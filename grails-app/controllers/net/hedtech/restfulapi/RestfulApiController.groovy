@@ -7,7 +7,6 @@ package net.hedtech.restfulapi
 import grails.converters.JSON
 import grails.converters.XML
 
-import org.modeshape.common.text.Inflector
 
 /**
  * A default Restful API controller that delegates to a 
@@ -142,7 +141,13 @@ class RestfulApiController {
     protected Map errorMap(e) {
 
         [ success: false,
-          errorMessage: e.message 
+          errors: [ 
+            type: "validation",
+            resource: [ class: "net.hedtech.banner.general.system.College",
+                        id: 25
+                      ],
+            errorMessage: e.message 
+          ]
         ]
     }
 
@@ -177,18 +182,7 @@ class RestfulApiController {
 
 
     private String domainName() {
-        def s = Inflector.instance.singularize(params.pluralizedResourceName as Object)
-        lowerCamelCase(s)
+        Inflector.asPropertyName(params.pluralizedResourceName)
     }
 
-
-    // we'll wrap the Inflector method with a closure so we can curry it...
-    private def inflectorCamelCase = { String text, boolean capitalizeFirst, 
-                                       char... delimChars ->
-        Inflector.instance.camelCase( text, capitalizeFirst, delimChars )
-    }
-
-
-    private def lowerCamelCase = 
-        inflectorCamelCase.rcurry(false, '_' as char, '-' as char)
 }

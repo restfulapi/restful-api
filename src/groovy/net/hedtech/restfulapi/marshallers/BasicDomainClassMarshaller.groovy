@@ -6,6 +6,8 @@ package net.hedtech.restfulapi.marshallers
 import grails.converters.JSON
 import grails.util.GrailsNameUtils
 
+import net.hedtech.restfulapi.Inflector
+
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 
@@ -21,8 +23,6 @@ import org.codehaus.groovy.grails.web.converters.marshaller.json.*
 import org.codehaus.groovy.grails.web.json.JSONWriter
 import org.codehaus.groovy.grails.web.converters.exceptions.ConverterException
 import org.codehaus.groovy.grails.web.converters.ConverterUtil
-
-import org.modeshape.common.text.Inflector
 
 import org.springframework.beans.BeanWrapper
 import org.springframework.beans.BeanWrapperImpl
@@ -283,12 +283,12 @@ class BasicDomainClassMarshaller extends DomainClassMarshaller {
 
 
     private String pluralize(String str) {
-        Inflector.instance.pluralize(str)
+        Inflector.pluralize(str)
     }
 
 
     private String hyphenate(String str) {
-        Inflector.instance.underscore(str).replaceAll("_", "-")
+        Inflector.hyphenate(str)
     }
 
 }

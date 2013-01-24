@@ -78,7 +78,7 @@ import org.apache.log4j.*
 
 log4j = {
 
-    all    'grails.app.controllers',
+    error  'grails.app.controllers',
            'grails.app.services',
            'net.hedtech.marshallers'
 

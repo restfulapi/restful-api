@@ -7,7 +7,6 @@ import grails.converters.JSON
 import net.hedtech.restfulapi.*
 import net.hedtech.restfulapi.marshallers.*
 
-import org.modeshape.common.text.Inflector
 
 
 class BootStrap {
@@ -18,7 +17,7 @@ class BootStrap {
 
         // Add rules to singularize resource names as needed here...
         //
-        Inflector.instance.addSingularize("mice\$", "\$1mouse") 
+        Inflector.addSingularize("mice\$", "\$1mouse") 
 
         // Example of how to Register a marshaller into the default configuration,
         // that overrides the marshallers added by the 'restful-api' plugin. 
