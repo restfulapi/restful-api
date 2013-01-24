@@ -128,7 +128,7 @@ class RestfulApiController {
                 render responseMap as XML
             break
             case ~/.*xml.*/:
-                JSON.use(selectFormat()) {
+                XML.use(selectFormat()) {
                     render responseMap as XML
                 }
             break

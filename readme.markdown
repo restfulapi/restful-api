@@ -2,7 +2,7 @@
      Copyright 2013 Ellucian Company L.P. and its affiliates.
      ********************************************************************* --> 
 
-# TODO list
+# TODO list for work
 
 * Define strategy and guidelines for retaining version-specific representations. Can the general marshallers be used at all?  If so, are tests sufficient to drive develpment of version-specific marshallers?  Need discussion, and Shane input...
 
