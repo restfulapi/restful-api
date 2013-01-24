@@ -29,6 +29,9 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         assert "AA" == json.data[0].code
         assert "An AA thing" == json.data[0].description
 
+        // assert localization of the message
+        assert "List of thing resources" == json.message
+
         // Assert that an '_href' property is present but not a 'numParts'
         // property, which proves the plugin-registered marshaller is 
         // being used versus the built-in grails marshaller or the 
@@ -78,6 +81,9 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         assert "An AA thing" == json.data.description
         assert json.data._href?.contains('things')  
         assertNull json.data.numParts
+
+        // test localization of the message
+        println "Details for the {0} resource" == json.message
     }
 
 

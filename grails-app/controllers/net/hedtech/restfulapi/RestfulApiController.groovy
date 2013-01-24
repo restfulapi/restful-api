@@ -111,7 +111,7 @@ class RestfulApiController {
         String singularName = domainName()
         String localizedName = message( code: "${singularName}.label", 
                                         default: "$singularName" )
-
+        
         responseMap << [ message: message( code: msgResourceCode,
                                            args: [ localizedName ] ) ] 
 
