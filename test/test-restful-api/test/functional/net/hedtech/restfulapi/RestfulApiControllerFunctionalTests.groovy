@@ -65,6 +65,26 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
     }
 
 
+    void testValidationError() {
+
+        // TODO: Replace with real validation testing in create/update
+        get( "$localBase/api/things/?forceValidationError=y" ) {
+            headers['Content-Type']  = 'application/json'
+            headers['Accept']        = 'application/json'
+//            headers['Authorization'] = TestUtils.authHeader('user','password')
+        }
+        assertStatus 500
+        assertEquals 'application/json', page?.webResponse?.contentType
+
+        def stringContent = page?.webResponse?.contentAsString
+        def json = JSON.parse stringContent
+        assertFalse json.success
+        assert "validation" == json.errors.type
+        assert json.errors.resource.class == 'net.hedtech.restfulapi.Thing'
+        assertNotNull json.errors.errorMessage  
+    }
+
+
     void testShow_json() {
 
         get( "$localBase/api/things/1" ) {
@@ -83,7 +103,7 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         assertNull json.data.numParts
 
         // test localization of the message
-        println "Details for the {0} resource" == json.message
+        assert "Details for the thing resource" == json.message
     }
 
 

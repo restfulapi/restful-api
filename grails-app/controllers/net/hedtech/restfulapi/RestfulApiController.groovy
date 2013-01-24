@@ -6,6 +6,7 @@ package net.hedtech.restfulapi
 
 import grails.converters.JSON
 import grails.converters.XML
+import grails.validation.ValidationException
 
 
 /**
@@ -37,9 +38,10 @@ class RestfulApiController {
             result = getService().list(params)
         } 
         catch (e) {
-            log.error "Caught exception ${e.message}", e
-            this.response.setStatus( 500 )
+//            log.error "Caught exception ${e.message}", e
+            setErrorCode(e)
             renderResponse(errorMap(e), 'default.not.listed.message')
+            return
         }
 
         renderResponse( [
@@ -62,7 +64,7 @@ class RestfulApiController {
         } 
         catch (e) {
             log.error "Caught exception ${e.message}", e
-            this.response.setStatus( 500 )
+            setErrorCode(e)
             renderResponse(errorMap(e), 'default.not.shown.message')
         }
 
@@ -107,9 +109,7 @@ class RestfulApiController {
      **/
     protected void renderResponse(Map responseMap, String msgResourceCode) {
 
-        String singularName = domainName()
-        String localizedName = message( code: "${singularName}.label", 
-                                        default: "$singularName" )
+        String localizedName = localize(domainName())
         
         responseMap << [ message: message( code: msgResourceCode,
                                            args: [ localizedName ] ) ] 
@@ -140,15 +140,21 @@ class RestfulApiController {
      **/
     protected Map errorMap(e) {
 
+        // TODO: Support different exceptions (validation, optimistic lock, etc.)
+
         [ success: false,
           errors: [ 
             type: "validation",
-            resource: [ class: "net.hedtech.banner.general.system.College",
-                        id: 25
-                      ],
+            resource: [ class: getDomainClass().name, id: params.id ],
             errorMessage: e.message 
           ]
         ]
+    }
+
+
+    protected void setErrorCode(e) {
+        // We'll set the response status code based upon type of exception...
+        this.response.setStatus( 500 )
     }
 
 
@@ -173,6 +179,18 @@ class RestfulApiController {
         }
         log.trace "getService() is returning $svc"
         svc
+    }
+
+
+    protected Class getDomainClass() {
+        def singularizedName = Inflector.singularize(params.pluralizedResourceName)
+        def className = Inflector.camelCase(singularizedName, true)
+        grailsApplication.domainClasses.find { it.clazz.simpleName == className }.clazz
+    }
+
+
+    private String localize(String name) {
+        message( code: "${name}.label", default: "$name" )
     }
 
 

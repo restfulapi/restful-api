@@ -28,8 +28,8 @@ class Inflector {
     }
 
 
-    public static String camelCase(String source) {
-        inflector.camelCase(source, false, ' ' as char, '_' as char, '-' as char)
+    public static String camelCase(String source, boolean capitalize = false) {
+        inflector.camelCase(source, capitalize, ' ' as char, '_' as char, '-' as char)
     }
 
 

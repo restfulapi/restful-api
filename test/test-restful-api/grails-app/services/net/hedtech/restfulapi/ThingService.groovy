@@ -3,16 +3,23 @@ Copyright 2013 Ellucian Company L.P. and its affiliates.
 ******************************************************************************/ 
 package net.hedtech.restfulapi
 
+
+import grails.validation.ValidationException
+
+
+
 class ThingService {
 
     def list(Map params) {
 
-        log.trace "ThingService.list invoked"
+        log.trace "ThingService.list invoked with params $params"
 
         def result = [:]
-        def fail = { Map m ->
-            result.error = [ code: m.code, args: ["Thing"] ]
-            return result
+
+        // TODO: Do validation testing in create or update -- this is temporary
+        if (params.forceValidationError == 'y') {
+            // This will throw a validation exception...
+            new Thing(code:'FAIL', description: 'Code exceeds 2 chars').save(failOnError:true)
         }
  
         params.max = Math.min( params.max ? params.max.toInteger() : 10,  100)
@@ -20,9 +27,6 @@ class ThingService {
         	                          max: params.max, offset: params.offset )
         result.totalCount = Thing.count()
  
-        if(!result.instances || !result.totalCount) {
-            return fail(code:"default.list.failure")
-        }
         log.trace "ThingService.list returning ${result}"
         result
     }
