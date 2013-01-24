@@ -124,4 +124,53 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         assert 2 == json.data.numParts
     }
 
+    void testSave_json() {
+        post( "$localBase/api/things") {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/json'
+            body {
+                """
+                { 
+                    code:'AC',
+                    description:'An AC thingy',
+                }
+                """
+            }
+        }
+        assertStatus 201
+        assertEquals 'application/json', page?.webResponse?.contentType
+
+        def stringContent = page?.webResponse?.contentAsString
+        def json = JSON.parse stringContent
+        assertNotNull json.data.id 
+        assert "AC" == json.data.code
+        assert "An AC thingy" == json.data.description
+        assert 0 == json.data.parts.size()
+    }
+
+    void testSave_json_response_jsonv0() {
+        post( "$localBase/api/things") {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/vnd.hedtech.v0+json'
+            body {
+                """
+                { 
+                    code:'AC',
+                    description:'An AC thingy',
+                }
+                """
+            }
+        }
+        assertStatus 201
+        assertEquals 'application/json', page?.webResponse?.contentType
+
+        def stringContent = page?.webResponse?.contentAsString
+        def json = JSON.parse stringContent
+        assertNotNull json.data.id 
+        assert "AC" == json.data.code
+        assert "An AC thingy" == json.data.description
+        assert 0 == json.data.numParts
+    }
+
+
 }

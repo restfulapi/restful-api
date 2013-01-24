@@ -75,11 +75,27 @@ class RestfulApiController {
     }
 
 
-    // POST /api/pluralizedResourceName/id
+    // POST /api/pluralizedResourceName
     //
     public def save() {
-        log.trace "save invoked for ${params.pluralizedResourceName}/${params.id}"
-        throw new RuntimeException("Not yet implemented!")
+        log.trace "save invoked for ${params.pluralizedResourceName}"
+        def result
+
+        try {
+            def content = parseRequestContent( request )
+            result = getService().create( content )
+            response.setStatus( 201 )
+            renderResponse( [
+                    success:    true,
+                    data:       result.instance, 
+                    ], 'default.saved.message' )            
+        }
+        catch (e) {
+            log.error "Caught exception ${e.message}", e
+            this.response.setStatus( 500 )
+            renderResponse(errorMap(e), 'default.not.saved.message')
+        }
+
     }
 
 
@@ -132,6 +148,20 @@ class RestfulApiController {
                 }
             break
         }
+    }
+
+    /**
+     * Parses the content from the request.
+     * Returns a map representing the properties of content.
+     * @param request the request containing the content
+     **/
+    protected Map parseRequestContent(request) {
+        switch(request.format) {
+            case 'json':
+                return request.JSON
+            break
+        }
+        throw new RuntimeException( "unknown request format ${request.format}")
     }
 
 
@@ -192,7 +222,6 @@ class RestfulApiController {
     private String localize(String name) {
         message( code: "${name}.label", default: "$name" )
     }
-
 
     protected String selectFormat() {
         response.format == 'json' ? 'default' : response.format

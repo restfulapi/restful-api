@@ -41,4 +41,18 @@ class ThingService {
         log.trace "ThingService.show returning ${result}"
         result
     }
+
+    def create(Map params) {
+        log.trace "ThingService.create invoked"
+
+        def result = [:]
+
+        Thing.withTransaction {
+            def instance = new Thing( params )
+            instance.save(failOnError:true,flush:true)
+            result.instance = instance 
+            result.instance.parts //force lazy loading
+        }
+        result
+    }
 }

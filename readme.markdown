@@ -16,6 +16,7 @@
 * Support localization of label/title affordances (just use 'message' injected into the controller)
 * Add a groovy bean class marshaler to support non-domain objects
 * Investigate why the test application needed to install the 'inflector' plugin? (this should be transitive) 
+* Investigate why 2nd run of tests in grails console causes failures of the inflector plugin
 * Encapsulate the Inflector plugin within our own 'Inflector' class that exposes static methods (versus letting marshallers use the Inflector plugin directly)
 
 * Use a filter to calculate and add the ETag header SHA1 to the response
@@ -24,6 +25,12 @@
 * Add affordance support to marshalers, and demonstrate usage in a custom controller
 * Implement support for conditional requests (TBD)
 
+* Investigate returning absolute URI in Location header on create (how to if behind load balancer?)
+* Firm up contract with service save() method (what is returned in the result, optional id only, etc)
+* Make decision on exposure of id in a URI in Location header.  Is it always an internal key, or do we need resource keys that may differ from internal keys
+
+* Support for Date binding
+
 # Current Status
 * Created an initial plugin project and test-app (that uses an in-memory database versus a Banner dependency)
 * Partially implemented a generic controller with content negotiation that selects a registered marshaller. (Only show/list are implemented.)
@@ -31,4 +38,7 @@
 * Implemented a trivial resource-specific marshaller 
 * Implemented initial functional test to prove use of various marshallers
 * Implemented support for converting urls to resource names (e.g., part-of-things ==> PartOfThing) that leverages the 'inflector' plugin
+
+
+
 
