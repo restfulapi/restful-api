@@ -7,9 +7,8 @@ import grails.converters.JSON
 import org.codehaus.groovy.grails.web.converters.configuration.ConvertersConfigurationHolder as CCH
 import org.codehaus.groovy.grails.web.converters.configuration.DefaultConverterConfiguration as DCC
 
-import net.hedtech.marshallers.*
 import net.hedtech.restfulapi.*
-
+import net.hedtech.restfulapi.marshallers.*
 
 class RestfulApiGrailsPlugin {
     

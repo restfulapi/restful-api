@@ -2,7 +2,7 @@
 Copyright 2013 Ellucian Company L.P. and its affiliates.
 ******************************************************************************/ 
 
-package net.hedtech.marshallers
+package net.hedtech.restfulapi.marshallers
 
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory

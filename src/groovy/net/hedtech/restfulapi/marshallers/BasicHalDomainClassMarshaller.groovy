@@ -1,7 +1,7 @@
 /* ****************************************************************************
 Copyright 2013 Ellucian Company L.P. and its affiliates.
 ******************************************************************************/ 
-package net.hedtech.marshallers
+package net.hedtech.restfulapi.marshallers
 
 import grails.converters.JSON
 import grails.util.GrailsNameUtils

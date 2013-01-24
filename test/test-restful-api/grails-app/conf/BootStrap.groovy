@@ -4,8 +4,8 @@ Copyright 2013 Ellucian Company L.P. and its affiliates.
 
 import grails.converters.JSON
 
-import net.hedtech.marshallers.*
 import net.hedtech.restfulapi.*
+import net.hedtech.restfulapi.marshallers.*
 
 import org.modeshape.common.text.Inflector
 
