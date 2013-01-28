@@ -73,7 +73,7 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
             headers['Accept']        = 'application/json'
 //            headers['Authorization'] = TestUtils.authHeader('user','password')
         }
-        assertStatus 500
+        assertStatus 400
         assertEquals 'application/json', page?.webResponse?.contentType
 
         def stringContent = page?.webResponse?.contentAsString
@@ -96,6 +96,7 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         assertEquals 'application/json', page?.webResponse?.contentType
 
         def stringContent = page?.webResponse?.contentAsString
+
         def json = JSON.parse stringContent
         assert "AA" == json.data.code
         assert "An AA thing" == json.data.description
@@ -155,8 +156,8 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
             body {
                 """
                 { 
-                    code:'AC',
-                    description:'An AC thingy',
+                    code:'AD',
+                    description:'An AD thingy',
                 }
                 """
             }
@@ -167,10 +168,55 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         def stringContent = page?.webResponse?.contentAsString
         def json = JSON.parse stringContent
         assertNotNull json.data.id 
-        assert "AC" == json.data.code
-        assert "An AC thingy" == json.data.description
+        assert "AD" == json.data.code
+        assert "An AD thingy" == json.data.description
         assert 0 == json.data.numParts
     }
 
+    void testSaveExisting() {
+        post( "$localBase/api/things") {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/json'
+            body {
+                """
+                { 
+                    code:'AA',
+                    description:'An AA thingy',
+                }
+                """
+            }
+        }
+        assertStatus 400
+        assertHeader "X-Status-Reason", 'Validation failed'
 
+        def stringContent = page?.webResponse?.contentAsString
+        def json = JSON.parse stringContent
+        assertFalse json.success
+        assert "validation" == json.errors.type
+        assert json.errors.resource.class == 'net.hedtech.restfulapi.Thing'
+        assertNotNull json.errors.errorMessage  
+    }
+
+    void testGenericErrorOnSave() {
+        post( "$localBase/api/things?forceGenericError=y") {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/json'
+            body {
+                """
+                { 
+                    code:'AA',
+                    description:'An AA thingy',
+                }
+                """
+            }
+        }
+        assertStatus 500
+        def stringContent = page?.webResponse?.contentAsString
+        def json = JSON.parse stringContent
+        assertFalse json.success
+        assert "general" == json.errors.type
+        assert json.errors.resource.class == 'net.hedtech.restfulapi.Thing'
+        assertNotNull json.errors.errorMessage 
+
+    }
 }

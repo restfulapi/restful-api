@@ -27,9 +27,17 @@
 
 * Investigate returning absolute URI in Location header on create (how to if behind load balancer?)
 * Firm up contract with service save() method (what is returned in the result, optional id only, etc)
+* Firm up contract with service save, update, and delete methods.  Do they get the full request params, or only the extracted resource representation?
 * Make decision on exposure of id in a URI in Location header.  Is it always an internal key, or do we need resource keys that may differ from internal keys
+* Is the format of an error response to be configurable via marshallers?
+* Is the format of an error response considered to be versioned?  
+* Determine mapping of Exceptions to errorMap.  
+* Does errorMap production need to take the action into account?  e.g., is producing an error response w/ classname and id appropriate for a list action?
 
 * Support for Date binding
+
+# Code cleanup tasks
+* setup/teardown methods for functional tests to setup/teardown persistent data?
 
 # Current Status
 * Created an initial plugin project and test-app (that uses an in-memory database versus a Banner dependency)

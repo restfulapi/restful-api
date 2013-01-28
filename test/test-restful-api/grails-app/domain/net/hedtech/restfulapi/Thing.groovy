@@ -35,7 +35,7 @@ class Thing implements Serializable {
 
 
     static constraints = {
-        code               ( nullable: false, maxSize: 2  )
+        code               ( nullable: false, maxSize: 2, unique: true  )
         description        ( nullable: false, maxSize: 30 )
         dateManufactured   ( nullable: true )
         isGood             ( nullable: true,  maxSize: 1, inList:['Y','N'] )

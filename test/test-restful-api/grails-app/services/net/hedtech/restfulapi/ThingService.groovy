@@ -6,6 +6,8 @@ package net.hedtech.restfulapi
 
 import grails.validation.ValidationException
 
+import org.codehaus.groovy.grails.web.util.WebUtils
+
 
 
 class ThingService {
@@ -45,14 +47,28 @@ class ThingService {
     def create(Map params) {
         log.trace "ThingService.create invoked"
 
+        if (WebUtils.retrieveGrailsWebRequest().getParameterMap().forceGenericError == 'y') {
+            throw new Exception( "generic failure" )
+        }
+
         def result = [:]
 
         Thing.withTransaction {
             def instance = new Thing( params )
-            instance.save(failOnError:true,flush:true)
+            instance.save(failOnError:true)
             result.instance = instance 
             result.instance.parts //force lazy loading
         }
         result
+    }
+
+    def update(Map params) {
+        log.trace "ThingService.update invoked"
+
+        def result = [:]
+        Thing.withTransaction {
+            Thing.get(params.id)
+        }
+
     }
 }

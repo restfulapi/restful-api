@@ -39,7 +39,7 @@ class RestfulApiController {
         } 
         catch (e) {
 //            log.error "Caught exception ${e.message}", e
-            setErrorCode(e)
+            setError(e)
             renderResponse(errorMap(e), 'default.not.listed.message')
             return
         }
@@ -64,7 +64,7 @@ class RestfulApiController {
         } 
         catch (e) {
             log.error "Caught exception ${e.message}", e
-            setErrorCode(e)
+            setError(e)
             renderResponse(errorMap(e), 'default.not.shown.message')
         }
 
@@ -92,7 +92,7 @@ class RestfulApiController {
         }
         catch (e) {
             log.error "Caught exception ${e.message}", e
-            this.response.setStatus( 500 )
+            setError(e)
             renderResponse(errorMap(e), 'default.not.saved.message')
         }
 
@@ -103,7 +103,22 @@ class RestfulApiController {
     //
     public def update() {
         log.trace "update invoked for ${params.pluralizedResourceName}/${params.id}"
-        throw new RuntimeException("Not yet implemented!")
+        def result
+
+        try {
+            def content = parseRequestContent( request )
+            result = getService().update( content )
+            response.setStatus( 20 )
+            renderResponse( [
+                    success:    true,
+                    data:       result.instance, 
+                    ], 'default.updated.message' )            
+        }
+        catch (e) {
+            log.error "Caught exception ${e.message}", e
+            setError(e)
+            renderResponse(errorMap(e), 'default.not.updated.message')
+        }
     }
 
 
@@ -172,19 +187,43 @@ class RestfulApiController {
 
         // TODO: Support different exceptions (validation, optimistic lock, etc.)
 
-        [ success: false,
-          errors: [ 
-            type: "validation",
-            resource: [ class: getDomainClass().name, id: params.id ],
-            errorMessage: e.message 
-          ]
-        ]
+        // TODO: Is this the right way to test for a validation exception?
+        if (e instanceof ValidationException) {
+            [ success: false,
+              errors: [ 
+                type: "validation",
+                resource: [ class: getDomainClass().name, id: params.id ],
+                errorMessage: e.message 
+              ]
+            ]
+        } else {
+            [ success: false,
+              errors: [ 
+                type: "general",
+                resource: [ class: getDomainClass().name, id: params.id ],
+                errorMessage: e.message 
+              ]
+            ]
+
+        }
+
     }
 
-
-    protected void setErrorCode(e) {
+    /**
+     * Sets the response status and appropriate header fields for 
+     * the error.
+     * @param e The exception to set response status and headers for
+     **/
+    protected void setError(e) {
         // We'll set the response status code based upon type of exception...
-        this.response.setStatus( 500 )
+
+        // TODO: Is this the correct way to detect a ValidationException?
+        if (e instanceof ValidationException) {
+            this.response.setStatus( 400 )
+            this.response.addHeader( 'X-Status-Reason', 'Validation failed' )
+        } else {
+            this.response.setStatus( 500 )
+        }
     }
 
 
