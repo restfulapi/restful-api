@@ -61,8 +61,12 @@ grails.web.disable.multipart=false
 // request parameters to mask when logging exceptions
 grails.exceptionresolver.params.exclude = ['password']
 
+
 // configure auto-caching of queries by default (if false you can cache individual queries with 'cache: true')
 grails.hibernate.cache.queries = false
+
+//throw validation exception during save by default
+grails.gorm.failOnError = true
 
 environments {
     development {

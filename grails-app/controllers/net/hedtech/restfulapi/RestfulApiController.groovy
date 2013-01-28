@@ -8,6 +8,10 @@ import grails.converters.JSON
 import grails.converters.XML
 import grails.validation.ValidationException
 
+import org.hibernate.StaleObjectStateException
+
+import org.springframework.dao.OptimisticLockingFailureException
+
 
 /**
  * A default Restful API controller that delegates to a 
@@ -106,16 +110,18 @@ class RestfulApiController {
         def result
 
         try {
-            def content = parseRequestContent( request )
-            result = getService().update( content )
-            response.setStatus( 20 )
+            def map = [:]
+            map.id = params.id
+            map.content = parseRequestContent( request )
+            result = getService().update( map )
+            response.setStatus( 200 )
             renderResponse( [
                     success:    true,
                     data:       result.instance, 
                     ], 'default.updated.message' )            
         }
         catch (e) {
-            //log.error "Caught exception ${e.message}", e
+            log.error "Caught exception ${e.message}", e
             setError(e)
             renderResponse(errorMap(e), 'default.not.updated.message')
         }
@@ -126,7 +132,21 @@ class RestfulApiController {
     //
     public def delete() {
         log.trace "delete invoked for ${params.pluralizedResourceName}/${params.id}"
-        throw new RuntimeException("Not yet implemented!")
+        def result
+        try {
+            def map = [:]
+            map.id = params.id
+            map.content = parseRequestContent( request )
+            result = getService().delete( map )
+            response.setStatus( 200 )
+            renderResponse( [
+                success:    true], 'default.deleted.mesage' )
+        }
+        catch (e) {
+            log.error "Caught exception ${e.message}", e
+            setError(e)
+            renderResponse(errorMap(e), 'default.not.updated.message')
+        }
     }
 
 
@@ -187,8 +207,19 @@ class RestfulApiController {
 
         // TODO: Support different exceptions (validation, optimistic lock, etc.)
 
-        // TODO: Is this the right way to test for a validation exception?
-        if (e instanceof ValidationException) {
+        // TODO: Support ApplicationException without introducing dependencies
+
+        
+        if ((e instanceof OptimisticLockingFailureException) || (e instanceof StaleObjectStateException)) {
+            [ success: false,
+              errors: [ 
+                type: "optimisticlock",
+                resource: [ class: getDomainClass().name, id: params.id ],
+                errorMessage: e.message 
+              ]
+            ]            
+        // TODO: Is this the right way to test for a validation exception?            
+        } else if (e instanceof ValidationException) {
             [ success: false,
               errors: [ 
                 type: "validation",

@@ -13,6 +13,7 @@
 * Design/implement support for reading JSON and XML (if needed because Grails cannot do this)
 
 * Add to the generic RestfulApiController support for handling ApplicationException (but avoid ApplicationException dependency - if an exception responds to AE methods we can pass in a localizer to the 'returnMap' method otherwise we should just use 'e.message')
+* Add to generic RestfulApiController support for recognizing an ApplicationException is an optimistic lock
 * Support localization of label/title affordances (just use 'message' injected into the controller)
 * Add a groovy bean class marshaler to support non-domain objects
 * Investigate why the test application needed to install the 'inflector' plugin? (this should be transitive) 

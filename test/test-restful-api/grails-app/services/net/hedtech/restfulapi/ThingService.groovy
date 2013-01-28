@@ -8,6 +8,10 @@ import grails.validation.ValidationException
 
 import org.codehaus.groovy.grails.web.util.WebUtils
 
+import org.hibernate.StaleObjectStateException
+
+import org.springframework.dao.OptimisticLockingFailureException
+
 
 
 class ThingService {
@@ -36,7 +40,6 @@ class ThingService {
 
     def show(Map params) {
         log.trace "ThingService.show invoked"
-
         def result = [:]
         result.instance = Thing.get(params.id)
         result.instance.parts // force lazy loading
@@ -64,11 +67,35 @@ class ThingService {
 
     def update(Map params) {
         log.trace "ThingService.update invoked"
+        if (WebUtils.retrieveGrailsWebRequest().getParameterMap().throwOptimisticLock == 'y') {
+            throw new OptimisticLockingFailureException( "requested optimistic lock for testing" )
+        }
+        if (WebUtils.retrieveGrailsWebRequest().getParameterMap().throwStaleObjectStateException == 'y') {
+            throw new StaleObjectStateException()
+        }
+
+
+        /*if (!params.content?.version) {
+            throw new ValidationException( "Missing version field" )
+        }*/
 
         def result = [:]
         Thing.withTransaction {
-            Thing.get(params.id)
+            def thing = Thing.get(params.id)
+            thing.properties = params.content
+            thing.save(failOnError:true)
+            result.instance = thing
+            result.instance.parts //force lazy loading
         }
+        result
+    }
 
+    def delete(Map params) {
+        def result = [:]
+        Thing.withTransaction {
+            def thing = Thing.get(params.id)
+            thing.delete(failOnError:true)
+        }
+        result
     }
 }

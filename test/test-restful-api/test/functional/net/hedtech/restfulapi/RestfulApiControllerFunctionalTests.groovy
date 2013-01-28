@@ -15,7 +15,6 @@ import org.junit.*
 class RestfulApiControllerFunctionalTests extends BrowserTestCase {
 
     static final String localBase = "http://127.0.0.1:8080/test-restful-api"
-    ThingService thingService
 
     @Before
     void setUp() {
@@ -26,7 +25,6 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
     void tearDown() {
         deleteThings()
     }    
-
 
     void testList_json() {
         createThing('AA')
@@ -206,7 +204,7 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
     void testSaveExisting() {
         createThing('AA')
 
-        post( "$localBase/api/things") {
+        post( "$localBase/api/things" ) {
             headers['Content-Type'] = 'application/json'
             headers['Accept']       = 'application/json'
             body {
@@ -249,8 +247,102 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         assert "general" == json.errors.type
         assert json.errors.resource.class == 'net.hedtech.restfulapi.Thing'
         assertNotNull json.errors.errorMessage 
+    }
+
+    void testUpdate_json() {
+        def id = createThing('AA')
+        put( "$localBase/api/things/$id" ) {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/json'
+            body {
+                """
+                { 
+                    description:'updated description',
+                }
+                """
+            }
+        }
+
+        assertStatus 200
+        def stringContent = page?.webResponse?.contentAsString
+        def json = JSON.parse stringContent
+        assertTrue json.success
+        assertNotNull json.data.id 
+        assertNotNull json.data.version
+        assert json.data.version > 0
+        assert "updated description" == json.data.description
+        assertNull json.data.numParts
+        assert 2 == json.data.parts.size()
+    }       
+
+    void testUpdate_json_response_jsonv0() {
+        def id = createThing('AA')
+        put( "$localBase/api/things/$id" ) {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/vnd.hedtech.v0+json'
+            body {
+                """
+                { 
+                    description:'updated description',
+                }
+                """
+            }
+        }
+
+        assertStatus 200
+        def stringContent = page?.webResponse?.contentAsString
+        def json = JSON.parse stringContent
+        assertTrue json.success
+        assertNotNull json.data.id 
+        assertNotNull json.data.version
+        assert json.data.version > 0
+        assert "updated description" == json.data.description
+        assert 2 == json.data.numParts
+        assert 2 == json.data.parts.size()
+    }          
+
+    void testDelete() {
+        def id = createThing('AA')
+
+        delete( "$localBase/api/things/$id" ) {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/json'
+        }
+
+        assertStatus 200
+        def stringContent = page?.webResponse?.contentAsString
+        def json = JSON.parse stringContent
+        assertTrue json.success
+
+        def count
+
+        Thing.withNewSession{
+            count = Thing.findAll().size()
+        }
+
+        assert 0 == count
 
     }
+/*
+    void testOptimisticLock() {
+
+        put( "$localBase/api/things/1?throwOptimisticLock=y" ) {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/json'
+            body {
+                """
+                { 
+                    description:'updated description',
+                    version:"1"
+                }
+                """
+            }
+        }
+
+        assertStatus 409
+
+
+    }*/
 
 
     private void createThings() {
@@ -260,23 +352,25 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
     }
 
     private def createThing(String code) {
+        def id 
         Thing.withTransaction {
             Thing thing = new Thing(code: code, description: "An $code thing",
                       dateManufactured: new Date(), isGood: 'Y', isLarge: true)
-                .addPart(new PartOfThing(code: 'aa', description: 'aa part').save())
-                .addPart(new PartOfThing(code: 'bb', description: 'bb part').save())
-                .save()
-            return thing.getId()                
+            thing.addPart(new PartOfThing(code: 'aa', description: 'aa part').save())
+            thing.addPart(new PartOfThing(code: 'bb', description: 'bb part').save())
+            thing.save(failOnError:true, flush:true)
+            thing.getId()          
         }
-
     }    
 
     private void deleteThings() {
-        Thing.withTransaction {
-            def things = Thing.list()
-            things.each {
-                it.delete()
+        Thing.withNewSession{
+            def things = Thing.findAll()
+            things.each() { aThing ->
+                aThing.delete(failOnError:true,flush:true)
             }
         }
-    }    
+    }
+
+
 }
