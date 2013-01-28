@@ -8,13 +8,29 @@ import com.grailsrocks.functionaltest.*
 
 import grails.converters.JSON
 
+import static org.junit.Assert.*
+import org.junit.*
+
 
 class RestfulApiControllerFunctionalTests extends BrowserTestCase {
 
     static final String localBase = "http://127.0.0.1:8080/test-restful-api"
+    ThingService thingService
+
+    @Before
+    void setUp() {
+        deleteThings()
+    }
+
+    @After
+    void tearDown() {
+        deleteThings()
+    }    
 
 
     void testList_json() {
+        createThing('AA')
+        createThing('BB')
 
         get( "$localBase/api/things" ) {
             headers['Content-Type']  = 'application/json'
@@ -43,6 +59,8 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
 
 
     void testList_jsonv0() {
+        createThing('AA')
+        createThing('BB')
 
         get( "$localBase/api/things" ) {
             headers['Content-Type']  = 'application/json'
@@ -54,18 +72,22 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
 
         def stringContent = page?.webResponse?.contentAsString
         def json = JSON.parse stringContent
-        assert "AA" == json.data[0].code
-        assert "An AA thing" == json.data[0].description
-
         // Assert the 'numParts' property is present proving the 
         // resource-specific marshaller registered for the 'jsonv0'
         // configuration was used.
         //
         assert 2 == json.data[0].numParts
+
+        assert "AA" == json.data[0].code
+        assert "An AA thing" == json.data[0].description
+
+        
     }
 
 
     void testValidationError() {
+        createThing('AA')
+        createThing('BB')
 
         // TODO: Replace with real validation testing in create/update
         get( "$localBase/api/things/?forceValidationError=y" ) {
@@ -86,8 +108,10 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
 
 
     void testShow_json() {
+        def id = createThing('AA')
+        createThing('BB')
 
-        get( "$localBase/api/things/1" ) {
+        get( "$localBase/api/things/$id" ) {
             headers['Content-Type']  = 'application/json'
             headers['Accept']        = 'application/json'
 //            headers['Authorization'] = TestUtils.authHeader('user','password')
@@ -102,6 +126,7 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         assert "An AA thing" == json.data.description
         assert json.data._href?.contains('things')  
         assertNull json.data.numParts
+        assertNotNull json.data.version
 
         // test localization of the message
         assert "Details for the thing resource" == json.message
@@ -109,8 +134,10 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
 
 
     void testShow_jsonv0() {
+        def id = createThing('AA')
+        createThing('BB')
 
-        get( "$localBase/api/things/1" ) {
+        get( "$localBase/api/things/$id" ) {
             headers['Content-Type']  = 'application/json'
             headers['Accept']        = 'application/vnd.hedtech.v0+json'
 //            headers['Authorization'] = TestUtils.authHeader('user','password')
@@ -123,6 +150,7 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         assert "AA" == json.data.code
         assert "An AA thing" == json.data.description
         assert 2 == json.data.numParts
+        assertNotNull json.data.version
     }
 
     void testSave_json() {
@@ -147,6 +175,7 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         assert "AC" == json.data.code
         assert "An AC thingy" == json.data.description
         assert 0 == json.data.parts.size()
+        assertNotNull json.data.version
     }
 
     void testSave_json_response_jsonv0() {
@@ -171,9 +200,12 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         assert "AD" == json.data.code
         assert "An AD thingy" == json.data.description
         assert 0 == json.data.numParts
+        assertNotNull json.data.version
     }
 
     void testSaveExisting() {
+        createThing('AA')
+
         post( "$localBase/api/things") {
             headers['Content-Type'] = 'application/json'
             headers['Accept']       = 'application/json'
@@ -219,4 +251,32 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         assertNotNull json.errors.errorMessage 
 
     }
+
+
+    private void createThings() {
+        createThing('AA')
+        createThing('BB')
+
+    }
+
+    private def createThing(String code) {
+        Thing.withTransaction {
+            Thing thing = new Thing(code: code, description: "An $code thing",
+                      dateManufactured: new Date(), isGood: 'Y', isLarge: true)
+                .addPart(new PartOfThing(code: 'aa', description: 'aa part').save())
+                .addPart(new PartOfThing(code: 'bb', description: 'bb part').save())
+                .save()
+            return thing.getId()                
+        }
+
+    }    
+
+    private void deleteThings() {
+        Thing.withTransaction {
+            def things = Thing.list()
+            things.each {
+                it.delete()
+            }
+        }
+    }    
 }

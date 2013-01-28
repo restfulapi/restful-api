@@ -63,7 +63,7 @@ class RestfulApiController {
             result = getService().show(params)
         } 
         catch (e) {
-            log.error "Caught exception ${e.message}", e
+            //log.error "Caught exception ${e.message}", e
             setError(e)
             renderResponse(errorMap(e), 'default.not.shown.message')
         }
@@ -91,7 +91,7 @@ class RestfulApiController {
                     ], 'default.saved.message' )            
         }
         catch (e) {
-            log.error "Caught exception ${e.message}", e
+            //log.error "Caught exception ${e.message}", e
             setError(e)
             renderResponse(errorMap(e), 'default.not.saved.message')
         }
@@ -115,7 +115,7 @@ class RestfulApiController {
                     ], 'default.updated.message' )            
         }
         catch (e) {
-            log.error "Caught exception ${e.message}", e
+            //log.error "Caught exception ${e.message}", e
             setError(e)
             renderResponse(errorMap(e), 'default.not.updated.message')
         }

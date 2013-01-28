@@ -88,6 +88,12 @@ class BasicDomainClassMarshaller extends DomainClassMarshaller {
             json.property("id", id)
         }
 
+        if (isIncludeVersion()) {
+            GrailsDomainClassProperty versionProperty = domainClass.getVersion();
+            Object version = extractValue(value, versionProperty);
+            json.property("version", version);
+        }        
+
         // Add the 'href' link to 'self'
         writer.key("_href").value(getResourceUri(clazz.simpleName, value.id))
  
