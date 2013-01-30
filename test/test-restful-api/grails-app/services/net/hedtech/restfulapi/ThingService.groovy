@@ -124,6 +124,8 @@ class ThingService {
         if (WebUtils.retrieveGrailsWebRequest().getParameterMap().throwStaleObjectStateException == 'y') {
             throw new StaleObjectStateException( Thing.class.getName(), null )
         }
-
+        if (WebUtils.retrieveGrailsWebRequest().getParameterMap().throwAppOptimisticLockException == 'y') {
+            throw new AppOptimisticLockException()
+        }
     }
 }

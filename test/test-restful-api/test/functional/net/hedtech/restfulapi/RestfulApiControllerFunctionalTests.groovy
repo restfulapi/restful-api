@@ -407,6 +407,30 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         assertNotNull json.errors[0].errorMessage 
     }    
 
+    void testCustomOptimisticLock() {
+        put( "$localBase/api/things/1?throwAppOptimisticLockException=y" ) {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/vnd.hedtech.v0+json'
+            body {
+                """
+                { 
+                    description:'updated description',
+                    version:'0'
+                }
+                """
+            }
+        }
+
+        assertStatus 409
+        def stringContent = page?.webResponse?.contentAsString
+        def json = JSON.parse stringContent
+        assertFalse json.success
+        assert 1 == json.errors.size()
+        assert 'optimisticlock' == json.errors[0].type
+        assert json.errors[0].resource.class == 'net.hedtech.restfulapi.Thing'
+        assertNotNull json.errors[0].errorMessage         
+    }
+
 
     private void createThings() {
         createThing('AA')

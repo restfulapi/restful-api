@@ -68,6 +68,8 @@ grails.hibernate.cache.queries = false
 //throw validation exception during save by default
 grails.gorm.failOnError = true
 
+grails.restfulapi.addOptimisticLockExceptions = ['net.hedtech.restfulapi.AppOptimisticLockException']
+
 environments {
     development {
         grails.logging.jul.usebridge = true

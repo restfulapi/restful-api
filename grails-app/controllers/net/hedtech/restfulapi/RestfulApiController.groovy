@@ -8,8 +8,6 @@ import grails.converters.JSON
 import grails.converters.XML
 import grails.validation.ValidationException
 
-import org.hibernate.StaleObjectStateException
-
 import org.springframework.dao.OptimisticLockingFailureException
 
 
@@ -21,12 +19,42 @@ import org.springframework.dao.OptimisticLockingFailureException
  * necessary.  (If a stateful controller is needed, this 
  * should not be used as a base class.)
  **/
-class RestfulApiController {
+class RestfulApiController implements org.springframework.beans.factory.InitializingBean {
 
     // Because this controller is stateless, a single instance
     // may be used to handle all requests. 
     //
     static scope = "singleton"
+
+    private def defaultOptimisticLockExceptions = [
+        org.springframework.dao.OptimisticLockingFailureException.class.getName(),
+        'org.hibernate.StaleObjectStateException'
+    ]
+
+    private def optimisticLockClasses = []
+
+    void afterPropertiesSet() {
+        def clazzes = []
+        log.info ""
+        def names = []
+        //see if the configuration wants to completely override the classes to be mapped
+        //to the optimistic lock handler, otherwise, use the default set.
+        if (grailsApplication.config.grails.restfulapi.optimisticLockExceptions) {
+            names.addAll( grailsApplication.config.grails.restfulapi.optimisticLockExceptions )
+        } else {
+            names.addAll( defaultOptimisticLockExceptions )
+        }
+
+        //Add additional classes to the default set.
+        if (grailsApplication.config.grails.restfulapi.addOptimisticLockExceptions) {
+            names.addAll( grailsApplication.config.grails.restfulapi.addOptimisticLockExceptions )
+        }
+
+        names.each() { name->
+            log.info( "Loading class '$name' as an Optimistic lock exception" )
+            optimisticLockClasses.add( grailsApplication.getClassLoader().loadClass( name ) )
+        }
+    }
 
 
 // ---------------------------------- ACTIONS ---------------------------------
@@ -219,13 +247,23 @@ class RestfulApiController {
      * @param e the exception to map
      **/
     protected String getErrorType(e) {
-        if ((e instanceof OptimisticLockingFailureException) || (e instanceof StaleObjectStateException)) {
+        if (isInstanceOf(e, this.optimisticLockClasses)) {
             return 'OptimisticLockException'
         } else if (e instanceof ValidationException) {
             return 'ValidationException'
         } else {
             return 'AnyOtherException'
         }
+    }
+
+    private boolean isInstanceOf( Throwable e, def classes ) {
+        def isInstanceOf = false;
+        classes.each { clazz ->
+            if (clazz.isAssignableFrom( e.class )) {
+                isInstanceOf = true
+            }
+        }
+        return isInstanceOf
     }
 
 
