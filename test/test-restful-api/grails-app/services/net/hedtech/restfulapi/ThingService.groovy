@@ -12,7 +12,7 @@ import org.hibernate.StaleObjectStateException
 
 import org.springframework.dao.OptimisticLockingFailureException
 
-
+import org.springframework.orm.hibernate3.HibernateOptimisticLockingFailureException as OptimisticLockException
 
 class ThingService {
 
@@ -67,21 +67,15 @@ class ThingService {
 
     def update(Map params) {
         log.trace "ThingService.update invoked"
-        if (WebUtils.retrieveGrailsWebRequest().getParameterMap().throwOptimisticLock == 'y') {
-            throw new OptimisticLockingFailureException( "requested optimistic lock for testing" )
-        }
-        if (WebUtils.retrieveGrailsWebRequest().getParameterMap().throwStaleObjectStateException == 'y') {
-            throw new StaleObjectStateException()
-        }
 
-
-        /*if (!params.content?.version) {
-            throw new ValidationException( "Missing version field" )
-        }*/
+        checkForExceptionRequest()
 
         def result = [:]
         Thing.withTransaction {
             def thing = Thing.get(params.id)
+
+            checkOptimisticLock( thing, params.content )
+
             thing.properties = params.content
             thing.save(failOnError:true)
             result.instance = thing
@@ -97,5 +91,39 @@ class ThingService {
             thing.delete(failOnError:true)
         }
         result
+    }
+
+    public def checkOptimisticLock( domainObject, content ) {
+        
+        if (domainObject.hasProperty( 'version' )) {
+            if (!content?.version) {
+                thing.errors.reject( 'version', "net.hedtech.restfulapi.Thing.missingVersion")
+                throw new ValidationException( "Missing version field", thing.errors )
+            }            
+            int ver = content.version instanceof String ? content.version.toInteger() : content.version
+            if (ver != domainObject.version) {
+                throw exceptionForOptimisticLock( domainObject, content )
+            }
+        }
+    }
+
+    private def exceptionForOptimisticLock( domainObject, content ) {
+        new OptimisticLockException( new StaleObjectStateException( domainObject.class.getName(), domainObject.id ) )
+    }
+
+    /**
+     * Checks the request for a flag asking for a specific exception to be thrown
+     * so error handling can be tested.
+     * This is a method to support testing of the plugin, and should not be taken
+     * as an example of good service construction.
+     **/
+    private void checkForExceptionRequest() {
+        if (WebUtils.retrieveGrailsWebRequest().getParameterMap().throwOptimisticLock == 'y') {
+            throw new OptimisticLockingFailureException( "requested optimistic lock for testing" )
+        }
+        if (WebUtils.retrieveGrailsWebRequest().getParameterMap().throwStaleObjectStateException == 'y') {
+            throw new StaleObjectStateException( Thing.class.getName(), null )
+        }
+
     }
 }

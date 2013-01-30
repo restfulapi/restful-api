@@ -18,12 +18,14 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
 
     @Before
     void setUp() {
+        super.setUp()
         deleteThings()
     }
 
     @After
     void tearDown() {
         deleteThings()
+        super.tearDown()
     }    
 
     void testList_json() {
@@ -99,9 +101,10 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         def stringContent = page?.webResponse?.contentAsString
         def json = JSON.parse stringContent
         assertFalse json.success
-        assert "validation" == json.errors.type
-        assert json.errors.resource.class == 'net.hedtech.restfulapi.Thing'
-        assertNotNull json.errors.errorMessage  
+        assert 1 == json.errors.size()
+        assert "validation" == json.errors[0].type
+        assert json.errors[0].resource.class == 'net.hedtech.restfulapi.Thing'
+        assertNotNull json.errors[0].errorMessage  
     }
 
 
@@ -222,9 +225,10 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         def stringContent = page?.webResponse?.contentAsString
         def json = JSON.parse stringContent
         assertFalse json.success
-        assert "validation" == json.errors.type
-        assert json.errors.resource.class == 'net.hedtech.restfulapi.Thing'
-        assertNotNull json.errors.errorMessage  
+        assert 1 == json.errors.size()
+        assert "validation" == json.errors[0].type
+        assert json.errors[0].resource.class == 'net.hedtech.restfulapi.Thing'
+        assertNotNull json.errors[0].errorMessage  
     }
 
     void testGenericErrorOnSave() {
@@ -244,13 +248,15 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         def stringContent = page?.webResponse?.contentAsString
         def json = JSON.parse stringContent
         assertFalse json.success
-        assert "general" == json.errors.type
-        assert json.errors.resource.class == 'net.hedtech.restfulapi.Thing'
-        assertNotNull json.errors.errorMessage 
+        assert 1 == json.errors.size()
+        assert "general" == json.errors[0].type
+        assert json.errors[0].resource.class == 'net.hedtech.restfulapi.Thing'
+        assertNotNull json.errors[0].errorMessage 
     }
 
     void testUpdate_json() {
         def id = createThing('AA')
+
         put( "$localBase/api/things/$id" ) {
             headers['Content-Type'] = 'application/json'
             headers['Accept']       = 'application/json'
@@ -258,6 +264,7 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
                 """
                 { 
                     description:'updated description',
+                    version:'0'
                 }
                 """
             }
@@ -277,6 +284,7 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
 
     void testUpdate_json_response_jsonv0() {
         def id = createThing('AA')
+        
         put( "$localBase/api/things/$id" ) {
             headers['Content-Type'] = 'application/json'
             headers['Accept']       = 'application/vnd.hedtech.v0+json'
@@ -284,6 +292,7 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
                 """
                 { 
                     description:'updated description',
+                    version:'0'
                 }
                 """
             }
@@ -299,7 +308,33 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         assert "updated description" == json.data.description
         assert 2 == json.data.numParts
         assert 2 == json.data.parts.size()
-    }          
+    }   
+
+    void testUpdateOptimisticLock() {
+        def id = createThing('AA')
+        updateThing( id, [description:'changed'] )
+
+        put( "$localBase/api/things/$id" ) {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/vnd.hedtech.v0+json'
+            body {
+                """
+                { 
+                    description:'updated description',
+                    version:'0'
+                }
+                """
+            }
+        }
+        assertStatus 409
+        def stringContent = page?.webResponse?.contentAsString
+        def json = JSON.parse stringContent
+        assertFalse json.success
+        assert 1 == json.errors.size()
+        assert 'optimisticlock' == json.errors[0].type
+        assert json.errors[0].resource.class == 'net.hedtech.restfulapi.Thing'
+        assertNotNull json.errors[0].errorMessage 
+    }       
 
     void testDelete() {
         def id = createThing('AA')
@@ -323,26 +358,54 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         assert 0 == count
 
     }
-/*
-    void testOptimisticLock() {
 
+    void testOptimisticLock() {
         put( "$localBase/api/things/1?throwOptimisticLock=y" ) {
             headers['Content-Type'] = 'application/json'
-            headers['Accept']       = 'application/json'
+            headers['Accept']       = 'application/vnd.hedtech.v0+json'
             body {
                 """
                 { 
                     description:'updated description',
-                    version:"1"
+                    version:'0'
                 }
                 """
             }
         }
 
         assertStatus 409
+        def stringContent = page?.webResponse?.contentAsString
+        def json = JSON.parse stringContent
+        assertFalse json.success
+        assert 1 == json.errors.size()
+        assert 'optimisticlock' == json.errors[0].type
+        assert json.errors[0].resource.class == 'net.hedtech.restfulapi.Thing'
+        assertNotNull json.errors[0].errorMessage 
+    }
 
+    void testStaleObject() {
+        put( "$localBase/api/things/1?throwStaleObjectStateException=y" ) {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/vnd.hedtech.v0+json'
+            body {
+                """
+                { 
+                    description:'updated description',
+                    version:'0'
+                }
+                """
+            }
+        }
 
-    }*/
+        assertStatus 409
+        def stringContent = page?.webResponse?.contentAsString
+        def json = JSON.parse stringContent
+        assertFalse json.success
+        assert 1 == json.errors.size()
+        assert 'optimisticlock' == json.errors[0].type
+        assert json.errors[0].resource.class == 'net.hedtech.restfulapi.Thing'
+        assertNotNull json.errors[0].errorMessage 
+    }    
 
 
     private void createThings() {
@@ -362,6 +425,16 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
             thing.getId()          
         }
     }    
+
+    private void updateThing( def id, def props ) {
+        Thing.withNewSession {
+            Thing.withTransaction {
+                def thing = Thing.get( id )
+                thing.properties = props
+                thing.save(failOnError:true,flush:true)
+            }
+        }
+    }
 
     private void deleteThings() {
         Thing.withNewSession{

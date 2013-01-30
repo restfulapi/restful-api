@@ -43,8 +43,7 @@ class RestfulApiController {
         } 
         catch (e) {
 //            log.error "Caught exception ${e.message}", e
-            setError(e)
-            renderResponse(errorMap(e), 'default.not.listed.message')
+            renderErrorResponse(e, 'default.not.listed.message')
             return
         }
 
@@ -68,8 +67,7 @@ class RestfulApiController {
         } 
         catch (e) {
             //log.error "Caught exception ${e.message}", e
-            setError(e)
-            renderResponse(errorMap(e), 'default.not.shown.message')
+            renderErrorResponse(e, 'default.not.shown.message')
         }
 
         renderResponse( [
@@ -96,8 +94,7 @@ class RestfulApiController {
         }
         catch (e) {
             //log.error "Caught exception ${e.message}", e
-            setError(e)
-            renderResponse(errorMap(e), 'default.not.saved.message')
+            renderErrorResponse(e, 'default.not.saved.message')
         }
 
     }
@@ -121,9 +118,8 @@ class RestfulApiController {
                     ], 'default.updated.message' )            
         }
         catch (e) {
-            log.error "Caught exception ${e.message}", e
-            setError(e)
-            renderResponse(errorMap(e), 'default.not.updated.message')
+            //log.error "Caught exception ${e.message}", e
+            renderErrorResponse(e, 'default.not.updated.message')
         }
     }
 
@@ -143,9 +139,8 @@ class RestfulApiController {
                 success:    true], 'default.deleted.mesage' )
         }
         catch (e) {
-            log.error "Caught exception ${e.message}", e
-            setError(e)
-            renderResponse(errorMap(e), 'default.not.updated.message')
+            //log.error "Caught exception ${e.message}", e
+            renderErrorResponse(e, 'default.not.updated.message')
         }
     }
 
@@ -199,61 +194,37 @@ class RestfulApiController {
         throw new RuntimeException( "unknown request format ${request.format}")
     }
 
-
     /**
-     * Returns a default error map that may be used to render a response.
+     * Renders an error response appropriate for the exception.
+     * @param e the exception to render an error response for
+     * @param msgResourceCode the resource code to use to create the message entry
      **/
-    protected Map errorMap(e) {
-
-        // TODO: Support different exceptions (validation, optimistic lock, etc.)
-
-        // TODO: Support ApplicationException without introducing dependencies
-
-        
-        if ((e instanceof OptimisticLockingFailureException) || (e instanceof StaleObjectStateException)) {
-            [ success: false,
-              errors: [ 
-                type: "optimisticlock",
-                resource: [ class: getDomainClass().name, id: params.id ],
-                errorMessage: e.message 
-              ]
-            ]            
-        // TODO: Is this the right way to test for a validation exception?            
-        } else if (e instanceof ValidationException) {
-            [ success: false,
-              errors: [ 
-                type: "validation",
-                resource: [ class: getDomainClass().name, id: params.id ],
-                errorMessage: e.message 
-              ]
-            ]
-        } else {
-            [ success: false,
-              errors: [ 
-                type: "general",
-                resource: [ class: getDomainClass().name, id: params.id ],
-                errorMessage: e.message 
-              ]
-            ]
-
+    protected void renderErrorResponse( Throwable e, String msgResourceCode ) {
+        def handler = exceptionHandlers[ getErrorType( e ) ] 
+        if (!handler) {
+            handler = exceptionHandlers[ 'AnyOtherException' ]
         }
-
+        this.response.setStatus( handler.httpStatusCode )
+        if (handler.additionalHeaders) {
+            handler.additionalHeaders().each() { header ->
+                this.response.addHeader( header.key, header.value )
+            }
+        }
+        def returnMap = handler.returnMap( e )
+        renderResponse( returnMap, msgResourceCode )
     }
 
     /**
-     * Sets the response status and appropriate header fields for 
-     * the error.
-     * @param e The exception to set response status and headers for
+     * Maps an exception to an error type known to the controller.
+     * @param e the exception to map
      **/
-    protected void setError(e) {
-        // We'll set the response status code based upon type of exception...
-
-        // TODO: Is this the correct way to detect a ValidationException?
-        if (e instanceof ValidationException) {
-            this.response.setStatus( 400 )
-            this.response.addHeader( 'X-Status-Reason', 'Validation failed' )
+    protected String getErrorType(e) {
+        if ((e instanceof OptimisticLockingFailureException) || (e instanceof StaleObjectStateException)) {
+            return 'OptimisticLockException'
+        } else if (e instanceof ValidationException) {
+            return 'ValidationException'
         } else {
-            this.response.setStatus( 500 )
+            return 'AnyOtherException'
         }
     }
 
@@ -301,5 +272,50 @@ class RestfulApiController {
     private String domainName() {
         Inflector.asPropertyName(params.pluralizedResourceName)
     }
+
+    private def exceptionHandlers = [
+
+        'ValidationException': [
+            httpStatusCode: 400,
+            additionalHeaders: { ['X-Status-Reason':'Validation failed'] },
+            returnMap: { e -> 
+                            [   success: false,
+                                errors: [ [ 
+                                    type: "validation",
+                                    resource: [ class: getDomainClass().name, id: params.id ],
+                                    errorMessage: e.message 
+                                    ]
+                                ]
+                            ]
+                        }
+        ],
+
+        'OptimisticLockException': [
+            httpStatusCode: 409,
+            returnMap: { e -> 
+                            [   success: false,
+                                errors: [ [
+                                    type: "optimisticlock",
+                                    resource: [ class: getDomainClass().name, id: params.id ],
+                                    errorMessage: e.message 
+                                ] ]
+                            ]
+                        }
+        ],
+
+        // Catch-all.  Unknown exception type.
+        'AnyOtherException': [
+            httpStatusCode: 500,
+            returnMap: { e ->
+                            [   success: false,
+                                errors: [ [ 
+                                    type: "general",
+                                    resource: [ class: getDomainClass().name, id: params.id ],
+                                    errorMessage: e.message 
+                                ] ]
+                            ]
+                        }
+            ]
+    ]
 
 }
