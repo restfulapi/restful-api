@@ -330,10 +330,8 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         def stringContent = page?.webResponse?.contentAsString
         def json = JSON.parse stringContent
         assertFalse json.success
-        assert 1 == json.errors.size()
-        assert 'optimisticlock' == json.errors[0].type
-        assert json.errors[0].resource.class == 'net.hedtech.restfulapi.Thing'
-        assertNotNull json.errors[0].errorMessage 
+        assertNull json.errors
+        assert "Another user has updated this thing while you were editing" == json.message
     }       
 
     void testDelete() {
@@ -377,10 +375,8 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         def stringContent = page?.webResponse?.contentAsString
         def json = JSON.parse stringContent
         assertFalse json.success
-        assert 1 == json.errors.size()
-        assert 'optimisticlock' == json.errors[0].type
-        assert json.errors[0].resource.class == 'net.hedtech.restfulapi.Thing'
-        assertNotNull json.errors[0].errorMessage 
+        assertNull json.errors
+        assert "Another user has updated this thing while you were editing" == json.message
     }
 
     void testStaleObject() {
@@ -401,10 +397,8 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         def stringContent = page?.webResponse?.contentAsString
         def json = JSON.parse stringContent
         assertFalse json.success
-        assert 1 == json.errors.size()
-        assert 'optimisticlock' == json.errors[0].type
-        assert json.errors[0].resource.class == 'net.hedtech.restfulapi.Thing'
-        assertNotNull json.errors[0].errorMessage 
+        assertNull json.errors
+        assert "Another user has updated this thing while you were editing" == json.message 
     }    
 
     void testCustomOptimisticLock() {
@@ -425,10 +419,8 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         def stringContent = page?.webResponse?.contentAsString
         def json = JSON.parse stringContent
         assertFalse json.success
-        assert 1 == json.errors.size()
-        assert 'optimisticlock' == json.errors[0].type
-        assert json.errors[0].resource.class == 'net.hedtech.restfulapi.Thing'
-        assertNotNull json.errors[0].errorMessage         
+        assertNull json.errors
+        assert "Another user has updated this thing while you were editing" == json.message      
     }
 
 

@@ -10,7 +10,18 @@
 * Firm up contract with service save, update, and delete methods.  Do they get the full request params, or only the extracted resource representation?
 * Support for Date binding
 
+# Question list for ApplicationException support
+* ApplicationException can wrap sql exceptions.  Can sql exceptions represent validation exceptions from Banner APIs?
+* If we look at the wrapped exception directly, will we get a potential mis-match between return map from the exception and status code?
+* This approach may change how exceptions are mapped to status codes (that is, using the plugin for existing Banner 9 APIs may change the behavior)
+* Do we need to pass the type of action to the error handlers, in order to generate more specific error messages?
+
+# Code review items
+* Change 409 responses to not have an error block.  You already know the requested resource, and the 409 response communicates that it's an optimistic lock.  An error block would be redundant information.
+* Changes to message generation
+
 # Code cleanup tasks
+* Remove unused codes from message.properties
 
 
 # Current Status

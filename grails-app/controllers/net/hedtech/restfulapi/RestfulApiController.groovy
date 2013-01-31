@@ -68,20 +68,22 @@ class RestfulApiController implements org.springframework.beans.factory.Initiali
         def result
         try {
             result = getService().list(params)
-        } 
-        catch (e) {
-//            log.error "Caught exception ${e.message}", e
-            renderErrorResponse(e, 'default.not.listed.message')
-            return
-        }
 
-        renderResponse( [
+            renderSuccessResponse( [
                 success:     true,
                 data:        result.instances,
                 totalCount:  result.totalCount,
                 pageOffset:  params.offset ? params?.offset : 0,
                 pageMaxSize: params.max ? params?.max : totalCount
-            ], 'default.list.message' )
+            ], 'default.list.message' )            
+        } 
+        catch (e) {
+//            log.error "Caught exception ${e.message}", e
+            renderErrorResponse(e)
+            return
+        }
+
+
    }
 
 
@@ -92,16 +94,18 @@ class RestfulApiController implements org.springframework.beans.factory.Initiali
         def result
         try {
             result = getService().show(params)
-        } 
-        catch (e) {
-            //log.error "Caught exception ${e.message}", e
-            renderErrorResponse(e, 'default.not.shown.message')
-        }
 
-        renderResponse( [
+            renderSuccessResponse( [
                 success:     true,
                 data:        result.instance,
             ], 'default.shown.message' )
+        } 
+        catch (e) {
+            //log.error "Caught exception ${e.message}", e
+            renderErrorResponse(e)
+        }
+
+        
     }
 
 
@@ -115,14 +119,14 @@ class RestfulApiController implements org.springframework.beans.factory.Initiali
             def content = parseRequestContent( request )
             result = getService().create( content )
             response.setStatus( 201 )
-            renderResponse( [
+            renderSuccessResponse( [
                     success:    true,
                     data:       result.instance, 
                     ], 'default.saved.message' )            
         }
         catch (e) {
             //log.error "Caught exception ${e.message}", e
-            renderErrorResponse(e, 'default.not.saved.message')
+            renderErrorResponse(e)
         }
 
     }
@@ -140,14 +144,14 @@ class RestfulApiController implements org.springframework.beans.factory.Initiali
             map.content = parseRequestContent( request )
             result = getService().update( map )
             response.setStatus( 200 )
-            renderResponse( [
+            renderSuccessResponse( [
                     success:    true,
                     data:       result.instance, 
                     ], 'default.updated.message' )            
         }
         catch (e) {
             //log.error "Caught exception ${e.message}", e
-            renderErrorResponse(e, 'default.not.updated.message')
+            renderErrorResponse(e)
         }
     }
 
@@ -163,17 +167,37 @@ class RestfulApiController implements org.springframework.beans.factory.Initiali
             map.content = parseRequestContent( request )
             result = getService().delete( map )
             response.setStatus( 200 )
-            renderResponse( [
+            renderSuccessResponse( [
                 success:    true], 'default.deleted.mesage' )
         }
         catch (e) {
             //log.error "Caught exception ${e.message}", e
-            renderErrorResponse(e, 'default.not.updated.message')
+            renderErrorResponse(e)
         }
     }
 
 
 // ---------------------------- Helper Methods -------------------------------    
+
+    /**
+     * Renders a successful response using the supplied map and the msg resource
+     * code.  
+     * A success value of true will be automatically added to the map.
+     * A message property with a value translated from the message resource code
+     * provided with a localized domainName will be automatically added to the map.
+     * @param responseMap the Map to render
+     * @param msgResourceCode the resource code used to create a message entry
+     **/
+     protected void renderSuccessResponse(Map responseMap, String msgResourceCode) {
+
+        String localizedName = localize(domainName())
+
+        responseMap << [ success: true ]
+        
+        responseMap << [ message: message( code: msgResourceCode,
+                                           args: [ localizedName ] ) ] 
+        renderResponse( responseMap )
+     }
 
 
     /**
@@ -181,12 +205,7 @@ class RestfulApiController implements org.springframework.beans.factory.Initiali
      * @param responseMap the Map to render
      * @param msgResourceCode the resource code to use to create message entry
      **/
-    protected void renderResponse(Map responseMap, String msgResourceCode) {
-
-        String localizedName = localize(domainName())
-        
-        responseMap << [ message: message( code: msgResourceCode,
-                                           args: [ localizedName ] ) ] 
+    protected void renderResponse(Map responseMap ) {
 
         switch(response.format) {
             case 'json':
@@ -225,9 +244,8 @@ class RestfulApiController implements org.springframework.beans.factory.Initiali
     /**
      * Renders an error response appropriate for the exception.
      * @param e the exception to render an error response for
-     * @param msgResourceCode the resource code to use to create the message entry
      **/
-    protected void renderErrorResponse( Throwable e, String msgResourceCode ) {
+    protected void renderErrorResponse( Throwable e ) {
         def handler = exceptionHandlers[ getErrorType( e ) ] 
         if (!handler) {
             handler = exceptionHandlers[ 'AnyOtherException' ]
@@ -239,7 +257,8 @@ class RestfulApiController implements org.springframework.beans.factory.Initiali
             }
         }
         def returnMap = handler.returnMap( e )
-        renderResponse( returnMap, msgResourceCode )
+        returnMap << [ success : false ]
+        renderResponse( returnMap )
     }
 
     /**
@@ -318,6 +337,9 @@ class RestfulApiController implements org.springframework.beans.factory.Initiali
             additionalHeaders: { ['X-Status-Reason':'Validation failed'] },
             returnMap: { e -> 
                             [   success: false,
+
+                                message: message( code: "default.validation.errors.message",
+                                                  args: [ localize(domainName()) ] ) as String,
                                 errors: [ [ 
                                     type: "validation",
                                     resource: [ class: getDomainClass().name, id: params.id ],
@@ -332,11 +354,8 @@ class RestfulApiController implements org.springframework.beans.factory.Initiali
             httpStatusCode: 409,
             returnMap: { e -> 
                             [   success: false,
-                                errors: [ [
-                                    type: "optimisticlock",
-                                    resource: [ class: getDomainClass().name, id: params.id ],
-                                    errorMessage: e.message 
-                                ] ]
+                                message: message( code: "default.optimistic.locking.failure",
+                                                  args: [ localize(domainName()) ] ) as String,
                             ]
                         }
         ],
@@ -346,6 +365,8 @@ class RestfulApiController implements org.springframework.beans.factory.Initiali
             httpStatusCode: 500,
             returnMap: { e ->
                             [   success: false,
+                                message: message( code: "default.general.errors.message",
+                                                  args: [ localize(domainName()) ] ) as String,
                                 errors: [ [ 
                                     type: "general",
                                     resource: [ class: getDomainClass().name, id: params.id ],
