@@ -118,14 +118,18 @@ class ThingService {
      * as an example of good service construction.
      **/
     private void checkForExceptionRequest() {
-        if (WebUtils.retrieveGrailsWebRequest().getParameterMap().throwOptimisticLock == 'y') {
+        def params = WebUtils.retrieveGrailsWebRequest().getParameterMap()
+        if (params.throwOptimisticLock == 'y') {
             throw new OptimisticLockingFailureException( "requested optimistic lock for testing" )
         }
-        if (WebUtils.retrieveGrailsWebRequest().getParameterMap().throwStaleObjectStateException == 'y') {
+        if (params.throwStaleObjectStateException == 'y') {
             throw new StaleObjectStateException( Thing.class.getName(), null )
         }
-        if (WebUtils.retrieveGrailsWebRequest().getParameterMap().throwAppOptimisticLockException == 'y') {
+        if (params.throwAppOptimisticLockException == 'y') {
             throw new AppOptimisticLockException()
+        }
+        if (params.throwApplicationException == 'y') {
+            throw new DummyApplicationException( params.appStatusCode, params.appMsgCode, params.appErrorType )
         }
     }
 }

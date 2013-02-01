@@ -1,6 +1,6 @@
 /* ****************************************************************************
 Copyright 2013 Ellucian Company L.P. and its affiliates.
-******************************************************************************/ 
+******************************************************************************/
 
 package net.hedtech.restfulapi
 
@@ -26,7 +26,7 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
     void tearDown() {
         deleteThings()
         super.tearDown()
-    }    
+    }
 
     void testList_json() {
         createThing('AA')
@@ -49,11 +49,11 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         assert "List of thing resources" == json.message
 
         // Assert that an '_href' property is present but not a 'numParts'
-        // property, which proves the plugin-registered marshaller is 
-        // being used versus the built-in grails marshaller or the 
+        // property, which proves the plugin-registered marshaller is
+        // being used versus the built-in grails marshaller or the
         // resource-specific marshaller registered by this test app.
         //
-        assert json.data[0]._href?.contains('things')  
+        assert json.data[0]._href?.contains('things')
         assertNull json.data[0].numParts
     }
 
@@ -72,7 +72,7 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
 
         def stringContent = page?.webResponse?.contentAsString
         def json = JSON.parse stringContent
-        // Assert the 'numParts' property is present proving the 
+        // Assert the 'numParts' property is present proving the
         // resource-specific marshaller registered for the 'jsonv0'
         // configuration was used.
         //
@@ -81,7 +81,7 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         assert "AA" == json.data[0].code
         assert "An AA thing" == json.data[0].description
 
-        
+
     }
 
 
@@ -104,7 +104,7 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         assert 1 == json.errors.size()
         assert "validation" == json.errors[0].type
         assert json.errors[0].resource.class == 'net.hedtech.restfulapi.Thing'
-        assertNotNull json.errors[0].errorMessage  
+        assertNotNull json.errors[0].errorMessage
     }
 
 
@@ -125,7 +125,7 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         def json = JSON.parse stringContent
         assert "AA" == json.data.code
         assert "An AA thing" == json.data.description
-        assert json.data._href?.contains('things')  
+        assert json.data._href?.contains('things')
         assertNull json.data.numParts
         assertNotNull json.data.version
 
@@ -160,7 +160,7 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
             headers['Accept']       = 'application/json'
             body {
                 """
-                { 
+                {
                     code:'AC',
                     description:'An AC thingy',
                 }
@@ -172,7 +172,7 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
 
         def stringContent = page?.webResponse?.contentAsString
         def json = JSON.parse stringContent
-        assertNotNull json.data.id 
+        assertNotNull json.data.id
         assert "AC" == json.data.code
         assert "An AC thingy" == json.data.description
         assert 0 == json.data.parts.size()
@@ -185,7 +185,7 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
             headers['Accept']       = 'application/vnd.hedtech.v0+json'
             body {
                 """
-                { 
+                {
                     code:'AD',
                     description:'An AD thingy',
                 }
@@ -197,7 +197,7 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
 
         def stringContent = page?.webResponse?.contentAsString
         def json = JSON.parse stringContent
-        assertNotNull json.data.id 
+        assertNotNull json.data.id
         assert "AD" == json.data.code
         assert "An AD thingy" == json.data.description
         assert 0 == json.data.numParts
@@ -212,7 +212,7 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
             headers['Accept']       = 'application/json'
             body {
                 """
-                { 
+                {
                     code:'AA',
                     description:'An AA thingy',
                 }
@@ -228,7 +228,7 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         assert 1 == json.errors.size()
         assert "validation" == json.errors[0].type
         assert json.errors[0].resource.class == 'net.hedtech.restfulapi.Thing'
-        assertNotNull json.errors[0].errorMessage  
+        assertNotNull json.errors[0].errorMessage
     }
 
     void testGenericErrorOnSave() {
@@ -237,7 +237,7 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
             headers['Accept']       = 'application/json'
             body {
                 """
-                { 
+                {
                     code:'AA',
                     description:'An AA thingy',
                 }
@@ -251,7 +251,7 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         assert 1 == json.errors.size()
         assert "general" == json.errors[0].type
         assert json.errors[0].resource.class == 'net.hedtech.restfulapi.Thing'
-        assertNotNull json.errors[0].errorMessage 
+        assertNotNull json.errors[0].errorMessage
     }
 
     void testUpdate_json() {
@@ -262,7 +262,7 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
             headers['Accept']       = 'application/json'
             body {
                 """
-                { 
+                {
                     description:'updated description',
                     version:'0'
                 }
@@ -274,23 +274,23 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         def stringContent = page?.webResponse?.contentAsString
         def json = JSON.parse stringContent
         assertTrue json.success
-        assertNotNull json.data.id 
+        assertNotNull json.data.id
         assertNotNull json.data.version
         assert json.data.version > 0
         assert "updated description" == json.data.description
         assertNull json.data.numParts
         assert 2 == json.data.parts.size()
-    }       
+    }
 
     void testUpdate_json_response_jsonv0() {
         def id = createThing('AA')
-        
+
         put( "$localBase/api/things/$id" ) {
             headers['Content-Type'] = 'application/json'
             headers['Accept']       = 'application/vnd.hedtech.v0+json'
             body {
                 """
-                { 
+                {
                     description:'updated description',
                     version:'0'
                 }
@@ -302,13 +302,13 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         def stringContent = page?.webResponse?.contentAsString
         def json = JSON.parse stringContent
         assertTrue json.success
-        assertNotNull json.data.id 
+        assertNotNull json.data.id
         assertNotNull json.data.version
         assert json.data.version > 0
         assert "updated description" == json.data.description
         assert 2 == json.data.numParts
         assert 2 == json.data.parts.size()
-    }   
+    }
 
     void testUpdateOptimisticLock() {
         def id = createThing('AA')
@@ -319,7 +319,7 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
             headers['Accept']       = 'application/vnd.hedtech.v0+json'
             body {
                 """
-                { 
+                {
                     description:'updated description',
                     version:'0'
                 }
@@ -332,7 +332,7 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         assertFalse json.success
         assertNull json.errors
         assert "Another user has updated this thing while you were editing" == json.message
-    }       
+    }
 
     void testDelete() {
         def id = createThing('AA')
@@ -363,7 +363,7 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
             headers['Accept']       = 'application/vnd.hedtech.v0+json'
             body {
                 """
-                { 
+                {
                     description:'updated description',
                     version:'0'
                 }
@@ -385,7 +385,7 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
             headers['Accept']       = 'application/vnd.hedtech.v0+json'
             body {
                 """
-                { 
+                {
                     description:'updated description',
                     version:'0'
                 }
@@ -398,8 +398,8 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         def json = JSON.parse stringContent
         assertFalse json.success
         assertNull json.errors
-        assert "Another user has updated this thing while you were editing" == json.message 
-    }    
+        assert "Another user has updated this thing while you were editing" == json.message
+    }
 
     void testCustomOptimisticLock() {
         put( "$localBase/api/things/1?throwAppOptimisticLockException=y" ) {
@@ -407,7 +407,7 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
             headers['Accept']       = 'application/vnd.hedtech.v0+json'
             body {
                 """
-                { 
+                {
                     description:'updated description',
                     version:'0'
                 }
@@ -420,9 +420,76 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         def json = JSON.parse stringContent
         assertFalse json.success
         assertNull json.errors
-        assert "Another user has updated this thing while you were editing" == json.message      
+        assert "Another user has updated this thing while you were editing" == json.message
     }
 
+    void testApplicationException() {
+        put( "$localBase/api/things/1?throwApplicationException=y&appStatusCode=400&appMsgCode=testapp.application.exception.message&appErrorType=validation" ) {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/json'
+            body {
+                """
+                {
+                    description:'updated description',
+                    version:'0'
+                }
+                """
+            }
+        }
+
+        assertStatus 400
+        assertHeader "X-Status-Reason", 'Validation failed'
+        def stringContent = page?.webResponse?.contentAsString
+        def json = JSON.parse stringContent
+        assertFalse json.success
+        assertNotNull json.errors
+        assert 1 == json.errors.size()
+        assert "foo resource had errors" == json.message
+    }
+
+    void testApplicationExceptionWithoutMessageAndErrorBlock() {
+        put( "$localBase/api/things/1?throwApplicationException=y&appStatusCode=409" ) {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/json'
+            body {
+                """
+                {
+                    description:'updated description',
+                    version:'0'
+                }
+                """
+            }
+        }
+
+        assertStatus 409
+        def stringContent = page?.webResponse?.contentAsString
+        def json = JSON.parse stringContent
+        assertFalse json.success
+        assertNull json.errors
+        assertNull json.message
+    }
+
+    void testBrokenErrorHandling() {
+        put( "$localBase/api/things/1?throwApplicationException=y&appStatusCode=409&appErrorType=programming" ) {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/json'
+            body {
+                """
+                {
+                    description:'updated description',
+                    version:'0'
+                }
+                """
+            }
+        }
+
+        assertStatus 500
+        def stringContent = page?.webResponse?.contentAsString
+        def json = JSON.parse stringContent
+        assertFalse json.success
+        assert "Encountered unexpected error generating a response" == json.message
+
+    }
 
     private void createThings() {
         createThing('AA')
@@ -431,16 +498,16 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
     }
 
     private def createThing(String code) {
-        def id 
+        def id
         Thing.withTransaction {
             Thing thing = new Thing(code: code, description: "An $code thing",
                       dateManufactured: new Date(), isGood: 'Y', isLarge: true)
             thing.addPart(new PartOfThing(code: 'aa', description: 'aa part').save())
             thing.addPart(new PartOfThing(code: 'bb', description: 'bb part').save())
             thing.save(failOnError:true, flush:true)
-            thing.getId()          
+            thing.getId()
         }
-    }    
+    }
 
     private void updateThing( def id, def props ) {
         Thing.withNewSession {

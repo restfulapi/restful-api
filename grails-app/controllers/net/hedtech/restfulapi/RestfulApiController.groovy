@@ -1,6 +1,6 @@
 /* ****************************************************************************
 Copyright 2013 Ellucian Company L.P. and its affiliates.
-******************************************************************************/ 
+******************************************************************************/
 
 package net.hedtech.restfulapi
 
@@ -12,17 +12,17 @@ import org.springframework.dao.OptimisticLockingFailureException
 
 
 /**
- * A default Restful API controller that delegates to a 
+ * A default Restful API controller that delegates to a
  * transactional service corresponding to the resource
  * identified on the URL. This controller may be subclassed
- * to create stateless resource-specific controllers when 
- * necessary.  (If a stateful controller is needed, this 
+ * to create stateless resource-specific controllers when
+ * necessary.  (If a stateful controller is needed, this
  * should not be used as a base class.)
  **/
 class RestfulApiController implements org.springframework.beans.factory.InitializingBean {
 
     // Because this controller is stateless, a single instance
-    // may be used to handle all requests. 
+    // may be used to handle all requests.
     //
     static scope = "singleton"
 
@@ -75,8 +75,8 @@ class RestfulApiController implements org.springframework.beans.factory.Initiali
                 totalCount:  result.totalCount,
                 pageOffset:  params.offset ? params?.offset : 0,
                 pageMaxSize: params.max ? params?.max : totalCount
-            ], 'default.list.message' )            
-        } 
+            ], 'default.list.message' )
+        }
         catch (e) {
 //            log.error "Caught exception ${e.message}", e
             renderErrorResponse(e)
@@ -89,7 +89,7 @@ class RestfulApiController implements org.springframework.beans.factory.Initiali
 
     // GET /api/pluralizedResourceName/id
     //
-    public def show() { 
+    public def show() {
         log.trace "show invoked for ${params.pluralizedResourceName}/${params.id}"
         def result
         try {
@@ -99,13 +99,13 @@ class RestfulApiController implements org.springframework.beans.factory.Initiali
                 success:     true,
                 data:        result.instance,
             ], 'default.shown.message' )
-        } 
+        }
         catch (e) {
             //log.error "Caught exception ${e.message}", e
             renderErrorResponse(e)
         }
 
-        
+
     }
 
 
@@ -121,8 +121,8 @@ class RestfulApiController implements org.springframework.beans.factory.Initiali
             response.setStatus( 201 )
             renderSuccessResponse( [
                     success:    true,
-                    data:       result.instance, 
-                    ], 'default.saved.message' )            
+                    data:       result.instance,
+                    ], 'default.saved.message' )
         }
         catch (e) {
             //log.error "Caught exception ${e.message}", e
@@ -146,8 +146,8 @@ class RestfulApiController implements org.springframework.beans.factory.Initiali
             response.setStatus( 200 )
             renderSuccessResponse( [
                     success:    true,
-                    data:       result.instance, 
-                    ], 'default.updated.message' )            
+                    data:       result.instance,
+                    ], 'default.updated.message' )
         }
         catch (e) {
             //log.error "Caught exception ${e.message}", e
@@ -177,11 +177,11 @@ class RestfulApiController implements org.springframework.beans.factory.Initiali
     }
 
 
-// ---------------------------- Helper Methods -------------------------------    
+// ---------------------------- Helper Methods -------------------------------
 
     /**
      * Renders a successful response using the supplied map and the msg resource
-     * code.  
+     * code.
      * A success value of true will be automatically added to the map.
      * A message property with a value translated from the message resource code
      * provided with a localized domainName will be automatically added to the map.
@@ -193,10 +193,45 @@ class RestfulApiController implements org.springframework.beans.factory.Initiali
         String localizedName = localize(domainName())
 
         responseMap << [ success: true ]
-        
+
         responseMap << [ message: message( code: msgResourceCode,
-                                           args: [ localizedName ] ) ] 
+                                           args: [ localizedName ] ) ]
         renderResponse( responseMap )
+     }
+
+
+     /**
+      * Renders an error response appropriate for the exception.
+      * @param e the exception to render an error response for
+      **/
+     protected void renderErrorResponse( Throwable e ) {
+        def returnMap = [:]
+        try {
+            def handler = exceptionHandlers[ getErrorType( e ) ]
+            if (!handler) {
+                handler = exceptionHandlers[ 'AnyOtherException' ]
+            }
+            def result = handler(e)
+
+            if (result.headers) {
+                result.headers.each() { header ->
+                    this.response.addHeader( header.key, header.value )
+                }
+            }
+            returnMap = result.returnMap
+            returnMap << [ success : false ]
+            this.response.setStatus( result.httpStatusCode )
+         }
+         catch (t) {
+            //We generated an exception trying to generate an error response.
+            //Log the error, and attempt to fall back on a generic fail-whale response
+            log.error( "Caught exception attemping to prepare an error response: ${t.message}", t )
+            returnMap.success = false
+            returnMap.message = "Encountered unexpected error generating a response"
+            this.response.setStatus( 500 )
+         }
+
+         renderResponse( returnMap )
      }
 
 
@@ -241,32 +276,21 @@ class RestfulApiController implements org.springframework.beans.factory.Initiali
         throw new RuntimeException( "unknown request format ${request.format}")
     }
 
-    /**
-     * Renders an error response appropriate for the exception.
-     * @param e the exception to render an error response for
-     **/
-    protected void renderErrorResponse( Throwable e ) {
-        def handler = exceptionHandlers[ getErrorType( e ) ] 
-        if (!handler) {
-            handler = exceptionHandlers[ 'AnyOtherException' ]
-        }
-        this.response.setStatus( handler.httpStatusCode )
-        if (handler.additionalHeaders) {
-            handler.additionalHeaders().each() { header ->
-                this.response.addHeader( header.key, header.value )
-            }
-        }
-        def returnMap = handler.returnMap( e )
-        returnMap << [ success : false ]
-        renderResponse( returnMap )
-    }
+
 
     /**
      * Maps an exception to an error type known to the controller.
      * @param e the exception to map
      **/
     protected String getErrorType(e) {
-        if (isInstanceOf(e, this.optimisticLockClasses)) {
+        if (e.metaClass.respondsTo( e, "getHttpStatusCode") &&
+            e.hasProperty( "returnMap" ) &&
+            e.returnMap && (e.returnMap instanceof Closure)) {
+            //treat as an 'ApplicationException'.  That is, assume the exception is taking
+            //responsibility for specifying the correct status code and
+            //response message elements
+            return 'ApplicationException'
+        } else if (isInstanceOf(e, this.optimisticLockClasses)) {
             return 'OptimisticLockException'
         } else if (e instanceof ValidationException) {
             return 'ValidationException'
@@ -288,11 +312,11 @@ class RestfulApiController implements org.springframework.beans.factory.Initiali
 
     /**
      * Returns the transactional service corresponding to this resource.
-     * The default implementation assumes the resource is a Grails 'domain' 
+     * The default implementation assumes the resource is a Grails 'domain'
      * object, and that the service can be identified by using the pluralized
-     * 'resource' name found on the URL. 
-     * For example: If a URL of /api/pluralizedResourceName/id was invoked, 
-     * a service named 
+     * 'resource' name found on the URL.
+     * For example: If a URL of /api/pluralizedResourceName/id was invoked,
+     * a service named
      * 'SingularizedResourceNameController' will be retrieved from the IoC container.
      **/
     protected def getService() {
@@ -332,49 +356,77 @@ class RestfulApiController implements org.springframework.beans.factory.Initiali
 
     private def exceptionHandlers = [
 
-        'ValidationException': [
-            httpStatusCode: 400,
-            additionalHeaders: { ['X-Status-Reason':'Validation failed'] },
-            returnMap: { e -> 
-                            [   success: false,
-
-                                message: message( code: "default.validation.errors.message",
-                                                  args: [ localize(domainName()) ] ) as String,
-                                errors: [ [ 
-                                    type: "validation",
-                                    resource: [ class: getDomainClass().name, id: params.id ],
-                                    errorMessage: e.message 
-                                    ]
-                                ]
+        'ValidationException': { e->
+            [
+                httpStatusCode: 400,
+                headers: ['X-Status-Reason':'Validation failed'],
+                returnMap:
+                    [
+                        message: message( code: "default.validation.errors.message",
+                                          args: [ localize(domainName()) ] ) as String,
+                        errors: [ [
+                            type: "validation",
+                            resource: [ class: getDomainClass().name, id: params.id ],
+                            errorMessage: e.message
                             ]
-                        }
-        ],
+                        ]
+                    ]
+            ]
+        },
 
-        'OptimisticLockException': [
-            httpStatusCode: 409,
-            returnMap: { e -> 
-                            [   success: false,
-                                message: message( code: "default.optimistic.locking.failure",
-                                                  args: [ localize(domainName()) ] ) as String,
-                            ]
-                        }
-        ],
+        'OptimisticLockException': { e ->
+            [
+                httpStatusCode: 409,
+                returnMap:
+                    [
+                        message: message( code: "default.optimistic.locking.failure",
+                                          args: [ localize(domainName()) ] ) as String,
+                    ]
+            ]
+        },
+
+        'ApplicationException': { e ->
+            // wrap the 'message' invocation within a closure, so it can be passed into an ApplicationException to localize error messages
+            def localizer = { mapToLocalize ->
+                this.message( mapToLocalize )
+            }
+
+            def map = [:]
+
+            def appMap = e.returnMap( localizer )
+
+            map.httpStatusCode = e.getHttpStatusCode()
+            if (appMap.headers) {
+                map.headers = appMap.headers
+            }
+            def returnMap = [:]
+            if (appMap.message) {
+                returnMap.message = appMap.message
+            }
+            if (appMap.errors) {
+                returnMap.errors = appMap.errors
+            }
+            map.returnMap = returnMap
+
+            return map
+        },
 
         // Catch-all.  Unknown exception type.
-        'AnyOtherException': [
-            httpStatusCode: 500,
-            returnMap: { e ->
-                            [   success: false,
-                                message: message( code: "default.general.errors.message",
-                                                  args: [ localize(domainName()) ] ) as String,
-                                errors: [ [ 
-                                    type: "general",
-                                    resource: [ class: getDomainClass().name, id: params.id ],
-                                    errorMessage: e.message 
-                                ] ]
-                            ]
-                        }
+        'AnyOtherException': { e ->
+            [
+                httpStatusCode: 500,
+                returnMap:
+                    [
+                        message: message( code: "default.general.errors.message",
+                                          args: [ localize(domainName()) ] ) as String,
+                        errors: [ [
+                            type: "general",
+                            resource: [ class: getDomainClass().name, id: params.id ],
+                            errorMessage: e.message
+                        ] ]
+                    ]
             ]
+        }
     ]
 
 }
