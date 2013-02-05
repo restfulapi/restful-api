@@ -50,6 +50,8 @@ grails.views.gsp.sitemesh.preprocess = true
 // scaffolding templates configuration
 grails.scaffolding.templates.domainSuffix = 'Instance'
 
+//grails.converters.json.circular.reference.behaviour = "INSERT_NULL"
+
 // Set to false to use the new Grails 1.2 JSONBuilder in the render method
 grails.json.legacy.builder = false
 // enabled native2ascii conversion of i18n properties files
@@ -84,12 +86,11 @@ environments {
 }
 
 import org.apache.log4j.*
-
 log4j = {
 
-    error  'grails.app.controllers',
-           'grails.app.services',
-           'net.hedtech.marshallers'
+    error  'grails.app.controllers'
+    error  'grails.app.services'
+    error  'net.hedtech.restfulapi.marshallers'
 
     error  'org.codehaus.groovy.grails.web.servlet',        // controllers
            'org.codehaus.groovy.grails.web.pages',          // GSP

@@ -1,21 +1,21 @@
 /* ****************************************************************************
 Copyright 2013 Ellucian Company L.P. and its affiliates.
-******************************************************************************/ 
+******************************************************************************/
 package net.hedtech.restfulapi
 
 class Thing implements Serializable {
 
     static hasMany = [parts: PartOfThing]
 
-    Set     parts = [] as Set
-    String  code
-    String  description
-    Date    dateManufactured
-    String  isGood
-    boolean isLarge
-    Date    lastModified
-    String  lastModifiedBy
-    String  dataOrigin
+    Set        parts = [] as Set
+    String     code
+    String     description
+    Date       dateManufactured
+    String     isGood
+    boolean    isLarge
+    Date       lastModified
+    String     lastModifiedBy
+    String     dataOrigin
 
 
     // Adds a part and returns 'this' to allow chaining.
@@ -23,7 +23,7 @@ class Thing implements Serializable {
         parts.add(part)
         this
     }
-    
+
 
     public String toString() {
         "Thing[id=$id, code=$code, description=$description, parts=${parts}]"

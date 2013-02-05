@@ -30,7 +30,7 @@ class ThingService {
 
         params.max = Math.min( params.max ? params.max.toInteger() : 10,  100)
         result.instances = Thing.list(fetch: [parts: "eager"],
-        	                          max: params.max, offset: params.offset ).sort { it.id }
+                                      max: params.max, offset: params.offset ).sort { it.id }
         result.totalCount = result.instances.size()
 
         log.trace "ThingService.list returning ${result}"

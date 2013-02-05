@@ -41,7 +41,7 @@ class BasicDomainClassMarshaller extends DomainClassMarshaller {
     protected GrailsApplication app
 
     private static List SKIPPED_FIELDS = Arrays.asList('lastModified', 'lastModifiedBy',
-                                                       'createdBy', 'password')
+                                                       'dataOrigin', 'createdBy', 'password')
 
 
 // ------------------------------- Constructors -------------------------------

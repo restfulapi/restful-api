@@ -1,6 +1,6 @@
 /* ****************************************************************************
 Copyright 2013 Ellucian Company L.P. and its affiliates.
-******************************************************************************/ 
+******************************************************************************/
 package net.hedtech.restfulapi.marshallers
 
 import grails.converters.JSON
@@ -9,6 +9,7 @@ import grails.util.GrailsNameUtils
 import org.codehaus.groovy.grails.commons.GrailsDomainClass
 import org.codehaus.groovy.grails.commons.GrailsDomainClassProperty
 import org.codehaus.groovy.grails.orm.hibernate.proxy.HibernateProxyHandler
+import org.codehaus.groovy.grails.web.converters.exceptions.ConverterException
 
 import org.springframework.beans.BeanWrapper
 
@@ -24,17 +25,25 @@ class BasicHalDomainClassMarshaller extends BasicDomainClassMarshaller {
     }
 
 
-    @Override 
+    // @Override
+    // public void marshalObject(Object value, JSON json) throws ConverterException {
+
+    //     log.trace ">>>>>>>>>>>>>>>>>>>>>>>>>> $this marshalObject() called for $clazz"
+    //     super.marshalObject(value, json)
+    // }
+
+
+    @Override
     protected List getSkippedFields() { }
 
 
-    @Override 
+    @Override
     protected String getAlternativeName(String originalName){
         return null
     }
- 
 
-    @Override 
+
+    @Override
     protected boolean processSpecificFields(BeanWrapper beanWrapper,
                                             GrailsDomainClassProperty property, JSON json) {
         // Object referenceObject = beanWrapper.getPropertyValue(property.getName())
@@ -45,8 +54,8 @@ class BasicHalDomainClassMarshaller extends BasicDomainClassMarshaller {
     @Override
     protected void processAdditionalFields(BeanWrapper beanWrapper, JSON json) {
     }
- 
-    
+
+
     @Override
     public boolean supports(Object object) {
         super.supports(object)
@@ -56,8 +65,8 @@ class BasicHalDomainClassMarshaller extends BasicDomainClassMarshaller {
 
 
     @Override
-    protected void asShortObject(java.lang.Object refObj, JSON json, 
-                                 GrailsDomainClassProperty idProperty, 
+    protected void asShortObject(java.lang.Object refObj, JSON json,
+                                 GrailsDomainClassProperty idProperty,
                                  GrailsDomainClass referencedDomainClass) {
 
         log.trace "asShortObject is processing ${referencedDomainClass.shortName}"

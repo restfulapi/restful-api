@@ -36,7 +36,6 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         get( "$localBase/api/things" ) {
             headers['Content-Type']  = 'application/json'
             headers['Accept']        = 'application/json'
-//            headers['Authorization'] = TestUtils.authHeader('user','password')
         }
         assertStatus 200
         assertEquals 'application/json', page?.webResponse?.contentType
@@ -99,13 +98,13 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         get( "$localBase/api/things" ) {
             headers['Content-Type']  = 'application/json'
             headers['Accept']        = 'application/vnd.hedtech.v0+json'
-//            headers['Authorization'] = TestUtils.authHeader('user','password')
         }
         assertStatus 200
         assertEquals 'application/json', page?.webResponse?.contentType
 
         def stringContent = page?.webResponse?.contentAsString
         def json = JSON.parse stringContent
+
         // Assert the 'numParts' property is present proving the
         // resource-specific marshaller registered for the 'jsonv0'
         // configuration was used.
