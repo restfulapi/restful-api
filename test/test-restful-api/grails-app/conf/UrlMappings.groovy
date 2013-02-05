@@ -7,17 +7,16 @@ class UrlMappings {
     static mappings = {
 
         // Mappings supported by resource-specific controllers
-        // should be added before the default mapping used for  
-        // resources handled by the default RestfulApiController. 
+        // should be added before the default mapping used for
+        // resources handled by the default RestfulApiController.
 
         // name otherthingRestfulApi: "api/other-things/$id"
 
         // Default controller to handle RESTful API requests.
         // Place URL mappings to specific controllers BEFORE this mapping.
         //
-        "/api/$pluralizedResourceName/$id" {
-            controller   = 'restfulApi'
-            action = [GET: "show", PUT: "update", 
+        "/api/$pluralizedResourceName/$id"(controller:'restfulApi') {
+            action = [GET: "show", PUT: "update",
                       DELETE: "delete"]
             parseRequest = true
             constraints {
@@ -25,11 +24,11 @@ class UrlMappings {
                 // id matches: /\d+/
             }
         }
-        "/api/$pluralizedResourceName" {
-            controller   = 'restfulApi'
+        "/api/$pluralizedResourceName"(controller:'restfulApi') {
             action = [GET: "list", POST: "save"]
             parseRequest = true
         }
+
 
 
         "/"(view:"/index")
