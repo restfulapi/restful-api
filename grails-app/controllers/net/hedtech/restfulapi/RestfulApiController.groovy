@@ -7,6 +7,7 @@ package net.hedtech.restfulapi
 import grails.converters.JSON
 import grails.converters.XML
 import grails.validation.ValidationException
+import org.codehaus.groovy.grails.web.json.JSONObject
 
 import org.springframework.dao.OptimisticLockingFailureException
 
@@ -32,6 +33,12 @@ class RestfulApiController implements org.springframework.beans.factory.Initiali
     ]
 
     private def optimisticLockClasses = []
+    //Resources specified here will have any xml format requests
+    //handled as if the request was for JSON, then the JSON content
+    //will be rendered as XML according to a JSON-as-xml schema.
+    //The resource name should be the pluralizedResourceName
+    //as defined in the UrlMappings
+    private def jsonAsXMLResources = []
 
     void afterPropertiesSet() {
         def clazzes = []
@@ -53,6 +60,10 @@ class RestfulApiController implements org.springframework.beans.factory.Initiali
         names.each() { name->
             log.info( "Loading class '$name' as an Optimistic lock exception" )
             optimisticLockClasses.add( grailsApplication.getClassLoader().loadClass( name ) )
+        }
+
+        if (grailsApplication.config.grails.restfulapi.jsonAsXMLResource) {
+            jsonAsXMLResources.addAll grailsApplication.config.grails.restfulapi.jsonAsXMLResource
         }
     }
 
@@ -240,7 +251,7 @@ class RestfulApiController implements org.springframework.beans.factory.Initiali
      * @param responseMap the Map to render
      * @param msgResourceCode the resource code to use to create message entry
      **/
-    protected void renderResponse(Map responseMap ) {
+    protected void renderResponse(Map responseMap) {
 
         switch(response.format) {
             case 'json':
@@ -252,11 +263,28 @@ class RestfulApiController implements org.springframework.beans.factory.Initiali
                 }
             break
             case 'xml':
-                render responseMap as XML
+                if (jsonAsXMLResources.contains(params.pluralizedResourceName)) {
+                    def json = new JSONObject( (responseMap as JSON) as String )
+                    render json as XML
+                } else {
+                    render responseMap as XML
+                }
             break
             case ~/.*xml.*/:
-                XML.use(selectFormat()) {
-                    render responseMap as XML
+                if (jsonAsXMLResources.contains(params.pluralizedResourceName)) {
+                    def format = selectFormat()
+                    format = 'json' + format.substring( 3 )
+                    def json
+                    JSON.use(format) {
+                        json = new JSONObject( (responseMap as JSON) as String )
+                    }
+                    XML.use(selectFormat()) {
+                        render json as XML
+                    }
+                } else {
+                    XML.use(selectFormat()) {
+                        render responseMap as XML
+                    }
                 }
             break
         }

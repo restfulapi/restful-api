@@ -27,11 +27,12 @@ grails.mime.types = [
     html:          ['text/html','application/xhtml+xml'],
     js:            'text/javascript',
     jsonv0:        'application/vnd.hedtech.v0+json',
+    xmlv0:         'application/vnd.hedtech.v0+xml',
     json:          ['application/json', 'text/json'],
     multipartForm: 'multipart/form-data',
     rss:           'application/rss+xml',
     text:          'text/plain',
-    xml:           ['text/xml', 'application/xml']
+    xml:           ['application/xml','text/xml']
 ]
 
 // URL Mapping Cache Max Size, defaults to 5000
@@ -68,7 +69,10 @@ grails.hibernate.cache.queries = false
 //throw validation exception during save by default
 grails.gorm.failOnError = true
 
+
 grails.restfulapi.addOptimisticLockExceptions = ['net.hedtech.restfulapi.AppOptimisticLockException']
+grails.restfulapi.jsonAsXMLResource = ['things']
+//grails.converters.default.pretty.print=true
 
 environments {
     development {

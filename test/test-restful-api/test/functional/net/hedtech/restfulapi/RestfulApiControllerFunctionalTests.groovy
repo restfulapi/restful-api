@@ -7,6 +7,7 @@ package net.hedtech.restfulapi
 import com.grailsrocks.functionaltest.*
 
 import grails.converters.JSON
+import grails.converters.XML
 
 import static org.junit.Assert.*
 import org.junit.*
@@ -42,6 +43,7 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
 
         def stringContent = page?.webResponse?.contentAsString
         def json = JSON.parse stringContent
+        assert 2 == json.data.size()
         assert "AA" == json.data[0].code
         assert "An AA thing" == json.data[0].description
 
@@ -56,6 +58,37 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         assert json.data[0]._href?.contains('things')
         assertNull json.data[0].numParts
     }
+/*
+    void testList_json_as_xml() {
+        createThing('AA')
+        createThing('BB')
+
+        get( "$localBase/api/things" ) {
+            headers['Content-Type']  = 'application/json'
+            headers['Accept']        = 'application/xml'
+//            headers['Authorization'] = TestUtils.authHeader('user','password')
+        }
+        assertStatus 200
+        assertEquals 'text/xml', page?.webResponse?.contentType
+
+        def stringContent = page?.webResponse?.contentAsString
+        def xml = XML.parse stringContent
+        assert
+        assert "AA" == xml.data[0].code
+        assert "An AA thing" == json.data[0].description
+
+        // assert localization of the message
+        assert "List of thing resources" == json.message
+
+        // Assert that an '_href' property is present but not a 'numParts'
+        // property, which proves the plugin-registered marshaller is
+        // being used versus the built-in grails marshaller or the
+        // resource-specific marshaller registered by this test app.
+        //
+        assert json.data[0]._href?.contains('things')
+        assertNull json.data[0].numParts
+
+    }*/
 
 
     void testList_jsonv0() {
@@ -80,8 +113,6 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
 
         assert "AA" == json.data[0].code
         assert "An AA thing" == json.data[0].description
-
-
     }
 
 
@@ -133,6 +164,30 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         assert "Details for the thing resource" == json.message
     }
 
+    void testShow_xml_from_json() {
+        def id = createThing('AA')
+        createThing('BB')
+
+        get( "$localBase/api/things/$id" ) {
+            headers['Content-Type']  = 'application/json'
+            headers['Accept']        = 'application/xml'
+//            headers['Authorization'] = TestUtils.authHeader('user','password')
+        }
+        assertStatus 200
+        assertEquals 'text/xml', page?.webResponse?.contentType
+
+        def stringContent = page?.webResponse?.contentAsString
+
+        def xml = XML.parse stringContent
+        assert "AA" == xml.data.code[0].text()
+        assert "An AA thing" == xml.data.description[0].text()
+        assert xml.data._href[0]?.text().contains('things')
+        assert xml.data.numParts.isEmpty()
+        assertNotNull xml.data.version[0].text()
+
+        // test localization of the message
+        assert "Details for the thing resource" == xml.message[0].text()
+    }
 
     void testShow_jsonv0() {
         def id = createThing('AA')
@@ -153,6 +208,28 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         assert 2 == json.data.numParts
         assertNotNull json.data.version
     }
+
+    void testShow_xml_from_json_v0() {
+        def id = createThing('AA')
+        createThing('BB')
+
+        get( "$localBase/api/things/$id" ) {
+            headers['Content-Type']  = 'application/json'
+            headers['Accept']        = 'application/vnd.hedtech.v0+xml'
+//            headers['Authorization'] = TestUtils.authHeader('user','password')
+        }
+        assertStatus 200
+        assertEquals 'text/xml', page?.webResponse?.contentType
+
+        def stringContent = page?.webResponse?.contentAsString
+        def xml = XML.parse stringContent
+        assert "AA" == xml.data.code[0].text()
+        assert "An AA thing" == xml.data.description[0].text()
+        assert '2' == xml.data.numParts[0].text()
+        assertNotNull xml.data.version[0].text()
+
+    }
+
 
     void testSave_json() {
         post( "$localBase/api/things") {

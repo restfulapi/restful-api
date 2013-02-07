@@ -21,12 +21,14 @@
 * Changed 409 responses to not have an error block.  You already know the requested resource, and the 409 response communicates that it's an optimistic lock.  An error block would be redundant information.
 * Changes to message generation
 * Code review of ApplicationException support.
-* With ApplicationException supported, do we need the configurable OptimisticLock exception support, or should it be removed, and our approach be to introduce handling of more exceptions (like other OptimisticLock classes) via ApplicationException?
-* Verify status, message, headers, errors contract with ApplicationException.  We are excluding modelValidationErrorsMaps, is this ok?
+* Why do we need selectFormat()?  it seems disconnected, as we have already selected format within the case statement.
+* JSON-as-xml depends on the formats mapped to mime-types be xmlvX and jsonvX
+* Current implementation of JSON-as-xml uses a custom marshaller for JSONObject that is registered under the named config for the format.
 
 # Code cleanup tasks
 * Remove unused codes from message.properties
 * Do the default messages belong in the plugin message.properties, since they are used by the plugin, and not the test app?
+* Remove OptimisticLock exception support.
 
 # Current Status
 * Created an initial plugin project and test-app (that uses an in-memory database versus a Banner dependency)

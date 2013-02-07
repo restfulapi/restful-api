@@ -1,11 +1,13 @@
 /* ****************************************************************************
 Copyright 2013 Ellucian Company L.P. and its affiliates.
-******************************************************************************/ 
+******************************************************************************/
 
 import grails.converters.JSON
+import grails.converters.XML
 
 import net.hedtech.restfulapi.*
 import net.hedtech.restfulapi.marshallers.*
+import net.hedtech.restfulapi.marshallers.xml.*
 
 
 
@@ -17,11 +19,11 @@ class BootStrap {
 
         // Add rules to singularize resource names as needed here...
         //
-        Inflector.addSingularize("mice\$", "\$1mouse") 
+        Inflector.addSingularize("mice\$", "\$1mouse")
 
         // Example of how to Register a marshaller into the default configuration,
-        // that overrides the marshallers added by the 'restful-api' plugin. 
-        // Note the priority is above 100 (so that it will be used instead of the 
+        // that overrides the marshallers added by the 'restful-api' plugin.
+        // Note the priority is above 100 (so that it will be used instead of the
         // marshaller registered by the plugin.)
 
         // 'json' (application/json) configuration
@@ -29,12 +31,18 @@ class BootStrap {
         //JSON.registerObjectMarshaller(new BasicDomainClassMarshaller(grailsApplication), 101)
 
         // ------ Named configuration(s) that corresponds to a custom media type ------
-        
+
         // 'jsonv0' (application/vnd.hedtech.v0+json) configuration
         //
         JSON.createNamedConfig('jsonv0') {
             it.registerObjectMarshaller(new BasicHalDomainClassMarshaller(grailsApplication), 100)
             it.registerObjectMarshaller(new ThingClassMarshaller(grailsApplication), 101)
+        }
+
+        XML.registerObjectMarshaller(new JSONObjectMarshaller(), 200)
+
+        XML.createNamedConfig('xmlv0') {
+            it.registerObjectMarshaller(new JSONObjectMarshaller(), 200)
         }
 
         // Our simple seed data

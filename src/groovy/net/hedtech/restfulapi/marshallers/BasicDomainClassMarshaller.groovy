@@ -1,6 +1,6 @@
 /* ****************************************************************************
 Copyright 2013 Ellucian Company L.P. and its affiliates.
-******************************************************************************/ 
+******************************************************************************/
 package net.hedtech.restfulapi.marshallers
 
 import grails.converters.JSON
@@ -39,10 +39,10 @@ class BasicDomainClassMarshaller extends DomainClassMarshaller {
 
     protected ProxyHandler proxyHandler
     protected GrailsApplication app
- 
+
     private static List SKIPPED_FIELDS = Arrays.asList('lastModified', 'lastModifiedBy',
                                                        'createdBy', 'password')
- 
+
 
 // ------------------------------- Constructors -------------------------------
 
@@ -74,10 +74,10 @@ class BasicDomainClassMarshaller extends DomainClassMarshaller {
         value = proxyHandler.unwrapIfProxy(value)
         GrailsDomainClass domainClass = app.getDomainClass(clazz.getName())
         BeanWrapper beanWrapper = new BeanWrapperImpl(value)
- 
+
         writer.object()
         GrailsDomainClassProperty[] properties = domainClass.getPersistentProperties()
- 
+
         if (needToDefineId()) {
             def id
             if (domainClass.hasProperty(getObjectIdentifier())) {
@@ -92,35 +92,35 @@ class BasicDomainClassMarshaller extends DomainClassMarshaller {
             GrailsDomainClassProperty versionProperty = domainClass.getVersion();
             Object version = extractValue(value, versionProperty);
             json.property("version", version);
-        }        
+        }
 
         // Add the 'href' link to 'self'
         writer.key("_href").value(getResourceUri(clazz.simpleName, value.id))
- 
+
         processAdditionalFields(beanWrapper, json)
- 
+
         List excludedFields = SKIPPED_FIELDS + getSkippedFields()
- 
+
         for (GrailsDomainClassProperty property: properties) {
 
             if (!excludedFields.contains(property.getName())) {
- 
-                if (!property.isAssociation() 
+
+                if (!property.isAssociation()
                         && !processSimpleField(beanWrapper, property, json)) {
 
                     writeFieldName(writer, property)
 
                     // Write non-relation property
                     Object val = beanWrapper.getPropertyValue(property.getName())
-                  
+
                     if (val instanceof String && !val) {
                         val = null
                     } else if (property.getType() == Boolean && val == null) {
                         val = false
                     }
- 
+
                     json.convertAnother(val)
-                } 
+                }
                 else {
                     Object referenceObject = beanWrapper.getPropertyValue(property.getName())
                     GrailsDomainClass referencedDomainClass = property.getReferencedDomainClass()
@@ -145,13 +145,13 @@ class BasicDomainClassMarshaller extends DomainClassMarshaller {
                                 asShortObject(el, json, referencedIdProperty, referencedDomainClass)
                             }
                             writer.endArray()
-                        } 
+                        }
                         else if (referenceObject instanceof Map) {
                             Map<Object, Object> map = (Map<Object, Object>) referenceObject
-                          
+
                             for (Map.Entry<Object, Object> entry: map.entrySet()) {
                                 String key = String.valueOf(entry.getKey())
-                              
+
                                 Object o = entry.getValue()
                                 writer.object()
                                 writer.key(key)
@@ -165,18 +165,11 @@ class BasicDomainClassMarshaller extends DomainClassMarshaller {
         }
         writer.endObject()
     }
- 
+
 
     @Override
     public boolean supports(Object object) {
-        def response = WebUtils.retrieveGrailsWebRequest().getCurrentResponse()
-        log.trace "\n$this supports(${object.getClass()}) invoked (format is ${response.format})"
-
-        def result = DCAH.isDomainClass(object.getClass()) && (response.format == 'jsonv0' || response.format == 'json')
-        log.trace "$this supports(${object.getClass()}) returning $result"
-        log.debug "   (Based on: isDomainClass=${app.isDomainClass(object.getClass())} \
-                       && response.format=${response.format})"
-        result
+        DCAH.isDomainClass(object.getClass())
     }
 
 
@@ -188,13 +181,13 @@ class BasicDomainClassMarshaller extends DomainClassMarshaller {
 
     // TODO: Implement changes to how associated domain objects are rendered
     @Override
-    protected void asShortObject(java.lang.Object refObj, JSON json, 
-                                 GrailsDomainClassProperty idProperty, 
+    protected void asShortObject(java.lang.Object refObj, JSON json,
+                                 GrailsDomainClassProperty idProperty,
                                  GrailsDomainClass referencedDomainClass) {
 
         super.asShortObject refObj, json, idProperty, referencedDomainClass
     }
- 
+
 
 // ------------------- Additional Methods, Helper Methods ---------------------
 
@@ -211,10 +204,10 @@ class BasicDomainClassMarshaller extends DomainClassMarshaller {
 
     /**
      * Returns the URI for the resource.
-     * This method should be called from a 'asShortObject' method implementation  
+     * This method should be called from a 'asShortObject' method implementation
      * (it uses a subset of the argments from that method to facilitate usage).
      **/
-    protected String getResourceUri(java.lang.Object refObj, 
+    protected String getResourceUri(java.lang.Object refObj,
                                     GrailsDomainClassProperty idProperty,
                                     GrailsDomainClass referencedDomainClass) {
 
@@ -235,7 +228,7 @@ class BasicDomainClassMarshaller extends DomainClassMarshaller {
         }
         null
     }
- 
+
 
     protected def writeFieldName(JSONWriter writer, GrailsDomainClassProperty property) {
         def propertyName = property.getName()
@@ -244,7 +237,7 @@ class BasicDomainClassMarshaller extends DomainClassMarshaller {
         }
         writer.key(propertyName)
     }
- 
+
 
     protected String getAlternativeName(String originalName) {
         null
@@ -254,37 +247,37 @@ class BasicDomainClassMarshaller extends DomainClassMarshaller {
     protected List getSkippedFields() {
         []
     }
- 
+
 
     protected List getCommonSkippedFields() {
         SKIPPED_FIELDS
     }
- 
+
 
     protected boolean processSpecificFields(BeanWrapper beanWrapper,
                                             GrailsDomainClassProperty property, JSON json) {
         false
     }
- 
+
 
     protected boolean processSimpleField(BeanWrapper beanWrapper,
-                                         GrailsDomainClassProperty property, 
+                                         GrailsDomainClassProperty property,
                                          JSON json) {
         false
     }
- 
+
 
     protected void processAdditionalFields(BeanWrapper beanWrapper, JSON json) {
     }
- 
+
 
     protected String getObjectIdentifier() {
         'id'
     }
- 
+
 
     protected boolean needToDefineId() {
-        true 
+        true
     }
 
 
