@@ -58,7 +58,7 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         assert json.data[0]._href?.contains('things')
         assertNull json.data[0].numParts
     }
-/*
+
     void testList_json_as_xml() {
         createThing('AA')
         createThing('BB')
@@ -72,23 +72,24 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         assertEquals 'text/xml', page?.webResponse?.contentType
 
         def stringContent = page?.webResponse?.contentAsString
+
         def xml = XML.parse stringContent
-        assert
-        assert "AA" == xml.data[0].code
-        assert "An AA thing" == json.data[0].description
+        assert 2 == xml.data.array.arrayElement.size()
+        assert "AA" == xml.data.array.arrayElement[0].code[0].text()
+        assert "An AA thing" == xml.data.array.arrayElement[0].description[0].text()
 
         // assert localization of the message
-        assert "List of thing resources" == json.message
+        assert "List of thing resources" == xml.message.text()
 
         // Assert that an '_href' property is present but not a 'numParts'
         // property, which proves the plugin-registered marshaller is
         // being used versus the built-in grails marshaller or the
         // resource-specific marshaller registered by this test app.
         //
-        assert json.data[0]._href?.contains('things')
-        assertNull json.data[0].numParts
+        assert xml.data.array.arrayElement[0]._href[0].text().contains('things')
+        assert 0 == xml.data.array.arrayElement[0].numParts.size()
 
-    }*/
+    }
 
 
     void testList_jsonv0() {
@@ -113,6 +114,38 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
 
         assert "AA" == json.data[0].code
         assert "An AA thing" == json.data[0].description
+    }
+
+    void testList_jsonv0_as_xml() {
+        createThing('AA')
+        createThing('BB')
+
+        get( "$localBase/api/things" ) {
+            headers['Content-Type']  = 'application/json'
+            headers['Accept']        = 'application/vnd.hedtech.v0+xml'
+//            headers['Authorization'] = TestUtils.authHeader('user','password')
+        }
+        assertStatus 200
+        assertEquals 'text/xml', page?.webResponse?.contentType
+
+        def stringContent = page?.webResponse?.contentAsString
+
+        def xml = XML.parse stringContent
+        assert 2 == xml.data.array.arrayElement.size()
+        assert "AA" == xml.data.array.arrayElement[0].code[0].text()
+        assert "An AA thing" == xml.data.array.arrayElement[0].description[0].text()
+
+        // assert localization of the message
+        assert "List of thing resources" == xml.message.text()
+
+        // Assert that an '_href' property is present but not a 'numParts'
+        // property, which proves the plugin-registered marshaller is
+        // being used versus the built-in grails marshaller or the
+        // resource-specific marshaller registered by this test app.
+        //
+        assert xml.data.array.arrayElement[0]._href[0].text().contains('things')
+        assert '2' == xml.data.array.arrayElement[0].numParts[0].text()
+
     }
 
 
@@ -411,6 +444,8 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         assert "Another user has updated this thing while you were editing" == json.message
     }
 
+
+
     void testDelete() {
         def id = createThing('AA')
 
@@ -454,6 +489,30 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         assertFalse json.success
         assertNull json.errors
         assert "Another user has updated this thing while you were editing" == json.message
+    }
+
+    void testUpdateOptimisticLock_json_as_xml() {
+        def id = createThing('AA')
+        updateThing( id, [description:'changed'] )
+
+        put( "$localBase/api/things/$id" ) {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/xml'
+            body {
+                """
+                {
+                    description:'updated description',
+                    version:'0'
+                }
+                """
+            }
+        }
+        assertStatus 409
+        def stringContent = page?.webResponse?.contentAsString
+        def xml = XML.parse stringContent
+        assertFalse new Boolean( xml.success[0].text() )
+        assert 0 == xml.errors.size()
+        assert "Another user has updated this thing while you were editing" == xml.message[0].text()
     }
 
     void testStaleObject() {
@@ -524,6 +583,29 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         assert "foo resource had errors" == json.message
     }
 
+    void testApplicationException_json_as_xml() {
+        put( "$localBase/api/things/1?throwApplicationException=y&appStatusCode=400&appMsgCode=testapp.application.exception.message&appErrorType=validation" ) {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/xml'
+            body {
+                """
+                {
+                    description:'updated description',
+                    version:'0'
+                }
+                """
+            }
+        }
+
+        assertStatus 400
+        assertHeader "X-Status-Reason", 'Validation failed'
+        def stringContent = page?.webResponse?.contentAsString
+        def xml = XML.parse stringContent
+        assertFalse new Boolean( xml.success.text() )
+        assert 1 == xml.errors.size()
+        assert "foo resource had errors" == xml.message.text()
+    }
+
     void testApplicationExceptionWithoutMessageAndErrorBlock() {
         put( "$localBase/api/things/1?throwApplicationException=y&appStatusCode=409" ) {
             headers['Content-Type'] = 'application/json'
@@ -565,8 +647,29 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         def json = JSON.parse stringContent
         assertFalse json.success
         assert "Encountered unexpected error generating a response" == json.message
-
     }
+
+    void testBrokenErrorHandling_json_as_xml() {
+        put( "$localBase/api/things/1?throwApplicationException=y&appStatusCode=409&appErrorType=programming" ) {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/json'
+            body {
+                """
+                {
+                    description:'updated description',
+                    version:'0'
+                }
+                """
+            }
+        }
+
+        assertStatus 500
+        def stringContent = page?.webResponse?.contentAsString
+        def xml = XML.parse stringContent
+        assertFalse new Boolean( xml.success )
+        assert "Encountered unexpected error generating a response" == xml.message.text()
+    }
+
 
     private void createThings() {
         createThing('AA')
