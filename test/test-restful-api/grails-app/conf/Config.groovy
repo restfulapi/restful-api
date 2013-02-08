@@ -70,7 +70,6 @@ grails.hibernate.cache.queries = false
 grails.gorm.failOnError = true
 
 
-grails.restfulapi.addOptimisticLockExceptions = ['net.hedtech.restfulapi.AppOptimisticLockException']
 grails.restfulapi.jsonAsXMLResource = ['things']
 //grails.converters.default.pretty.print=true
 

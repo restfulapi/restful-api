@@ -8,6 +8,7 @@ import grails.converters.JSON
 import grails.converters.XML
 import grails.validation.ValidationException
 import org.codehaus.groovy.grails.web.json.JSONObject
+import org.springframework.dao.OptimisticLockingFailureException
 
 import org.springframework.dao.OptimisticLockingFailureException
 
@@ -27,12 +28,7 @@ class RestfulApiController implements org.springframework.beans.factory.Initiali
     //
     static scope = "singleton"
 
-    private def defaultOptimisticLockExceptions = [
-        org.springframework.dao.OptimisticLockingFailureException.class.getName(),
-        'org.hibernate.StaleObjectStateException'
-    ]
 
-    private def optimisticLockClasses = []
     //Resources specified here will have any xml format requests
     //handled as if the request was for JSON, then the JSON content
     //will be rendered as XML according to a JSON-as-xml schema.
@@ -41,27 +37,6 @@ class RestfulApiController implements org.springframework.beans.factory.Initiali
     private def jsonAsXMLResources = []
 
     void afterPropertiesSet() {
-        def clazzes = []
-        log.info ""
-        def names = []
-        //see if the configuration wants to completely override the classes to be mapped
-        //to the optimistic lock handler, otherwise, use the default set.
-        if (grailsApplication.config.grails.restfulapi.optimisticLockExceptions) {
-            names.addAll( grailsApplication.config.grails.restfulapi.optimisticLockExceptions )
-        } else {
-            names.addAll( defaultOptimisticLockExceptions )
-        }
-
-        //Add additional classes to the default set.
-        if (grailsApplication.config.grails.restfulapi.addOptimisticLockExceptions) {
-            names.addAll( grailsApplication.config.grails.restfulapi.addOptimisticLockExceptions )
-        }
-
-        names.each() { name->
-            log.info( "Loading class '$name' as an Optimistic lock exception" )
-            optimisticLockClasses.add( grailsApplication.getClassLoader().loadClass( name ) )
-        }
-
         if (grailsApplication.config.grails.restfulapi.jsonAsXMLResource) {
             jsonAsXMLResources.addAll grailsApplication.config.grails.restfulapi.jsonAsXMLResource
         }
@@ -237,11 +212,11 @@ class RestfulApiController implements org.springframework.beans.factory.Initiali
             //We generated an exception trying to generate an error response.
             //Log the error, and attempt to fall back on a generic fail-whale response
             log.error( "Caught exception attemping to prepare an error response: ${t.message}", t )
+            returnMap = [:]
             returnMap.success = false
             returnMap.message = "Encountered unexpected error generating a response"
             this.response.setStatus( 500 )
          }
-
          renderResponse( returnMap )
      }
 
@@ -318,23 +293,13 @@ class RestfulApiController implements org.springframework.beans.factory.Initiali
             //responsibility for specifying the correct status code and
             //response message elements
             return 'ApplicationException'
-        } else if (isInstanceOf(e, this.optimisticLockClasses)) {
+        } else if (e instanceof OptimisticLockingFailureException) {
             return 'OptimisticLockException'
         } else if (e instanceof ValidationException) {
             return 'ValidationException'
         } else {
             return 'AnyOtherException'
         }
-    }
-
-    private boolean isInstanceOf( Throwable e, def classes ) {
-        def isInstanceOf = false;
-        classes.each { clazz ->
-            if (clazz.isAssignableFrom( e.class )) {
-                isInstanceOf = true
-            }
-        }
-        return isInstanceOf
     }
 
 

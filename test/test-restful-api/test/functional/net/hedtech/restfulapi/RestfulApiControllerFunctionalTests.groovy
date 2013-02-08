@@ -515,50 +515,6 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         assert "Another user has updated this thing while you were editing" == xml.message[0].text()
     }
 
-    void testStaleObject() {
-        put( "$localBase/api/things/1?throwStaleObjectStateException=y" ) {
-            headers['Content-Type'] = 'application/json'
-            headers['Accept']       = 'application/vnd.hedtech.v0+json'
-            body {
-                """
-                {
-                    description:'updated description',
-                    version:'0'
-                }
-                """
-            }
-        }
-
-        assertStatus 409
-        def stringContent = page?.webResponse?.contentAsString
-        def json = JSON.parse stringContent
-        assertFalse json.success
-        assertNull json.errors
-        assert "Another user has updated this thing while you were editing" == json.message
-    }
-
-    void testCustomOptimisticLock() {
-        put( "$localBase/api/things/1?throwAppOptimisticLockException=y" ) {
-            headers['Content-Type'] = 'application/json'
-            headers['Accept']       = 'application/vnd.hedtech.v0+json'
-            body {
-                """
-                {
-                    description:'updated description',
-                    version:'0'
-                }
-                """
-            }
-        }
-
-        assertStatus 409
-        def stringContent = page?.webResponse?.contentAsString
-        def json = JSON.parse stringContent
-        assertFalse json.success
-        assertNull json.errors
-        assert "Another user has updated this thing while you were editing" == json.message
-    }
-
     void testApplicationException() {
         put( "$localBase/api/things/1?throwApplicationException=y&appStatusCode=400&appMsgCode=testapp.application.exception.message&appErrorType=validation" ) {
             headers['Content-Type'] = 'application/json'
@@ -652,7 +608,7 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
     void testBrokenErrorHandling_json_as_xml() {
         put( "$localBase/api/things/1?throwApplicationException=y&appStatusCode=409&appErrorType=programming" ) {
             headers['Content-Type'] = 'application/json'
-            headers['Accept']       = 'application/json'
+            headers['Accept']       = 'application/xml'
             body {
                 """
                 {
@@ -666,7 +622,7 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         assertStatus 500
         def stringContent = page?.webResponse?.contentAsString
         def xml = XML.parse stringContent
-        assertFalse new Boolean( xml.success )
+        assertFalse new Boolean( xml.success.text() )
         assert "Encountered unexpected error generating a response" == xml.message.text()
     }
 

@@ -1,6 +1,6 @@
 /* ****************************************************************************
 Copyright 2013 Ellucian Company L.P. and its affiliates.
-******************************************************************************/ 
+******************************************************************************/
 package net.hedtech.restfulapi
 
 
@@ -27,12 +27,12 @@ class ThingService {
             // This will throw a validation exception...
             new Thing(code:'FAIL', description: 'Code exceeds 2 chars').save(failOnError:true)
         }
- 
+
         params.max = Math.min( params.max ? params.max.toInteger() : 10,  100)
-        result.instances = Thing.list(fetch: [parts: "eager"], 
+        result.instances = Thing.list(fetch: [parts: "eager"],
         	                          max: params.max, offset: params.offset ).sort { it.id }
         result.totalCount = result.instances.size()
- 
+
         log.trace "ThingService.list returning ${result}"
         result
     }
@@ -59,7 +59,7 @@ class ThingService {
         Thing.withTransaction {
             def instance = new Thing( params )
             instance.save(failOnError:true)
-            result.instance = instance 
+            result.instance = instance
             result.instance.parts //force lazy loading
         }
         result
@@ -94,12 +94,12 @@ class ThingService {
     }
 
     public def checkOptimisticLock( domainObject, content ) {
-        
+
         if (domainObject.hasProperty( 'version' )) {
             if (!content?.version) {
                 thing.errors.reject( 'version', "net.hedtech.restfulapi.Thing.missingVersion")
                 throw new ValidationException( "Missing version field", thing.errors )
-            }            
+            }
             int ver = content.version instanceof String ? content.version.toInteger() : content.version
             if (ver != domainObject.version) {
                 throw exceptionForOptimisticLock( domainObject, content )
@@ -121,12 +121,6 @@ class ThingService {
         def params = WebUtils.retrieveGrailsWebRequest().getParameterMap()
         if (params.throwOptimisticLock == 'y') {
             throw new OptimisticLockingFailureException( "requested optimistic lock for testing" )
-        }
-        if (params.throwStaleObjectStateException == 'y') {
-            throw new StaleObjectStateException( Thing.class.getName(), null )
-        }
-        if (params.throwAppOptimisticLockException == 'y') {
-            throw new AppOptimisticLockException()
         }
         if (params.throwApplicationException == 'y') {
             throw new DummyApplicationException( params.appStatusCode, params.appMsgCode, params.appErrorType )
