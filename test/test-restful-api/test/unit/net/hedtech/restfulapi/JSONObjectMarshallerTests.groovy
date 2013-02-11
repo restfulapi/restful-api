@@ -12,13 +12,11 @@ import org.junit.*
 
 class JSONObjectMarshallerTests {
 
-    void testObject() {
+    void testJSONasXML() {
         def namedConfig = this.getClass().getName() + "_testJSONasXML"
         XML.createNamedConfig( namedConfig  ) {
             it.registerObjectMarshaller(new JSONObjectMarshaller(), 999)
         }
-        def escapedQuote = '\"'
-
         String data = """
         {
             text:"text 'with single quote'",
@@ -40,7 +38,7 @@ class JSONObjectMarshallerTests {
             object:{
                 text:"i'm an object"
             },
-            array:["i'm an array elt", 4.5, 1.34E+52]
+            anArray:["i'm an array elt", 4.5, 1.34E+52]
 
         }
         """
@@ -67,9 +65,9 @@ class JSONObjectMarshallerTests {
         assert "true" == xml.booleanTrue.text()
         assert "false" == xml.booleanFalse.text()
         assert "i'm an object" == xml.object[0].text.text()
-        assert "i'm an array elt" == xml.array[0].array.arrayElement[0].text()
-        assert "4.5" == xml.array[0].array.arrayElement[1].text()
-        assert "1.34E52" == xml.array[0].array.arrayElement[2].text()
+        assert "i'm an array elt" == xml.anArray[0].array.arrayElement[0].text()
+        assert "4.5" == xml.anArray[0].array.arrayElement[1].text()
+        assert "1.34E52" == xml.anArray[0].array.arrayElement[2].text()
 
 
     }

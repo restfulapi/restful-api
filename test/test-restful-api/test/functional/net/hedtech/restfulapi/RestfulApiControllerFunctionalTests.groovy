@@ -313,6 +313,23 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         assertNotNull json.data.version
     }
 
+    void testShane() {
+        def t ="""<?xml version="1.0" encoding="UTF-8"?><json><text>some text</text><foo><bar>barme</bar></foo></json>"""
+        def xml = XML.parse( t )
+        def seek
+        seek = { x, indent  ->
+            if (x.children().size() == 0) {
+                println indent + "  " + x.name() + "=" + x.text()
+            } else {
+                println indent + x.name()
+                x.children().each {
+                    seek( it, indent + "  " )
+                }
+            }
+        }
+        seek( xml, "" )
+    }
+
     void testSaveExisting() {
         createThing('AA')
 

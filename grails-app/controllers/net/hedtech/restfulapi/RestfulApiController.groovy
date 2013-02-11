@@ -275,6 +275,9 @@ class RestfulApiController implements org.springframework.beans.factory.Initiali
             case 'json':
                 return request.JSON
             break
+            case 'xml':
+                request.XML
+            break
         }
         throw new RuntimeException( "unknown request format ${request.format}")
     }
