@@ -66,9 +66,12 @@ class JSONObjectMarshaller extends CollectionMarshaller {
         } else if (value == JSONObject.NULL) {
             //do nothing, NULL == empty element
         } else if (value instanceof Boolean) {
-            xml.chars value ? 'true' : 'false'
+            xml.chars JSONObject.valueToString( value )
+        } else if (value instanceof String) {
+            xml.chars value
+        } else if (value instanceof Number) {
+            xml.chars JSONObject.valueToString( value )
         } else {
-            //number or string
             xml.chars value.toString()
         }
         if (current) {

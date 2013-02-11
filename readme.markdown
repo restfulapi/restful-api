@@ -15,6 +15,7 @@
 * Generic JSON representation in XML may need a meta-data driven facility to map JSON property names to different xml names
 * Generic JSON representation in XML may need type information on literals?
 * Generic JSON representation in XML may need a schema for the xml representation defined (so clients can use data-binding tools on the JSON as xml schema)?
+* JSONObjectMarshaller: handling needed for special characters in strings? (e.g. backspace, tab, etc)
 
 
 # Code review items
@@ -29,6 +30,10 @@
 * Remove unused codes from message.properties
 * Do the default messages belong in the plugin message.properties, since they are used by the plugin, and not the test app?
 * Remove OptimisticLock exception support.
+
+# Deficiencies in json-as-xml marshalling.
+* JSON support \b and \f (backspace and form-feed) as legal string values.  XML 1.0 does not.  Converting a JSON entity that contains these will produce XML that cannot be parsed.
+* JSON support \n, \r, and \t as explicit representations of newline, carriage return, and horizontal tab.  While this does not create unparsable xml, it does create xml that is not true to the original JSON meaning.  For example, a JSON entity {text:"\n"} has an explicit newline for the text field.  The corresponding xml is <text/>, which is either null or an empty string depending on how you interpret it.  A round trip in this case does not get you back at the same JSON you started with.  However {text:"a\nb"} will result in a sucessful roundtrip, as the conversion to XML will have a newline between the two characters.  The same is true for carriage returns and horizontal tabs.  Furthermore, XML 1.0 processor rules will cause "a\rb" to be parsed as "a\nb".
 
 # Current Status
 * Created an initial plugin project and test-app (that uses an in-memory database versus a Banner dependency)
