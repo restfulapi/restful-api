@@ -58,9 +58,9 @@ class JSONObjectMarshaller extends CollectionMarshaller {
                 build( xml, it, nextValue )
             }
         } else if (value instanceof JSONArray) {
-            xml.startNode('array')
+            xml.startNode('net-hedtech-array')
             value.toArray().each() { arrayElement ->
-                build( xml, 'arrayElement', arrayElement )
+                build( xml, 'net-hedtech-arrayElement', arrayElement )
             }
             xml.end()
         } else if (value == JSONObject.NULL) {

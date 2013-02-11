@@ -73,9 +73,9 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         def stringContent = page?.webResponse?.contentAsString
 
         def xml = XML.parse stringContent
-        assert 2 == xml.data.array.arrayElement.size()
-        assert "AA" == xml.data.array.arrayElement[0].code[0].text()
-        assert "An AA thing" == xml.data.array.arrayElement[0].description[0].text()
+        assert 2 == xml.data.'net-hedtech-array'.'net-hedtech-arrayElement'.size()
+        assert "AA" == xml.data.'net-hedtech-array'.'net-hedtech-arrayElement'[0].code[0].text()
+        assert "An AA thing" == xml.data.'net-hedtech-array'.'net-hedtech-arrayElement'[0].description[0].text()
 
         // assert localization of the message
         assert "List of thing resources" == xml.message.text()
@@ -85,8 +85,8 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         // being used versus the built-in grails marshaller or the
         // resource-specific marshaller registered by this test app.
         //
-        assert xml.data.array.arrayElement[0]._href[0].text().contains('things')
-        assert 0 == xml.data.array.arrayElement[0].numParts.size()
+        assert xml.data.'net-hedtech-array'.'net-hedtech-arrayElement'[0]._href[0].text().contains('things')
+        assert 0 == xml.data.'net-hedtech-array'.'net-hedtech-arrayElement'[0].numParts.size()
 
     }
 
@@ -130,9 +130,9 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         def stringContent = page?.webResponse?.contentAsString
 
         def xml = XML.parse stringContent
-        assert 2 == xml.data.array.arrayElement.size()
-        assert "AA" == xml.data.array.arrayElement[0].code[0].text()
-        assert "An AA thing" == xml.data.array.arrayElement[0].description[0].text()
+        assert 2 == xml.data.'net-hedtech-array'.'net-hedtech-arrayElement'.size()
+        assert "AA" == xml.data.'net-hedtech-array'.'net-hedtech-arrayElement'[0].code[0].text()
+        assert "An AA thing" == xml.data.'net-hedtech-array'.'net-hedtech-arrayElement'[0].description[0].text()
 
         // assert localization of the message
         assert "List of thing resources" == xml.message.text()
@@ -142,8 +142,8 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         // being used versus the built-in grails marshaller or the
         // resource-specific marshaller registered by this test app.
         //
-        assert xml.data.array.arrayElement[0]._href[0].text().contains('things')
-        assert '2' == xml.data.array.arrayElement[0].numParts[0].text()
+        assert xml.data.'net-hedtech-array'.'net-hedtech-arrayElement'[0]._href[0].text().contains('things')
+        assert '2' == xml.data.'net-hedtech-array'.'net-hedtech-arrayElement'[0].numParts[0].text()
 
     }
 

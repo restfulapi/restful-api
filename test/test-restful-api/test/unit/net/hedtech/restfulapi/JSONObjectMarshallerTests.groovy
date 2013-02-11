@@ -65,9 +65,9 @@ class JSONObjectMarshallerTests {
         assert "true" == xml.booleanTrue.text()
         assert "false" == xml.booleanFalse.text()
         assert "i'm an object" == xml.object[0].text.text()
-        assert "i'm an array elt" == xml.anArray[0].array.arrayElement[0].text()
-        assert "4.5" == xml.anArray[0].array.arrayElement[1].text()
-        assert "1.34E52" == xml.anArray[0].array.arrayElement[2].text()
+        assert "i'm an array elt" == xml.anArray[0].'net-hedtech-array'.'net-hedtech-arrayElement'[0].text()
+        assert "4.5" == xml.anArray[0].'net-hedtech-array'.'net-hedtech-arrayElement'[1].text()
+        assert "1.34E52" == xml.anArray[0].'net-hedtech-array'.'net-hedtech-arrayElement'[2].text()
 
 
     }

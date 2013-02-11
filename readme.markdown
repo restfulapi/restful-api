@@ -16,6 +16,7 @@
 * Generic JSON representation in XML may need type information on literals?
 * Generic JSON representation in XML may need a schema for the xml representation defined (so clients can use data-binding tools on the JSON as xml schema)?
 * JSONObjectMarshaller: handling needed for special characters in strings? (e.g. backspace, tab, etc)
+* JSONObjectMarshaller is using the entity <array> and <arrayElement> for a specific purpose, meaning that problems will be encountered rendering objects that use those as property names.  The ideal way to handle this would be to use a namespace, however, the grails xml converter does not support namespaces.
 
 
 # Code review items

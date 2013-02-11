@@ -19,7 +19,7 @@ class JSONObjectExtractorTests {
             it.registerObjectMarshaller(new JSONObjectMarshaller(), 999)
         }
         String data = """<?xml version="1.0" encoding="UTF-8"?><json><text>text 'with single quote'</text><unicode>""" + """\u0c23""" + """</unicode><booleanTrue>true</booleanTrue><object><text>i'm an object</text></object><aNull /><number1>123456789</number1><number4>123.4567</number4><number3>-0.1234</number3><number2>0.1234</number2><number6>1.34E52</number6><number5>1.34E-93</number5><booleanFalse>false</booleanFalse><horizontalTab>a""" + """\t""" + """b</horizontalTab><newLine>a
-b</newLine><carriageReturn>a"""+"""\r"""+"""b</carriageReturn><anArray><array><arrayElement>i'm an array elt</arrayElement><arrayElement>4.5</arrayElement><arrayElement>1.34E52</arrayElement></array></anArray></json>
+b</newLine><carriageReturn>a"""+"""\r"""+"""b</carriageReturn><anArray><net-hedtech-array><net-hedtech-arrayElement>i'm an array elt</net-hedtech-arrayElement><net-hedtech-arrayElement>4.5</net-hedtech-arrayElement><net-hedtech-arrayElement>1.34E52</net-hedtech-arrayElement></net-hedtech-array></anArray></json>
         """
 
         def xml = XML.parse( data )

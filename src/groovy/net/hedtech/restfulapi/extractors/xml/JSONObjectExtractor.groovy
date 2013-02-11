@@ -21,7 +21,7 @@ class JSONObjectExtractor {
             } else {
                 return xml.text()
             }
-        } else if (xml.children().size() == 1 && xml.children()[0].name() == 'array') {
+        } else if (xml.children().size() == 1 && xml.children()[0].name() == 'net-hedtech-array') {
             //have an array.
             //all children will be named 'ArrayElement',
             //and may themelves have complex content.
