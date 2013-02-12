@@ -68,7 +68,36 @@ class JSONObjectMarshallerTests {
         assert "i'm an array elt" == xml.anArray[0].'net-hedtech-array'.'net-hedtech-arrayElement'[0].text()
         assert "4.5" == xml.anArray[0].'net-hedtech-array'.'net-hedtech-arrayElement'[1].text()
         assert "1.34E52" == xml.anArray[0].'net-hedtech-array'.'net-hedtech-arrayElement'[2].text()
+    }
 
+    void testNested() {
+        def namedConfig = this.getClass().getName() + "_testNested"
+        XML.createNamedConfig( namedConfig  ) {
+            it.registerObjectMarshaller(new JSONObjectMarshaller(), 999)
+        }
+        def data = """
+            {"anArray": [
+                ["nested1","nested2"],
+                {
+                    "foo": ["bar",5.3],
+                    bar:"bar text"
+                }
+            ]}
+        """
+
+        def json = JSON.parse( data )
+        def xml
+        XML.use( namedConfig ) {
+            StringWriter w = new StringWriter()
+            (json as XML).render( w )
+            xml = XML.parse( w.toString() )
+        }
+
+        assert "nested1" == xml.anArray.'net-hedtech-array'.'net-hedtech-arrayElement'[0].'net-hedtech-array'.'net-hedtech-arrayElement'[0].text()
+        assert "nested2" == xml.anArray.'net-hedtech-array'.'net-hedtech-arrayElement'[0].'net-hedtech-array'.'net-hedtech-arrayElement'[1].text()
+        assert "bar" == xml.anArray.'net-hedtech-array'.'net-hedtech-arrayElement'[1].foo.'net-hedtech-array'.'net-hedtech-arrayElement'[0].text()
+        assert "5.3" == xml.anArray.'net-hedtech-array'.'net-hedtech-arrayElement'[1].foo.'net-hedtech-array'.'net-hedtech-arrayElement'[1].text()
+        assert "bar text" == xml.anArray.'net-hedtech-array'.'net-hedtech-arrayElement'[1].bar.text()
 
     }
 

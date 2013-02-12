@@ -313,21 +313,31 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         assertNotNull json.data.version
     }
 
-    void testShane() {
-        def t ="""<?xml version="1.0" encoding="UTF-8"?><json><text>some text</text><foo><bar>barme</bar></foo></json>"""
-        def xml = XML.parse( t )
-        def seek
-        seek = { x, indent  ->
-            if (x.children().size() == 0) {
-                println indent + "  " + x.name() + "=" + x.text()
-            } else {
-                println indent + x.name()
-                x.children().each {
-                    seek( it, indent + "  " )
-                }
+
+    void testSave_json_as_xml() {
+        post( "$localBase/api/things") {
+            headers['Content-Type'] = 'application/xml'
+            headers['Accept']       = 'application/xml'
+            body {
+                """<?xml version="1.0" encoding="UTF-8"?>
+                <json>
+                    <code>AC</code>
+                    <description>An AC thingy</description>
+                </json>
+                """
             }
         }
-        seek( xml, "" )
+        assertStatus 201
+        assertEquals 'text/xml', page?.webResponse?.contentType
+
+        def stringContent = page?.webResponse?.contentAsString
+        def xml = XML.parse stringContent
+
+        assertNotNull xml.data.id[0].text()
+        assert "AC" == xml.data.code[0].text()
+        assert "An AC thingy" == xml.data.description[0].text()
+        assertNotNull xml.data.version[0].text()
+        assert xml.data.version[0].text().length() > 0
     }
 
     void testSaveExisting() {

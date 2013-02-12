@@ -8,7 +8,10 @@ import grails.converters.JSON
 import grails.converters.XML
 import grails.validation.ValidationException
 
+import net.hedtech.restfulapi.extractors.xml.*
+
 import org.codehaus.groovy.grails.web.json.JSONObject
+import org.springframework.dao.OptimisticLockingFailureException
 
 import org.springframework.dao.OptimisticLockingFailureException
 
@@ -276,7 +279,7 @@ class RestfulApiController implements org.springframework.beans.factory.Initiali
                 return request.JSON
             break
             case 'xml':
-                request.XML
+                return new JSONObjectExtractor().extract( request.XML )
             break
         }
         throw new RuntimeException( "unknown request format ${request.format}")
