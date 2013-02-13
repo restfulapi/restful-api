@@ -8,7 +8,8 @@ import grails.converters.XML
 import net.hedtech.restfulapi.*
 import net.hedtech.restfulapi.marshallers.*
 import net.hedtech.restfulapi.marshallers.xml.*
-
+import net.hedtech.restfulapi.extractors.xml.*
+import net.hedtech.restfulapi.extractors.configuration.*
 
 
 class BootStrap {
@@ -44,6 +45,8 @@ class BootStrap {
         XML.createNamedConfig('xmlv0') {
             it.registerObjectMarshaller(new JSONObjectMarshaller(), 200)
         }
+
+        XMLExtractorConfigurationHolder.registerExtractor( "things", "xml", new JSONObjectExtractor() )
 
         // Our simple seed data
         createThing('AA')

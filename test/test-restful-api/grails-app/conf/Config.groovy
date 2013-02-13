@@ -32,7 +32,9 @@ grails.mime.types = [
     multipartForm: 'multipart/form-data',
     rss:           'application/rss+xml',
     text:          'text/plain',
-    xml:           ['application/xml','text/xml']
+    xml:           ['application/xml','text/xml'],
+    xml_noextractor: ['application/vnd.hedtech.no_extractor+xml'],
+    json_noextractor: ['application/vnd.hedtech.no_extractor+json']
 ]
 
 // URL Mapping Cache Max Size, defaults to 5000
@@ -71,8 +73,6 @@ grails.hibernate.cache.queries = false
 //throw validation exception during save by default
 grails.gorm.failOnError = true
 
-
-grails.restfulapi.jsonAsXMLResource = ['things']
 //grails.converters.default.pretty.print=true
 
 environments {

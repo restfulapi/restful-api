@@ -17,6 +17,10 @@
 * Generic JSON representation in XML may need a schema for the xml representation defined (so clients can use data-binding tools on the JSON as xml schema)?
 * JSONObjectMarshaller: handling needed for special characters in strings? (e.g. backspace, tab, etc)
 * JSONObjectMarshaller is using the entity <array> and <arrayElement> for a specific purpose, meaning that problems will be encountered rendering objects that use those as property names.  The ideal way to handle this would be to use a namespace, however, the grails xml converter does not support namespaces.
+* Plugin is always using default JSON or XML (json-as-xml) marshalling if an error response is returned.  Is this correct?
+* Starting to run into issues with relying on grails media type handling.  If an unsupported representation is requested, we probably want to
+* return a 400 response, with appropriate headers and error messages indicating an unsupported representation was either sent or requested.
+* However, by delegating to grails to get the format from the Accept-Header, we run into Grails attempt to make a best-effort substitution.  (For example, requesting an unknown media type will set response.format to 'html').  It appears grails will also give precedence to mediate types sepcified in the url or query parameter.
 
 
 # Code review items

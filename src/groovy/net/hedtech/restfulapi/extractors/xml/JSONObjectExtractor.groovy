@@ -8,12 +8,19 @@ import org.codehaus.groovy.grails.web.json.JSONArray
 
 import groovy.util.slurpersupport.GPathResult
 
+import net.hedtech.restfulapi.extractors.XMLExtractor
+
 /**
  * Extracts a JSONObject from json-as-xml.
  **/
-class JSONObjectExtractor {
+class JSONObjectExtractor implements XMLExtractor {
 
-    def extract( GPathResult xml ) {
+    Map extract( GPathResult xml ) {
+        return extractInternal( xml )
+
+    }
+
+    private def extractInternal( GPathResult xml ) {
         //Element with no children represents a final value
         if (xml.children().size() == 0) {
             if (xml.text() == null || xml.text() == "") {
@@ -27,14 +34,14 @@ class JSONObjectExtractor {
             //and may themelves have complex content.
             JSONArray array = new JSONArray()
             xml.children()[0].children().each() {
-                array.add( extract( it ) )
+                array.add( extractInternal( it ) )
             }
             return array
         } else {
             //have a JSON entity.
             JSONObject json = new JSONObject()
             xml.children().each() {
-                json.put( it.name(), extract( it ) )
+                json.put( it.name(), extractInternal( it ) )
             }
             return json
         }

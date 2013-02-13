@@ -8,12 +8,17 @@ import grails.converters.JSON
 import grails.converters.XML
 import grails.validation.ValidationException
 
-import net.hedtech.restfulapi.extractors.xml.*
+import net.hedtech.restfulapi.extractors.*
+import net.hedtech.restfulapi.extractors.configuration.*
 
 import org.codehaus.groovy.grails.web.json.JSONObject
 import org.springframework.dao.OptimisticLockingFailureException
 
 import org.springframework.dao.OptimisticLockingFailureException
+
+import org.codehaus.groovy.grails.web.converters.exceptions.ConverterException
+
+import org.codehaus.groovy.grails.web.servlet.HttpHeaders
 
 
 /**
@@ -24,26 +29,12 @@ import org.springframework.dao.OptimisticLockingFailureException
  * necessary.  (If a stateful controller is needed, this
  * should not be used as a base class.)
  **/
-class RestfulApiController implements org.springframework.beans.factory.InitializingBean {
+class RestfulApiController {
 
     // Because this controller is stateless, a single instance
     // may be used to handle all requests.
     //
     static scope = "singleton"
-
-
-    //Resources specified here will have any xml format requests
-    //handled as if the request was for JSON, then the JSON content
-    //will be rendered as XML according to a JSON-as-xml schema.
-    //The resource name should be the pluralizedResourceName
-    //as defined in the UrlMappings
-    private def jsonAsXMLResources = []
-
-    void afterPropertiesSet() {
-        if (grailsApplication.config.grails.restfulapi.jsonAsXMLResource) {
-            jsonAsXMLResources.addAll grailsApplication.config.grails.restfulapi.jsonAsXMLResource
-        }
-    }
 
 
 // ---------------------------------- ACTIONS ---------------------------------
@@ -220,53 +211,76 @@ class RestfulApiController implements org.springframework.beans.factory.Initiali
             returnMap.message = "Encountered unexpected error generating a response"
             this.response.setStatus( 500 )
          }
-         renderResponse( returnMap )
+
+         //The versioning applies to resource representations, not to
+         //errors.  In fact, it can't, as the error may be that an unrecognized format
+         //was requested.  So if we are returning an error response, we switch the format
+         //to either json or xml.
+         //We can't depend on response.format for this, because if the error was caused by an
+         //unknown media type, Grails may have set the format to a fallback option, like 'html'.
+         //So we will look at the Accept-Header directly and try to determine if JSON or XML was
+         //requested.  In we can't decide, we will return JSON.
+         String format = null
+         switch(request.getHeader(HttpHeaders.ACCEPT)) {
+            case ~/.*json.*/:
+                format = "json"
+            break
+            case ~/.*xml.*/:
+                format = "xml"
+            break
+            default:
+                format = "json"
+         }
+         renderResponse( returnMap, format )
      }
 
 
     /**
      * Renders the supplied map using a registered converter.
      * @param responseMap the Map to render
-     * @param msgResourceCode the resource code to use to create message entry
+     * @param format if specified, use the as the response format.  Otherwise
+     *        use the format on the response (taken from the Accept-Header)
      **/
-    protected void renderResponse(Map responseMap) {
-
-        switch(response.format) {
+    protected void renderResponse(Map responseMap, String format=null) {
+        if (!format) {
+            format = response.format
+        }
+        switch(format) {
             case 'json':
                 render responseMap as JSON
             break
             case ~/.*json.*/:
-                JSON.use(selectFormat()) {
+                useJSON(selectResponseFormat(format)) {
                     render responseMap as JSON
                 }
             break
             case 'xml':
-                if (jsonAsXMLResources.contains(params.pluralizedResourceName)) {
-                    def json = new JSONObject( (responseMap as JSON) as String )
+                def json = new JSONObject( (responseMap as JSON) as String )
+                render json as XML
+            break
+            case ~/xml.*/:
+                format = selectResponseFormat(format)
+                def jsonFormat = 'json' + format.substring( 3 )
+                def json
+                useJSON(jsonFormat) {
+                    json = new JSONObject( (responseMap as JSON) as String )
+                }
+                useXML(selectResponseFormat(format)) {
                     render json as XML
-                } else {
-                    render responseMap as XML
                 }
             break
             case ~/.*xml.*/:
-                if (jsonAsXMLResources.contains(params.pluralizedResourceName)) {
-                    def format = selectFormat()
-                    format = 'json' + format.substring( 3 )
-                    def json
-                    JSON.use(format) {
-                        json = new JSONObject( (responseMap as JSON) as String )
-                    }
-                    XML.use(selectFormat()) {
-                        render json as XML
-                    }
-                } else {
-                    XML.use(selectFormat()) {
-                        render responseMap as XML
-                    }
+                useXML(selectResponseFormat(format)) {
+                    render responseMap as XML
                 }
             break
+            default:
+                //Default grails behavior for determining response format is to parse the Accept-Header, and if the media
+                //type isn't defined, to fallback on default mime-types.
+                throw new UnknownRepresentationException( params.pluralizedResourceName, request.getHeader(HttpHeaders.ACCEPT) )
         }
     }
+
 
     /**
      * Parses the content from the request.
@@ -279,10 +293,21 @@ class RestfulApiController implements org.springframework.beans.factory.Initiali
                 return request.JSON
             break
             case 'xml':
-                return new JSONObjectExtractor().extract( request.XML )
+                XMLExtractor xmlExtractor = XMLExtractorConfigurationHolder.getExtractor( params.pluralizedResourceName, request.format )
+                if (!xmlExtractor) {
+                    throw new UnknownRepresentationException( params.pluralizedResourceName, request.contentType )
+                }
+                def json = xmlExtractor.extract( request.XML )
+                def format = request.format
+                format = 'json' + format.substring( 3 )
+                JSONExtractor jsonExtractor = JSONExtractorConfigurationHolder.getExtractor( params.pluralizedResourceName, format )
+                if (!jsonExtractor) {
+                    throw new UnknownRepresentationException( params.pluralizedResourceName, request.contentType )
+                }
+                return jsonExtractor.extract( json )
             break
         }
-        throw new RuntimeException( "unknown request format ${request.format}")
+        throw new UnknownRepresentationException( params.pluralizedResourceName, request.contentType )
     }
 
 
@@ -303,6 +328,8 @@ class RestfulApiController implements org.springframework.beans.factory.Initiali
             return 'OptimisticLockException'
         } else if (e instanceof ValidationException) {
             return 'ValidationException'
+        } else if (e instanceof UnknownRepresentationException) {
+            return 'UnknownRepresentationException'
         } else {
             return 'AnyOtherException'
         }
@@ -352,13 +379,48 @@ class RestfulApiController implements org.springframework.beans.factory.Initiali
         message( code: "${name}.label", default: "$name" )
     }
 
-    protected String selectFormat() {
-        response.format == 'json' ? 'default' : response.format
+    protected String selectResponseFormat( String format = null) {
+        if (!format) {
+            format = response.format
+        }
+        format == 'json' ? 'default' : format
     }
 
 
     private String domainName() {
         Inflector.asPropertyName(params.pluralizedResourceName)
+    }
+
+    /**
+     * If we try to use an unknown configuration for a grails converter, a ConverterException
+     * is thrown, which can't be programmatically distinguished from other marshalling errors.
+     * So we'll test for the existence of the named configuration upfront, so if we don't
+     * support it, we can return an appropriate error response.
+     **/
+    private Object useJSON( String config, Closure closure ) {
+        try {
+            JSON.getNamedConfig( config )
+        } catch (ConverterException e) {
+            //failure to retrieve the named config.  Treat as an unknown format.
+            throw new UnknownRepresentationException( params.pluralizedResourceName, request.getHeader(HttpHeaders.ACCEPT) )
+        }
+        JSON.use(config,closure)
+    }
+
+    /**
+     * If we try to use an unknown configuration for a grails converter, a ConverterException
+     * is thrown, which can't be programmatically distinguished from other marshalling errors.
+     * So we'll test for the existence of the named configuration upfront, so if we don't
+     * support it, we can return an appropriate error response.
+     **/
+    private Object useXML( String config, Closure closure ) {
+        try {
+            XML.getNamedConfig( config )
+        } catch (ConverterException e) {
+            //failure to retrieve the named config.  Treat as an unknown format.
+            throw new UnknownRepresentationException( params.pluralizedResourceName, request.getHeader(HttpHeaders.ACCEPT) )
+        }
+        XML.use(config,closure)
     }
 
     private def exceptionHandlers = [
@@ -388,6 +450,19 @@ class RestfulApiController implements org.springframework.beans.factory.Initiali
                     [
                         message: message( code: "default.optimistic.locking.failure",
                                           args: [ localize(domainName()) ] ) as String,
+                    ]
+            ]
+        },
+
+
+        'UnknownRepresentationException': { e ->
+            [
+                httpStatusCode: 400,
+                headers: ['X-Status-Reason':'Unknown resource representation'],
+                returnMap:
+                    [
+                        message: message( code: "default.unknownrepresentation.message",
+                                          args: [ e.getPluralizedResourceName(), e.getContentType() ] ) as String,
                     ]
             ]
         },

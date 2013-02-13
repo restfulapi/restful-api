@@ -652,6 +652,95 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         assert "Encountered unexpected error generating a response" == xml.message.text()
     }
 
+    void testRequestNoExtractor_json() {
+        post( "$localBase/api/things" ) {
+            headers['Content-Type'] = 'application/vnd.hedtech.no_extractor+json'
+            headers['Accept']       = 'application/json'
+            body {
+                """
+                {
+                    code:"AA",
+                    description:"thing"
+                }
+                """
+            }
+        }
+
+        assertStatus 400
+        assertHeader "X-Status-Reason", 'Unknown resource representation'
+        def stringContent = page?.webResponse?.contentAsString
+        def json = JSON.parse stringContent
+        assertFalse json.success
+        assert "Unsupported media type 'application/vnd.hedtech.no_extractor+json' for resource 'things'" == json.message
+    }
+
+    void testRequestNoExtractor_xml() {
+        post( "$localBase/api/things" ) {
+            headers['Content-Type'] = 'application/vnd.hedtech.no_extractor+xml'
+            headers['Accept']       = 'application/xml'
+            body {
+                """<?xml version="1.0" encoding="UTF-8"?>
+                <json>
+                    <code>AC</code>
+                    <description>An AC thingy</description>
+                </json>
+                """
+            }
+        }
+
+        assertStatus 400
+        assertHeader "X-Status-Reason", 'Unknown resource representation'
+        def stringContent = page?.webResponse?.contentAsString
+        def xml = XML.parse stringContent
+        assertFalse new Boolean( xml.success.text() )
+        assert "Unsupported media type 'application/vnd.hedtech.no_extractor+xml' for resource 'things'" == xml.message.text()
+    }
+
+    void testUnknownResponseFormat_xml() {
+        post( "$localBase/api/things" ) {
+            headers['Content-Type'] = 'application/xml'
+            headers['Accept']       = 'application/vnd.hedtech.no_such_type+xml'
+            body {
+                """<?xml version="1.0" encoding="UTF-8"?>
+                <json>
+                    <code>AC</code>
+                    <description>An AC thingy</description>
+                </json>
+                """
+            }
+        }
+
+        assertStatus 400
+        assertEquals 'text/xml', page?.webResponse?.contentType
+        assertHeader "X-Status-Reason", 'Unknown resource representation'
+        def stringContent = page?.webResponse?.contentAsString
+        def xml = XML.parse stringContent
+        assertFalse new Boolean( xml.success.text() )
+        assert "Unsupported media type 'application/vnd.hedtech.no_such_type+xml' for resource 'things'" == xml.message.text()
+    }
+
+    void testUnknownResponseFormat_json() {
+        post( "$localBase/api/things" ) {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/vnd.hedtech.no_such_type+json'
+            body {
+                """
+                {
+                    code:"AA",
+                    description:"thing"
+                }
+                """
+            }
+        }
+
+        assertStatus 400
+        assertEquals 'application/json', page?.webResponse?.contentType
+        assertHeader "X-Status-Reason", 'Unknown resource representation'
+        def stringContent = page?.webResponse?.contentAsString
+        def json = JSON.parse stringContent
+        assertFalse json.success
+        assert "Unsupported media type 'application/vnd.hedtech.no_such_type+json' for resource 'things'" == json.message
+    }
 
     private void createThings() {
         createThing('AA')
