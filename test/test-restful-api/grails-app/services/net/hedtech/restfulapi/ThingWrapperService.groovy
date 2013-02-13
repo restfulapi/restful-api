@@ -27,7 +27,7 @@ class ThingWrapperService {
         //
         result.instances = [] as List
         things?.eachWithIndex { thing, index ->
-            def wrapper = new ComplexWrapper( complexCode: "C-{$index}",
+            def wrapper = new ThingWrapper( complexCode: "C-{$index}",
                                               buildDate: new Date(),
                                               things: things )
             result.instances << wrapper
@@ -46,7 +46,7 @@ class ThingWrapperService {
                                         max: params.max,
                                         offset: params.offset ).sort { it.id }
 
-        result.instance = new ComplexWrapper( complexCode: "C-{index}",
+        result.instance = new ThingWrapper( complexCode: "C-{index}",
                                               buildDate: new Date(),
                                               things: things )
         log.trace "ThingWrapperService.show returning ${result}"
