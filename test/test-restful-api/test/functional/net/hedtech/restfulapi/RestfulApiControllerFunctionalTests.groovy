@@ -270,8 +270,8 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
             body {
                 """
                 {
-                    code:'AC',
-                    description:'An AC thingy',
+                    "code": "AC",
+                    "description": "An AC thingy",
                 }
                 """
             }
@@ -295,8 +295,8 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
             body {
                 """
                 {
-                    code:'AD',
-                    description:'An AD thingy',
+                    "code": "AD",
+                    "description": "An AD thingy",
                 }
                 """
             }
@@ -322,8 +322,8 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
             body {
                 """
                 {
-                    code:'AA',
-                    description:'An AA thingy',
+                    "code": "AA",
+                    "description": "An AA thingy",
                 }
                 """
             }
@@ -347,8 +347,8 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
             body {
                 """
                 {
-                    code:'AA',
-                    description:'An AA thingy',
+                    "code": "AA",
+                    "description": "An AA thingy",
                 }
                 """
             }
@@ -372,8 +372,8 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
             body {
                 """
                 {
-                    description:'updated description',
-                    version:'0'
+                    "description": "updated description",
+                    "version": "0"
                 }
                 """
             }
@@ -400,8 +400,8 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
             body {
                 """
                 {
-                    description:'updated description',
-                    version:'0'
+                    "description": "updated description",
+                    "version": "0"
                 }
                 """
             }
@@ -429,8 +429,8 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
             body {
                 """
                 {
-                    description:'updated description',
-                    version:'0'
+                    "description": "updated description",
+                    "version": "0"
                 }
                 """
             }
@@ -475,8 +475,8 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
             body {
                 """
                 {
-                    description:'updated description',
-                    version:'0'
+                    "description": "updated description",
+                    "version": "0"
                 }
                 """
             }
@@ -500,8 +500,8 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
             body {
                 """
                 {
-                    description:'updated description',
-                    version:'0'
+                    "description": "updated description",
+                    "version": "0"
                 }
                 """
             }
@@ -521,8 +521,8 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
             body {
                 """
                 {
-                    description:'updated description',
-                    version:'0'
+                    "description": "updated description",
+                    "version": "0"
                 }
                 """
             }
@@ -545,8 +545,8 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
             body {
                 """
                 {
-                    description:'updated description',
-                    version:'0'
+                    "description": "updated description",
+                    "version": "0"
                 }
                 """
             }
@@ -568,8 +568,8 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
             body {
                 """
                 {
-                    description:'updated description',
-                    version:'0'
+                    "description": "updated description",
+                    "version": "0"
                 }
                 """
             }
@@ -590,8 +590,8 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
             body {
                 """
                 {
-                    description:'updated description',
-                    version:'0'
+                    "description": "updated description",
+                    "version": "0"
                 }
                 """
             }
@@ -611,8 +611,8 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
             body {
                 """
                 {
-                    description:'updated description',
-                    version:'0'
+                    "description": "updated description",
+                    "version": "0"
                 }
                 """
             }
