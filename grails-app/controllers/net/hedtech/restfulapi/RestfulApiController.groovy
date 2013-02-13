@@ -7,8 +7,8 @@ package net.hedtech.restfulapi
 import grails.converters.JSON
 import grails.converters.XML
 import grails.validation.ValidationException
+
 import org.codehaus.groovy.grails.web.json.JSONObject
-import org.springframework.dao.OptimisticLockingFailureException
 
 import org.springframework.dao.OptimisticLockingFailureException
 
@@ -330,7 +330,15 @@ class RestfulApiController implements org.springframework.beans.factory.Initiali
     protected Class getDomainClass() {
         def singularizedName = Inflector.singularize(params.pluralizedResourceName)
         def className = Inflector.camelCase(singularizedName, true)
-        grailsApplication.domainClasses.find { it.clazz.simpleName == className }.clazz
+        def domainClass = grailsApplication.domainClasses.find { it.clazz.simpleName == className }?.clazz
+        if (!domainClass) domainClass = grailsApplication.allClasses.find { it.getClass().simpleName == className }
+
+        return domainClass ? domainClass : ''.getClass()
+    }
+
+
+    protected Class getNonDomainClass(String className) {
+
     }
 
 
