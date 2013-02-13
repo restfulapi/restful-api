@@ -29,6 +29,7 @@ grails.mime.types = [
     jsonv0:        'application/vnd.hedtech.v0+json',
     jsonv1:        'application/vnd.hedtech.v1+json',
     xmlv0:         'application/vnd.hedtech.v0+xml',
+    xmlv1:         'application/vnd.hedtech.v1+xml',
     json:          ['application/json', 'text/json'],
     multipartForm: 'multipart/form-data',
     rss:           'application/rss+xml',

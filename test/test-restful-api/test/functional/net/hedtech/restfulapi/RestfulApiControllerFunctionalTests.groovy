@@ -676,6 +676,30 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         assertNotNull json.data.version
     }
 
+    void testSave_xmlv1() {
+        post( "$localBase/api/things") {
+            headers['Content-Type'] = 'application/vnd.hedtech.v1+xml'
+            headers['Accept']       = 'application/json'
+            body {
+                """<?xml version="1.0" encoding="UTF-8"?>
+                <json>
+                    <code>AC</code>
+                </json>
+                """
+            }
+        }
+        assertStatus 201
+        assertEquals 'application/json', page?.webResponse?.contentType
+
+        def stringContent = page?.webResponse?.contentAsString
+        def json = JSON.parse stringContent
+        assertNotNull json.data.id
+        assert "AC" == json.data.code
+        assert "Default description" == json.data.description
+        assert 0 == json.data.parts.size()
+        assertNotNull json.data.version
+    }
+
     void testRequestNoExtractor_json() {
         post( "$localBase/api/things" ) {
             headers['Content-Type'] = 'application/vnd.hedtech.no_extractor+json'

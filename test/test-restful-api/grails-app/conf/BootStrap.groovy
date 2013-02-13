@@ -6,7 +6,7 @@ import grails.converters.JSON
 import grails.converters.XML
 
 import net.hedtech.restfulapi.*
-import net.hedtech.restfulapi.marshallers.*
+import net.hedtech.restfulapi.marshallers.json.*
 import net.hedtech.restfulapi.marshallers.xml.*
 import net.hedtech.restfulapi.extractors.json.*
 import net.hedtech.restfulapi.extractors.xml.*
@@ -49,8 +49,11 @@ class BootStrap {
 
         JSONExtractorConfigurationHolder.registerExtractor( "things", "json", new DefaultJSONExtractor() )
         JSONExtractorConfigurationHolder.registerExtractor( "things", "jsonv1", new ThingDefaultDescriptionExtractor() )
+        JSONExtractorConfigurationHolder.registerExtractor( "thing-wrapper", "json", new DefaultJSONExtractor() )
 
         XMLExtractorConfigurationHolder.registerExtractor( "things", "xml", new JSONObjectExtractor() )
+        XMLExtractorConfigurationHolder.registerExtractor( "things", "xmlv1", new JSONObjectExtractor() )
+
 
         // Our simple seed data
         createThing('AA')
