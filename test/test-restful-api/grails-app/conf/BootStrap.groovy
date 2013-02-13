@@ -8,6 +8,7 @@ import grails.converters.XML
 import net.hedtech.restfulapi.*
 import net.hedtech.restfulapi.marshallers.*
 import net.hedtech.restfulapi.marshallers.xml.*
+import net.hedtech.restfulapi.extractors.json.*
 import net.hedtech.restfulapi.extractors.xml.*
 import net.hedtech.restfulapi.extractors.configuration.*
 
@@ -45,6 +46,9 @@ class BootStrap {
         XML.createNamedConfig('xmlv0') {
             it.registerObjectMarshaller(new JSONObjectMarshaller(), 200)
         }
+
+        JSONExtractorConfigurationHolder.registerExtractor( "things", "json", new DefaultJSONExtractor() )
+        JSONExtractorConfigurationHolder.registerExtractor( "things", "jsonv1", new ThingDefaultDescriptionExtractor() )
 
         XMLExtractorConfigurationHolder.registerExtractor( "things", "xml", new JSONObjectExtractor() )
 

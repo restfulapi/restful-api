@@ -289,10 +289,14 @@ class RestfulApiController {
      **/
     protected Map parseRequestContent(request) {
         switch(request.format) {
-            case 'json':
-                return request.JSON
+            case ~/.*json.*/:
+                JSONExtractor extractor = JSONExtractorConfigurationHolder.getExtractor( params.pluralizedResourceName, request.format )
+                if (!extractor) {
+                    throw new UnknownRepresentationException( params.pluralizedResourceName, request.contentType )
+                }
+                return extractor.extract( request.JSON )
             break
-            case 'xml':
+            case ~/xml.*/:
                 XMLExtractor xmlExtractor = XMLExtractorConfigurationHolder.getExtractor( params.pluralizedResourceName, request.format )
                 if (!xmlExtractor) {
                     throw new UnknownRepresentationException( params.pluralizedResourceName, request.contentType )

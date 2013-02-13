@@ -14,8 +14,6 @@ class JSONExtractorConfigurationHolder {
     //key of outer map is the pluralized resource name.  Key of inner map is the format for a resource representation.
     private final Map<String, Map<String,JSONExtractor>> extractors = new HashMap<String,Map<String,JSONExtractor>>()
 
-    private JSONExtractor defaultExtractor = new DefaultJSONExtractor()
-
     JSONExtractorConfigurationHolder() {
         //singleton
     }
@@ -31,11 +29,7 @@ class JSONExtractorConfigurationHolder {
     }
 
     static JSONExtractor getExtractor( String pluralizedResourceName, String format ) {
-        def extractor = getInstance().extractors.get( pluralizedResourceName )?.get(format)
-        if (!extractor) {
-            extractor = getInstance().defaultExtractor
-        }
-        return extractor
+        getInstance().extractors.get( pluralizedResourceName )?.get(format)
     }
 
     static JSONExtractorConfigurationHolder getInstance() {

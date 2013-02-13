@@ -16,7 +16,6 @@ class Thing implements Serializable {
     Date       lastModified
     String     lastModifiedBy
     String     dataOrigin
-    Float    quantity
 
 
     // Adds a part and returns 'this' to allow chaining.
@@ -43,6 +42,5 @@ class Thing implements Serializable {
         lastModified       ( nullable: true )
         lastModifiedBy     ( nullable: true,  maxSize: 30 )
         dataOrigin         ( nullable: true,  maxSize: 30 )
-        quantity           ( nullable: true )
     }
 }

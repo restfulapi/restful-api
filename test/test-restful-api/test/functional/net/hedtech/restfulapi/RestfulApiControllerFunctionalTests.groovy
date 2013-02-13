@@ -652,6 +652,30 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         assert "Encountered unexpected error generating a response" == xml.message.text()
     }
 
+    void testSave_jsonv1() {
+        post( "$localBase/api/things") {
+            headers['Content-Type'] = 'application/vnd.hedtech.v1+json'
+            headers['Accept']       = 'application/json'
+            body {
+                """
+                {
+                    "code": "AC",
+                }
+                """
+            }
+        }
+        assertStatus 201
+        assertEquals 'application/json', page?.webResponse?.contentType
+
+        def stringContent = page?.webResponse?.contentAsString
+        def json = JSON.parse stringContent
+        assertNotNull json.data.id
+        assert "AC" == json.data.code
+        assert "Default description" == json.data.description
+        assert 0 == json.data.parts.size()
+        assertNotNull json.data.version
+    }
+
     void testRequestNoExtractor_json() {
         post( "$localBase/api/things" ) {
             headers['Content-Type'] = 'application/vnd.hedtech.no_extractor+json'
