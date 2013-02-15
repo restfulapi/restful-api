@@ -807,7 +807,7 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
 //            headers['Authorization'] = TestUtils.authHeader('user','password')
         }
         assertStatus 200
-        assertEquals 'application/vnd.hedtech.minimal-thing.v0+xml', page?.webResponse?.contentType
+        assertEquals 'application/xml', page?.webResponse?.contentType
         assertHeader "X-hedtech-Media-Type", 'application/vnd.hedtech.minimal-thing.v0+xml'
 
         def stringContent = page?.webResponse?.contentAsString
