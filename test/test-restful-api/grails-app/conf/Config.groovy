@@ -19,24 +19,25 @@ grails.project.groupId = appName // change this to alter the default package nam
 grails.mime.file.extensions = true // enables the parsing of file extensions from URLs into the request format
 grails.mime.use.accept.header = true
 grails.mime.types = [
-    all:           '*/*',
-    atom:          'application/atom+xml',
-    css:           'text/css',
-    csv:           'text/csv',
-    form:          'application/x-www-form-urlencoded',
-    html:          ['text/html','application/xhtml+xml'],
-    js:            'text/javascript',
-    jsonv0:        'application/vnd.hedtech.v0+json',
-    jsonv1:        'application/vnd.hedtech.v1+json',
-    xmlv0:         'application/vnd.hedtech.v0+xml',
-    xmlv1:         'application/vnd.hedtech.v1+xml',
-    json:          ['application/json', 'text/json'],
-    multipartForm: 'multipart/form-data',
-    rss:           'application/rss+xml',
-    text:          'text/plain',
-    xml:           ['application/xml','text/xml'],
-    xml_noextractor: ['application/vnd.hedtech.no_extractor+xml'],
-    json_noextractor: ['application/vnd.hedtech.no_extractor+json']
+    all:                   '*/*',
+    atom:                  'application/atom+xml',
+    css:                   'text/css',
+    csv:                   'text/csv',
+    form:                  'application/x-www-form-urlencoded',
+    html:                  ['text/html','application/xhtml+xml'],
+    js:                    'text/javascript',
+    jsonv0:                'application/vnd.hedtech.v0+json',
+    jsonv1:                'application/vnd.hedtech.v1+json',
+    xmlv0:                 'application/vnd.hedtech.v0+xml',
+    xmlv1:                 'application/vnd.hedtech.v1+xml',
+    'minimal-thing-xmlv0': 'application/vnd.hedtech.minimal-thing.v0+xml',
+    json:                  ['application/json', 'text/json'],
+    multipartForm:         'multipart/form-data',
+    rss:                   'application/rss+xml',
+    text:                  'text/plain',
+    xml:                   ['application/xml','text/xml'],
+    xml_noextractor:       ['application/vnd.hedtech.no_extractor+xml'],
+    json_noextractor:      ['application/vnd.hedtech.no_extractor+json']
 ]
 
 // URL Mapping Cache Max Size, defaults to 5000

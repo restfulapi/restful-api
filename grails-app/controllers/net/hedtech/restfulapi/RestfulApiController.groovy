@@ -219,19 +219,24 @@ class RestfulApiController {
          //We can't depend on response.format for this, because if the error was caused by an
          //unknown media type, Grails may have set the format to a fallback option, like 'html'.
          //So we will look at the Accept-Header directly and try to determine if JSON or XML was
-         //requested.  In we can't decide, we will return JSON.
+         //requested.  If we can't decide, we will return JSON.
          String format = null
+         String contentType = null
          switch(request.getHeader(HttpHeaders.ACCEPT)) {
             case ~/.*json.*/:
                 format = "json"
+                contentType = 'application/json'
             break
             case ~/.*xml.*/:
                 format = "xml"
+                contentType = 'application/xml'
             break
             default:
                 format = "json"
+                contentType = 'application/json'
+            break
          }
-         renderResponse( returnMap, format )
+         renderResponse( returnMap, format, contentType )
      }
 
 
@@ -240,23 +245,30 @@ class RestfulApiController {
      * @param responseMap the Map to render
      * @param format if specified, use the as the response format.  Otherwise
      *        use the format on the response (taken from the Accept-Header)
+     * @param mediaType if specified, use as the media type for the response.
+    *         Otherwise, use the media-type type specified by the Accept header.
      **/
-    protected void renderResponse(Map responseMap, String format=null) {
+    protected void renderResponse(Map responseMap, String format=null, String mediaType=null ) {
         if (!format) {
             format = response.format
         }
+        if (!mediaType) {
+            mediaType = request.getHeader(HttpHeaders.ACCEPT)
+        }
+        def content
+
         switch(format) {
             case 'json':
-                render responseMap as JSON
+                content = responseMap as JSON
             break
             case ~/.*json.*/:
                 useJSON(selectResponseFormat(format)) {
-                    render responseMap as JSON
+                    content = responseMap as JSON
                 }
             break
             case 'xml':
                 def json = new JSONObject( (responseMap as JSON) as String )
-                render json as XML
+                content = json as XML
             break
             case ~/xml.*/:
                 format = selectResponseFormat(format)
@@ -266,12 +278,12 @@ class RestfulApiController {
                     json = new JSONObject( (responseMap as JSON) as String )
                 }
                 useXML(selectResponseFormat(format)) {
-                    render json as XML
+                    content = json as XML
                 }
             break
             case ~/.*xml.*/:
                 useXML(selectResponseFormat(format)) {
-                    render responseMap as XML
+                     content = responseMap as XML
                 }
             break
             default:
@@ -279,6 +291,26 @@ class RestfulApiController {
                 //type isn't defined, to fallback on default mime-types.
                 throw new UnknownRepresentationException( params.pluralizedResourceName, request.getHeader(HttpHeaders.ACCEPT) )
         }
+        //Select the content type
+        //Content type will always be application/json or application/xml
+        //to make it easy for a response to be displayed in a browser or other tools
+        //The X-hedtech-Media-Type header will hold the custom media type (if any)
+        //describing the content in more detail.
+        def contentType
+        switch(mediaType) {
+            case ~/application\/.*json.*/:
+                contentType = "application/json"
+            break
+            case ~/application\/.*xml.*/:
+                contentType = "application/xml"
+            break
+            default:
+                contentType = "application/json"
+            break
+        }
+        response.addHeader( 'X-hedtech-Media-Type', mediaType )
+
+        render(text: content, contentType: contentType )
     }
 
 

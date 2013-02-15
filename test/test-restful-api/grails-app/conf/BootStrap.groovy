@@ -47,6 +47,10 @@ class BootStrap {
             it.registerObjectMarshaller(new JSONObjectMarshaller(), 200)
         }
 
+        XML.createNamedConfig('minimal-thing-xmlv0') {
+            it.registerObjectMarshaller(new MinimalThingClassMarshaller(), 101)
+        }
+
         JSONExtractorConfigurationHolder.registerExtractor( "things", "json", new DefaultJSONExtractor() )
         JSONExtractorConfigurationHolder.registerExtractor( "things", "jsonv1", new ThingDefaultDescriptionExtractor() )
         JSONExtractorConfigurationHolder.registerExtractor( "thing-wrapper", "json", new DefaultJSONExtractor() )

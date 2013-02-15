@@ -68,7 +68,7 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
 //            headers['Authorization'] = TestUtils.authHeader('user','password')
         }
         assertStatus 200
-        assertEquals 'text/xml', page?.webResponse?.contentType
+        assertEquals 'application/xml', page?.webResponse?.contentType
 
         def stringContent = page?.webResponse?.contentAsString
 
@@ -101,6 +101,7 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         }
         assertStatus 200
         assertEquals 'application/json', page?.webResponse?.contentType
+        assertHeader "X-hedtech-Media-Type", 'application/vnd.hedtech.v0+json'
 
         def stringContent = page?.webResponse?.contentAsString
         def json = JSON.parse stringContent
@@ -125,7 +126,8 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
 //            headers['Authorization'] = TestUtils.authHeader('user','password')
         }
         assertStatus 200
-        assertEquals 'text/xml', page?.webResponse?.contentType
+        assertEquals 'application/xml', page?.webResponse?.contentType
+        assertHeader "X-hedtech-Media-Type", 'application/vnd.hedtech.v0+xml'
 
         def stringContent = page?.webResponse?.contentAsString
 
@@ -206,7 +208,7 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
 //            headers['Authorization'] = TestUtils.authHeader('user','password')
         }
         assertStatus 200
-        assertEquals 'text/xml', page?.webResponse?.contentType
+        assertEquals 'application/xml', page?.webResponse?.contentType
 
         def stringContent = page?.webResponse?.contentAsString
 
@@ -232,6 +234,7 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         }
         assertStatus 200
         assertEquals 'application/json', page?.webResponse?.contentType
+        assertHeader "X-hedtech-Media-Type", 'application/vnd.hedtech.v0+json'
 
         def stringContent = page?.webResponse?.contentAsString
         def json = JSON.parse stringContent
@@ -251,7 +254,8 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
 //            headers['Authorization'] = TestUtils.authHeader('user','password')
         }
         assertStatus 200
-        assertEquals 'text/xml', page?.webResponse?.contentType
+        assertEquals 'application/xml', page?.webResponse?.contentType
+        assertHeader "X-hedtech-Media-Type", 'application/vnd.hedtech.v0+xml'
 
         def stringContent = page?.webResponse?.contentAsString
         def xml = XML.parse stringContent
@@ -304,6 +308,8 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         assertStatus 201
         assertEquals 'application/json', page?.webResponse?.contentType
 
+        assertHeader "X-Hedtech-Media-Type", 'application/vnd.hedtech.v0+json'
+
         def stringContent = page?.webResponse?.contentAsString
         def json = JSON.parse stringContent
         assertNotNull json.data.id
@@ -328,7 +334,7 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
             }
         }
         assertStatus 201
-        assertEquals 'text/xml', page?.webResponse?.contentType
+        assertEquals 'application/xml', page?.webResponse?.contentType
 
         def stringContent = page?.webResponse?.contentAsString
         def xml = XML.parse stringContent
@@ -435,6 +441,8 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         }
 
         assertStatus 200
+        assertEquals 'application/json', page?.webResponse?.contentType
+        assertHeader "X-hedtech-Media-Type", 'application/vnd.hedtech.v0+json'
         def stringContent = page?.webResponse?.contentAsString
         def json = JSON.parse stringContent
         assertTrue json.success
@@ -759,7 +767,7 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         }
 
         assertStatus 400
-        assertEquals 'text/xml', page?.webResponse?.contentType
+        assertEquals 'application/xml', page?.webResponse?.contentType
         assertHeader "X-Status-Reason", 'Unknown resource representation'
         def stringContent = page?.webResponse?.contentAsString
         def xml = XML.parse stringContent
@@ -788,6 +796,32 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         def json = JSON.parse stringContent
         assertFalse json.success
         assert "Unsupported media type 'application/vnd.hedtech.no_such_type+json' for resource 'things'" == json.message
+    }
+
+    void testCustomXMLMarshalling() {
+        def id = createThing('AA')
+
+        get( "$localBase/api/things/$id" ) {
+            headers['Content-Type']  = 'application/xml'
+            headers['Accept']        = 'application/vnd.hedtech.minimal-thing.v0+xml'
+//            headers['Authorization'] = TestUtils.authHeader('user','password')
+        }
+        assertStatus 200
+        assertEquals 'application/vnd.hedtech.minimal-thing.v0+xml', page?.webResponse?.contentType
+        assertHeader "X-hedtech-Media-Type", 'application/vnd.hedtech.minimal-thing.v0+xml'
+
+        def stringContent = page?.webResponse?.contentAsString
+
+        /*def xml = XML.parse stringContent
+        assert "AA" == xml.data.code
+        assert "An AA thing" == json.data.description
+        assert json.data._href?.contains('things')
+        assertNull json.data.numParts
+        assertNotNull json.data.version
+
+        // test localization of the message
+        assert "Details for the thing resource" == json.message*/
+
     }
 
     private void createThings() {
