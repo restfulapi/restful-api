@@ -34,7 +34,22 @@ The plugin uses the Content-Type header to determine the type of the resource re
 If a request specified an unsupported media type in either the Content-Type or Accept header, the plugin will return a 400 response with an additional 'X-Status-Reason' header having a value of 'Unknown resource representation'  (This may change to a different status code in the future to clearly indicate that an unsupported media type was sent or requested if the Strategy Document specifies such a code.)
 
 ###Response envelope.
-The plugin currently uses a thin 'envelope' in which the response body contains not the resource representation, but an envelope containing the representation, a message, and optional affordances.  However, work is being done to eliminate the envelope so that the message (or additional information) will be carried in headers, and the affordances will be made part of the resource representation.  The driver for this is to simplify custom xml representation marshalling.
+Any response body will be one of the following:
+
+* A representation of a resource
+* An array of representations of a resource (either a JSON array, or list representation in xml)
+* an empty body
+
+Any 'envelope' information is conveyed in headers.
+Currently, the following response headers are supported:
+
+* X-hedtech-totalCount.  Returned with list responses and contains the total count of objects.
+* X-hedtech-pageOffset.  Returned with list responses.
+* X-hedtech-pageMaxSize. Returned with list responses.
+* X-hedtech-Media-Type.  Returned with all (sucess) responses, and contains the exact type of the response.
+* X-hedtech-message.  May optionally be returned with any response.  Contains a localized message for the response.
+* X-Status-Reason.  Optionally returned with a 400 response to provide additional information on why the request could not be understood.
+
 
 ##JSON-as-xml
 The plugin supports a 'cheap' method of supporting both json and xml representation, while only requiring JSON marshallers/extractors to be created.
