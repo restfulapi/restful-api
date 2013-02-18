@@ -42,7 +42,7 @@ class ThingWrapperResourceFunctionalTests extends BrowserTestCase {
 
         def stringContent = page?.webResponse?.contentAsString
         def json = JSON.parse stringContent
-        assert json.data[0].xlarge
+        assert json[0].xlarge
     }
 
 
@@ -74,9 +74,9 @@ class ThingWrapperResourceFunctionalTests extends BrowserTestCase {
 
         def stringContent = page?.webResponse?.contentAsString
         def json = JSON.parse stringContent
-        assert "MMNN" == json.data.complexCode
-        assert "MM" == json.data.things[0].code
-        assert "An MM thingy" == json.data.things[0].description
+        assert "MMNN" == json.complexCode
+        assert "MM" == json.things[0].code
+        assert "An MM thingy" == json.things[0].description
     }
 
 

@@ -27,7 +27,7 @@ class JSONObjectMarshaller extends CollectionMarshaller {
 
 
     public String getElementName(Object o) {
-        return "json";
+        return "net-hedtech-object";
     }
 
     private void build( XML xml, def current, def value ) {

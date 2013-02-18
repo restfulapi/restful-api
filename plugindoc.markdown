@@ -13,7 +13,7 @@ The restful-api plugin is an implementation designed to conform to the Ellucian 
 The plugin relies heavily on convention-over-configuration.  A request to a resource named 'things' will be delegated to the 'ThingService'.  De-pluralization of the resource name happens automatically; it is also assumed that there is unique ThingService that can be looked up in the grails application.
 
 ###Use of custom media types
-The plugin relies on custom media types to specify resource representations.  For requests, the media type in the Accept header is used to identify the resource representation in the request body, in order to extract parameters from it to be passed to the resource's service.
+The plugin relies on custom media types to specify resource representations.  For requests, the media type in the Content-Type header is used to identify the resource representation in the request body, in order to extract parameters from it to be passed to the resource's service.
 
 Media types used must contain either 'json' or 'xml' in their name.  Any media type with 'json' in the name denotes a format that can be parsed as JSON; any type with 'xml' in the name is a format that is assumed to be parsed as XML.
 

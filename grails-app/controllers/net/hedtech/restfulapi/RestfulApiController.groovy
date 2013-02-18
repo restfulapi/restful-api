@@ -11,7 +11,10 @@ import grails.validation.ValidationException
 import net.hedtech.restfulapi.extractors.*
 import net.hedtech.restfulapi.extractors.configuration.*
 
+import org.codehaus.groovy.grails.web.json.JSONArray
+import org.codehaus.groovy.grails.web.json.JSONElement
 import org.codehaus.groovy.grails.web.json.JSONObject
+
 import org.springframework.dao.OptimisticLockingFailureException
 
 import org.springframework.dao.OptimisticLockingFailureException
@@ -48,14 +51,13 @@ class RestfulApiController {
         def result
         try {
             result = getService().list(params)
+            ResponseHolder holder = new ResponseHolder()
+            holder.data = result.instances
+            holder.addHeader('X-hedtech-totalCount',result.totalCount)
+            holder.addHeader('X-hedtech-pageOffset',params.max ? params?.max : totalCount)
+            holder.addHeader('X-hedtech-pageMaxSize',params.offset ? params?.offset : 0)
 
-            renderSuccessResponse( [
-                success:     true,
-                data:        result.instances,
-                totalCount:  result.totalCount,
-                pageOffset:  params.offset ? params?.offset : 0,
-                pageMaxSize: params.max ? params?.max : totalCount
-            ], 'default.list.message' )
+            renderSuccessResponse( holder, 'default.rest.list.message' )
         }
         catch (e) {
 //            log.error "Caught exception ${e.message}", e
@@ -74,11 +76,8 @@ class RestfulApiController {
         def result
         try {
             result = getService().show(params)
-
-            renderSuccessResponse( [
-                success:     true,
-                data:        result.instance,
-            ], 'default.shown.message' )
+            renderSuccessResponse( new ResponseHolder( data: result.instance ),
+                                   'default.rest.shown.message' )
         }
         catch (e) {
             //log.error "Caught exception ${e.message}", e
@@ -99,10 +98,8 @@ class RestfulApiController {
             def content = parseRequestContent( request )
             result = getService().create( content )
             response.setStatus( 201 )
-            renderSuccessResponse( [
-                    success:    true,
-                    data:       result.instance,
-                    ], 'default.saved.message' )
+            renderSuccessResponse( new ResponseHolder( data: result.instance ),
+                                   'default.rest.saved.message' )
         }
         catch (e) {
             //log.error "Caught exception ${e.message}", e
@@ -124,10 +121,8 @@ class RestfulApiController {
             map.content = parseRequestContent( request )
             result = getService().update( map )
             response.setStatus( 200 )
-            renderSuccessResponse( [
-                    success:    true,
-                    data:       result.instance,
-                    ], 'default.updated.message' )
+            renderSuccessResponse( new ResponseHolder( data: result.instance ),
+                                   'default.rest.updated.message' )
         }
         catch (e) {
             //log.error "Caught exception ${e.message}", e
@@ -147,8 +142,7 @@ class RestfulApiController {
             map.content = parseRequestContent( request )
             result = getService().delete( map )
             response.setStatus( 200 )
-            renderSuccessResponse( [
-                success:    true], 'default.deleted.mesage' )
+            renderSuccessResponse( new ResponseHolder(), 'default.rest.deleted.message' )
         }
         catch (e) {
             //log.error "Caught exception ${e.message}", e
@@ -162,21 +156,16 @@ class RestfulApiController {
     /**
      * Renders a successful response using the supplied map and the msg resource
      * code.
-     * A success value of true will be automatically added to the map.
      * A message property with a value translated from the message resource code
      * provided with a localized domainName will be automatically added to the map.
      * @param responseMap the Map to render
      * @param msgResourceCode the resource code used to create a message entry
      **/
-     protected void renderSuccessResponse(Map responseMap, String msgResourceCode) {
+     protected void renderSuccessResponse(ResponseHolder holder, String msgResourceCode) {
 
         String localizedName = localize(domainName())
-
-        responseMap << [ success: true ]
-
-        responseMap << [ message: message( code: msgResourceCode,
-                                           args: [ localizedName ] ) ]
-        renderResponse( responseMap )
+        holder.message = message( code: msgResourceCode, args: [ localizedName ] )
+        renderResponse( holder )
      }
 
 
@@ -185,7 +174,7 @@ class RestfulApiController {
       * @param e the exception to render an error response for
       **/
      protected void renderErrorResponse( Throwable e ) {
-        def returnMap = [:]
+        ResponseHolder responseHolder = new ResponseHolder()
         try {
             def handler = exceptionHandlers[ getErrorType( e ) ]
             if (!handler) {
@@ -195,20 +184,20 @@ class RestfulApiController {
 
             if (result.headers) {
                 result.headers.each() { header ->
-                    this.response.addHeader( header.key, header.value )
+                    responseHolder.addHeader( header.key, header.value )
                 }
             }
-            returnMap = result.returnMap
-            returnMap << [ success : false ]
+            responseHolder.data = result.returnMap
+            responseHolder.message = result.message
             this.response.setStatus( result.httpStatusCode )
          }
          catch (t) {
             //We generated an exception trying to generate an error response.
             //Log the error, and attempt to fall back on a generic fail-whale response
             log.error( "Caught exception attemping to prepare an error response: ${t.message}", t )
-            returnMap = [:]
-            returnMap.success = false
-            returnMap.message = "Encountered unexpected error generating a response"
+            responseHolder.data = null
+
+            responseHolder.message = message( code: 'default.rest.unexpected.exception.messages' )
             this.response.setStatus( 500 )
          }
 
@@ -236,19 +225,19 @@ class RestfulApiController {
                 contentType = 'application/json'
             break
          }
-         renderResponse( returnMap, format, contentType )
+         renderResponse( responseHolder, format, contentType )
      }
 
 
     /**
-     * Renders the supplied map using a registered converter.
-     * @param responseMap the Map to render
+     * Renders the content of the supplied map using a registered converter.
+     * @param responseMap the Map containing the data and headers to render
      * @param format if specified, use the as the response format.  Otherwise
      *        use the format on the response (taken from the Accept-Header)
      * @param mediaType if specified, use as the media type for the response.
     *         Otherwise, use the media-type type specified by the Accept header.
      **/
-    protected void renderResponse(Map responseMap, String format=null, String mediaType=null ) {
+    protected void renderResponse(ResponseHolder responseHolder, String format=null, String mediaType=null) {
         if (!format) {
             format = response.format
         }
@@ -257,17 +246,19 @@ class RestfulApiController {
         }
         def content
 
+
         switch(format) {
             case 'json':
-                content = responseMap as JSON
+                content = responseHolder.data as JSON
             break
             case ~/.*json.*/:
                 useJSON(selectResponseFormat(format)) {
-                    content = responseMap as JSON
+                    content = responseHolder.data as JSON
                 }
             break
             case 'xml':
-                def json = new JSONObject( (responseMap as JSON) as String )
+                def s = (responseHolder.data as JSON) as String
+                def json = toJSONElement( s )
                 content = json as XML
             break
             case ~/xml.*/:
@@ -275,7 +266,8 @@ class RestfulApiController {
                 def jsonFormat = 'json' + format.substring( 3 )
                 def json
                 useJSON(jsonFormat) {
-                    json = new JSONObject( (responseMap as JSON) as String )
+                    def s = (responseHolder.data as JSON) as String
+                    json = toJSONElement( s )
                 }
                 useXML(selectResponseFormat(format)) {
                     content = json as XML
@@ -283,7 +275,7 @@ class RestfulApiController {
             break
             case ~/.*xml.*/:
                 useXML(selectResponseFormat(format)) {
-                     content = responseMap as XML
+                     content = responseHolder.data as XML
                 }
             break
             default:
@@ -309,8 +301,19 @@ class RestfulApiController {
             break
         }
         response.addHeader( 'X-hedtech-Media-Type', mediaType )
-
-        render(text: content, contentType: contentType )
+        responseHolder.headers.each { header ->
+            if (header.value instanceof Collection) {
+                header.value.each() { val ->
+                    response.addHeader( header.key, val )
+                }
+            } else {
+                response.addHeader( header.key, header.value )
+            }
+        }
+        if (responseHolder.message) {
+            response.addHeader( "X-hedtech-message", responseHolder.message )
+        }
+        render(text: content ? content : "", contentType: contentType )
     }
 
 
@@ -459,34 +462,43 @@ class RestfulApiController {
         XML.use(config,closure)
     }
 
+    private JSONElement toJSONElement( String s ) {
+        if (s == null || s.trim().size() == 0) {
+            return null
+        }
+        //is there a better way to detect this?
+        if (s.startsWith('[')) {
+            return new JSONArray(s)
+        } else {
+            return new JSONObject(s)
+        }
+    }
+
     private def exceptionHandlers = [
 
         'ValidationException': { e->
             [
                 httpStatusCode: 400,
                 headers: ['X-Status-Reason':'Validation failed'],
-                returnMap:
-                    [
-                        message: message( code: "default.validation.errors.message",
+                message: message( code: "default.rest.validation.errors.message",
                                           args: [ localize(domainName()) ] ) as String,
-                        errors: [ [
+                returnMap: [
+                    errors: [
+                        [
                             type: "validation",
                             resource: [ class: getDomainClass().name, id: params.id ],
                             errorMessage: e.message
-                            ]
                         ]
                     ]
+                ]
             ]
         },
 
         'OptimisticLockException': { e ->
             [
                 httpStatusCode: 409,
-                returnMap:
-                    [
-                        message: message( code: "default.optimistic.locking.failure",
+                message: message( code: "default.optimistic.locking.failure",
                                           args: [ localize(domainName()) ] ) as String,
-                    ]
             ]
         },
 
@@ -495,11 +507,8 @@ class RestfulApiController {
             [
                 httpStatusCode: 400,
                 headers: ['X-Status-Reason':'Unknown resource representation'],
-                returnMap:
-                    [
-                        message: message( code: "default.unknownrepresentation.message",
+                message: message( code: "default.rest.unknownrepresentation.message",
                                           args: [ e.getPluralizedResourceName(), e.getContentType() ] ) as String,
-                    ]
             ]
         },
 
@@ -517,10 +526,11 @@ class RestfulApiController {
             if (appMap.headers) {
                 map.headers = appMap.headers
             }
-            def returnMap = [:]
             if (appMap.message) {
-                returnMap.message = appMap.message
+                map.message = appMap.message
             }
+
+            def returnMap = [:]
             if (appMap.errors) {
                 returnMap.errors = appMap.errors
             }
@@ -533,16 +543,16 @@ class RestfulApiController {
         'AnyOtherException': { e ->
             [
                 httpStatusCode: 500,
-                returnMap:
-                    [
-                        message: message( code: "default.general.errors.message",
+                message: message( code: "default.rest.general.errors.message",
                                           args: [ localize(domainName()) ] ) as String,
-                        errors: [ [
-                            type: "general",
-                            resource: [ class: getDomainClass().name, id: params.id ],
-                            errorMessage: e.message
-                        ] ]
+                returnMap: [
+                    errors: [ [
+                        type: "general",
+                        resource: [ class: getDomainClass().name, id: params.id ],
+                        errorMessage: e.message
+                        ]
                     ]
+                ]
             ]
         }
     ]

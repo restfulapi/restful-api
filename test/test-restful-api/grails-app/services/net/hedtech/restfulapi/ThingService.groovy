@@ -14,6 +14,8 @@ import org.springframework.dao.OptimisticLockingFailureException
 
 import org.springframework.orm.hibernate3.HibernateOptimisticLockingFailureException as OptimisticLockException
 
+import java.security.*
+
 class ThingService {
 
     def list(Map params) {
@@ -31,6 +33,9 @@ class ThingService {
         params.max = Math.min( params.max ? params.max.toInteger() : 10,  100)
         result.instances = Thing.list(fetch: [parts: "eager"],
                                       max: params.max, offset: params.offset ).sort { it.id }
+        result.instances.each {
+            supplementThing( it )
+        }
         result.totalCount = result.instances.size()
 
         log.trace "ThingService.list returning ${result}"
@@ -43,6 +48,7 @@ class ThingService {
         def result = [:]
         result.instance = Thing.get(params.id)
         result.instance.parts // force lazy loading
+        supplementThing( result.instance )
         log.trace "ThingService.show returning ${result}"
         result
     }
@@ -62,6 +68,7 @@ class ThingService {
             result.instance = instance
             result.instance.parts //force lazy loading
         }
+        supplementThing( result.instance )
         result
     }
 
@@ -81,6 +88,7 @@ class ThingService {
             result.instance = thing
             result.instance.parts //force lazy loading
         }
+        supplementThing( result.instance )
         result
     }
 
@@ -125,5 +133,13 @@ class ThingService {
         if (params.throwApplicationException == 'y') {
             throw new DummyApplicationException( params.appStatusCode, params.appMsgCode, params.appErrorType )
         }
+    }
+
+    private void supplementThing( Thing thing ) {
+        MessageDigest digest = MessageDigest.getInstance("SHA1")
+        digest.update("code:${thing.getCode()}".getBytes("UTF-8"))
+        digest.update("description${thing.getDescription()}".getBytes("UTF-8"))
+        def properties = [sha1:new BigInteger(1,digest.digest()).toString(16).padLeft(40,'0')]
+        thing.metaClass.getSupplementalRestProperties << {-> properties }
     }
 }

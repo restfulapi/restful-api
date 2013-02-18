@@ -43,7 +43,7 @@ class ComplexThingResourceFunctionalTests extends BrowserTestCase {
 
         def stringContent = page?.webResponse?.contentAsString
         def json = JSON.parse stringContent
-        assert json.data[0].xlarge
+        assert json[0].xlarge
     }
 
 
@@ -60,7 +60,7 @@ class ComplexThingResourceFunctionalTests extends BrowserTestCase {
         def stringContent = page?.webResponse?.contentAsString
         def json = JSON.parse stringContent
         def dataParser = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
-        def retrievedDate = dataParser.parse(json.data[0].buildDate)
+        def retrievedDate = dataParser.parse(json[0].buildDate)
         use(groovy.time.TimeCategory) {
             retrievedDate > 2.seconds.ago // we can be very loose...
         }
@@ -79,9 +79,9 @@ class ComplexThingResourceFunctionalTests extends BrowserTestCase {
 
         def stringContent = page?.webResponse?.contentAsString
         def json = JSON.parse stringContent
-        assert 2 == json.data.things?.size()
-        assert 0 <= json.data.things[0].id
-        assert 0 <= json.data.things[1].id
+        assert 2 == json.things?.size()
+        assert 0 <= json.things[0].id
+        assert 0 <= json.things[1].id
     }
 
 
@@ -97,7 +97,7 @@ class ComplexThingResourceFunctionalTests extends BrowserTestCase {
 
         def stringContent = page?.webResponse?.contentAsString
         def json = JSON.parse stringContent
-        assert "junk" == json.data.transientProp
+        assert "junk" == json.transientProp
     }
 
 
@@ -114,7 +114,7 @@ class ComplexThingResourceFunctionalTests extends BrowserTestCase {
         def stringContent = page?.webResponse?.contentAsString
         def json = JSON.parse stringContent
 println "******************************** JSON ****************************** \n$json"
-        assert 2 == json.data.size
+        assert 2 == json.size
     }
 
 
@@ -131,9 +131,9 @@ println "******************************** JSON ****************************** \n
         def stringContent = page?.webResponse?.contentAsString
         def json = JSON.parse stringContent
 println "******************************** JSON ****************************** \n$json"
-        assertNull json.data.dataOrigin
-        assertNull json.data.lastModifiedBy
-        assertNull json.data.modifiedBy
+        assertNull json.dataOrigin
+        assertNull json.lastModifiedBy
+        assertNull json.modifiedBy
     }
 
 

@@ -41,6 +41,11 @@ class ThingClassMarshaller extends BasicHalDomainClassMarshaller {
         return false // and we'll allow further processing of 'parts' by returning false
     }
 
+    @Override
+    protected void processAdditionalFields(BeanWrapper beanWrapper, JSON json) {
+        json.property("sha1", beanWrapper.getWrappedInstance().getSupplementalRestProperties()['sha1'] )
+    }
+
 
 
 }
