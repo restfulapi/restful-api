@@ -3,6 +3,15 @@
 ******************************************************************** -->
 
 # TODO list for work (turn into Jira)
+* Support 415 for unsupported media types
+
+# TODO list (too small for JIRA)
+* make delete() return void?
+
+# Code cleanup tasks
+* Remove unused codes from message.properties
+* Do the default messages belong in the plugin message.properties, since they are used by the plugin, and not the test app?
+* Remove OptimisticLock exception support.
 
 # Things to consider (may need user stories)
 * Define strategy and guidelines for retaining version-specific representations. Can the general marshallers be used at all?  If so, are tests sufficient to drive develpment of version-specific marshallers?  Need discussion, and Shane input...
@@ -30,11 +39,6 @@
 * Why do we need selectFormat()?  it seems disconnected, as we have already selected format within the case statement.
 * JSON-as-xml depends on the formats mapped to mime-types be xmlvX and jsonvX
 * Current implementation of JSON-as-xml uses a custom marshaller for JSONObject that is registered under the named config for the format.
-
-# Code cleanup tasks
-* Remove unused codes from message.properties
-* Do the default messages belong in the plugin message.properties, since they are used by the plugin, and not the test app?
-* Remove OptimisticLock exception support.
 
 # Deficiencies in json-as-xml marshalling.
 * JSON support \b and \f (backspace and form-feed) as legal string values.  XML 1.0 does not.  Converting a JSON entity that contains these will produce XML that cannot be parsed.

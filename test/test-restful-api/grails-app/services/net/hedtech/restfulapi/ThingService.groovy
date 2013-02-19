@@ -36,7 +36,7 @@ class ThingService {
         result.instances.each {
             supplementThing( it )
         }
-        result.totalCount = result.instances.size()
+        result.totalCount = Thing.count()
 
         log.trace "ThingService.list returning ${result}"
         result
