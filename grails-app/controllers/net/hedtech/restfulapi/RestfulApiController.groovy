@@ -281,7 +281,7 @@ class RestfulApiController {
             default:
                 //Default grails behavior for determining response format is to parse the Accept-Header, and if the media
                 //type isn't defined, to fallback on default mime-types.
-                throw new UnknownRepresentationException( params.pluralizedResourceName, request.getHeader(HttpHeaders.ACCEPT) )
+                throw new UnsupportedResponseRepresentationException( params.pluralizedResourceName, request.getHeader(HttpHeaders.ACCEPT) )
         }
         //Select the content type
         //Content type will always be application/json or application/xml
@@ -327,26 +327,26 @@ class RestfulApiController {
             case ~/.*json.*/:
                 JSONExtractor extractor = JSONExtractorConfigurationHolder.getExtractor( params.pluralizedResourceName, request.format )
                 if (!extractor) {
-                    throw new UnknownRepresentationException( params.pluralizedResourceName, request.contentType )
+                    throw new UnsupportedRequestRepresentationException( params.pluralizedResourceName, request.contentType )
                 }
                 return extractor.extract( request.JSON )
             break
             case ~/xml.*/:
                 XMLExtractor xmlExtractor = XMLExtractorConfigurationHolder.getExtractor( params.pluralizedResourceName, request.format )
                 if (!xmlExtractor) {
-                    throw new UnknownRepresentationException( params.pluralizedResourceName, request.contentType )
+                    throw new UnsupportedRequestRepresentationException( params.pluralizedResourceName, request.contentType )
                 }
                 def json = xmlExtractor.extract( request.XML )
                 def format = request.format
                 format = 'json' + format.substring( 3 )
                 JSONExtractor jsonExtractor = JSONExtractorConfigurationHolder.getExtractor( params.pluralizedResourceName, format )
                 if (!jsonExtractor) {
-                    throw new UnknownRepresentationException( params.pluralizedResourceName, request.contentType )
+                    throw new UnsupportedRequestRepresentationException( params.pluralizedResourceName, request.contentType )
                 }
                 return jsonExtractor.extract( json )
             break
         }
-        throw new UnknownRepresentationException( params.pluralizedResourceName, request.contentType )
+        throw new UnsupportedRequestRepresentationException( params.pluralizedResourceName, request.contentType )
     }
 
 
@@ -367,8 +367,10 @@ class RestfulApiController {
             return 'OptimisticLockException'
         } else if (e instanceof ValidationException) {
             return 'ValidationException'
-        } else if (e instanceof UnknownRepresentationException) {
-            return 'UnknownRepresentationException'
+        } else if (e instanceof UnsupportedRequestRepresentationException) {
+            return 'UnsupportedRequestRepresentationException'
+        } else if (e instanceof UnsupportedResponseRepresentationException) {
+            return 'UnsupportedResponseRepresentationException'
         } else {
             return 'AnyOtherException'
         }
@@ -441,7 +443,7 @@ class RestfulApiController {
             JSON.getNamedConfig( config )
         } catch (ConverterException e) {
             //failure to retrieve the named config.  Treat as an unknown format.
-            throw new UnknownRepresentationException( params.pluralizedResourceName, request.getHeader(HttpHeaders.ACCEPT) )
+            throw new UnsupportedResponseRepresentationException( params.pluralizedResourceName, request.getHeader(HttpHeaders.ACCEPT) )
         }
         JSON.use(config,closure)
     }
@@ -457,7 +459,7 @@ class RestfulApiController {
             XML.getNamedConfig( config )
         } catch (ConverterException e) {
             //failure to retrieve the named config.  Treat as an unknown format.
-            throw new UnknownRepresentationException( params.pluralizedResourceName, request.getHeader(HttpHeaders.ACCEPT) )
+            throw new UnsupportedResponseRepresentationException( params.pluralizedResourceName, request.getHeader(HttpHeaders.ACCEPT) )
         }
         XML.use(config,closure)
     }
@@ -503,10 +505,17 @@ class RestfulApiController {
         },
 
 
-        'UnknownRepresentationException': { e ->
+        'UnsupportedResponseRepresentationException': { e ->
             [
-                httpStatusCode: 400,
-                headers: ['X-Status-Reason':'Unknown resource representation'],
+                httpStatusCode: 406,
+                message: message( code: "default.rest.unknownrepresentation.message",
+                                          args: [ e.getPluralizedResourceName(), e.getContentType() ] ) as String,
+            ]
+        },
+
+        'UnsupportedRequestRepresentationException': { e ->
+            [
+                httpStatusCode: 415,
                 message: message( code: "default.rest.unknownrepresentation.message",
                                           args: [ e.getPluralizedResourceName(), e.getContentType() ] ) as String,
             ]

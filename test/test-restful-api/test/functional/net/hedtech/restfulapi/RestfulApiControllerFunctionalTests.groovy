@@ -753,8 +753,7 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
             }
         }
 
-        assertStatus 400
-        assertHeader "X-Status-Reason", 'Unknown resource representation'
+        assertStatus 415
 
         // assert localization of the message
         assertHeader 'X-hedtech-message', "Unsupported media type 'application/vnd.hedtech.no_extractor+json' for resource 'things'"
@@ -777,8 +776,7 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
             }
         }
 
-        assertStatus 400
-        assertHeader "X-Status-Reason", 'Unknown resource representation'
+        assertStatus 415
 
         // assert localization of the message
         assertHeader 'X-hedtech-message', "Unsupported media type 'application/vnd.hedtech.no_extractor+xml' for resource 'things'"
@@ -800,9 +798,8 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
             }
         }
 
-        assertStatus 400
+        assertStatus 406
         assertEquals 'application/xml', page?.webResponse?.contentType
-        assertHeader "X-Status-Reason", 'Unknown resource representation'
 
         // assert localization of the message
         assertHeader 'X-hedtech-message', "Unsupported media type 'application/vnd.hedtech.no_such_type+xml' for resource 'things'"
@@ -824,9 +821,8 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
             }
         }
 
-        assertStatus 400
+        assertStatus 406
         assertEquals 'application/json', page?.webResponse?.contentType
-        assertHeader "X-Status-Reason", 'Unknown resource representation'
 
         // assert localization of the message
         assertHeader 'X-hedtech-message', "Unsupported media type 'application/vnd.hedtech.no_such_type+json' for resource 'things'"

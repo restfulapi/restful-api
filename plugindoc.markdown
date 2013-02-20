@@ -31,7 +31,8 @@ Errors are not considered part of the resource representation, and do not have v
 The plugin uses the Content-Type header to determine the type of the resource representation sent in a request.  It uses the (first) Accept header to determine the type of resource representation that should be used in the response.  The Content-Type and Accept headers on a request are not required to match.
 
 ###Unsupported media types
-If a request specified an unsupported media type in either the Content-Type or Accept header, the plugin will return a 400 response with an additional 'X-Status-Reason' header having a value of 'Unknown resource representation'  (This may change to a different status code in the future to clearly indicate that an unsupported media type was sent or requested if the Strategy Document specifies such a code.)
+If a request specified an unsupported media type in the Accept header, the plugin will respond with a 406 status code.
+If the request specified an unsupported media type in the Content-Type header, the plugin will respond with a 415 status code.
 
 ###Response envelope.
 Any response body will be one of the following:
