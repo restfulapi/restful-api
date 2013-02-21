@@ -830,29 +830,53 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         assert "" == stringContent
     }
 
-    void testCustomXMLMarshalling() {
+    void testCustomXMLMarshalling_v0() {
         def id = createThing('AA')
 
         get( "$localBase/api/things/$id" ) {
             headers['Content-Type']  = 'application/xml'
-            headers['Accept']        = 'application/vnd.hedtech.minimal-thing.v0+xml'
-//            headers['Authorization'] = TestUtils.authHeader('user','password')
+            headers['Accept']        = 'application/vnd.hedtech.thing.v0+xml'
         }
         assertStatus 200
         assertEquals 'application/xml', page?.webResponse?.contentType
-        assertHeader "X-hedtech-Media-Type", 'application/vnd.hedtech.minimal-thing.v0+xml'
+        assertHeader "X-hedtech-Media-Type", 'application/vnd.hedtech.thing.v0+xml'
+
+        assertHeader 'X-hedtech-message', "Details for the thing resource"
 
         def stringContent = page?.webResponse?.contentAsString
 
-        /*def xml = XML.parse stringContent
-        assert "AA" == xml.data.code
-        assert "An AA thing" == json.data.description
-        assert json.data._href?.contains('things')
-        assertNull json.data.numParts
-        assertNotNull json.data.version
+        def xml = XML.parse stringContent
+        println xml.@id.getClass().getName()
+        assert id.toString() == xml.@id.text()
+        assertNotNull xml.@version
+        assert "AA" == xml.code.text()
+        assert "An AA thing" == xml.description.text()
+        assert 0 == xml.parts.size()
+    }
 
-        // test localization of the message
-        assert "Details for the thing resource" == json.message*/
+    void testCustomXMLMarshalling_v1() {
+        def id = createThing('AA')
+
+        get( "$localBase/api/things/$id" ) {
+            headers['Content-Type']  = 'application/xml'
+            headers['Accept']        = 'application/vnd.hedtech.thing.v1+xml'
+        }
+        assertStatus 200
+        assertEquals 'application/xml', page?.webResponse?.contentType
+        assertHeader "X-hedtech-Media-Type", 'application/vnd.hedtech.thing.v1+xml'
+
+        assertHeader 'X-hedtech-message', "Details for the thing resource"
+
+        def stringContent = page?.webResponse?.contentAsString
+
+        def xml = XML.parse stringContent
+        println xml.@id.getClass().getName()
+        assert id.toString() == xml.@id.text()
+        assertNotNull xml.@version
+        assert "AA" == xml.code.text()
+        assert "An AA thing" == xml.description.text()
+
+        assert 2 == xml.parts.part.size()
 
     }
 
@@ -863,7 +887,6 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
     }
 
     private def createThing(String code) {
-        def id
         Thing.withTransaction {
             Thing thing = new Thing(code: code, description: "An $code thing",
                       dateManufactured: new Date(), isGood: 'Y', isLarge: true)
@@ -871,6 +894,14 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
             thing.addPart(new PartOfThing(code: 'bb', description: 'bb part').save())
             thing.save(failOnError:true, flush:true)
             thing.getId()
+        }
+    }
+
+    private def createPartOfThing( String code, String desc ) {
+        PartOfThing.withTransaction {
+            PartOfThing part = new PartOfThing( code:code, description:desc )
+            part.save(failOnError:true, flush:true)
+            part.getId()
         }
     }
 

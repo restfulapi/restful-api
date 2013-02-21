@@ -64,6 +64,9 @@ class ThingService {
 
         Thing.withTransaction {
             def instance = new Thing( params )
+            params['parts'].each { partID ->
+                instance.addPart( PartOfThing.get( partID ) )
+            }
             instance.save(failOnError:true)
             result.instance = instance
             result.instance.parts //force lazy loading

@@ -47,8 +47,12 @@ class BootStrap {
             it.registerObjectMarshaller(new JSONObjectMarshaller(), 200)
         }
 
-        XML.createNamedConfig('minimal-thing-xmlv0') {
-            it.registerObjectMarshaller(new MinimalThingClassMarshaller(), 101)
+        XML.createNamedConfig('thing-xmlv0') {
+            it.registerObjectMarshaller(new net.hedtech.restfulapi.marshallers.xml.v0.ThingClassMarshaller(), 101)
+        }
+
+        XML.createNamedConfig('thing-xmlv1') {
+            it.registerObjectMarshaller(new net.hedtech.restfulapi.marshallers.xml.v1.ThingClassMarshaller(), 101)
         }
 
         JSONExtractorConfigurationHolder.registerExtractor( "things", "json", new DefaultJSONExtractor() )

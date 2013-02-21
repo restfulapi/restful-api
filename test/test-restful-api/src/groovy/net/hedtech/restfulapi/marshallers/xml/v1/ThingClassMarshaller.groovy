@@ -2,7 +2,7 @@
 Copyright 2013 Ellucian Company L.P. and its affiliates.
 ******************************************************************************/
 
-package net.hedtech.restfulapi.marshallers.xml
+package net.hedtech.restfulapi.marshallers.xml.v1
 
 import grails.converters.XML
 import org.codehaus.groovy.grails.web.converters.marshaller.ObjectMarshaller
@@ -11,7 +11,7 @@ import org.codehaus.groovy.grails.web.converters.exceptions.ConverterException
 
 import net.hedtech.restfulapi.Thing
 
-class MinimalThingClassMarshaller implements ObjectMarshaller<XML>, NameAwareMarshaller {
+class ThingClassMarshaller implements ObjectMarshaller<XML>, NameAwareMarshaller {
 
     public boolean supports(Object object) {
         return object instanceof Thing;
@@ -28,6 +28,14 @@ class MinimalThingClassMarshaller implements ObjectMarshaller<XML>, NameAwareMar
 
         xml.startNode( "description" )
         xml.chars thing.getDescription()
+        xml.end()
+
+        xml.startNode( "parts" )
+        thing.parts.each { part ->
+            xml.startNode("part")
+            xml.attribute("id", part.id.toString() )
+            xml.end()
+        }
         xml.end()
     }
 

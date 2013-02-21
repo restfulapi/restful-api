@@ -42,5 +42,6 @@ class Thing implements Serializable {
         lastModified       ( nullable: true )
         lastModifiedBy     ( nullable: true,  maxSize: 30 )
         dataOrigin         ( nullable: true,  maxSize: 30 )
+        parts              ( bindable: false )
     }
 }
