@@ -102,7 +102,7 @@ class RestfulApiController {
                                    'default.rest.saved.message' )
         }
         catch (e) {
-            //log.error "Caught exception ${e.message}", e
+            log.error "Caught exception ${e.message}", e
             renderErrorResponse(e)
         }
 
@@ -345,8 +345,16 @@ class RestfulApiController {
                 }
                 return jsonExtractor.extract( json )
             break
+            case ~/.*xml.*/:
+                XMLExtractor extractor = XMLExtractorConfigurationHolder.getExtractor( params.pluralizedResourceName, request.format )
+                if (!extractor) {
+                    throw new UnsupportedRequestRepresentationException( params.pluralizedResourceName, request.contentType )
+                }
+                return extractor.extract( request.XML )
+            break
         }
         throw new UnsupportedRequestRepresentationException( params.pluralizedResourceName, request.contentType )
+
     }
 
 

@@ -20,7 +20,7 @@ class ThingClassMarshaller implements ObjectMarshaller<XML>, NameAwareMarshaller
     public void marshalObject(Object object, XML xml) throws ConverterException {
         Thing thing = (Thing) object
         if (thing.id)       xml.attribute( "id", thing.id.toString() )
-        if (thing.version)   xml.attribute( "version", thing.version.toString() )
+        if (thing.version != null)   xml.attribute( "version", thing.getVersion().toString() )
 
         xml.startNode( "code" )
         xml.chars thing.getCode()

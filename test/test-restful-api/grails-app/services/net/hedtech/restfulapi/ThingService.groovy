@@ -64,6 +64,7 @@ class ThingService {
 
         Thing.withTransaction {
             def instance = new Thing( params )
+            instance.parts = [] as Set //workaround for GRAILS-9775 until the bindable constraint works on associtations
             params['parts'].each { partID ->
                 instance.addPart( PartOfThing.get( partID ) )
             }

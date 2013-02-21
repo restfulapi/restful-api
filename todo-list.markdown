@@ -2,8 +2,8 @@
      Copyright 2013 Ellucian Company L.P. and its affiliates.
 ******************************************************************** -->
 
-# TODO list for work (turn into Jira)
-* Support 415 for unsupported media types
+# TODO list for work (potential Jiras)
+* Nail down using map to pass data to the services, and issues with data binding.
 
 # TODO list (too small for JIRA)
 * make delete() return void?

@@ -62,6 +62,13 @@ class BootStrap {
         XMLExtractorConfigurationHolder.registerExtractor( "things", "xml", new JSONObjectExtractor() )
         XMLExtractorConfigurationHolder.registerExtractor( "things", "xmlv1", new JSONObjectExtractor() )
 
+        XMLExtractorConfigurationHolder.registerExtractor( "things", "thing-xmlv0",
+            new net.hedtech.restfulapi.extractors.xml.v0.ThingExtractor() )
+
+        XMLExtractorConfigurationHolder.registerExtractor( "things", "thing-xmlv1",
+            new net.hedtech.restfulapi.extractors.xml.v1.ThingExtractor() )
+
+
 
         // Our simple seed data
         createThing('AA')

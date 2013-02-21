@@ -846,9 +846,8 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         def stringContent = page?.webResponse?.contentAsString
 
         def xml = XML.parse stringContent
-        println xml.@id.getClass().getName()
         assert id.toString() == xml.@id.text()
-        assertNotNull xml.@version
+        assert 0 < xml.@version.text().length()
         assert "AA" == xml.code.text()
         assert "An AA thing" == xml.description.text()
         assert 0 == xml.parts.size()
@@ -870,14 +869,72 @@ class RestfulApiControllerFunctionalTests extends BrowserTestCase {
         def stringContent = page?.webResponse?.contentAsString
 
         def xml = XML.parse stringContent
-        println xml.@id.getClass().getName()
         assert id.toString() == xml.@id.text()
-        assertNotNull xml.@version
+        assert 0 < xml.@version.text().length()
         assert "AA" == xml.code.text()
         assert "An AA thing" == xml.description.text()
 
         assert 2 == xml.parts.part.size()
 
+    }
+
+    void testCustomXMLExtractor_v0() {
+        post( "$localBase/api/things" ) {
+            body {
+                headers['Content-Type']  = 'application/vnd.hedtech.thing.v0+xml'
+                headers['Accept']        = 'application/vnd.hedtech.thing.v0+xml'
+                """<?xml version="1.0" encoding="UTF-8"?>
+                   <Thing><code>AA</code><description>An AA thing</description></Thing>
+                """
+            }
+        }
+
+        assertStatus 201
+        assertEquals 'application/xml', page?.webResponse?.contentType
+        assertHeader "X-hedtech-Media-Type", 'application/vnd.hedtech.thing.v0+xml'
+
+        assertHeader 'X-hedtech-message', "thing resource created"
+
+        def stringContent = page?.webResponse?.contentAsString
+
+        def xml = XML.parse stringContent
+        assertNotNull xml.@id.text()
+        assert 0 < xml.@version.text().length()
+        assert "AA" == xml.code.text()
+        assert "An AA thing" == xml.description.text()
+
+        assert 0 == xml.parts.part.size()
+    }
+
+
+    void testCustomXMLExtractor_v1() {
+        def part1 = createPartOfThing( 'aa', 'part a' )
+        def part2 = createPartOfThing( 'bb', 'part b' )
+        post( "$localBase/api/things" ) {
+            body {
+                headers['Content-Type']  = 'application/vnd.hedtech.thing.v1+xml'
+                headers['Accept']        = 'application/vnd.hedtech.thing.v1+xml'
+                """<?xml version="1.0" encoding="UTF-8"?>
+                   <Thing><code>AA</code><description>An AA thing</description><parts><part id="$part1"/><part id="$part2"/></parts></Thing>
+                """
+            }
+        }
+
+        assertStatus 201
+        assertEquals 'application/xml', page?.webResponse?.contentType
+        assertHeader "X-hedtech-Media-Type", 'application/vnd.hedtech.thing.v1+xml'
+
+        assertHeader 'X-hedtech-message', "thing resource created"
+
+        def stringContent = page?.webResponse?.contentAsString
+
+        def xml = XML.parse stringContent
+        assertNotNull xml.@id.text()
+        assert 0 < xml.@version.text().length()
+        assert "AA" == xml.code.text()
+        assert "An AA thing" == xml.description.text()
+
+        assert 2 == xml.parts.part.size()
     }
 
     private void createThings() {
