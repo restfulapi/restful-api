@@ -35,4 +35,12 @@ class JSONExtractorConfigurationHolder {
     static JSONExtractorConfigurationHolder getInstance() {
         return INSTANCE
     }
+
+    static void clear() {
+        getInstance().clearMap()
+    }
+
+    void clearMap() {
+        this.extractors.clear()
+    }
 }

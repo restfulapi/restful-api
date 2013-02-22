@@ -54,7 +54,7 @@ class RestfulApiController {
             ResponseHolder holder = new ResponseHolder()
             holder.data = result.instances
             holder.addHeader('X-hedtech-totalCount',result.totalCount)
-            holder.addHeader('X-hedtech-pageOffset',params.max ? params?.max : totalCount)
+            holder.addHeader('X-hedtech-pageOffset',params.max ? params?.max : result.totalCount)
             holder.addHeader('X-hedtech-pageMaxSize',params.offset ? params?.offset : 0)
 
             renderSuccessResponse( holder, 'default.rest.list.message' )
@@ -102,7 +102,7 @@ class RestfulApiController {
                                    'default.rest.saved.message' )
         }
         catch (e) {
-            log.error "Caught exception ${e.message}", e
+            //log.error "Caught exception ${e.message}", e
             renderErrorResponse(e)
         }
 
@@ -246,7 +246,6 @@ class RestfulApiController {
         }
         def content
 
-
         switch(format) {
             case 'json':
                 content = responseHolder.data as JSON
@@ -282,6 +281,7 @@ class RestfulApiController {
                 //Default grails behavior for determining response format is to parse the Accept-Header, and if the media
                 //type isn't defined, to fallback on default mime-types.
                 throw new UnsupportedResponseRepresentationException( params.pluralizedResourceName, request.getHeader(HttpHeaders.ACCEPT) )
+            break
         }
         //Select the content type
         //Content type will always be application/json or application/xml
