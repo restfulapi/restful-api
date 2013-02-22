@@ -5,9 +5,9 @@
 # TODO list for work (potential Jiras)
 * Nail down using map to pass data to the services, and issues with data binding.
 * Check the pageOffset and maxSize computations and ensure they are correct
+* Work out the rules for Accept and Content-Type headers when the request or response body is empty.
 
 # TODO list (too small for JIRA)
-* make delete() return void?
 
 # Code cleanup tasks
 * Remove unused codes from message.properties

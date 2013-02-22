@@ -96,13 +96,11 @@ class ThingService {
         result
     }
 
-    def delete(Map params) {
-        def result = [:]
+    void delete(Map params) {
         Thing.withTransaction {
             def thing = Thing.get(params.id)
             thing.delete(failOnError:true)
         }
-        result
     }
 
     public def checkOptimisticLock( domainObject, content ) {

@@ -135,12 +135,11 @@ class RestfulApiController {
     //
     public def delete() {
         log.trace "delete invoked for ${params.pluralizedResourceName}/${params.id}"
-        def result
         try {
             def map = [:]
             map.id = params.id
             map.content = parseRequestContent( request )
-            result = getService().delete( map )
+            getService().delete( map )
             response.setStatus( 200 )
             renderSuccessResponse( new ResponseHolder(), 'default.rest.deleted.message' )
         }
@@ -211,6 +210,7 @@ class RestfulApiController {
          //requested.  If we can't decide, we will return JSON.
          String format = null
          String contentType = null
+println "picking response based on " + request.getHeader(HttpHeaders.ACCEPT)
          switch(request.getHeader(HttpHeaders.ACCEPT)) {
             case ~/.*json.*/:
                 format = "json"
@@ -225,6 +225,8 @@ class RestfulApiController {
                 contentType = 'application/json'
             break
          }
+println "picked contentType " + contentType
+println ""
          renderResponse( responseHolder, format, contentType )
      }
 
@@ -238,6 +240,7 @@ class RestfulApiController {
     *         Otherwise, use the media-type type specified by the Accept header.
      **/
     protected void renderResponse(ResponseHolder responseHolder, String format=null, String mediaType=null) {
+println "rendering with mediaType overridden to " +mediaType
         if (!format) {
             format = response.format
         }
@@ -245,43 +248,44 @@ class RestfulApiController {
             mediaType = request.getHeader(HttpHeaders.ACCEPT)
         }
         def content
-
-        switch(format) {
-            case 'json':
-                content = responseHolder.data as JSON
-            break
-            case ~/.*json.*/:
-                useJSON(selectResponseFormat(format)) {
+        if (responseHolder.data != null) {
+            switch(format) {
+                case 'json':
                     content = responseHolder.data as JSON
-                }
-            break
-            case 'xml':
-                def s = (responseHolder.data as JSON) as String
-                def json = toJSONElement( s )
-                content = json as XML
-            break
-            case ~/xml.*/:
-                format = selectResponseFormat(format)
-                def jsonFormat = 'json' + format.substring( 3 )
-                def json
-                useJSON(jsonFormat) {
+                break
+                case ~/.*json.*/:
+                    useJSON(selectResponseFormat(format)) {
+                        content = responseHolder.data as JSON
+                    }
+                break
+                case 'xml':
                     def s = (responseHolder.data as JSON) as String
-                    json = toJSONElement( s )
-                }
-                useXML(selectResponseFormat(format)) {
+                    def json = toJSONElement( s )
                     content = json as XML
-                }
-            break
-            case ~/.*xml.*/:
-                useXML(selectResponseFormat(format)) {
-                     content = responseHolder.data as XML
-                }
-            break
-            default:
-                //Default grails behavior for determining response format is to parse the Accept-Header, and if the media
-                //type isn't defined, to fallback on default mime-types.
-                throw new UnsupportedResponseRepresentationException( params.pluralizedResourceName, request.getHeader(HttpHeaders.ACCEPT) )
-            break
+                break
+                case ~/xml.*/:
+                    format = selectResponseFormat(format)
+                    def jsonFormat = 'json' + format.substring( 3 )
+                    def json
+                    useJSON(jsonFormat) {
+                        def s = (responseHolder.data as JSON) as String
+                        json = toJSONElement( s )
+                    }
+                    useXML(selectResponseFormat(format)) {
+                        content = json as XML
+                    }
+                break
+                case ~/.*xml.*/:
+                    useXML(selectResponseFormat(format)) {
+                         content = responseHolder.data as XML
+                    }
+                break
+                default:
+                    //Default grails behavior for determining response format is to parse the Accept-Header, and if the media
+                    //type isn't defined, to fallback on default mime-types.
+                    throw new UnsupportedResponseRepresentationException( params.pluralizedResourceName, request.getHeader(HttpHeaders.ACCEPT) )
+                break
+            }
         }
         //Select the content type
         //Content type will always be application/json or application/xml
@@ -300,7 +304,9 @@ class RestfulApiController {
                 contentType = "application/json"
             break
         }
-        response.addHeader( 'X-hedtech-Media-Type', mediaType )
+        if (content != null && mediaType != null) {
+            response.addHeader( 'X-hedtech-Media-Type', mediaType )
+        }
         responseHolder.headers.each { header ->
             if (header.value instanceof Collection) {
                 header.value.each() { val ->

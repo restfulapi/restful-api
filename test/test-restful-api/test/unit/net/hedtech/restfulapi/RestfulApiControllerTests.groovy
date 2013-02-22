@@ -28,7 +28,7 @@ class RestfulApiControllerTests {
 
     void testUnmappedAcceptForList() {
         def mock = mockFor(ThingService)
-        mock.demand.list(1..1) { Map params -> return [totalCount:0] }
+        mock.demand.list(1..1) { Map params -> return [totalCount:0,instances:['foo']] }
         controller.metaClass.getService = {-> mock.createMock()}
         //test that if the format of the response is not an xml or json variant, that
         //a 406 is returned
@@ -45,7 +45,7 @@ class RestfulApiControllerTests {
 
     void testUnmappedAcceptForShow() {
         def mock = mockFor(ThingService)
-        mock.demand.show(1..1) { Map params -> return [:] }
+        mock.demand.show(1..1) { Map params -> return [instance:'foo'] }
         controller.metaClass.getService = {-> mock.createMock()}
         //test that if the format of the response is not an xml or json variant, that
         //a 406 is returned
@@ -65,7 +65,7 @@ class RestfulApiControllerTests {
         JSONExtractorConfigurationHolder.registerExtractor( "things", "json", new DefaultJSONExtractor() )
 
         def mock = mockFor(ThingService)
-        mock.demand.create(1..1) { Map params -> return [:] }
+        mock.demand.create(1..1) { Map params -> return [instance:'foo'] }
         controller.metaClass.getService = {-> mock.createMock()}
         //test that if the format of the response is not an xml or json variant, that
         //a 406 is returned
@@ -85,7 +85,7 @@ class RestfulApiControllerTests {
         JSONExtractorConfigurationHolder.registerExtractor( "things", "json", new DefaultJSONExtractor() )
 
         def mock = mockFor(ThingService)
-        mock.demand.update(1..1) { Map params -> return [:] }
+        mock.demand.update(1..1) { Map params -> return [instance:'bar'] }
         controller.metaClass.getService = {-> mock.createMock()}
         //test that if the format of the response is not an xml or json variant, that
         //a 406 is returned
@@ -101,28 +101,5 @@ class RestfulApiControllerTests {
 
         mock.verify()
     }
-
-
-    void testUnmappedAcceptForDelete() {
-        JSONExtractorConfigurationHolder.registerExtractor( "things", "json", new DefaultJSONExtractor() )
-
-        def mock = mockFor(ThingService)
-        mock.demand.update(1..1) { Map params -> return [:] }
-        controller.metaClass.getService = {-> mock.createMock()}
-        //test that if the format of the response is not an xml or json variant, that
-        //a 406 is returned
-        request.format = 'json'
-        response.format = 'html'
-        request.method = "PUT"
-        params.pluralizedResourceName = 'things'
-        params.id = '1'
-        controller.update()
-
-        assert response.status == 406
-        assert 0 == response.getContentLength()
-
-        mock.verify()
-    }
-
 
 }
