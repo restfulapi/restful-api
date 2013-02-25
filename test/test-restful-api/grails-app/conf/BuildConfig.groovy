@@ -42,7 +42,7 @@ grails.project.dependency.resolution = {
           exclude "spock-grails-support"
         }
         //test ":rest-client-builder:1.0.2"
-        test ":functional-spock:0.6"
+        compile ":functional-spock:0.6"
 
         // 'grails install-plugin inflector' updated
         // application.properties file.  Source code is at:
