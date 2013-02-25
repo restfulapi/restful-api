@@ -6,7 +6,6 @@ package net.hedtech.restfulapi.spock
 
 import grails.test.mixin.*
 import spock.lang.*
-import grails.plugins.rest.client.*
 
 import org.codehaus.groovy.runtime.InvokerHelper
 
