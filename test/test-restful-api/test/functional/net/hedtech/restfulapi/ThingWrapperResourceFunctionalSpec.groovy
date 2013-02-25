@@ -12,44 +12,42 @@ import static org.junit.Assert.*
 import org.junit.*
 
 
-class ThingWrapperResourceFunctionalTests extends BrowserTestCase {
+class ThingWrapperResourceFunctionalSpec extends RESTSpec {
 
     static final String localBase = "http://127.0.0.1:8080/test-restful-api"
 
-    @Before
-    void setUp() {
-        super.setUp()
+    void setup() {
         deleteThings()
     }
 
-    @After
-    void tearDown() {
+    void cleanup() {
         deleteThings()
-        super.tearDown()
     }
 
 
-    void testList_Json() {
-
+    def "Test list with json response"() {
+        setup:
         createThings()
 
+        when:
         get( "$localBase/api/thing-wrapper" ) {
             headers['Content-Type']  = 'application/json'
             headers['Accept']        = 'application/json'
         }
-        // assertStatus 200
-        assertEquals 'application/json', page?.webResponse?.contentType
 
-        def stringContent = page?.webResponse?.contentAsString
-        def json = JSON.parse stringContent
-        assert json[0].xlarge
+        then:
+        200 == response.status
+        'application/json' == response.contentType
+        def json = JSON.parse response.text
+        null != json[0].xlarge
     }
 
 
-    void testSave_json() {
-
+    def "Test saving with json"() {
+        setup:
         createThings()
 
+        when:
         post( "$localBase/api/thing-wrapper") {
             headers['Content-Type'] = 'application/json'
             headers['Accept']       = 'application/json'
@@ -69,14 +67,14 @@ class ThingWrapperResourceFunctionalTests extends BrowserTestCase {
                 """
             }
         }
-        assertStatus 201
-        assertEquals 'application/json', page?.webResponse?.contentType
 
-        def stringContent = page?.webResponse?.contentAsString
-        def json = JSON.parse stringContent
-        assert "MMNN" == json.complexCode
-        assert "MM" == json.things[0].code
-        assert "An MM thingy" == json.things[0].description
+        then:
+        201 == response.status
+        'application/json' == response.contentType
+        def json = JSON.parse response.text
+        "MMNN" == json.complexCode
+        "MM" == json.things[0].code
+        "An MM thingy" == json.things[0].description
     }
 
 

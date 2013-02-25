@@ -12,128 +12,131 @@ import static org.junit.Assert.*
 import org.junit.*
 
 
-class ComplexThingResourceFunctionalTests extends BrowserTestCase {
-
+class ComplexThingResourceFunctionalSpec extends RESTSpec {
     static final String localBase = "http://127.0.0.1:8080/test-restful-api"
 
-    @Before
-    void setUp() {
-        super.setUp()
+    def setup() {
         deleteComplexThings()
         deleteThings()
     }
 
-    @After
-    void tearDown() {
+    def cleanup() {
         deleteComplexThings()
         deleteThings()
-        super.tearDown()
     }
 
-
-    void testNonPersistentProperty_json() {
+    def "Test non-persistent property for json"() {
+        setup:
         createComplexThing('AABB')
 
+        when:
         get( "$localBase/api/complex-things" ) {
             headers['Content-Type']  = 'application/json'
             headers['Accept']        = 'application/json'
         }
-        assertStatus 200
-        assertEquals 'application/json', page?.webResponse?.contentType
 
-        def stringContent = page?.webResponse?.contentAsString
-        def json = JSON.parse stringContent
-        assert json[0].xlarge
+        then:
+        200 == response.status
+        'application/json' == response.contentType
+        def json = JSON.parse response.text
+        null != json[0].xlarge
     }
 
-
-    void testDateProperty_json() {
+    def "Test date property in json response"() {
+        setup:
         createComplexThing('AABB')
 
+        when:
         get( "$localBase/api/complex-things" ) {
             headers['Content-Type']  = 'application/json'
             headers['Accept']        = 'application/json'
         }
-        assertStatus 200
-        assertEquals 'application/json', page?.webResponse?.contentType
-
-        def stringContent = page?.webResponse?.contentAsString
-        def json = JSON.parse stringContent
         def dataParser = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
+
+        then:
+        200 == response.status
+        'application/json' == response.contentType
+        def json = JSON.parse response.text
         def retrievedDate = dataParser.parse(json[0].buildDate)
         use(groovy.time.TimeCategory) {
-            retrievedDate > 2.seconds.ago // we can be very loose...
+            //we can be very loose...
+            retrievedDate > 2.seconds.ago
         }
     }
 
 
-    void testAssociatedResourceProperty_json() {
+    def "Test associated resource property in json response"() {
+        setup:
         def complexThing = createComplexThing('AABB')
 
+        when:
         get( "$localBase/api/complex-things/${complexThing.id}" ) {
             headers['Content-Type']  = 'application/json'
             headers['Accept']        = 'application/json'
         }
-        assertStatus 200
-        assertEquals 'application/json', page?.webResponse?.contentType
 
-        def stringContent = page?.webResponse?.contentAsString
-        def json = JSON.parse stringContent
-        assert 2 == json.things?.size()
-        assert 0 <= json.things[0].id
-        assert 0 <= json.things[1].id
+        then:
+        200 == response.status
+        'application/json' == response.contentType
+        def json = JSON.parse response.text
+        2 == json.things?.size()
+        0 <= json.things[0].id
+        0 <= json.things[1].id
+    }
+
+    def "Test transient serialization property in json response"() {
+        setup:
+        def complexThing = createComplexThing('AABB')
+
+        when:
+        get( "$localBase/api/complex-things/${complexThing.id}" ) {
+            headers['Content-Type']  = 'application/json'
+            headers['Accept']        = 'application/json'
+        }
+
+        then:
+        200 == response.status
+        'application/json' == response.contentType
+        def json = JSON.parse response.text
+        "junk" == json.transientProp
     }
 
 
-    void testTransientSerializionProperty_json() {
+    def "Test BigDecimal property in json response"() {
+        setup:
         def complexThing = createComplexThing('AABB')
 
+        when:
         get( "$localBase/api/complex-things/${complexThing.id}" ) {
             headers['Content-Type']  = 'application/json'
             headers['Accept']        = 'application/json'
         }
-        assertStatus 200
-        assertEquals 'application/json', page?.webResponse?.contentType
 
-        def stringContent = page?.webResponse?.contentAsString
-        def json = JSON.parse stringContent
-        assert "junk" == json.transientProp
+        then:
+        200 == response.status
+        'application/json' == response.contentType
+        def json = JSON.parse response.text
+        2 == json.size
     }
 
-
-    void testBigDecimalProperty_json() {
+    def "Test excluded properties in json response"() {
+        setup:
         def complexThing = createComplexThing('AABB')
 
+        when:
         get( "$localBase/api/complex-things/${complexThing.id}" ) {
             headers['Content-Type']  = 'application/json'
             headers['Accept']        = 'application/json'
         }
-        assertStatus 200
-        assertEquals 'application/json', page?.webResponse?.contentType
 
-        def stringContent = page?.webResponse?.contentAsString
-        def json = JSON.parse stringContent
-println "******************************** JSON ****************************** \n$json"
-        assert 2 == json.size
-    }
+        then:
+        200 == response.status
+        'application/json' == response.contentType
 
-
-    void testExcludedProperties_json() {
-        def complexThing = createComplexThing('AABB')
-
-        get( "$localBase/api/complex-things/${complexThing.id}" ) {
-            headers['Content-Type']  = 'application/json'
-            headers['Accept']        = 'application/json'
-        }
-        assertStatus 200
-        assertEquals 'application/json', page?.webResponse?.contentType
-
-        def stringContent = page?.webResponse?.contentAsString
-        def json = JSON.parse stringContent
-println "******************************** JSON ****************************** \n$json"
-        assertNull json.dataOrigin
-        assertNull json.lastModifiedBy
-        assertNull json.modifiedBy
+        def json = JSON.parse response.text
+        null == json.dataOrigin
+        null == json.lastModifiedBy
+        null == json.modifiedBy
     }
 
 
@@ -179,6 +182,5 @@ println "******************************** JSON ****************************** \n
             }
         }
     }
-
-
 }
+

@@ -1,6 +1,6 @@
 /* ****************************************************************************
 Copyright 2013 Ellucian Company L.P. and its affiliates.
-******************************************************************************/ 
+******************************************************************************/
 
 grails.servlet.version = "2.5" // Change depending on target container compliance (2.5 or 3.0)
 grails.project.class.dir = "target/classes"
@@ -28,6 +28,7 @@ grails.project.dependency.resolution = {
         mavenCentral()
     }
     dependencies {
+        test "org.spockframework:spock-grails-support:0.7-groovy-2.0"
     }
 
     plugins {
@@ -37,6 +38,11 @@ grails.project.dependency.resolution = {
         build   ":tomcat:$grailsVersion"
         runtime ":database-migration:1.1"
         compile ':cache:1.0.0'
+        test(":spock:0.7") {
+          exclude "spock-grails-support"
+        }
+        //test ":rest-client-builder:1.0.2"
+        test ":functional-spock:0.6"
 
         // 'grails install-plugin inflector' updated
         // application.properties file.  Source code is at:

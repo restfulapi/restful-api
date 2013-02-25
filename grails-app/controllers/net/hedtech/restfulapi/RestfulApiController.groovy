@@ -56,11 +56,10 @@ class RestfulApiController {
             holder.addHeader('X-hedtech-totalCount',result.totalCount)
             holder.addHeader('X-hedtech-pageOffset',params.max ? params?.max : result.totalCount)
             holder.addHeader('X-hedtech-pageMaxSize',params.offset ? params?.offset : 0)
-
             renderSuccessResponse( holder, 'default.rest.list.message' )
         }
         catch (e) {
-//            log.error "Caught exception ${e.message}", e
+            //log.error "Caught exception ${e.message}", e
             renderErrorResponse(e)
             return
         }
@@ -210,7 +209,6 @@ class RestfulApiController {
          //requested.  If we can't decide, we will return JSON.
          String format = null
          String contentType = null
-println "picking response based on " + request.getHeader(HttpHeaders.ACCEPT)
          switch(request.getHeader(HttpHeaders.ACCEPT)) {
             case ~/.*json.*/:
                 format = "json"
@@ -225,8 +223,6 @@ println "picking response based on " + request.getHeader(HttpHeaders.ACCEPT)
                 contentType = 'application/json'
             break
          }
-println "picked contentType " + contentType
-println ""
          renderResponse( responseHolder, format, contentType )
      }
 
@@ -240,7 +236,6 @@ println ""
     *         Otherwise, use the media-type type specified by the Accept header.
      **/
     protected void renderResponse(ResponseHolder responseHolder, String format=null, String mediaType=null) {
-println "rendering with mediaType overridden to " +mediaType
         if (!format) {
             format = response.format
         }
