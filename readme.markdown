@@ -31,8 +31,10 @@ Errors are not considered part of the resource representation, and do not have v
 The plugin uses the Content-Type header to determine the type of the resource representation sent in a request.  It uses the (first) Accept header to determine the type of resource representation that should be used in the response.  The Content-Type and Accept headers on a request are not required to match.
 
 ###Unsupported media types
-If a request specified an unsupported media type in the Accept header, the plugin will respond with a 406 status code.
-If the request specified an unsupported media type in the Content-Type header, the plugin will respond with a 415 status code.
+If a request specified an unsupported media type in the Accept header, for a request that returns a reponse body, the plugin will respond with a 406 status code.
+If the request specified an unsupported media type in the Content-Type header, for a request that processes a request body, the plugin will respond with a 415 status code.
+A delete operation does not return a response body, and will not return a 406 regardless of the Accept header.
+Request bodies for list and show operations are ignored (and will not generate a 415) regardless of the Content-Type header.
 
 ###Response envelope.
 Any response body will be one of the following:
@@ -80,6 +82,7 @@ The plugin delegates to the following methods on a service:
 ###list method
 The list method will be passed the request parameters object directly.
 If paging support is being used, params.max, and params.offset should be used to indicate the maximum number of results to return and the offset.
+
 The list method must return a map containing the the following entries:
 
 * instances: a collection of the objects for the resource being listed.  These objects will be rendered as a resource representation via the configured marshallers
@@ -135,6 +138,45 @@ def properties = [sha1:new BigInteger(1,digest.digest()).toString(16).padLeft(40
 thing.metaClass.getSupplementalRestProperties << {-> properties }`
 
 Note that the getSupplementalRestProperties method is being added only to the single object instance, not the entire class.  A marshaller can check to see whether the instance it is marshalling support the method, and if so, extract data from it to generate affordances.
+
+##Exception handling
+When an exception is encountered while servicing a request, the controller will classify the exception into one of the following existing categories:
+
+* ApplicationException
+* OptimisticLockException
+* Validation Exception
+* UnsupportedRequestRepresentationException
+* UnsupportedResponseRepresentationException
+* AnyOtherException
+
+Each one of these categories has a registered handler that specifies the status code to return, along with any additional headers or response body.
+
+Except for the ApplicationException category, the other categories represent hard-coded responses mapped to exceptions as follows:
+
+* OptimisticLockException: if the exception is an instance of org.springframework.dao.OptimisticLockingFailureException
+* Validation Exception: if the exception is an instance of grails.validation.ValidationException
+* UnsupportedRequestRepresentationException: internal exception thrown when a request  specifies a Content-Type that cannot be supported
+* UnsupportedResponseRepresentationException: internal exception thrown when a request specifies a media type in the Accept header that cannot be supported.
+* AnyOtherException: encountered an exception that doesn't fit any other category.  Will result in a 500 status
+
+###ApplicationException
+The ApplicationException is treated as a special case that allows applications using the plugin to customize how their exceptions map to response codes.
+
+An ApplicationException is not determined by inheritance; instead duck typing is used.  If the controller encounters an exception that responds to 'getHttpStatusCode' (it has a method getHttStatusCode()) and has a property named 'returnMap' that is an instance of Closure, then the controller will treat that exception as an ApplicationException, and extract data from it as follow:
+
+* getHttpStatusCode() will be invoked to obtain the http status code that should be returned
+* the returnMap closure will be invoked, passing in a localizer so that localized messages can be contructed.  The closure must return a Map; entries in the map will be used as follows:
+    * if the map contains a 'headers' key, the value is expected to be a map of header names/header values to return in the error response
+    * if the map contains a 'message' key, the value is expected to be a (localized) string to be returned in the X-hedtech-message header.
+    * if the map contains an 'errors' key, the value is expected to be an object that is to be rendered as JSON or xml in the response body
+
+This definition of ApplicationException allows any application to customize error handling without extending or overriding any controller methods.  However, the implementation of any application exceptions must take responsibility for conforming to the strategy guide.  For example, if an application exception represents a validation exception, it needs to return a 400 status code, and should also return an 'X-Status-Reason:Validation failed' header.
+
+Also note that the contract on what to recognize as an application exception was chosen to be compatible with the existing Banner Core ApplicationException.
+
+
+
+
 
 
 

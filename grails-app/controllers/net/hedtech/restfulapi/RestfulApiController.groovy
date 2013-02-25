@@ -17,8 +17,6 @@ import org.codehaus.groovy.grails.web.json.JSONObject
 
 import org.springframework.dao.OptimisticLockingFailureException
 
-import org.springframework.dao.OptimisticLockingFailureException
-
 import org.codehaus.groovy.grails.web.converters.exceptions.ConverterException
 
 import org.codehaus.groovy.grails.web.servlet.HttpHeaders
