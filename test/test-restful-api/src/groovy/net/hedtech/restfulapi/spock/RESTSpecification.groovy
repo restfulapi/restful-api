@@ -2,7 +2,7 @@
 Copyright 2013 Ellucian Company L.P. and its affiliates.
 ******************************************************************************/
 
-package net.hedtech.restfulapi
+package net.hedtech.restfulapi.spock
 
 import grails.test.mixin.*
 import spock.lang.*
@@ -17,7 +17,7 @@ import org.springframework.web.client.HttpStatusCodeException
 import org.springframework.web.client.RestTemplate
 
 
-abstract class RESTSpec extends Specification {
+abstract class RESTSpecification extends Specification {
 
     def response
 

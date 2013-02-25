@@ -4,6 +4,8 @@ Copyright 2013 Ellucian Company L.P. and its affiliates.
 
 package net.hedtech.restfulapi
 
+import net.hedtech.restfulapi.spock.*
+
 import grails.test.mixin.*
 import spock.lang.*
 import grails.plugins.rest.client.*
@@ -11,7 +13,7 @@ import grails.plugins.rest.client.*
 import grails.converters.JSON
 import grails.converters.XML
 
-class RestfulApiControllerFunctionalSpec extends RESTSpec {
+class RestfulApiControllerFunctionalSpec extends RESTSpecification {
 
     static final String localBase = "http://127.0.0.1:8080/test-restful-api"
 

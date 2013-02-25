@@ -4,7 +4,7 @@ Copyright 2013 Ellucian Company L.P. and its affiliates.
 
 package net.hedtech.restfulapi
 
-import com.grailsrocks.functionaltest.*
+import net.hedtech.restfulapi.spock.*
 
 import grails.converters.JSON
 
@@ -12,7 +12,7 @@ import static org.junit.Assert.*
 import org.junit.*
 
 
-class ComplexThingResourceFunctionalSpec extends RESTSpec {
+class ComplexThingResourceFunctionalSpec extends RESTSpecification {
     static final String localBase = "http://127.0.0.1:8080/test-restful-api"
 
     def setup() {

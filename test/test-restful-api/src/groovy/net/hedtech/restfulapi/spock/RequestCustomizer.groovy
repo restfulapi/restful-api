@@ -2,7 +2,7 @@
 Copyright 2013 Ellucian Company L.P. and its affiliates.
 ******************************************************************************/
 
-package net.hedtech.restfulapi
+package net.hedtech.restfulapi.spock
 
 import grails.converters.JSON
 import grails.converters.XML

@@ -2,7 +2,7 @@
 Copyright 2013 Ellucian Company L.P. and its affiliates.
 ******************************************************************************/
 
-package net.hedtech.restfulapi
+package net.hedtech.restfulapi.spock
 
 import org.springframework.http.*
 
