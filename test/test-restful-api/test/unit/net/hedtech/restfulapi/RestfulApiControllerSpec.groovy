@@ -29,7 +29,6 @@ class RestfulApiControllerSpec extends Specification {
 
         //mock the appropriate service method, expect exactly 1 invocation
         def mock = Mock(ThingService)
-        1 * mock."$serviceMethod"(_) >> { return serviceReturn }
         controller.metaClass.getService = {-> mock}
 
         //simulate unrecognized media type so content negotiation falls back to html
@@ -46,6 +45,7 @@ class RestfulApiControllerSpec extends Specification {
         then:
         406 == response.status
           0 == response.getContentLength()
+        1 * mock."$serviceMethod"(_) >> { return serviceReturn }
 
         where:
         controllerMethod | httpMethod | id   | serviceMethod | serviceReturn
@@ -62,7 +62,6 @@ class RestfulApiControllerSpec extends Specification {
 
         //mock the appropriate service method, expect exactly 1 invocation
         def mock = Mock(ThingService)
-        1 * mock.delete(_) >> {}
         controller.metaClass.getService = {-> mock}
 
         //simulate unrecognized media type so content negotiation falls back to html
@@ -78,6 +77,7 @@ class RestfulApiControllerSpec extends Specification {
         then:
         200 == response.status
           0 == response.getContentLength()
+          1 * mock.delete(_) >> {}
 
     }
 
@@ -87,7 +87,6 @@ class RestfulApiControllerSpec extends Specification {
         //mock the appropriate service method, but expect no method calls
         //(since the request cannot be understood, the service should not be contacted)
         def mock = Mock(ThingService)
-        0 * _._
         controller.metaClass.getService = {-> mock}
 
         response.format = 'json'
@@ -104,6 +103,7 @@ class RestfulApiControllerSpec extends Specification {
         then:
         415 == response.status
           0 == response.getContentLength()
+        0 * _._
 
         where:
         controllerMethod | httpMethod | id   | serviceMethod | serviceReturn
@@ -118,7 +118,6 @@ class RestfulApiControllerSpec extends Specification {
         //mock the appropriate service method, but expect no method calls
         //(since the request cannot be understood, the service should not be contacted)
         def mock = Mock(ThingService)
-        0 * _._
         controller.metaClass.getService = {-> mock}
 
         response.format = 'json'
@@ -135,6 +134,7 @@ class RestfulApiControllerSpec extends Specification {
         then:
         415 == response.status
           0 == response.getContentLength()
+        0 * _._
 
         where:
         //test data for the current 3 'buckets' an incoming request falls into:
@@ -159,7 +159,6 @@ class RestfulApiControllerSpec extends Specification {
         //mock the appropriate service method, but expect no method calls
         //(since the request cannot be understood, the service should not be contacted)
         def mock = Mock(ThingService)
-        1 * mock."$serviceMethod"(_) >> { return serviceReturn }
         controller.metaClass.getService = {-> mock}
 
         response.format = 'json'
@@ -176,6 +175,7 @@ class RestfulApiControllerSpec extends Specification {
         then:
         200 == response.status
           0 < response.text.length()
+        1 * mock."$serviceMethod"(_) >> { return serviceReturn }
 
         where:
         controllerMethod | httpMethod | id   | serviceMethod | serviceReturn
