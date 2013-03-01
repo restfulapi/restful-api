@@ -26,19 +26,19 @@ grails.mime.types = [
     form:                  'application/x-www-form-urlencoded',
     html:                  ['text/html','application/xhtml+xml'],
     js:                    'text/javascript',
-    jsonv0:                'application/vnd.hedtech.v0+json',
-    jsonv1:                'application/vnd.hedtech.v1+json',
-    xmlv0:                 'application/vnd.hedtech.v0+xml',
-    xmlv1:                 'application/vnd.hedtech.v1+xml',
-    'thing-xmlv0': 'application/vnd.hedtech.thing.v0+xml',
-    'thing-xmlv1': 'application/vnd.hedtech.thing.v1+xml',
+    //jsonv0:                'application/vnd.hedtech.v0+json',
+    //jsonv1:                'application/vnd.hedtech.v1+json',
+    //xmlv0:                 'application/vnd.hedtech.v0+xml',
+    //xmlv1:                 'application/vnd.hedtech.v1+xml',
+    //'thing-xmlv0': 'application/vnd.hedtech.thing.v0+xml',
+    //'thing-xmlv1': 'application/vnd.hedtech.thing.v1+xml',
     json:                  ['application/json', 'text/json'],
     multipartForm:         'multipart/form-data',
     rss:                   'application/rss+xml',
     text:                  'text/plain',
     xml:                   ['application/xml','text/xml'],
-    xml_noextractor:       ['application/vnd.hedtech.no_extractor+xml'],
-    json_noextractor:      ['application/vnd.hedtech.no_extractor+json']
+    //xml_noextractor:       ['application/vnd.hedtech.no_extractor+xml'],
+    //json_noextractor:      ['application/vnd.hedtech.no_extractor+json']
 ]
 
 // URL Mapping Cache Max Size, defaults to 5000
@@ -123,4 +123,98 @@ log4j = {
         error 'console', 'appFile'
         additivity = true
     }
+}
+
+restfulApiConfig = {
+    resource {
+        name = 'things'
+        representation {
+            mediaType = "application/json"
+            marshaller {
+                marshaller = new net.hedtech.restfulapi.marshallers.BasicDomainClassMarshaller(grailsApplication)
+                priority = 100
+            }
+            extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()
+        }
+        representation {
+            mediaType = "application/xml"
+            jsonAsXml = true
+            marshaller {
+                marshaller = new net.hedtech.restfulapi.marshallers.xml.JSONObjectMarshaller()
+                priority = 200
+            }
+            extractor = new net.hedtech.restfulapi.extractors.xml.JSONObjectExtractor()
+        }
+        representation {
+            mediaType =  'application/vnd.hedtech.v0+json'
+            marshaller {
+                marshaller = new net.hedtech.restfulapi.marshallers.BasicHalDomainClassMarshaller( grailsApplication )
+                priority = 100
+            }
+            marshaller {
+                marshaller = new net.hedtech.restfulapi.marshallers.json.ThingClassMarshaller(grailsApplication)
+                priority = 101
+            }
+            extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()
+        }
+        representation {
+            mediaType =  'application/vnd.hedtech.v0+xml'
+            jsonAsXml = true
+            marshaller {
+                marshaller = new net.hedtech.restfulapi.marshallers.xml.JSONObjectMarshaller()
+                priority = 200
+            }
+            extractor = new net.hedtech.restfulapi.extractors.xml.JSONObjectExtractor()
+        }
+        representation {
+            mediaType = 'application/vnd.hedtech.thing.v0+xml'
+            marshaller {
+                marshaller = new net.hedtech.restfulapi.marshallers.xml.v0.ThingClassMarshaller()
+                priority = 101
+            }
+            extractor = new net.hedtech.restfulapi.extractors.xml.v0.ThingExtractor()
+        }
+        representation {
+            mediaType = 'application/vnd.hedtech.thing.v1+xml'
+            marshaller {
+                marshaller = new net.hedtech.restfulapi.marshallers.xml.v1.ThingClassMarshaller()
+                priority = 101
+            }
+            extractor = new net.hedtech.restfulapi.extractors.xml.v1.ThingExtractor()
+        }
+        representation {
+            mediaType = 'application/vnd.hedtech.v1+json'
+            extractor = new net.hedtech.restfulapi.extractors.json.ThingDefaultDescriptionExtractor()
+        }
+        representation {
+            mediaType = 'application/vnd.hedtech.v1+xml'
+            jsonAsXml = true
+            extractor = new net.hedtech.restfulapi.extractors.xml.JSONObjectExtractor()
+        }
+    }
+
+    resource {
+        name = 'thing-wrapper'
+        representation {
+            mediaType = "application/json"
+            marshaller {
+                marshaller = new net.hedtech.restfulapi.marshallers.BasicDomainClassMarshaller(grailsApplication)
+                priority = 100
+            }
+            extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()
+        }
+    }
+
+    resource {
+        name = 'complex-things'
+        representation {
+            mediaType = "application/json"
+            marshaller {
+                marshaller = new net.hedtech.restfulapi.marshallers.BasicDomainClassMarshaller(grailsApplication)
+                priority = 100
+            }
+            extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()
+        }
+    }
+
 }

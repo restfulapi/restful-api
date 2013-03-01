@@ -23,10 +23,6 @@ class ErrorResponse {
         error?.responseHeaders?.getContentType().toString().split(';')[0]
     }()
 
-    byte[] getBody() {
-        error.responseBodyAsByteArray
-    }
-
     String header(String name) {
         responseEntity?.getResponseHeaders?.getFirst(name)
     }
@@ -40,6 +36,6 @@ class ErrorResponse {
     }
 
     def getBody() {
-        error.getResponseBody()
+         error.responseBodyAsString
     }
 }

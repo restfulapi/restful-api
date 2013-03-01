@@ -7,8 +7,10 @@ package net.hedtech.restfulapi
 import grails.test.mixin.*
 import spock.lang.*
 
+import net.hedtech.restfulapi.config.*
 import net.hedtech.restfulapi.extractors.configuration.*
 import net.hedtech.restfulapi.extractors.json.*
+import net.hedtech.restfulapi.extractors.xml.*
 
 @TestFor(RestfulApiController)
 class RestfulApiControllerSpec extends Specification {
@@ -22,19 +24,28 @@ class RestfulApiControllerSpec extends Specification {
     }
 
     @Unroll
-    def "Unmapped media type in Accept header returns 406"(String controllerMethod, String httpMethod, String id, String serviceMethod, def serviceReturn ) {
+    def "Test unsupported media type in Accept header returns 406"(String controllerMethod, String httpMethod, String id, String serviceMethod, def serviceReturn ) {
         setup:
         //use default extractor for any methods with a request body
-        JSONExtractorConfigurationHolder.registerExtractor( "things", "json", new DefaultJSONExtractor() )
+         config.restfulApiConfig = {
+            resource {
+                name = 'things'
+                representation {
+                    mediaType = 'application/json'
+                    extractor = new DefaultJSONExtractor()
+                }
+            }
+        }
+        //controller.restConfig = RESTConfig.parse( null, restfulApiConfig )
+        controller.init()
 
         //mock the appropriate service method, expect exactly 1 invocation
         def mock = Mock(ThingService)
         controller.metaClass.getService = {-> mock}
 
-        //simulate unrecognized media type so content negotiation falls back to html
-        response.format = 'html'
+        request.addHeader( 'Accept', 'application/xml' )
         //incoming format always json, so no errors
-        request.format = 'json'
+        request.addHeader( 'Content-Type', 'application/json' )
         request.method = httpMethod
         params.pluralizedResourceName = 'things'
         if (id != null) params.id = id
@@ -58,15 +69,25 @@ class RestfulApiControllerSpec extends Specification {
     def "Test delete with unsupported Accept header works, as there is no content returned"() {
         setup:
         //use default extractor for any methods with a request body
-        JSONExtractorConfigurationHolder.registerExtractor( "things", "json", new DefaultJSONExtractor() )
+        config.restfulApiConfig = {
+            resource {
+                name = 'things'
+                representation {
+                    mediaType = 'application/json'
+                    extractor = new DefaultJSONExtractor()
+                }
+            }
+        }
+
+        controller.init()
 
         //mock the appropriate service method, expect exactly 1 invocation
         def mock = Mock(ThingService)
         controller.metaClass.getService = {-> mock}
 
-        //simulate unrecognized media type so content negotiation falls back to html
-        response.format = 'html'
-        request.format = 'json'
+        request.addHeader( 'Accept', 'application/xml' )
+        //incoming format always json, so no errors
+        request.addHeader( 'Content-Type', 'application/json' )
         request.method = 'DELETE'
         params.pluralizedResourceName = 'things'
         params.id = '1'
@@ -82,17 +103,22 @@ class RestfulApiControllerSpec extends Specification {
     }
 
     @Unroll
-    def "Unmapped media type in Content-Type header returns 415"(String controllerMethod, String httpMethod, String id, String serviceMethod, def serviceReturn ) {
+    def "Unsupported media type in Content-Type header returns 415"(String controllerMethod, String httpMethod, String id, String serviceMethod, def serviceReturn ) {
         setup:
+         config.restfulApiConfig = {
+            resource {
+                name = 'things'
+            }
+        }
+        controller.init()
+
         //mock the appropriate service method, but expect no method calls
         //(since the request cannot be understood, the service should not be contacted)
         def mock = Mock(ThingService)
         controller.metaClass.getService = {-> mock}
 
-        response.format = 'json'
-        //incoming format not a registered media type, so
-        //simulate fallback to html
-        request.format = 'html'
+        request.addHeader('Accept','application/json')
+        request.addHeader('Content-Type','application/json')
         request.method = httpMethod
         params.pluralizedResourceName = 'things'
         if (id != null) params.id = id
@@ -113,18 +139,22 @@ class RestfulApiControllerSpec extends Specification {
     }
 
     @Unroll
-    def " Media type in Content-Type header without extractor returns 415"(String controllerMethod, String httpMethod, String format, String id, String serviceMethod, def serviceReturn ) {
+    def "Media type in Content-Type header without extractor returns 415"(String controllerMethod, String httpMethod, String mediaType, String id, String serviceMethod, def serviceReturn, def body ) {
         setup:
+        config.restfulApiConfig = getConfigMissingExtractorsAndMarshallers()
+        controller.init()
+
         //mock the appropriate service method, but expect no method calls
         //(since the request cannot be understood, the service should not be contacted)
         def mock = Mock(ThingService)
         controller.metaClass.getService = {-> mock}
 
-        response.format = 'json'
+        request.addHeader( 'Accept', 'application/json' )
+        request.addHeader( 'Content-Type', mediaType  )
         //incoming format not a registered media type, so
         //simulate fallback to html
-        request.format = format
         request.method = httpMethod
+        if (body != null) request.setContent( body.getBytes('UTF-8' ) )
         params.pluralizedResourceName = 'things'
         if (id != null) params.id = id
 
@@ -140,31 +170,43 @@ class RestfulApiControllerSpec extends Specification {
         //test data for the current 3 'buckets' an incoming request falls into:
         //json content, json-as-xml content (xml), and custom xml (any format not)
         //starting with 'xml'
-        controllerMethod | httpMethod | format        | id   | serviceMethod | serviceReturn
-        'save'           | 'POST'     | 'json'        | null | 'create'      | [instance:'foo']
-        'update'         | 'PUT'      | 'json'        | '1'  | 'update'      | [instance:'foo']
-        'delete'         | 'DELETE'   | 'json'        | '1'  | 'delete'      | null
-        'save'           | 'POST'     | 'xml'         | null | 'create'      | [instance:'foo']
-        'update'         | 'PUT'      | 'xml'         | '1'  | 'update'      | [instance:'foo']
-        'delete'         | 'DELETE'   | 'xml'         | '1'  | 'delete'      | null
-        'save'           | 'POST'     | 'custom-xml'  | null | 'create'      | [instance:'foo']
-        'update'         | 'PUT'      | 'custom-xml'  | '1'  | 'update'      | [instance:'foo']
-        'delete'         | 'DELETE'   | 'cusotm-xml'  | '1'  | 'delete'      | null
+        controllerMethod | httpMethod | mediaType                      | id   | serviceMethod | serviceReturn    | body
+        'save'           | 'POST'     | 'application/json'             | null | 'create'      | [instance:'foo'] | null
+        'update'         | 'PUT'      | 'application/json'             | '1'  | 'update'      | [instance:'foo'] | null
+        'delete'         | 'DELETE'   | 'application/json'             | '1'  | 'delete'      | null             | null
+        'save'           | 'POST'     | 'application/xml'              | null | 'create'      | [instance:'foo'] | """<?xml version="1.0" encoding="UTF-8"?><json><code>AC</code><description>An AC thingy</description></json>"""
+        'update'         | 'PUT'      | 'application/xml'              | '1'  | 'update'      | [instance:'foo'] | """<?xml version="1.0" encoding="UTF-8"?><json><code>AC</code><description>An AC thingy</description></json>"""
+        'delete'         | 'DELETE'   | 'application/xml'              | '1'  | 'delete'      | null             | """<?xml version="1.0" encoding="UTF-8"?><json><code>AC</code><description>An AC thingy</description></json>"""
+        'save'           | 'POST'     | 'application/custom-xml'       | null | 'create'      | [instance:'foo'] | null
+        'update'         | 'PUT'      | 'application/custom-xml'       | '1'  | 'update'      | [instance:'foo'] | null
+        'delete'         | 'DELETE'   | 'application/custom-xml'       | '1'  | 'delete'      | null             | null
+        'save'           | 'POST'     | 'application/custom-thing-xml' | null | 'create'      | [instance:'foo'] | null
+        'update'         | 'PUT'      | 'application/custom-thing-xml' | '1'  | 'update'      | [instance:'foo'] | null
+        'delete'         | 'DELETE'   | 'application/custom-thing-xml' | '1'  | 'delete'      | null             | null
     }
 
     //test list and show edge cases. since there is no request body accepted, ignore content-type header?
     @Unroll
-    def "Unmapped media type in Content-Type header for list and show is ignored"(String controllerMethod, String httpMethod, String id, String serviceMethod, def serviceReturn ) {
+    def "Media type without extractor in Content-Type header for list and show is ignored"(String controllerMethod, String httpMethod, String id, String serviceMethod, def serviceReturn ) {
         setup:
+        config.restfulApiConfig = {
+            resource {
+                name = 'things'
+                representation {
+                    mediaType = 'application/json'
+                }
+            }
+        }
+        controller.init()
         //mock the appropriate service method, but expect no method calls
         //(since the request cannot be understood, the service should not be contacted)
         def mock = Mock(ThingService)
         controller.metaClass.getService = {-> mock}
 
-        response.format = 'json'
+        request.addHeader('Accept','application/json')
+        request.addHeader('Content-Type','application/json')
         //incoming format not a registered media type, so
         //simulate fallback to html
-        request.format = 'html'
         request.method = httpMethod
         params.pluralizedResourceName = 'things'
         if (id != null) params.id = id
@@ -183,6 +225,32 @@ class RestfulApiControllerSpec extends Specification {
         'show'           | 'GET'      | '1'  | 'show'        | [instance:[foo:'foo']]
     }
 
+    /**
+     * Work around for a weird bug where defining the config closure
+     * in the test setup doesn't work.
+     **/
+    private def getConfigMissingExtractorsAndMarshallers() {
+        return {
+            resource {
+                name = 'things'
+                representation {
+                    mediaType = 'application/json'
+                }
+                representation {
+                    mediaType = 'application/xml'
+                    jsonAsXml = true
+                    extractor = new net.hedtech.restfulapi.extractors.xml.JSONObjectExtractor()
+                }
+                representation {
+                    mediaType = 'application/custom-xml'
+                }
+                representation {
+                    mediaType = 'application/custom-thing-xml'
+                    jsonAsXml = true
+                }
+            }
+        }
+    }
 
 
 }

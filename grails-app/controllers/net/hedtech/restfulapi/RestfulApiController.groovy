@@ -1,4 +1,4 @@
-/* ****************************************************************************
+/*****************************************************************************
 Copyright 2013 Ellucian Company L.P. and its affiliates.
 ******************************************************************************/
 
@@ -8,6 +8,10 @@ import grails.converters.JSON
 import grails.converters.XML
 import grails.validation.ValidationException
 
+import javax.annotation.PostConstruct
+
+import net.hedtech.restfulapi.config.*
+
 import net.hedtech.restfulapi.extractors.*
 import net.hedtech.restfulapi.extractors.configuration.*
 
@@ -16,10 +20,13 @@ import org.codehaus.groovy.grails.web.json.JSONElement
 import org.codehaus.groovy.grails.web.json.JSONObject
 
 import org.springframework.dao.OptimisticLockingFailureException
+import org.springframework.beans.factory.InitializingBean
 
 import org.codehaus.groovy.grails.web.converters.exceptions.ConverterException
 
 import org.codehaus.groovy.grails.web.servlet.HttpHeaders
+
+import org.codehaus.groovy.grails.web.servlet.GrailsApplicationAttributes
 
 
 /**
@@ -36,6 +43,48 @@ class RestfulApiController {
     // may be used to handle all requests.
     //
     static scope = "singleton"
+
+    private mediaTypeParser = new MediaTypeParser()
+
+    private RESTConfig restConfig
+
+    @PostConstruct
+    void init() {
+        restConfig = RESTConfig.parse( grailsApplication, grailsApplication.config.restfulApiConfig )
+
+        restConfig.resources.values().each() { resource ->
+            resource.representations.values().each() { representation ->
+                switch(representation.mediaType) {
+                    case ~/.*json$/:
+                        JSON.createNamedConfig("restfulapi:" + resource.name + ":" + representation.mediaType) { json ->
+                            representation.marshallers.each() {
+                                json.registerObjectMarshaller(it.marshaller,it.priority)
+                            }
+                        }
+                        JSONExtractorConfigurationHolder.registerExtractor(resource.name, representation.mediaType, representation.extractor )
+                    break
+                    case ~/.*xml$/:
+                        XML.createNamedConfig("restfulapi:" + resource.name + ":" + representation.mediaType) { xml ->
+                            representation.marshallers.each() {
+                                xml.registerObjectMarshaller(it.marshaller,it.priority)
+                            }
+                        }
+                        XMLExtractorConfigurationHolder.registerExtractor(resource.name, representation.mediaType, representation.extractor )
+                    break
+                    default:
+                        throw new RuntimeException("Cannot support media type ${representation.mediaType} in resource ${resource.name}.  All media types must end in xml or json.")
+                }
+            }
+        }
+
+        JSON.createNamedConfig('restapi-error:json') {
+        }
+
+        XML.createNamedConfig('restapi-error:xml') {
+            it.registerObjectMarshaller(new net.hedtech.restfulapi.marshallers.xml.JSONObjectMarshaller(), 200)
+        }
+
+    }
 
 
 // ---------------------------------- ACTIONS ---------------------------------
@@ -164,12 +213,61 @@ class RestfulApiController {
         renderResponse( holder )
      }
 
-
      /**
       * Renders an error response appropriate for the exception.
       * @param e the exception to render an error response for
       **/
      protected void renderErrorResponse( Throwable e ) {
+        ResponseHolder responseHolder = createErrorResponse( e )
+         //The versioning applies to resource representations, not to
+         //errors.  In fact, it can't, as the error may be that an unrecognized format
+         //was requested.  So if we are returning an error response, we switch the format
+         //to either json or xml.
+         //So we will look at the Accept-Header directly and try to determine if JSON or XML was
+         //requested.  If we can't decide, we will return JSON.
+         String contentType = null
+         def content
+         MediaType[] acceptedTypes = mediaTypeParser.parse(request.getHeader(HttpHeaders.ACCEPT))
+         switch(acceptedTypes[0].name) {
+            case ~/.*xml.*/:
+                contentType = 'application/xml'
+                if (responseHolder.data != null) {
+                    def jsonObject
+                    useJSON("restapi-error:json") {
+                        def s = (responseHolder.data as JSON) as String
+                        jsonObject = toJSONElement(s)
+                    }
+                    useXML("restapi-error:xml") {
+                        content = jsonObject as XML
+                    }
+                }
+            break
+            default:
+                contentType = 'application/json'
+                if (responseHolder.data != null) {
+                    useJSON("restapi-error:json") {
+                        content = responseHolder.data as JSON
+                    }
+                }
+            break
+         }
+
+        responseHolder.headers.each { header ->
+            if (header.value instanceof Collection) {
+                header.value.each() { val ->
+                    response.addHeader( header.key, val )
+                }
+            } else {
+                response.addHeader( header.key, header.value )
+            }
+        }
+        if (responseHolder.message) {
+            response.addHeader( "X-hedtech-message", responseHolder.message )
+        }
+        render(text: content ? content : "", contentType: contentType )
+     }
+
+     protected ResponseHolder createErrorResponse( Throwable e ) {
         ResponseHolder responseHolder = new ResponseHolder()
         try {
             def handler = exceptionHandlers[ getErrorType( e ) ]
@@ -196,32 +294,40 @@ class RestfulApiController {
             responseHolder.message = message( code: 'default.rest.unexpected.exception.messages' )
             this.response.setStatus( 500 )
          }
+         return responseHolder
+     }
 
-         //The versioning applies to resource representations, not to
-         //errors.  In fact, it can't, as the error may be that an unrecognized format
-         //was requested.  So if we are returning an error response, we switch the format
-         //to either json or xml.
-         //We can't depend on response.format for this, because if the error was caused by an
-         //unknown media type, Grails may have set the format to a fallback option, like 'html'.
-         //So we will look at the Accept-Header directly and try to determine if JSON or XML was
-         //requested.  If we can't decide, we will return JSON.
-         String format = null
-         String contentType = null
-         switch(request.getHeader(HttpHeaders.ACCEPT)) {
-            case ~/.*json.*/:
-                format = "json"
-                contentType = 'application/json'
-            break
-            case ~/.*xml.*/:
-                format = "xml"
-                contentType = 'application/xml'
-            break
+     protected def generateResponseContent( RepresentationConfig representation, def data ) {
+        def content
+        switch(representation.mediaType) {
+            case ~/.*json$/:
+                useJSON(representation) {
+                    content = data as JSON
+                }
+                break
+            case ~/.*xml$/:
+                def objectToRender = data
+                if (representation.jsonAsXml) {
+                    def jsonType = getJSONMediaType( representation.mediaType )
+                    def jsonRepresentation = getRepresentation(params.pluralizedResourceName,[new MediaType(jsonType)])
+                    if (!jsonRepresentation) {
+                        unsupportedResponseRepresentation()
+                    }
+                    useJSON(jsonRepresentation) {
+                        def s = (data as JSON) as String
+                        objectToRender = toJSONElement(s)
+                    }
+                }
+
+                useXML(representation) {
+                    content = objectToRender as XML
+                }
+                break
             default:
-                format = "json"
-                contentType = 'application/json'
-            break
-         }
-         renderResponse( responseHolder, format, contentType )
+                unsupportedResponseRepresentation()
+                break
+        }
+        return content
      }
 
 
@@ -233,72 +339,23 @@ class RestfulApiController {
      * @param mediaType if specified, use as the media type for the response.
     *         Otherwise, use the media-type type specified by the Accept header.
      **/
-    protected void renderResponse(ResponseHolder responseHolder, String format=null, String mediaType=null) {
-        if (!format) {
-            format = response.format
-        }
-        if (!mediaType) {
-            mediaType = request.getHeader(HttpHeaders.ACCEPT)
-        }
+    protected void renderResponse(ResponseHolder responseHolder) {
+        def acceptedTypes = mediaTypeParser.parse( request.getHeader(HttpHeaders.ACCEPT) )
+        def representation
         def content
+
         if (responseHolder.data != null) {
-            switch(format) {
-                case 'json':
-                    content = responseHolder.data as JSON
-                break
-                case ~/.*json.*/:
-                    useJSON(selectResponseFormat(format)) {
-                        content = responseHolder.data as JSON
-                    }
-                break
-                case 'xml':
-                    def s = (responseHolder.data as JSON) as String
-                    def json = toJSONElement( s )
-                    content = json as XML
-                break
-                case ~/xml.*/:
-                    format = selectResponseFormat(format)
-                    def jsonFormat = 'json' + format.substring( 3 )
-                    def json
-                    useJSON(jsonFormat) {
-                        def s = (responseHolder.data as JSON) as String
-                        json = toJSONElement( s )
-                    }
-                    useXML(selectResponseFormat(format)) {
-                        content = json as XML
-                    }
-                break
-                case ~/.*xml.*/:
-                    useXML(selectResponseFormat(format)) {
-                         content = responseHolder.data as XML
-                    }
-                break
-                default:
-                    //Default grails behavior for determining response format is to parse the Accept-Header, and if the media
-                    //type isn't defined, to fallback on default mime-types.
-                    throw new UnsupportedResponseRepresentationException( params.pluralizedResourceName, request.getHeader(HttpHeaders.ACCEPT) )
-                break
+            representation = getRepresentation( params.pluralizedResourceName, acceptedTypes )
+            if (!representation) {
+                unsupportedResponseRepresentation()
             }
+            content = generateResponseContent( representation, responseHolder.data )
         }
-        //Select the content type
-        //Content type will always be application/json or application/xml
-        //to make it easy for a response to be displayed in a browser or other tools
-        //The X-hedtech-Media-Type header will hold the custom media type (if any)
-        //describing the content in more detail.
-        def contentType
-        switch(mediaType) {
-            case ~/application\/.*json.*/:
-                contentType = "application/json"
-            break
-            case ~/application\/.*xml.*/:
-                contentType = "application/xml"
-            break
-            default:
-                contentType = "application/json"
-            break
-        }
-        if (content != null && mediaType != null) {
-            response.addHeader( 'X-hedtech-Media-Type', mediaType )
+
+        def contentType = selectResponseContentType( representation )
+
+        if (content != null) {
+            response.addHeader( 'X-hedtech-Media-Type', representation.mediaType )
         }
         responseHolder.headers.each { header ->
             if (header.value instanceof Collection) {
@@ -312,9 +369,31 @@ class RestfulApiController {
         if (responseHolder.message) {
             response.addHeader( "X-hedtech-message", responseHolder.message )
         }
+
         render(text: content ? content : "", contentType: contentType )
     }
 
+    private String selectResponseContentType( RepresentationConfig representation ) {
+        //Select the content type
+        //Content type will always be application/json or application/xml
+        //to make it easy for a response to be displayed in a browser or other tools
+        //The X-hedtech-Media-Type header will hold the custom media type (if any)
+        //describing the content in more detail.
+        def mediaType = representation ? representation.mediaType : 'json'
+        def contentType
+        switch(mediaType) {
+            case ~/.*json$/:
+                contentType = "application/json"
+            break
+            case ~/.*xml$/:
+                contentType = "application/xml"
+            break
+            default:
+                contentType = "application/json"
+            break
+        }
+        return contentType
+    }
 
     /**
      * Parses the content from the request.
@@ -322,38 +401,23 @@ class RestfulApiController {
      * @param request the request containing the content
      **/
     protected Map parseRequestContent(request) {
-        switch(request.format) {
-            case ~/.*json.*/:
-                JSONExtractor extractor = JSONExtractorConfigurationHolder.getExtractor( params.pluralizedResourceName, request.format )
-                if (!extractor) {
-                    throw new UnsupportedRequestRepresentationException( params.pluralizedResourceName, request.contentType )
-                }
-                return extractor.extract( request.JSON )
+        def representation = getRequestRepresentation()
+        switch(representation.mediaType) {
+            case ~/.*json$/:
+                return extractJSON( representation.mediaType )
             break
-            case ~/xml.*/:
-                XMLExtractor xmlExtractor = XMLExtractorConfigurationHolder.getExtractor( params.pluralizedResourceName, request.format )
-                if (!xmlExtractor) {
-                    throw new UnsupportedRequestRepresentationException( params.pluralizedResourceName, request.contentType )
+            case ~/.*xml$/:
+                Map content = extractXML( representation.mediaType )
+                if (representation.jsonAsXml) {
+                    def jsonMediaType = getJSONMediaType( representation.mediaType )
+                    content = extractJSON( content, jsonMediaType )
                 }
-                def json = xmlExtractor.extract( request.XML )
-                def format = request.format
-                format = 'json' + format.substring( 3 )
-                JSONExtractor jsonExtractor = JSONExtractorConfigurationHolder.getExtractor( params.pluralizedResourceName, format )
-                if (!jsonExtractor) {
-                    throw new UnsupportedRequestRepresentationException( params.pluralizedResourceName, request.contentType )
-                }
-                return jsonExtractor.extract( json )
+                return content
             break
-            case ~/.*xml.*/:
-                XMLExtractor extractor = XMLExtractorConfigurationHolder.getExtractor( params.pluralizedResourceName, request.format )
-                if (!extractor) {
-                    throw new UnsupportedRequestRepresentationException( params.pluralizedResourceName, request.contentType )
-                }
-                return extractor.extract( request.XML )
+            default:
+                unsupportedRequestRepresentation()
             break
         }
-        throw new UnsupportedRequestRepresentationException( params.pluralizedResourceName, request.contentType )
-
     }
 
 
@@ -422,6 +486,13 @@ class RestfulApiController {
 
     }
 
+    /**
+     * Returns the best match, or null if no supported representation for the resource exists.
+     **/
+    protected RepresentationConfig getRepresentation(pluralizedResourceName, allowedTypes) {
+        return restConfig.getRepresentation( pluralizedResourceName, allowedTypes.name )
+    }
+
 
     private String localize(String name) {
         message( code: "${name}.label", default: "$name" )
@@ -455,6 +526,10 @@ class RestfulApiController {
         JSON.use(config,closure)
     }
 
+    private Object useJSON(RepresentationConfig config, Closure closure) {
+        useJSON( "restfulapi:" + params.pluralizedResourceName + ":" + config.mediaType, closure )
+    }
+
     /**
      * If we try to use an unknown configuration for a grails converter, a ConverterException
      * is thrown, which can't be programmatically distinguished from other marshalling errors.
@@ -471,6 +546,10 @@ class RestfulApiController {
         XML.use(config,closure)
     }
 
+    private Object useXML( RepresentationConfig config, Closure closure ) {
+        useXML( "restfulapi:" + params.pluralizedResourceName + ":" + config.mediaType, closure )
+    }
+
     private JSONElement toJSONElement( String s ) {
         if (s == null || s.trim().size() == 0) {
             return null
@@ -481,6 +560,51 @@ class RestfulApiController {
         } else {
             return new JSONObject(s)
         }
+    }
+
+    private RepresentationConfig getRequestRepresentation() {
+        def type = mediaTypeParser.parse( request.getHeader(HttpHeaders.CONTENT_TYPE) )[0]
+            def representation = getRepresentation( params.pluralizedResourceName, [type] )
+            if (representation == null) {
+                unsupportedRequestRepresentation()
+            }
+            return representation
+    }
+
+    private Map extractJSON( String mediaType ) {
+        extractJSON( request.JSON, mediaType )
+    }
+
+    private Map extractJSON( JSONObject json, String mediaType ) {
+        JSONExtractor extractor = JSONExtractorConfigurationHolder.getExtractor( params.pluralizedResourceName, mediaType )
+        if (!extractor) {
+            unsupportedRequestRepresentation()
+        }
+        return extractor.extract( json )
+    }
+
+    private Map extractXML( String mediaType ) {
+        XMLExtractor xmlExtractor = XMLExtractorConfigurationHolder.getExtractor( params.pluralizedResourceName, mediaType )
+        if (!xmlExtractor) {
+            unsupportedRequestRepresentation()
+        }
+        return xmlExtractor.extract( request.XML )
+    }
+
+    private String getJSONMediaType( String xmlType ) {
+        //convention - there must exist a registered media type obtained by chopping the last
+        //3 chars from the media type (i.e., type must end in 'xml') and replacing with 'json'
+        def s = xmlType.substring(0,xmlType.length()-3)
+        return s + "json"
+    }
+
+     private unsupportedResponseRepresentation() {
+        throw new UnsupportedResponseRepresentationException( params.pluralizedResourceName, request.getHeader(HttpHeaders.ACCEPT) )
+     }
+
+
+    private unsupportedRequestRepresentation() {
+        throw new UnsupportedRequestRepresentationException( params.pluralizedResourceName, request.getHeader(HttpHeaders.CONTENT_TYPE ) )
     }
 
     private def exceptionHandlers = [

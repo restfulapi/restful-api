@@ -6,6 +6,12 @@
 * Nail down using map to pass data to the services, and issues with data binding.
 * Check the pageOffset and maxSize computations and ensure they are correct
 * Work out the rules for Accept and Content-Type headers when the request or response body is empty.
+* Make sure a 406 or 415 is returned for a resource not explicitly whitelisted
+* Move the data marshaller for JSON into the explicit config, and out of the RestfulApiGrailsPlugin initialization
+* If the selected representation has marshalling errors, fallback to other representations?
+* Move configuration of resources into a closure on each service, instead of in a single closure in the config?
+* What's the scope of a resource name?  Is it considered scoped within the application that exposes it?
+* Move spock testing class from test app to the plugin itself and document.
 
 # TODO list (too small for JIRA)
 

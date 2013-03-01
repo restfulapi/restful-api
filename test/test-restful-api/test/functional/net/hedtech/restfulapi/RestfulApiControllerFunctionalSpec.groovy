@@ -13,6 +13,8 @@ import grails.plugins.rest.client.*
 import grails.converters.JSON
 import grails.converters.XML
 
+import net.hedtech.restfulapi.extractors.configuration.*
+
 class RestfulApiControllerFunctionalSpec extends RESTSpecification {
 
     static final String localBase = "http://127.0.0.1:8080/test-restful-api"
@@ -108,7 +110,7 @@ class RestfulApiControllerFunctionalSpec extends RESTSpecification {
         def json = JSON.parse response.text
 
         // Assert the 'numParts' property is present proving the
-        // resource-specific marshaller registered for the 'jsonv0'
+        // resource-specific marshaller registered for the 'application/vnd.hedtech.v0+json'
         // configuration was used.
         //
         2 == json[0].numParts
@@ -801,7 +803,6 @@ class RestfulApiControllerFunctionalSpec extends RESTSpecification {
     }
 
     def "Test that a 406 status is returned if the accept type is an unsupported xml type"() {
-
         when:
         post( "$localBase/api/things" ) {
             headers['Content-Type'] = 'application/xml'

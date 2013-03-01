@@ -54,7 +54,7 @@ class RestfulApiGrailsPlugin {
 
         // 'json' (application/json) configuration
         //
-        JSON.registerObjectMarshaller(new BasicDomainClassMarshaller(application), 100)
+        //JSON.registerObjectMarshaller(new BasicDomainClassMarshaller(application), 100)
 
         // Use an ISO8601-compliant date format
         //
