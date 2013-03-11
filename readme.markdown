@@ -176,7 +176,7 @@ The overall processing of a request proceeds as follows:
 * The controller renders the response along with appropriate associated headers and status code.
 * If at any point, an exception is thrown, it is rendered according to the rules in Exception handling (see above).
 
-###Configuration
+##Configuration
 The controller uses the grails converter mechanism to marshall responses, and extractor classes to convert resource representations in requests to Map instances that are passed to the services.
 
 Configuration is currently performed by assigning a closure to the restfulApiConfig property in the grails configuration.
@@ -188,7 +188,7 @@ For example, in Config.groovy:
             name = 'things'
             representation {
                 mediaType = "application/json"
-                marshaller {
+                addMarshaller {
                     marshaller = new net.hedtech.restfulapi.marshallers.BasicDomainClassMarshaller(grailsApplication)
                     priority = 100
                 }
@@ -197,7 +197,7 @@ For example, in Config.groovy:
             representation {
                 mediaType = "application/xml"
                 jsonAsXml = true
-                marshaller {
+                addMarshaller {
                     marshaller = new net.hedtech.restfulapi.marshallers.xml.JSONObjectMarshaller()
                     priority = 200
                 }
@@ -208,11 +208,9 @@ For example, in Config.groovy:
 
 This declares that a resources 'things' is to be exposed via the plugin.  Resource 'things' has two available representations, one for json, and one for xml.  In the case of the json representation, a named configuration for the JSON converter will be created (based on the resource name and media type), and the BasicDomainClassMarshaller will be registed under that configuration, and that JSON converter configuration will be used to marshall any thing representation for 'application/json'.  Any requests for things with a Content-Type of 'application/json' will use the DefaultJSONExtractor to convert the resource representation to a map to be passed to the backing service.
 
-Note that each resource representation gets its isolated set of marshallers, allowing for complete control of how any objects are marshalled for that representation.  In particular, this allows for versioned representations.
+Note that each resource representation gets its own isolated set of marshallers, allowing for complete control of how any objects are marshalled for that representation.  In particular, this allows for versioned representations.
 
 grailsApplication can be used within the restfulApiConfig closure; and references the grailsApplication instance as expected.
-
-Note that at present, there is no facility to define common collections of marshallers and then reference them from representations; however, this is a feature that will likely be added before 1.0 to simplify configuration.
 
 Consider another example in which we are supporting versioned json representations of two resources:
 
@@ -221,7 +219,7 @@ Consider another example in which we are supporting versioned json representatio
             name = 'colleges'
             representation {
                 mediaType = "application/vnd.hedtech.v0+json"
-                marshaller {
+                addMarshaller {
                     marshaller = new net.hedtech.restfulapi.marshallers.json.v0.CollegeMarshaller(grailsApplication)
                     priority = 100
                 }
@@ -229,7 +227,7 @@ Consider another example in which we are supporting versioned json representatio
             }
             representation {
                 mediaType = "application/vnd.hedtech.v1+json"
-                marshaller {
+                addMarshaller {
                     marshaller = new net.hedtech.restfulapi.marshallers.json.v1.CollegeMarshaller(grailsApplication)
                     priority = 100
                 }
@@ -240,7 +238,7 @@ Consider another example in which we are supporting versioned json representatio
             name = 'students'
             representation {
                 mediaType = "application/vnd.hedtech.v0+json"
-                marshaller {
+                addMarshaller {
                     marshaller = new net.hedtech.restfulapi.marshallers.json.v0.StudentMarshaller(grailsApplication)
                     priority = 100
                 }
@@ -251,6 +249,109 @@ Consider another example in which we are supporting versioned json representatio
 
 This configuration exposes 2 resources, 'colleges' and 'students'.  The 'colleges' resource support two versioned representations, while the 'students' resource only has one.  Note that the custom media types are re-used across the resources.
 
+####Default representations
+You can also assign multiple media types to the same representation.  The most common use for this is to have a media type such as 'application/json' represent a particular version as a default.  For example:
+
+    restfulApiConfig = {
+        resource {
+            name = 'colleges'
+            representation {
+                mediaType = "application/vnd.hedtech.v0+json"
+                addMarshaller {
+                    marshaller = new net.hedtech.restfulapi.marshallers.json.v0.CollegeMarshaller(grailsApplication)
+                    priority = 100
+                }
+                extractor = new net.hedtech.restfulapi.extractors.json.v0.CollegeExtractor()
+            }
+            representation {
+                mediaType = "application/vnd.hedtech.v1+json"
+                mediaType = "application/json"
+                addMarshaller {
+                    marshaller = new net.hedtech.restfulapi.marshallers.json.v1.CollegeMarshaller(grailsApplication)
+                    priority = 100
+                }
+                extractor = new net.hedtech.restfulapi.extractors.json.v1.CollegeExtractor()
+            }
+        }
+    }
+
+Both 'application/vnd.hedtech.v1+json' and 'application/json' identify the same representation.  As new versions are added, the 'application/json' can be moved to them, so that a client that always wants the latest/default representation can obtain it with 'application/json'.
+
+####Marshaller groups
+It is likely that you will have marshallers that you will want to re-use across multiple resources/representations; for example, a common marshaller for objects like dates, addresses, etc.  You can configure a collection of marshallers as a marshaller group:
+
+    restfulApiConfig = {
+        marshallerGroup {
+            name = 'defaultJSON'
+            addMarshaller {
+                marshaller = new net.hedtech.restulfapi.marshallers.json.DateMarshaller()
+                priority = 100
+            }
+            addMarshaller {
+                marshaller = new net.hedtech.restulfapi.marshallers.json.AddressMarshaller(grailsApplication)
+                priority = 100
+            }
+        }
+        resource {
+            name = 'students'
+            representation {
+                mediaType = 'application/json'
+                addMarshaller getMarshallerGroup('defaultJSON')
+                addMarshaller {
+                    marshaller = new net.hedtech.restfulapi.marshallers.json.StudentMarshaller(grailsApplication)
+                    priority = 100
+                }
+            }
+        }
+    }
+
+This configuration defines a reusable group of marshallers named 'defaultJSON' containing marshallers for dates and addresses.  The 'students' resource representation is using those marshallers.  The above configuration is equivalent to:
+
+    restfulApiConfig = {
+        marshallerGroup {
+            name = 'defaultJSON'
+        }
+        resource {
+            name = 'students'
+            representation {
+                mediaType = 'application/json'
+                addMarshaller {
+                    marshaller = new net.hedtech.restulfapi.marshallers.json.DateMarshaller()
+                    priority = 100
+                }
+                addMarshaller {
+                    marshaller = new net.hedtech.restulfapi.marshallers.json.AddressMarshaller(grailsApplication)
+                    priority = 100
+                }
+                addMarshaller {
+                    marshaller = new net.hedtech.restfulapi.marshallers.json.StudentMarshaller(grailsApplication)
+                    priority = 100
+                }
+            }
+        }
+    }
+
+####Ordering
+Configuration elements are applied in the order in which they are encountered.  This means that ordering in the configuration is signficant.  For example:
+
+    restfulApiConfig = {
+        resource {
+            name = 'students'
+            representation {
+                mediaType = 'application/json'
+                addMarshaller getMarshallerGroup('student')
+            }
+        }
+        marshallerGroup {
+            name = 'student'
+            addMarshaller {
+                marshaller = new net.hedtech.restfulapi.marshallers.json.StudentMarshaller(grailsApplication)
+                priority = 100
+            }
+        }
+    }
+
+Will result in an exception, as the first call to `getMarshallerGroup('student')` occurs before the marshallerGroup is defined.
 
 
 ##JSON-as-xml
@@ -260,7 +361,7 @@ To enable it for a representation, set jsonAsXml = true and specify the default 
     representation {
         mediaType = "application/xml"
         jsonAsXml = true
-        marshaller {
+        addMarshaller {
             marshaller = new net.hedtech.restfulapi.marshallers.xml.JSONObjectMarshaller()
             priority = 200
         }

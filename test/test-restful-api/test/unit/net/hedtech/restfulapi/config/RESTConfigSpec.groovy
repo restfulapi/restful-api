@@ -10,18 +10,10 @@ import spock.lang.*
 import net.hedtech.restfulapi.extractors.configuration.*
 import net.hedtech.restfulapi.extractors.json.*
 import net.hedtech.restfulapi.*
+import grails.test.mixin.support.*
 
-@TestFor(RestConfigService)
-class RESTConfigServiceSpec extends Specification {
-
-
-    def setup() {
-        config.restfulApiConfig = null
-    }
-
-    def cleanup() {
-        config.restfulApiConfig = null
-    }
+@TestMixin(GrailsUnitTestMixin)
+class RESTConfigSpec extends Specification {
 
     def "Test simple configuration for one media type"() {
         setup:
@@ -31,11 +23,11 @@ class RESTConfigServiceSpec extends Specification {
                 name = 'things'
                 representation {
                     mediaType = 'application/vnd.hedtech.v0+json'
-                    marshaller {
+                    addMarshaller {
                         marshaller = 'a'
                         priority = 5
                     }
-                    marshaller {
+                    addMarshaller {
                         marshaller = 'b'
                         priority = 6
                     }
@@ -61,7 +53,7 @@ class RESTConfigServiceSpec extends Specification {
                 name = 'things'
                 representation {
                     mediaType = 'application/vnd.hedtech.v0+json'
-                    marshaller {
+                    addMarshaller {
                         marshaller = 'v0'
                         priority = 5
                     }
@@ -69,7 +61,7 @@ class RESTConfigServiceSpec extends Specification {
                 }
                 representation {
                     mediaType = 'application/vnd.hedtech.v1+json'
-                    marshaller {
+                    addMarshaller {
                         marshaller = 'v1'
                         priority = 5
                     }
@@ -99,7 +91,7 @@ class RESTConfigServiceSpec extends Specification {
                 representation {
                     mediaType = 'application/vnd.hedtech.v1+xml'
                     jsonAsXml = false
-                    marshaller {
+                    addMarshaller {
                         marshaller = 'v1'
                         priority = 5
                     }
@@ -107,7 +99,7 @@ class RESTConfigServiceSpec extends Specification {
                 }
                 representation {
                     mediaType = 'application/vnd.hedtech.v2+xml'
-                    marshaller {
+                    addMarshaller {
                         marshaller = 'v2'
                         priority = 5
                     }
@@ -136,7 +128,7 @@ class RESTConfigServiceSpec extends Specification {
                 name = 'things'
                 representation {
                     mediaType = 'application/json'
-                    marshaller {
+                    addMarshaller {
                         marshaller = 'foo'
                         priority = 5
                     }
@@ -168,7 +160,6 @@ class RESTConfigServiceSpec extends Specification {
         where:
         foo | bar
         'foo' | 'bar'
-
     }
 
     def "Test global json as xml settings"() {
@@ -177,11 +168,11 @@ class RESTConfigServiceSpec extends Specification {
         {
             jsonAsXml {
                 enableDefault = true
-                marshaller {
+                addMarshaller {
                     marshaller = "xml1"
                     priority 5
                 }
-                marshaller {
+                addMarshaller {
                     marshaller = "xml2"
                     priority = 6
                 }
@@ -205,7 +196,7 @@ class RESTConfigServiceSpec extends Specification {
                 name = 'things'
                 representation {
                     mediaType = 'application/vnd.hedtech.v0+json'
-                    marshaller {
+                    addMarshaller {
                         marshaller = 'v0'
                         priority = 5
                     }
@@ -213,7 +204,7 @@ class RESTConfigServiceSpec extends Specification {
                 }
                 representation {
                     mediaType = 'application/vnd.hedtech.v1+json'
-                    marshaller {
+                    addMarshaller {
                         marshaller = 'v1'
                         priority = 5
                     }
@@ -231,5 +222,154 @@ class RESTConfigServiceSpec extends Specification {
         then:
         null != conf
         'application/vnd.hedtech.v1+json' == conf.mediaType
+    }
+
+    def "Test multiple media types assigned to representation"() {
+        setup:
+        def src =
+        {
+            resource {
+                name = 'things'
+                representation {
+                    mediaType = 'application/vnd.hedtech.v0+json'
+                    mediaType = 'application/json'
+                    addMarshaller {
+                        marshaller = 'v0'
+                        priority = 5
+                    }
+                    extractor = 'v0'
+                }
+                representation {
+                    mediaType = 'application/vnd.hedtech.v1+json'
+                    addMarshaller {
+                        marshaller = 'v1'
+                        priority = 5
+                    }
+                    extractor = 'v1'
+                }
+            }
+        }
+
+        when:
+        def config = RESTConfig.parse( grailsApplication, src )
+        RepresentationConfig defaultConfig = config.getRepresentation( 'things', 'application/json' )
+        RepresentationConfig version0 = config.getRepresentation( 'things', 'application/vnd.hedtech.v0+json' )
+        RepresentationConfig version1 = config.getRepresentation( 'things', 'application/vnd.hedtech.v1+json' )
+
+        then:
+        'application/json' == defaultConfig.mediaType
+        'v0' == defaultConfig.marshallers[0].marshaller
+        'v0' == defaultConfig.extractor
+        'application/vnd.hedtech.v0+json' == version0.mediaType
+        'v0' == version0.marshallers[0].marshaller
+        'v0' == version0.extractor
+        'application/vnd.hedtech.v1+json' == version1.mediaType
+        'v1' == version1.marshallers[0].marshaller
+        'v1' == version1.extractor
+    }
+
+    def "Test detection when the same media type is assigned to two different representation"() {
+        setup:
+        def src =
+        {
+            resource {
+                name = 'things'
+                representation {
+                    mediaType = 'application/json'
+                    addMarshaller {
+                        marshaller = 'v0'
+                        priority = 5
+                    }
+                    extractor = 'v0'
+                }
+                representation {
+                    mediaType = 'application/json'
+                    addMarshaller {
+                        marshaller = 'v1'
+                        priority = 5
+                    }
+                    extractor = 'v1'
+                }
+            }
+        }
+
+        when:
+        RESTConfig.parse( grailsApplication, src )
+
+        then:
+        def e = thrown(AmbiguousRepresentationException)
+        'things' == e.resourceName
+        'application/json' == e.mediaType
+    }
+
+    def "Test marshaller groups"() {
+        setup:
+        def src =
+        {
+            marshallerGroup {
+                name = 'defaultJSON'
+                addMarshaller {
+                    marshaller = 'defaultJsonDate'
+                    priority = 5
+                }
+                addMarshaller {
+                    marshaller = 'foo'
+                    priority = 10
+                }
+            }
+            marshallerGroup {
+                name = 'thingDefaults'
+                addMarshaller {
+                    marshaller = 'defaultThing'
+                    priority = 5
+                }
+            }
+            resource {
+                name = 'things'
+                representation {
+                    mediaType = 'application/json'
+                    addMarshaller {
+                        marshaller = 'customThing'
+                        priority = 15
+                    }
+                    addMarshaller getMarshallerGroup('defaultJSON')
+                    addMarshaller {
+                        marshaller = 'customDate'
+                        priority = 15
+                    }
+                    addMarshaller getMarshallerGroup('thingDefaults')
+                }
+            }
+
+        }
+
+        when:
+        def config = RESTConfig.parse( grailsApplication, src )
+        RepresentationConfig rep = config.getRepresentation( 'things', 'application/json' )
+
+        then:
+        ['customThing','defaultJsonDate','foo','customDate','defaultThing'] == rep.marshallers.marshaller
+        [15,5,10,15,5] == rep.marshallers.priority
+    }
+
+    def "Test missing marshaller group"() {
+        setup:
+        def src =
+        {
+            resource {
+                name = 'things'
+                representation {
+                    mediaType = 'application/json'
+                    addMarshaller getMarshallerGroup('defaultJSON')
+                }
+            }
+        }
+
+        when:
+        RESTConfig.parse( grailsApplication, src )
+
+        then:
+        def e = thrown(MissingMarshallerGroupException)
+        'defaultJSON' == e.name
     }
 }

@@ -6,29 +6,25 @@ package net.hedtech.restfulapi.config
 
 import org.codehaus.groovy.grails.commons.GrailsApplication
 
-class JsonAsXmlConfig {
+class RepresentationDelegate {
 
-    boolean enableDefault
+    def mediaTypes = []
+    boolean jsonAsXml = false
     def marshallers = []
     def extractor
 
-
-    JsonAsXmlConfig enableDefault(boolean b) {
-        this.enableDefault = b
+    RepresentationDelegate setMediaType(String mediaType) {
+        this.mediaTypes.add mediaType
         return this
     }
 
-
-    JsonAsXmlConfig representation(Closure c) {
-        RepresentationConfig config = new RepresentationConfig()
-        c.delegate = config
-        c.resolveStrategy = Closure.DELEGATE_FIRST
-        c.call()
-        representations[config.mediaType] = config
+    RepresentationDelegate jsonAsXml(boolean b) {
+        this.jsonAsXml = b
         this
     }
 
-    JsonAsXmlConfig addMarshaller(Closure c) {
+
+    RepresentationDelegate addMarshaller(Closure c) {
         MarshallerConfig config = new MarshallerConfig()
         c.delegate = config
         c.resolveStrategy = Closure.DELEGATE_FIRST
@@ -37,10 +33,16 @@ class JsonAsXmlConfig {
         this
     }
 
-    JsonAsXmlConfig extractor(Object obj) {
-        this.extractor = obj
+    RepresentationDelegate addMarshaller(MarshallerGroupConfig group) {
+        group.marshallers.each() {
+            marshallers.add it
+        }
         this
     }
 
+    RepresentationDelegate extractor(Object obj) {
+        this.extractor = obj
+        return this
+    }
 
 }
