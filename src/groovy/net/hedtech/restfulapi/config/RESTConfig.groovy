@@ -36,6 +36,24 @@ class RESTConfig {
         return null
     }
 
+    void validate() {
+        resources.values().each { resource ->
+            resource.representations.values().each { representation ->
+                if (representation.jsonAsXml) {
+                    def json = getRepresentation(resource.name, getJsonEquivalentMediaType( representation.mediaType ))
+                    if (json == null) {
+                        throw new MissingJSONEquivalent( resourceName:resource.name, mediaType: representation.mediaType )
+                    }
+                }
+            }
+        }
+    }
+
+    String getJsonEquivalentMediaType( String xmlType ) {
+        def s = xmlType.substring(0,xmlType.length()-3)
+        return s + "json"
+    }
+
 //------------ These methods exist to support the closures used to provide configuration ------------------
 //------------ They may throw exceptions to indicate errors when processing configuration -----------------
 

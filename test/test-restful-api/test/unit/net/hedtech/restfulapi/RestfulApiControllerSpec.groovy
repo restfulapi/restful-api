@@ -56,7 +56,7 @@ class RestfulApiControllerSpec extends Specification {
         then:
         406 == response.status
           0 == response.getContentLength()
-        1 * mock."$serviceMethod"(_) >> { return serviceReturn }
+          0 * mock."$serviceMethod"(_) >> { return serviceReturn }
 
         where:
         controllerMethod | httpMethod | id   | serviceMethod | serviceReturn
@@ -141,7 +141,30 @@ class RestfulApiControllerSpec extends Specification {
     @Unroll
     def "Media type in Content-Type header without extractor returns 415"(String controllerMethod, String httpMethod, String mediaType, String id, String serviceMethod, def serviceReturn, def body ) {
         setup:
-        config.restfulApiConfig = getConfigMissingExtractorsAndMarshallers()
+        config.restfulApiConfig = {
+            resource {
+                name = 'things'
+                representation {
+                    mediaType = 'application/json'
+                }
+                representation {
+                    mediaType = 'application/xml'
+                    jsonAsXml = true
+                    extractor = new net.hedtech.restfulapi.extractors.xml.JSONObjectExtractor()
+                }
+                representation {
+                    mediaType = 'application/custom-xml'
+                }
+                representation {
+                    mediaType = 'application/custom-thing-json'
+                    extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()
+                }
+                representation {
+                    mediaType = 'application/custom-thing-xml'
+                    jsonAsXml = true
+                }
+            }
+        }
         controller.init()
 
         //mock the appropriate service method, but expect no method calls
@@ -225,32 +248,29 @@ class RestfulApiControllerSpec extends Specification {
         'show'           | 'GET'      | '1'  | 'show'        | [instance:[foo:'foo']]
     }
 
-    /**
-     * Work around for a weird bug where defining the config closure
-     * in the test setup doesn't work.
-     **/
-    private def getConfigMissingExtractorsAndMarshallers() {
-        return {
+    def "Test the controller validates the configuration"() {
+        setup:
+        config.restfulApiConfig =
+        {
             resource {
                 name = 'things'
                 representation {
-                    mediaType = 'application/json'
-                }
-                representation {
                     mediaType = 'application/xml'
-                    jsonAsXml = true
-                    extractor = new net.hedtech.restfulapi.extractors.xml.JSONObjectExtractor()
-                }
-                representation {
-                    mediaType = 'application/custom-xml'
-                }
-                representation {
-                    mediaType = 'application/custom-thing-xml'
                     jsonAsXml = true
                 }
             }
         }
+
+        when:
+        controller.init()
+
+        then:
+        def e = thrown(MissingJSONEquivalent)
+        'things' == e.resourceName
+        'application/xml' == e.mediaType
     }
+
+
 
 
 }

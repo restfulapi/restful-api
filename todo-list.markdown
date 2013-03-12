@@ -9,7 +9,6 @@
 * Make sure a 406 or 415 is returned for a resource not explicitly whitelisted
 * Move the date marshaller for JSON into the explicit config, and out of the RestfulApiGrailsPlugin initialization
 * If the selected representation has marshalling errors, fallback to other representations?
-* Move configuration of resources into a closure on each service, instead of in a single closure in the config? no, per discussion with Charlie
 * What's the scope of a resource name?  Is it considered scoped within the application that exposes it?
 * Move spock testing class from test app to the plugin itself and document.
 
@@ -33,35 +32,15 @@
 * Generic JSON representation in XML may need a schema for the xml representation defined (so clients can use data-binding tools on the JSON as xml schema)?
 * JSONObjectMarshaller: handling needed for special characters in strings? (e.g. backspace, tab, etc)
 * JSONObjectMarshaller is using the entity <array> and <arrayElement> for a specific purpose, meaning that problems will be encountered rendering objects that use those as property names.  The ideal way to handle this would be to use a namespace, however, the grails xml converter does not support namespaces.
-* Plugin is always using default JSON or XML (json-as-xml) marshalling if an error response is returned.  Is this correct?
-* Starting to run into issues with relying on grails media type handling.  If an unsupported representation is requested, we probably want to
-* return a 400 response, with appropriate headers and error messages indicating an unsupported representation was either sent or requested.
-* However, by delegating to grails to get the format from the Accept-Header, we run into Grails attempt to make a best-effort substitution.  (For example, requesting an unknown media type will set response.format to 'html').  It appears grails will also give precedence to mediate types sepcified in the url or query parameter.
 
 
 # Code review items
 * Changed 409 responses to not have an error block.  You already know the requested resource, and the 409 response communicates that it's an optimistic lock.  An error block would be redundant information.
-* Changes to message generation
 * Code review of ApplicationException support.
-* Why do we need selectFormat()?  it seems disconnected, as we have already selected format within the case statement.
-* JSON-as-xml depends on the formats mapped to mime-types be xmlvX and jsonvX
-* Current implementation of JSON-as-xml uses a custom marshaller for JSONObject that is registered under the named config for the format.
 
 # Deficiencies in json-as-xml marshalling.
 * JSON support \b and \f (backspace and form-feed) as legal string values.  XML 1.0 does not.  Converting a JSON entity that contains these will produce XML that cannot be parsed.
 * JSON support \n, \r, and \t as explicit representations of newline, carriage return, and horizontal tab.  While this does not create unparsable xml, it does create xml that is not true to the original JSON meaning.  For example, a JSON entity {text:"\n"} has an explicit newline for the text field.  The corresponding xml is <text/>, which is either null or an empty string depending on how you interpret it.  A round trip in this case does not get you back at the same JSON you started with.  However {text:"a\nb"} will result in a sucessful roundtrip, as the conversion to XML will have a newline between the two characters.  The same is true for carriage returns and horizontal tabs.  Furthermore, XML 1.0 processor rules will cause "a\rb" to be parsed as "a\nb".
-
-# Current Status
-* Created an initial plugin project and test-app (that uses an in-memory database versus a Banner dependency)
-* Partially implemented a generic controller with content negotiation that selects a registered marshaller. (Only show/list are implemented.)
-* Implemented a generic 'basic' marhsaller, and a placeholder for a generic 'HAL' marshaller
-* Implemented a trivial resource-specific marshaller
-* Implemented initial functional test to prove use of various marshallers
-* Implemented support for converting urls to resource names (e.g., part-of-things ==> PartOfThing) that leverages the 'inflector' plugin
-* Demonstrate use of resource-specific marshallers (versus generic ones).
-* Implement create/update/delete actions
-* Support localization of label/title affordances (just use 'message' injected into the controller)
-* Encapsulate the Inflector plugin within our own 'Inflector' class that exposes static methods (versus letting marshallers use the Inflector plugin directly)
 
 
 

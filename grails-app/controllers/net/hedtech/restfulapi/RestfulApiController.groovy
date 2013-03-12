@@ -48,9 +48,12 @@ class RestfulApiController {
 
     private RESTConfig restConfig
 
+    private static final String RESPONSE_REPRESENTATION = 'net.hedtech.restfulapi.RestfulApiController.response_representation'
+
     @PostConstruct
     void init() {
         restConfig = RESTConfig.parse( grailsApplication, grailsApplication.config.restfulApiConfig )
+        restConfig.validate()
 
         restConfig.resources.values().each() { resource ->
             resource.representations.values().each() { representation ->
@@ -97,6 +100,7 @@ class RestfulApiController {
         log.trace "list invoked for ${params.pluralizedResourceName}"
         def result
         try {
+            getResponseRepresentation()
             result = getService().list(params)
             ResponseHolder holder = new ResponseHolder()
             holder.data = result.instances
@@ -121,6 +125,7 @@ class RestfulApiController {
         log.trace "show invoked for ${params.pluralizedResourceName}/${params.id}"
         def result
         try {
+            getResponseRepresentation()
             result = getService().show(params)
             renderSuccessResponse( new ResponseHolder( data: result.instance ),
                                    'default.rest.shown.message' )
@@ -142,6 +147,7 @@ class RestfulApiController {
 
         try {
             def content = parseRequestContent( request )
+            getResponseRepresentation()
             result = getService().create( content )
             response.setStatus( 201 )
             renderSuccessResponse( new ResponseHolder( data: result.instance ),
@@ -165,6 +171,7 @@ class RestfulApiController {
             def map = [:]
             map.id = params.id
             map.content = parseRequestContent( request )
+            getResponseRepresentation()
             result = getService().update( map )
             response.setStatus( 200 )
             renderSuccessResponse( new ResponseHolder( data: result.instance ),
@@ -308,11 +315,7 @@ class RestfulApiController {
             case ~/.*xml$/:
                 def objectToRender = data
                 if (representation.jsonAsXml) {
-                    def jsonType = getJSONMediaType( representation.mediaType )
-                    def jsonRepresentation = getRepresentation(params.pluralizedResourceName,[new MediaType(jsonType)])
-                    if (!jsonRepresentation) {
-                        unsupportedResponseRepresentation()
-                    }
+                    def jsonRepresentation = getJsonEquivalent( representation )
                     useJSON(jsonRepresentation) {
                         def s = (data as JSON) as String
                         objectToRender = toJSONElement(s)
@@ -340,15 +343,12 @@ class RestfulApiController {
     *         Otherwise, use the media-type type specified by the Accept header.
      **/
     protected void renderResponse(ResponseHolder responseHolder) {
-        def acceptedTypes = mediaTypeParser.parse( request.getHeader(HttpHeaders.ACCEPT) )
+        //def acceptedTypes = mediaTypeParser.parse( request.getHeader(HttpHeaders.ACCEPT) )
         def representation
         def content
 
         if (responseHolder.data != null) {
-            representation = getRepresentation( params.pluralizedResourceName, acceptedTypes )
-            if (!representation) {
-                unsupportedResponseRepresentation()
-            }
+            representation = getResponseRepresentation()
             content = generateResponseContent( representation, responseHolder.data )
         }
 
@@ -562,14 +562,46 @@ class RestfulApiController {
         }
     }
 
+    private RepresentationConfig getResponseRepresentation() {
+        def representation = request.getAttribute( RESPONSE_REPRESENTATION )
+        if (representation == null) {
+            def acceptedTypes = mediaTypeParser.parse( request.getHeader(HttpHeaders.ACCEPT) )
+            representation = getRepresentation( params.pluralizedResourceName, acceptedTypes )
+            if (representation == null) {
+                unsupportedResponseRepresentation()
+            }
+            request.setAttribute( RESPONSE_REPRESENTATION, representation )
+        }
+        representation
+    }
+
     private RepresentationConfig getRequestRepresentation() {
         def type = mediaTypeParser.parse( request.getHeader(HttpHeaders.CONTENT_TYPE) )[0]
-            def representation = getRepresentation( params.pluralizedResourceName, [type] )
-            if (representation == null) {
-                unsupportedRequestRepresentation()
-            }
-            return representation
+        def representation = getRepresentation( params.pluralizedResourceName, [type] )
+        if (representation == null) {
+            unsupportedRequestRepresentation()
+        }
+        return representation
     }
+
+    private RepresentationConfig getJsonEquivalent( RepresentationConfig representation ) {
+        def jsonType = getJSONMediaType( representation.mediaType )
+        def jsonRepresentation = getRepresentation( params.pluralizedResourceName, [new MediaType( jsonType )] )
+        if (!jsonRepresentation) {
+            unsupportedResponseRepresentation()
+        }
+        jsonRepresentation
+    }
+
+     private unsupportedResponseRepresentation() {
+        throw new UnsupportedResponseRepresentationException( params.pluralizedResourceName, request.getHeader(HttpHeaders.ACCEPT) )
+     }
+
+
+    private unsupportedRequestRepresentation() {
+        throw new UnsupportedRequestRepresentationException( params.pluralizedResourceName, request.getHeader(HttpHeaders.CONTENT_TYPE ) )
+    }
+
 
     private Map extractJSON( String mediaType ) {
         extractJSON( request.JSON, mediaType )
@@ -592,19 +624,7 @@ class RestfulApiController {
     }
 
     private String getJSONMediaType( String xmlType ) {
-        //convention - there must exist a registered media type obtained by chopping the last
-        //3 chars from the media type (i.e., type must end in 'xml') and replacing with 'json'
-        def s = xmlType.substring(0,xmlType.length()-3)
-        return s + "json"
-    }
-
-     private unsupportedResponseRepresentation() {
-        throw new UnsupportedResponseRepresentationException( params.pluralizedResourceName, request.getHeader(HttpHeaders.ACCEPT) )
-     }
-
-
-    private unsupportedRequestRepresentation() {
-        throw new UnsupportedRequestRepresentationException( params.pluralizedResourceName, request.getHeader(HttpHeaders.CONTENT_TYPE ) )
+        restConfig.getJsonEquivalentMediaType( xmlType )
     }
 
     private def exceptionHandlers = [

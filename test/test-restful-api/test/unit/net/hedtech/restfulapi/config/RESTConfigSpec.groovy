@@ -372,4 +372,28 @@ class RESTConfigSpec extends Specification {
         def e = thrown(MissingMarshallerGroupException)
         'defaultJSON' == e.name
     }
+
+    def "Test xmlAsJSON missing equivalent json representation for marshaller"() {
+        setup:
+        def src =
+        {
+            resource {
+                name = 'things'
+                representation {
+                    mediaType = 'application/xml'
+                    jsonAsXml = true
+                }
+            }
+        }
+
+        when:
+        def config = RESTConfig.parse( grailsApplication, src )
+        config.validate()
+
+        then:
+        def e = thrown(MissingJSONEquivalent)
+        'things' == e.resourceName
+        'application/xml' == e.mediaType
+    }
+
 }
