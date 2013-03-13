@@ -12,6 +12,40 @@ The restful-api plugin is an implementation designed to conform to the Ellucian 
 ###Use of conventions
 The plugin relies heavily on convention-over-configuration.  A request to a resource named 'things' will be delegated to the 'ThingService'.  De-pluralization of the resource name happens automatically; it is also assumed that there is a unique ThingService that can be looked up in the grails application.
 
+###Url Mapping
+To use the restful plugin, you need to configure your UrlMappings.groovy to route the requests to the controller:
+
+    static mappings = {
+
+        // Mappings supported by resource-specific controllers
+        // should be added before the default mapping used for
+        // resources handled by the default RestfulApiController.
+
+        // name otherthingRestfulApi: "api/other-things/$id"
+
+        // Default controller to handle RESTful API requests.
+        // Place URL mappings to specific controllers BEFORE this mapping.
+        //
+        "/api/$pluralizedResourceName/$id"(controller:'restfulApi') {
+            action = [GET: "show", PUT: "update",
+                      DELETE: "delete"]
+            parseRequest = true
+            constraints {
+                // to constrain the id to numeric, uncomment the following:
+                // id matches: /\d+/
+            }
+        }
+        "/api/$pluralizedResourceName"(controller:'restfulApi') {
+            action = [GET: "list", POST: "save"]
+            parseRequest = true
+        }
+
+
+
+        "/"(view:"/index")
+        "500"(view:'/error')
+    }
+
 ###Use of custom media types
 The plugin relies on custom media types to specify resource representations.  For requests, the media type in the Content-Type header is used to identify the resource representation in the request body, in order to extract parameters from it to be passed to the resource's service.
 
