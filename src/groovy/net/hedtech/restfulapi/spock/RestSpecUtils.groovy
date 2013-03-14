@@ -6,7 +6,7 @@ package net.hedtech.restfulapi.spock
 
 import org.springframework.http.*
 
-class RESTSpecUtils {
+class RestSpecUtils {
     static maxW = 80
 
     static final void dumpHeading(String title) {

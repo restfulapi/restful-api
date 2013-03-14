@@ -6,7 +6,7 @@ package net.hedtech.restfulapi.config
 
 import org.codehaus.groovy.grails.commons.GrailsApplication
 
-class RESTConfig {
+class RestConfig {
 
     GrailsApplication grailsApplication
 
@@ -14,7 +14,7 @@ class RESTConfig {
     def jsonAsXml
     def marshallerGroups = [:]
 
-    RESTConfig( GrailsApplication grailsApplication ) {
+    RestConfig( GrailsApplication grailsApplication ) {
         this.grailsApplication = grailsApplication
     }
 
@@ -57,15 +57,15 @@ class RESTConfig {
 //------------ These methods exist to support the closures used to provide configuration ------------------
 //------------ They may throw exceptions to indicate errors when processing configuration -----------------
 
-    static RESTConfig parse(GrailsApplication app, def c) {
-        RESTConfig config = new RESTConfig( app )
+    static RestConfig parse(GrailsApplication app, def c) {
+        RestConfig config = new RestConfig( app )
         c.delegate = config
         c.resolveStrategy = Closure.DELEGATE_ONLY
         c.call()
         return config
     }
 
-    RESTConfig resource(Closure c) {
+    RestConfig resource(Closure c) {
         ResourceConfig rc = new ResourceConfig()
         c.delegate = rc
         c.resolveStrategy = Closure.DELEGATE_FIRST
@@ -74,7 +74,7 @@ class RESTConfig {
         return this
     }
 
-    RESTConfig jsonAsXml(Closure c) {
+    RestConfig jsonAsXml(Closure c) {
         JsonAsXmlConfig config = new JsonAsXmlConfig()
         c.delegate = config
         c.resolveStrategy = Closure.DELEGATE_FIRST
@@ -83,7 +83,7 @@ class RESTConfig {
         this
     }
 
-    RESTConfig marshallerGroup(Closure c) {
+    RestConfig marshallerGroup(Closure c) {
         MarshallerGroupConfig group = new MarshallerGroupConfig()
         c.delegate = group
         c.resolveStrategy = Closure.DELEGATE_FIRST

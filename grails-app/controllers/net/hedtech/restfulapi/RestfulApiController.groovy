@@ -46,13 +46,13 @@ class RestfulApiController {
 
     private mediaTypeParser = new MediaTypeParser()
 
-    private RESTConfig restConfig
+    private RestConfig restConfig
 
     private static final String RESPONSE_REPRESENTATION = 'net.hedtech.restfulapi.RestfulApiController.response_representation'
 
     @PostConstruct
     void init() {
-        restConfig = RESTConfig.parse( grailsApplication, grailsApplication.config.restfulApiConfig )
+        restConfig = RestConfig.parse( grailsApplication, grailsApplication.config.restfulApiConfig )
         restConfig.validate()
 
         restConfig.resources.values().each() { resource ->

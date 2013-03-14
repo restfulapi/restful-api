@@ -36,7 +36,6 @@ class RestfulApiControllerSpec extends Specification {
                 }
             }
         }
-        //controller.restConfig = RESTConfig.parse( null, restfulApiConfig )
         controller.init()
 
         //mock the appropriate service method, expect exactly 1 invocation

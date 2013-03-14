@@ -12,7 +12,7 @@ import static org.junit.Assert.*
 import org.junit.*
 
 
-class ComplexThingResourceFunctionalSpec extends RESTSpecification {
+class ComplexThingResourceFunctionalSpec extends RestSpecification {
     static final String localBase = "http://127.0.0.1:8080/test-restful-api"
 
     def setup() {

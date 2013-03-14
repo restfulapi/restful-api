@@ -13,7 +13,7 @@ import net.hedtech.restfulapi.*
 import grails.test.mixin.support.*
 
 @TestMixin(GrailsUnitTestMixin)
-class RESTConfigSpec extends Specification {
+class RestConfigSpec extends Specification {
 
     def "Test simple configuration for one media type"() {
         setup:
@@ -38,7 +38,7 @@ class RESTConfigSpec extends Specification {
         }
 
         when:
-        def config = RESTConfig.parse( grailsApplication, src )
+        def config = RestConfig.parse( grailsApplication, src )
 
         then:
         1 == config.resources.size()
@@ -71,7 +71,7 @@ class RESTConfigSpec extends Specification {
         }
 
         when:
-        def conf = RESTConfig.parse( grailsApplication, src )
+        def conf = RestConfig.parse( grailsApplication, src )
 
         then:
         1 == conf.resources.size()
@@ -110,7 +110,7 @@ class RESTConfigSpec extends Specification {
         }
 
         when:
-        def conf = RESTConfig.parse( grailsApplication, src )
+        def conf = RestConfig.parse( grailsApplication, src )
 
         then:
         1     == conf.resources.size()
@@ -149,7 +149,7 @@ class RESTConfigSpec extends Specification {
         }
 
         when:
-        def conf = RESTConfig.parse( grailsApplication, src )
+        def conf = RestConfig.parse( grailsApplication, src )
 
         then:
         1     == conf.resources.size()
@@ -181,7 +181,7 @@ class RESTConfigSpec extends Specification {
         }
 
         when:
-        def conf = RESTConfig.parse( grailsApplication, src )
+        def conf = RestConfig.parse( grailsApplication, src )
 
         then:
         null  != conf.jsonAsXml
@@ -216,7 +216,7 @@ class RESTConfigSpec extends Specification {
                      'application/vnd.hedtech.v0+json']
 
         when:
-        def config = RESTConfig.parse( grailsApplication, src )
+        def config = RestConfig.parse( grailsApplication, src )
         RepresentationConfig conf = config.getRepresentation('things', types )
 
         then:
@@ -251,7 +251,7 @@ class RESTConfigSpec extends Specification {
         }
 
         when:
-        def config = RESTConfig.parse( grailsApplication, src )
+        def config = RestConfig.parse( grailsApplication, src )
         RepresentationConfig defaultConfig = config.getRepresentation( 'things', 'application/json' )
         RepresentationConfig version0 = config.getRepresentation( 'things', 'application/vnd.hedtech.v0+json' )
         RepresentationConfig version1 = config.getRepresentation( 'things', 'application/vnd.hedtech.v1+json' )
@@ -294,7 +294,7 @@ class RESTConfigSpec extends Specification {
         }
 
         when:
-        RESTConfig.parse( grailsApplication, src )
+        RestConfig.parse( grailsApplication, src )
 
         then:
         def e = thrown(AmbiguousRepresentationException)
@@ -344,7 +344,7 @@ class RESTConfigSpec extends Specification {
         }
 
         when:
-        def config = RESTConfig.parse( grailsApplication, src )
+        def config = RestConfig.parse( grailsApplication, src )
         RepresentationConfig rep = config.getRepresentation( 'things', 'application/json' )
 
         then:
@@ -366,7 +366,7 @@ class RESTConfigSpec extends Specification {
         }
 
         when:
-        RESTConfig.parse( grailsApplication, src )
+        RestConfig.parse( grailsApplication, src )
 
         then:
         def e = thrown(MissingMarshallerGroupException)
@@ -387,7 +387,7 @@ class RESTConfigSpec extends Specification {
         }
 
         when:
-        def config = RESTConfig.parse( grailsApplication, src )
+        def config = RestConfig.parse( grailsApplication, src )
         config.validate()
 
         then:

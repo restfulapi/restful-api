@@ -28,7 +28,7 @@ class RestfulApiGrailsPlugin {
         |singleton controller and both custom and default marshallers.
         |'''.stripMargin()
 
-    def documentation = "readme.markdown" // use with pandoc, Marked, or other generator
+    def documentation = "README.md" // use with pandoc, Marked, or other generator
 
     def organization = [ name: "Ellucian", url: "http://www.ellucian.com/" ]
 

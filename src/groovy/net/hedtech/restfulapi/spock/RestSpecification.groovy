@@ -11,12 +11,11 @@ import org.codehaus.groovy.runtime.InvokerHelper
 
 import org.springframework.http.HttpMethod
 import org.springframework.http.ResponseEntity
-//import org.springframework.http.client.SimpleClientHttpRequestFactory
 import org.springframework.web.client.HttpStatusCodeException
 import org.springframework.web.client.RestTemplate
 
 
-abstract class RESTSpecification extends Specification {
+abstract class RestSpecification extends Specification {
 
     def response
 
@@ -81,7 +80,7 @@ abstract class RESTSpecification extends Specification {
         RestTemplate restTemplate = new RestTemplate()
         try {
             def entity = requestCustomizer.createEntity()
-            RESTSpecUtils.dumpRequestInfo(url,method,entity)
+            RestSpecUtils.dumpRequestInfo(url,method,entity)
             response = restTemplate.exchange(
                 url, method, entity, String
             )
@@ -91,6 +90,6 @@ abstract class RESTSpecification extends Specification {
         catch (HttpStatusCodeException e) {
             response = new ErrorResponse(error:e)
         }
-        RESTSpecUtils.dumpResponse( response )
+        RestSpecUtils.dumpResponse( response )
     }
 }

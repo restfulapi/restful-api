@@ -342,9 +342,6 @@ It is likely that you will have marshallers that you will want to re-use across 
 This configuration defines a reusable group of marshallers named 'defaultJSON' containing marshallers for dates and addresses.  The 'students' resource representation is using those marshallers.  The above configuration is equivalent to:
 
     restfulApiConfig = {
-        marshallerGroup {
-            name = 'defaultJSON'
-        }
         resource {
             name = 'students'
             representation {

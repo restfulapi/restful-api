@@ -15,7 +15,7 @@ import grails.converters.XML
 
 import net.hedtech.restfulapi.extractors.configuration.*
 
-class RestfulApiControllerFunctionalSpec extends RESTSpecification {
+class RestfulApiControllerFunctionalSpec extends RestSpecification {
 
     static final String localBase = "http://127.0.0.1:8080/test-restful-api"
 
