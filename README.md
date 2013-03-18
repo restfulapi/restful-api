@@ -4,8 +4,38 @@
 
 #RESTful API plugin documentation
 
+##Status
+Early Access.  The plugin may be used gain familiarity and provide testing feedback, but should not be used with any shipping software yet.  The plugin has not been through export compliance.
+
 ##Overview
 The restful-api plugin is an implementation designed to conform to the Ellucian API Strategy Document.  It is not intended to implement all optional features of the Document.  It is not intended to provide support for multiple ways to accomplish the same requirements; in general, it implements the recommended approaches specified in the document.
+
+##Installation
+The recommended approach is to install the plugin as a git submodule.  (Follow the rules for Banner XE on installing plugins as submodules.)  The plugin repo is located at ssh://git@devgit1/framework/plugins/restful-api.git.  Releases will be tagged as release-x.y.
+
+If you cannot use the recommended approach, you can also use the plugin via grail's dependency management.
+
+To do so, define a new repository in your project's BuildConfig.groovy repositories section:
+
+            mavenRepo name: "core-architecture",
+                  root: "http://m039200.ellucian.com:8081/artifactory/core-architecture"
+
+Then include the plugin and its dependencies by adding the following to the plugin section of BuildConfig.groovy:
+
+        compile "core-architecture:grails-restful-api:0.1"
+        compile ":inflector:0.2"
+
+        test(":spock:0.7") {
+          exclude "spock-grails-support"
+        }
+
+In the dependencies section of BuildConfig.groovy, add:
+
+    test "org.spockframework:spock-grails-support:0.7-groovy-2.0"
+
+The plugin depends on both the inflector plugin, and spock plugins.  (The spock dependency is for the RestSpecification testing class.)
+
+Note that if you are using the artifactory repository, that this is a *internal only* site.  Source distributed to clients that depends on downloads from the internal artifactory repository will not work.  If you are not using the recommended git submodule approach, ensure that you package the plugin with your application or otherwise make it avaiable.
 
 ##Details
 
@@ -415,7 +445,50 @@ For handling request with a jsonAsXml representation, the controller will
 
 The json-as-xml support is not intended as a complete replacement for custom xml marshallers and extractors, but could be used in situations where xml support is required, but clients can understand 'json-like' semantics, but are using an xml parser/marshaller toolkit.
 
+##Testing
+The plugin contains the class net.hedtech.restfulapi.spock.RestSpecification which may be extended to write functional spock tests.  Spock is a testing and specification framework that is very expressive.  It is strongly recommended that you use spock to test your APIs.
 
+The RestSpecification class contains a number of convenience methods for making calls to Restful APIs as part of the functional test phase.
+
+For example
+
+    class ThingAPISpec extends RestSpecification {
+
+        static final String localBase = "http://127.0.0.1:8080/thing-api"
+
+        def "Test list with json response"() {
+            setup:
+            createThing('AA')
+            createThing('BB')
+
+            when:"list with  application/json accept"
+            get("$localBase/api/things") {
+                headers['Content-Type'] = 'application/json'
+                headers['Accept']       = 'application/json'
+            }
+
+            then:
+            200 == response.status
+            'application/json' == response.contentType
+            def json = JSON.parse response.text
+            2 == json.size()
+            "AA" == json[0].code
+            "An AA thing" == json[0].description
+
+            // assert localization of the message
+            "List of thing resources" == responseHeader('X-hedtech-message')
+
+            //check pagination headers
+            "2" == responseHeader('X-hedtech-totalCount')
+            null != responseHeader('X-hedtech-pageOffset')
+            null != responseHeader('X-hedtech-pageMaxSize')
+            json[0]._href?.contains('things')
+            null == json[0].numParts
+            null == json[0].sha1
+        }
+    }
+
+Clone the plugin's git repo and look at the tests under test-restful-api for more examples of using spock and the RestSpecification to do functional testing of your APIs.
 
 
 
