@@ -15,7 +15,7 @@ class ThingWrapperService {
         log.trace "ComplexThingService.list invoked with params $params"
 
         params.max = Math.min( params.max ? params.max.toInteger() : 10,  100)
-        def result = [:] as Map
+        def result
 
         def things = Thing.list(fetch: [things: "eager"],
                                         max: params.max,
@@ -25,36 +25,40 @@ class ThingWrapperService {
         // 1) We'll have each wrapper hold onto the entire list
         // 2) We'll create a wrapper for each thing instance, to return a list
         //
-        result.instances = [] as List
+        result = [] as List
         things?.eachWithIndex { thing, index ->
             def wrapper = new ThingWrapper( complexCode: "C-{$index}",
                                               buildDate: new Date(),
                                               things: things )
-            result.instances << wrapper
+            result << wrapper
         }
 
-        result.totalCount = result.instances.size()
         log.trace "ComplexWrapperService.list returning ${result}"
         result
+    }
+
+    def count() {
+        log.trace "ThingWrapperService.count invoked"
+        Thing.count()
     }
 
 
     def show(Map params) {
         log.trace "ThingWrapperService.show invoked"
-        def result = [:]
+        def result
         def things = Thing.list(fetch: [things: "eager"],
                                         max: params.max,
                                         offset: params.offset ).sort { it.id }
 
-        result.instance = new ThingWrapper( complexCode: "C-{index}",
-                                              buildDate: new Date(),
-                                              things: things )
+        result = new ThingWrapper( complexCode: "C-{index}",
+                                   buildDate: new Date(),
+                                   things: things )
         log.trace "ThingWrapperService.show returning ${result}"
         result
     }
 
 
-    def create(Map params) {
+    def create(Map content) {
         log.trace "ThingWrapperService.create invoked"
 
         if (WebUtils.retrieveGrailsWebRequest().getParameterMap().forceGenericError == 'y') {
@@ -64,24 +68,22 @@ class ThingWrapperService {
         def result
         def things = []
         Thing.withTransaction {
-            params.things?.each {
+            content.things?.each {
                 def thing = new Thing(it)
                 thing.save(failOnError:true)
                 things << thing
             }
-            def instance = new ThingWrapper(complexCode: params.complexCode,
-                                            things: things)
-            result = [:]
-            result.instance = instance
+            result = new ThingWrapper(complexCode: content.complexCode,
+                                      things: things)
         }
         result
     }
 
-    def update(Map params) {
+    def update(def id, Map content) {
         throw new RuntimeException("Not yet implemented!")
     }
 
-    def delete(Map params) {
+    def delete(def id, Map content) {
         throw new RuntimeException("Not yet implemented!")
     }
 

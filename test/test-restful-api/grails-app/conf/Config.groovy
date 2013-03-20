@@ -102,6 +102,8 @@ log4j = {
            'org.hibernate',
            'net.sf.ehcache.hibernate'
 
+    off    'RestfulApiController_messageLog'
+
     appenders {
 
         appender new ConsoleAppender(name: "console",

@@ -27,6 +27,7 @@ import org.codehaus.groovy.grails.web.converters.exceptions.ConverterException
 import org.codehaus.groovy.grails.web.servlet.HttpHeaders
 
 import org.codehaus.groovy.grails.web.servlet.GrailsApplicationAttributes
+import org.apache.commons.logging.LogFactory
 
 
 /**
@@ -47,6 +48,8 @@ class RestfulApiController {
     private mediaTypeParser = new MediaTypeParser()
 
     private RestConfig restConfig
+
+    private messageLog = LogFactory.getLog( 'RestfulApiController_messageLog' )
 
     private static final String RESPONSE_REPRESENTATION = 'net.hedtech.restfulapi.RestfulApiController.response_representation'
 
@@ -98,19 +101,22 @@ class RestfulApiController {
     public def list() {
 
         log.trace "list invoked for ${params.pluralizedResourceName}"
-        def result
         try {
             getResponseRepresentation()
-            result = getService().list(params)
+            def service = getService()
+            log.trace "... will delegate list() to service $service"
+            def result = service.list(params)
+            def count = service.count()
+            log.trace "... service returned $result"
             ResponseHolder holder = new ResponseHolder()
-            holder.data = result.instances
-            holder.addHeader('X-hedtech-totalCount',result.totalCount)
-            holder.addHeader('X-hedtech-pageOffset',params.max ? params?.max : result.totalCount)
+            holder.data = result
+            holder.addHeader('X-hedtech-totalCount',count)
+            holder.addHeader('X-hedtech-pageOffset',params.max ? params?.max : result.count)
             holder.addHeader('X-hedtech-pageMaxSize',params.offset ? params?.offset : 0)
             renderSuccessResponse( holder, 'default.rest.list.message' )
         }
         catch (e) {
-            //log.error "Caught exception ${e.message}", e
+            messageLog.error "Caught exception ${e.message}", e
             renderErrorResponse(e)
             return
         }
@@ -122,16 +128,16 @@ class RestfulApiController {
     // GET /api/pluralizedResourceName/id
     //
     public def show() {
-        log.trace "show invoked for ${params.pluralizedResourceName}/${params.id}"
+        log.trace "show() invoked for ${params.pluralizedResourceName}/${params.id}"
         def result
         try {
             getResponseRepresentation()
             result = getService().show(params)
-            renderSuccessResponse( new ResponseHolder( data: result.instance ),
+            renderSuccessResponse( new ResponseHolder( data: result ),
                                    'default.rest.shown.message' )
         }
         catch (e) {
-            //log.error "Caught exception ${e.message}", e
+            messageLog.error "Caught exception ${e.message}", e
             renderErrorResponse(e)
         }
 
@@ -142,7 +148,7 @@ class RestfulApiController {
     // POST /api/pluralizedResourceName
     //
     public def save() {
-        log.trace "save invoked for ${params.pluralizedResourceName}"
+        log.trace "save() invoked for ${params.pluralizedResourceName}"
         def result
 
         try {
@@ -150,11 +156,11 @@ class RestfulApiController {
             getResponseRepresentation()
             result = getService().create( content )
             response.setStatus( 201 )
-            renderSuccessResponse( new ResponseHolder( data: result.instance ),
+            renderSuccessResponse( new ResponseHolder( data: result ),
                                    'default.rest.saved.message' )
         }
         catch (e) {
-            //log.error "Caught exception ${e.message}", e
+            messageLog.error "Caught exception ${e.message}", e
             renderErrorResponse(e)
         }
 
@@ -164,21 +170,24 @@ class RestfulApiController {
     // PUT/PATCH /api/pluralizedResourceName/id
     //
     public def update() {
-        log.trace "update invoked for ${params.pluralizedResourceName}/${params.id}"
+        log.trace "update() invoked for ${params.pluralizedResourceName}/${params.id}"
         def result
 
         try {
-            def map = [:]
-            map.id = params.id
-            map.content = parseRequestContent( request )
+            def content = parseRequestContent( request )
+            if (content.id && content.id != params.id) {
+                // TODO: Handle this exception -- temporarilly just throwing RuntimeException
+                throw new RuntimeException("Bad request - ID on url differs from ID in content")
+            }
+
             getResponseRepresentation()
-            result = getService().update( map )
+            result = getService().update( params.id, content )
             response.setStatus( 200 )
-            renderSuccessResponse( new ResponseHolder( data: result.instance ),
+            renderSuccessResponse( new ResponseHolder( data: result ),
                                    'default.rest.updated.message' )
         }
         catch (e) {
-            //log.error "Caught exception ${e.message}", e
+            messageLog.error "Caught exception ${e.message}", e
             renderErrorResponse(e)
         }
     }
@@ -187,17 +196,21 @@ class RestfulApiController {
     // DELETE /api/pluralizedResourceName/id
     //
     public def delete() {
-        log.trace "delete invoked for ${params.pluralizedResourceName}/${params.id}"
+        log.trace "delete() invoked for ${params.pluralizedResourceName}/${params.id}"
         try {
             def map = [:]
             map.id = params.id
-            map.content = parseRequestContent( request )
-            getService().delete( map )
+            def content = parseRequestContent( request )
+            if (content && content.id && content.id != params.id) {
+                // TODO: Handle this exception -- temporarilly just throwing RuntimeException
+                throw new RuntimeException("Bad request - ID on url differs from ID in content")
+            }
+            getService().delete( params.id, content )
             response.setStatus( 200 )
             renderSuccessResponse( new ResponseHolder(), 'default.rest.deleted.message' )
         }
         catch (e) {
-            //log.error "Caught exception ${e.message}", e
+            messageLog.error "Caught exception ${e.message}", e
             renderErrorResponse(e)
         }
     }

@@ -55,14 +55,14 @@ class RestfulApiControllerSpec extends Specification {
         then:
         406 == response.status
           0 == response.getContentLength()
-          0 * mock."$serviceMethod"(_) >> { return serviceReturn }
+          0 * _._
 
         where:
         controllerMethod | httpMethod | id   | serviceMethod | serviceReturn
-        'list'           | 'GET'      | null | 'list'        | [totalCount:0,instances:['foo']]
-        'show'           | 'GET'      | '1'  | 'show'        | [instance:'foo']
-        'save'           | 'POST'     | null | 'create'      | [instance:'foo']
-        'update'         | 'PUT'      | '1'  | 'update'      | [instance:'foo']
+        'list'           | 'GET'      | null | 'list'        | ['foo']
+        'show'           | 'GET'      | '1'  | 'show'        | 'foo'
+        'save'           | 'POST'     | null | 'create'      | 'foo'
+        'update'         | 'PUT'      | '1'  | 'update'      | 'foo'
     }
 
     def "Test delete with unsupported Accept header works, as there is no content returned"() {
@@ -97,7 +97,7 @@ class RestfulApiControllerSpec extends Specification {
         then:
         200 == response.status
           0 == response.getContentLength()
-          1 * mock.delete(_) >> {}
+          1 * mock.delete(_,_) >> {}
 
     }
 
@@ -132,8 +132,8 @@ class RestfulApiControllerSpec extends Specification {
 
         where:
         controllerMethod | httpMethod | id   | serviceMethod | serviceReturn
-        'save'           | 'POST'     | null | 'create'      | [instance:'foo']
-        'update'         | 'PUT'      | '1'  | 'update'      | [instance:'foo']
+        'save'           | 'POST'     | null | 'create'      | 'foo'
+        'update'         | 'PUT'      | '1'  | 'update'      | 'foo'
         'delete'         | 'DELETE'   | '1'  | 'delete'      | null
     }
 
@@ -193,17 +193,17 @@ class RestfulApiControllerSpec extends Specification {
         //json content, json-as-xml content (xml), and custom xml (any format not)
         //starting with 'xml'
         controllerMethod | httpMethod | mediaType                      | id   | serviceMethod | serviceReturn    | body
-        'save'           | 'POST'     | 'application/json'             | null | 'create'      | [instance:'foo'] | null
-        'update'         | 'PUT'      | 'application/json'             | '1'  | 'update'      | [instance:'foo'] | null
+        'save'           | 'POST'     | 'application/json'             | null | 'create'      | 'foo'            | null
+        'update'         | 'PUT'      | 'application/json'             | '1'  | 'update'      | 'foo'            | null
         'delete'         | 'DELETE'   | 'application/json'             | '1'  | 'delete'      | null             | null
-        'save'           | 'POST'     | 'application/xml'              | null | 'create'      | [instance:'foo'] | """<?xml version="1.0" encoding="UTF-8"?><json><code>AC</code><description>An AC thingy</description></json>"""
-        'update'         | 'PUT'      | 'application/xml'              | '1'  | 'update'      | [instance:'foo'] | """<?xml version="1.0" encoding="UTF-8"?><json><code>AC</code><description>An AC thingy</description></json>"""
+        'save'           | 'POST'     | 'application/xml'              | null | 'create'      | 'foo'            | """<?xml version="1.0" encoding="UTF-8"?><json><code>AC</code><description>An AC thingy</description></json>"""
+        'update'         | 'PUT'      | 'application/xml'              | '1'  | 'update'      | 'foo'            | """<?xml version="1.0" encoding="UTF-8"?><json><code>AC</code><description>An AC thingy</description></json>"""
         'delete'         | 'DELETE'   | 'application/xml'              | '1'  | 'delete'      | null             | """<?xml version="1.0" encoding="UTF-8"?><json><code>AC</code><description>An AC thingy</description></json>"""
-        'save'           | 'POST'     | 'application/custom-xml'       | null | 'create'      | [instance:'foo'] | null
-        'update'         | 'PUT'      | 'application/custom-xml'       | '1'  | 'update'      | [instance:'foo'] | null
+        'save'           | 'POST'     | 'application/custom-xml'       | null | 'create'      | 'foo'            | null
+        'update'         | 'PUT'      | 'application/custom-xml'       | '1'  | 'update'      | 'foo'            | null
         'delete'         | 'DELETE'   | 'application/custom-xml'       | '1'  | 'delete'      | null             | null
-        'save'           | 'POST'     | 'application/custom-thing-xml' | null | 'create'      | [instance:'foo'] | null
-        'update'         | 'PUT'      | 'application/custom-thing-xml' | '1'  | 'update'      | [instance:'foo'] | null
+        'save'           | 'POST'     | 'application/custom-thing-xml' | null | 'create'      | 'foo'            | null
+        'update'         | 'PUT'      | 'application/custom-thing-xml' | '1'  | 'update'      | 'foo'            | null
         'delete'         | 'DELETE'   | 'application/custom-thing-xml' | '1'  | 'delete'      | null             | null
     }
 
@@ -232,6 +232,9 @@ class RestfulApiControllerSpec extends Specification {
         request.method = httpMethod
         params.pluralizedResourceName = 'things'
         if (id != null) params.id = id
+        if (serviceMethod == 'list') {
+            1 * mock.count() >> {return 5}
+        }
 
         when:
         controller."$controllerMethod"()
@@ -243,8 +246,8 @@ class RestfulApiControllerSpec extends Specification {
 
         where:
         controllerMethod | httpMethod | id   | serviceMethod | serviceReturn
-        'list'           | 'GET'      | null | 'list'        | [totalCount:0,instances:['foo']]
-        'show'           | 'GET'      | '1'  | 'show'        | [instance:[foo:'foo']]
+        'list'           | 'GET'      | null | 'list'        | ['foo']
+        'show'           | 'GET'      | '1'  | 'show'        | [foo:'foo']
     }
 
     def "Test the controller validates the configuration"() {

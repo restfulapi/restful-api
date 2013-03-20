@@ -22,7 +22,7 @@ class ThingService {
 
         log.trace "ThingService.list invoked with params $params"
 
-        def result = [:]
+        def result
 
         // TODO: Do validation testing in create or update -- this is temporary
         if (params.forceValidationError == 'y') {
@@ -31,74 +31,78 @@ class ThingService {
         }
 
         params.max = Math.min( params.max ? params.max.toInteger() : 10,  100)
-        result.instances = Thing.list(fetch: [parts: "eager"],
-                                      max: params.max, offset: params.offset ).sort { it.id }
-        result.instances.each {
+        result = Thing.list(fetch: [parts: "eager"],
+                            max: params.max, offset: params.offset ).sort { it.id }
+        result.each {
             supplementThing( it )
         }
-        result.totalCount = Thing.count()
 
         log.trace "ThingService.list returning ${result}"
         result
     }
 
+    def count() {
+        log.trace "ThingService.count invoked"
+        Thing.count()
+    }
+
 
     def show(Map params) {
         log.trace "ThingService.show invoked"
-        def result = [:]
-        result.instance = Thing.get(params.id)
-        result.instance.parts // force lazy loading
-        supplementThing( result.instance )
+        def result
+        result = Thing.get(params.id)
+        result.parts // force lazy loading
+        supplementThing( result )
         log.trace "ThingService.show returning ${result}"
         result
     }
 
-    def create(Map params) {
+    def create(Map content) {
         log.trace "ThingService.create invoked"
 
         if (WebUtils.retrieveGrailsWebRequest().getParameterMap().forceGenericError == 'y') {
             throw new Exception( "generic failure" )
         }
 
-        def result = [:]
+        def result
 
         Thing.withTransaction {
-            def instance = new Thing( params )
+            def instance = new Thing( content )
             instance.parts = [] as Set //workaround for GRAILS-9775 until the bindable constraint works on associtations
-            params['parts'].each { partID ->
+            content['parts'].each { partID ->
                 instance.addPart( PartOfThing.get( partID ) )
             }
             instance.save(failOnError:true)
-            result.instance = instance
-            result.instance.parts //force lazy loading
+            result = instance
+            result.parts //force lazy loading
         }
-        supplementThing( result.instance )
+        supplementThing( result )
         result
     }
 
-    def update(Map params) {
+    def update(def id, Map content) {
         log.trace "ThingService.update invoked"
 
         checkForExceptionRequest()
 
-        def result = [:]
+        def result
         Thing.withTransaction {
-            def thing = Thing.get(params.id)
+            def thing = Thing.get(id)
 
-            checkOptimisticLock( thing, params.content )
+            checkOptimisticLock( thing, content )
 
-            thing.properties = params.content
+            thing.properties = content
             thing.save(failOnError:true)
-            result.instance = thing
-            result.instance.parts //force lazy loading
+            result = thing
+            result.parts //force lazy loading
         }
-        supplementThing( result.instance )
+        supplementThing( result )
         result
     }
 
-    void delete(Map params) {
+    void delete(id,Map content) {
         Thing.withTransaction {
-            def thing = Thing.get(params.id)
+            def thing = Thing.get(id)
             thing.delete(failOnError:true)
         }
     }

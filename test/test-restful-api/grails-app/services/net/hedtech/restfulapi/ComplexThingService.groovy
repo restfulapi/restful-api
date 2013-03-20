@@ -14,22 +14,26 @@ class ComplexThingService {
         log.trace "ComplexThingService.list invoked with params $params"
 
         params.max = Math.min( params.max ? params.max.toInteger() : 10,  100)
-        def result = [:]
-        result.instances = ComplexThing.list(fetch: [things: "eager"],
-                                             max: params.max,
-                                             offset: params.offset ).sort { it.id }
-        result.totalCount = result.instances.size()
+        def result
+        result = ComplexThing.list(fetch: [things: "eager"],
+                                   max: params.max,
+                                   offset: params.offset ).sort { it.id }
 
         log.trace "ComplexThingService.list returning ${result}"
         result
     }
 
+    def count() {
+        log.trace "ComplexThingService.count invoked"
+        ComplexThing.count()
+    }
+
 
     def show(Map params) {
         log.trace "ThingService.show invoked"
-        def result = [:]
-        result.instance = ComplexThing.get(params.id)
-        result.instance.things // force lazy loading
+        def result
+        result = ComplexThing.get(params.id)
+        result.things // force lazy loading
         log.trace "ThingService.show returning ${result}"
         result
     }
@@ -38,7 +42,7 @@ class ComplexThingService {
         throw new RuntimeException("Not yet implemented!")
     }
 
-    def update(Map params) {
+    def update(def id,Map params) {
         throw new RuntimeException("Not yet implemented!")
     }
 
