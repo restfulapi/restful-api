@@ -175,9 +175,8 @@ class RestfulApiController {
 
         try {
             def content = parseRequestContent( request )
-            if (content.id && content.id != params.id) {
-                // TODO: Handle this exception -- temporarilly just throwing RuntimeException
-                throw new RuntimeException("Bad request - ID on url differs from ID in content")
+            if (content && content.id && content.id != params.id) {
+                throw new IdMismatchException( params.pluralizedResourceName )
             }
 
             getResponseRepresentation()
@@ -202,8 +201,7 @@ class RestfulApiController {
             map.id = params.id
             def content = parseRequestContent( request )
             if (content && content.id && content.id != params.id) {
-                // TODO: Handle this exception -- temporarilly just throwing RuntimeException
-                throw new RuntimeException("Bad request - ID on url differs from ID in content")
+                throw new IdMismatchException( params.pluralizedResourceName )
             }
             getService().delete( params.id, content )
             response.setStatus( 200 )
@@ -295,7 +293,6 @@ class RestfulApiController {
                 handler = exceptionHandlers[ 'AnyOtherException' ]
             }
             def result = handler(e)
-
             if (result.headers) {
                 result.headers.each() { header ->
                     responseHolder.addHeader( header.key, header.value )
@@ -455,6 +452,8 @@ class RestfulApiController {
             return 'UnsupportedRequestRepresentationException'
         } else if (e instanceof UnsupportedResponseRepresentationException) {
             return 'UnsupportedResponseRepresentationException'
+        } else if (e instanceof IdMismatchException) {
+            return 'IdMismatchException'
         } else {
             return 'AnyOtherException'
         }
@@ -617,6 +616,7 @@ class RestfulApiController {
 
 
     private Map extractJSON( String mediaType ) {
+        def json = request.JSON
         extractJSON( request.JSON, mediaType )
     }
 
@@ -682,6 +682,15 @@ class RestfulApiController {
                 httpStatusCode: 415,
                 message: message( code: "default.rest.unknownrepresentation.message",
                                           args: [ e.getPluralizedResourceName(), e.getContentType() ] ) as String,
+            ]
+        },
+
+        'IdMismatchException': { e ->
+            [
+                httpStatusCode: 400,
+                headers: ['X-Status-Reason':'Id mismatch'],
+                message: message( code: "default.rest.idmismatch.message",
+                                  args: [ e.getPluralizedResourceName() ] ) as String
             ]
         },
 

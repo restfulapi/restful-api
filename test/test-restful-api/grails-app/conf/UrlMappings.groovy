@@ -18,7 +18,7 @@ class UrlMappings {
         "/api/$pluralizedResourceName/$id"(controller:'restfulApi') {
             action = [GET: "show", PUT: "update",
                       DELETE: "delete"]
-            parseRequest = true
+            parseRequest = false
             constraints {
                 // to constrain the id to numeric, uncomment the following:
                 // id matches: /\d+/
@@ -26,7 +26,7 @@ class UrlMappings {
         }
         "/api/$pluralizedResourceName"(controller:'restfulApi') {
             action = [GET: "list", POST: "save"]
-            parseRequest = true
+            parseRequest = false
         }
 
 

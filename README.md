@@ -43,7 +43,9 @@ Note that if you are using the artifactory repository, that this is a *internal 
 The plugin relies heavily on convention-over-configuration.  A request to a resource named 'things' will be delegated to the 'ThingService'.  De-pluralization of the resource name happens automatically; it is also assumed that there is a unique ThingService that can be looked up in the grails application.
 
 ###Url Mapping
-To use the restful plugin, you need to configure your UrlMappings.groovy to route the requests to the controller:
+To use the restful plugin, you need to configure your UrlMappings.groovy to route the requests to the controller.
+
+**Important:parseRequest must be set to false; otherwise, grails will attempt to parse the request body and add values from it to the params object.  The restful plugin is designed to pass any content from the body to the service layer via an extracted map, not the params object.**
 
     static mappings = {
 
@@ -59,7 +61,7 @@ To use the restful plugin, you need to configure your UrlMappings.groovy to rout
         "/api/$pluralizedResourceName/$id"(controller:'restfulApi') {
             action = [GET: "show", PUT: "update",
                       DELETE: "delete"]
-            parseRequest = true
+            parseRequest = false
             constraints {
                 // to constrain the id to numeric, uncomment the following:
                 // id matches: /\d+/
@@ -67,7 +69,7 @@ To use the restful plugin, you need to configure your UrlMappings.groovy to rout
         }
         "/api/$pluralizedResourceName"(controller:'restfulApi') {
             action = [GET: "list", POST: "save"]
-            parseRequest = true
+            parseRequest = false
         }
 
 
@@ -439,6 +441,9 @@ For handling request with a jsonAsXml representation, the controller will
 * use the extractor defined for the equivalent json media type to conver the (intermediate) json object to a map to pass to the service.
 
 The json-as-xml support is not intended as a complete replacement for custom xml marshallers and extractors, but could be used in situations where xml support is required, but clients can understand 'json-like' semantics, but are using an xml parser/marshaller toolkit.
+
+##Logging
+Errors encountered while servicing a request are logged at error level to the log target 'RestfulApiController_messageLog'.  This is so errors occuring from the requests (which will typically be errors caused by invalid input, etc) can be separated from errors in the controller.
 
 ##Testing
 The plugin contains the class net.hedtech.restfulapi.spock.RestSpecification which may be extended to write functional spock tests.  Spock is a testing and specification framework that is very expressive.  It is strongly recommended that you use spock to test your APIs.

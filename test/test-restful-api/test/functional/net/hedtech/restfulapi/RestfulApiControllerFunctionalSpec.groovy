@@ -950,6 +950,23 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         2 == xml.parts.part.size()
     }
 
+    def "Test that mismatch between id in url and resource representation for update returns 400"() {
+        when:
+        put( "$localBase/api/things/1") {
+            body {
+                headers['Content-Type'] = 'application/json'
+                headers['Accept']       = 'application/json'
+                """{id:2}"""
+            }
+        }
+
+        then:
+        400 == response.status
+         '' == response.text
+        'Id mismatch' == responseHeader( 'X-Status-Reason' )
+        "Id in representation for resource 'things' did not match id of resource" == responseHeader( 'X-hedtech-message' )
+    }
+
     private void createThings() {
         createThing('AA')
         createThing('BB')

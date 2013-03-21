@@ -272,6 +272,47 @@ class RestfulApiControllerSpec extends Specification {
         'application/xml' == e.mediaType
     }
 
+    def "Test that mismatch between id in url and resource representation returns 400"(def controllerMethod, def httpMethod, def id, def body) {
+        setup:
+        //use default extractor for any methods with a request body
+         config.restfulApiConfig = {
+            resource {
+                name = 'things'
+                representation {
+                    mediaType = 'application/json'
+                    extractor = new DefaultJSONExtractor()
+                }
+            }
+        }
+        controller.init()
+
+        def mock = Mock(ThingService)
+        controller.metaClass.getService = {-> mock}
+
+        request.addHeader( 'Accept', 'application/json' )
+        request.addHeader( 'Content-Type', 'application/json' )
+        request.method = httpMethod
+        params.pluralizedResourceName = 'things'
+        params.id = id
+        request.setContent( body.getBytes('UTF-8' ) )
+
+        when:
+        controller."$controllerMethod"()
+
+        then:
+        400 == response.status
+          0 == response.getContentLength()
+          0 * _._
+        'Id mismatch' == response.getHeaderValue( 'X-Status-Reason' )
+        'default.rest.idmismatch.message' == response.getHeaderValue( 'X-hedtech-message' )
+
+        where:
+        controllerMethod | httpMethod | id   | body
+        'update'         | 'PUT'      | '1'  | '{id:2}'
+        'delete'         | 'DELETE'   | '1'  | '{id:2}'
+
+    }
+
 
 
 
