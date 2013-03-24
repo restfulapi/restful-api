@@ -22,6 +22,12 @@ import org.codehaus.groovy.grails.web.json.JSONObject
 import org.springframework.dao.OptimisticLockingFailureException
 import org.springframework.beans.factory.InitializingBean
 
+import org.codehaus.groovy.grails.web.converters.configuration.ConvertersConfigurationHolder
+import org.codehaus.groovy.grails.web.converters.configuration.ConverterConfiguration
+import org.codehaus.groovy.grails.web.converters.configuration.DefaultConverterConfiguration
+import org.codehaus.groovy.grails.web.converters.marshaller.ObjectMarshaller
+import org.codehaus.groovy.grails.web.converters.Converter
+import org.codehaus.groovy.grails.web.converters.configuration.ChainedConverterConfiguration
 import org.codehaus.groovy.grails.web.converters.exceptions.ConverterException
 
 import org.codehaus.groovy.grails.web.servlet.HttpHeaders
@@ -53,8 +59,28 @@ class RestfulApiController {
 
     private static final String RESPONSE_REPRESENTATION = 'net.hedtech.restfulapi.RestfulApiController.response_representation'
 
-    @PostConstruct
+    // The default adapter simply passes through the method invocations to the service.
+    // RestfulServiceAdapter.
+    private RestfulServiceAdapter defaultServiceAdapter =
+        [ list:   { def service, Map params          -> service.list(params) },
+          count:  { def service                      -> service.count() },
+          show:   { def service, Map params          -> service.show(params) },
+          create: { def service, Map content         -> service.create(content) },
+          update: { def service, def id, Map content -> service.update(id, content) },
+          delete: { def service, def id, Map content -> service.delete(id, content) }
+        ] as RestfulServiceAdapter
+
+
+    /**
+     * Initializes the controller by registering the configured marshallers.
+     **/
+    // NOTE: The timing of PostConstruct works only when running 'test-app'
+    //       -- it does *not* work for 'run-app' or 'test-app functional:'.
+    // @PostConstruct
     void init() {
+
+        log.trace 'Initializing RestfulApiController...'
+
         restConfig = RestConfig.parse( grailsApplication, grailsApplication.config.restfulApiConfig )
         restConfig.validate()
 
@@ -63,7 +89,9 @@ class RestfulApiController {
                 switch(representation.mediaType) {
                     case ~/.*json$/:
                         JSON.createNamedConfig("restfulapi:" + resource.name + ":" + representation.mediaType) { json ->
+                            log.trace "Creating named config: 'restfulapi:${resource.name}:${representation.mediaType}'"
                             representation.marshallers.each() {
+                                log.trace "    ...registering json marshaller ${it.marshaller}"
                                 json.registerObjectMarshaller(it.marshaller,it.priority)
                             }
                         }
@@ -72,6 +100,7 @@ class RestfulApiController {
                     case ~/.*xml$/:
                         XML.createNamedConfig("restfulapi:" + resource.name + ":" + representation.mediaType) { xml ->
                             representation.marshallers.each() {
+                                log.trace "    ...registering xml marshaller ${it.marshaller}"
                                 xml.registerObjectMarshaller(it.marshaller,it.priority)
                             }
                         }
@@ -89,7 +118,7 @@ class RestfulApiController {
         XML.createNamedConfig('restapi-error:xml') {
             it.registerObjectMarshaller(new net.hedtech.restfulapi.marshallers.xml.JSONObjectMarshaller(), 200)
         }
-
+        log.trace 'Done initializing RestfulApiController...'
     }
 
 
@@ -102,11 +131,12 @@ class RestfulApiController {
 
         log.trace "list invoked for ${params.pluralizedResourceName}"
         try {
-            getResponseRepresentation()
+            getResponseRepresentation() // adds representation attribute to request
             def service = getService()
-            log.trace "... will delegate list() to service $service"
-            def result = service.list(params)
-            def count = service.count()
+            def delegateToService = getServiceAdapter()
+            log.trace "... will delegate list() to service $service using adapter $delegateToService"
+            def result = delegateToService.list(service, params)
+            def count  = delegateToService.count(service)
             log.trace "... service returned $result"
             ResponseHolder holder = new ResponseHolder()
             holder.data = result
@@ -120,8 +150,6 @@ class RestfulApiController {
             renderErrorResponse(e)
             return
         }
-
-
    }
 
 
@@ -132,7 +160,7 @@ class RestfulApiController {
         def result
         try {
             getResponseRepresentation()
-            result = getService().show(params)
+            result = getServiceAdapter().show( getService(), params )
             renderSuccessResponse( new ResponseHolder( data: result ),
                                    'default.rest.shown.message' )
         }
@@ -140,8 +168,6 @@ class RestfulApiController {
             messageLog.error "Caught exception ${e.message}", e
             renderErrorResponse(e)
         }
-
-
     }
 
 
@@ -154,7 +180,7 @@ class RestfulApiController {
         try {
             def content = parseRequestContent( request )
             getResponseRepresentation()
-            result = getService().create( content )
+            result = getServiceAdapter().create( getService(), content )
             response.setStatus( 201 )
             renderSuccessResponse( new ResponseHolder( data: result ),
                                    'default.rest.saved.message' )
@@ -163,7 +189,6 @@ class RestfulApiController {
             messageLog.error "Caught exception ${e.message}", e
             renderErrorResponse(e)
         }
-
     }
 
 
@@ -180,7 +205,7 @@ class RestfulApiController {
             }
 
             getResponseRepresentation()
-            result = getService().update( params.id, content )
+            result = getServiceAdapter().update( getService(), params.id, content )
             response.setStatus( 200 )
             renderSuccessResponse( new ResponseHolder( data: result ),
                                    'default.rest.updated.message' )
@@ -203,7 +228,7 @@ class RestfulApiController {
             if (content && content.id && content.id != params.id) {
                 throw new IdMismatchException( params.pluralizedResourceName )
             }
-            getService().delete( params.id, content )
+            getServiceAdapter().delete( getService(), params.id, content )
             response.setStatus( 200 )
             renderSuccessResponse( new ResponseHolder(), 'default.rest.deleted.message' )
         }
@@ -216,6 +241,7 @@ class RestfulApiController {
 
 // ---------------------------- Helper Methods -------------------------------
 
+
     /**
      * Renders a successful response using the supplied map and the msg resource
      * code.
@@ -224,29 +250,30 @@ class RestfulApiController {
      * @param responseMap the Map to render
      * @param msgResourceCode the resource code used to create a message entry
      **/
-     protected void renderSuccessResponse(ResponseHolder holder, String msgResourceCode) {
+    protected void renderSuccessResponse(ResponseHolder holder, String msgResourceCode) {
 
         String localizedName = localize(domainName())
         holder.message = message( code: msgResourceCode, args: [ localizedName ] )
         renderResponse( holder )
-     }
+    }
 
-     /**
-      * Renders an error response appropriate for the exception.
-      * @param e the exception to render an error response for
-      **/
-     protected void renderErrorResponse( Throwable e ) {
+
+    /**
+     * Renders an error response appropriate for the exception.
+     * @param e the exception to render an error response for
+     **/
+    protected void renderErrorResponse( Throwable e ) {
         ResponseHolder responseHolder = createErrorResponse( e )
-         //The versioning applies to resource representations, not to
-         //errors.  In fact, it can't, as the error may be that an unrecognized format
-         //was requested.  So if we are returning an error response, we switch the format
-         //to either json or xml.
-         //So we will look at the Accept-Header directly and try to determine if JSON or XML was
-         //requested.  If we can't decide, we will return JSON.
-         String contentType = null
-         def content
-         MediaType[] acceptedTypes = mediaTypeParser.parse(request.getHeader(HttpHeaders.ACCEPT))
-         switch(acceptedTypes[0].name) {
+        //The versioning applies to resource representations, not to
+        //errors.  In fact, it can't, as the error may be that an unrecognized format
+        //was requested.  So if we are returning an error response, we switch the format
+        //to either json or xml.
+        //So we will look at the Accept-Header directly and try to determine if JSON or XML was
+        //requested.  If we can't decide, we will return JSON.
+        String contentType = null
+        def content
+        MediaType[] acceptedTypes = mediaTypeParser.parse(request.getHeader(HttpHeaders.ACCEPT))
+        switch(acceptedTypes[0].name) {
             case ~/.*xml.*/:
                 contentType = 'application/xml'
                 if (responseHolder.data != null) {
@@ -268,7 +295,7 @@ class RestfulApiController {
                     }
                 }
             break
-         }
+        }
 
         responseHolder.headers.each { header ->
             if (header.value instanceof Collection) {
@@ -283,9 +310,10 @@ class RestfulApiController {
             response.addHeader( "X-hedtech-message", responseHolder.message )
         }
         render(text: content ? content : "", contentType: contentType )
-     }
+    }
 
-     protected ResponseHolder createErrorResponse( Throwable e ) {
+
+    protected ResponseHolder createErrorResponse( Throwable e ) {
         ResponseHolder responseHolder = new ResponseHolder()
         try {
             def handler = exceptionHandlers[ getErrorType( e ) ]
@@ -312,12 +340,14 @@ class RestfulApiController {
             this.response.setStatus( 500 )
          }
          return responseHolder
-     }
+    }
+
 
      protected def generateResponseContent( RepresentationConfig representation, def data ) {
         def content
         switch(representation.mediaType) {
             case ~/.*json$/:
+                log.trace "Going to useJSON with representation $representation"
                 useJSON(representation) {
                     content = data as JSON
                 }
@@ -350,7 +380,7 @@ class RestfulApiController {
      * @param format if specified, use the as the response format.  Otherwise
      *        use the format on the response (taken from the Accept-Header)
      * @param mediaType if specified, use as the media type for the response.
-    *         Otherwise, use the media-type type specified by the Accept header.
+     *        Otherwise, use the media-type type specified by the Accept header.
      **/
     protected void renderResponse(ResponseHolder responseHolder) {
         //def acceptedTypes = mediaTypeParser.parse( request.getHeader(HttpHeaders.ACCEPT) )
@@ -383,12 +413,15 @@ class RestfulApiController {
         render(text: content ? content : "", contentType: contentType )
     }
 
+
     private String selectResponseContentType( RepresentationConfig representation ) {
-        //Select the content type
-        //Content type will always be application/json or application/xml
-        //to make it easy for a response to be displayed in a browser or other tools
-        //The X-hedtech-Media-Type header will hold the custom media type (if any)
-        //describing the content in more detail.
+
+        // Select the content type
+        // Content type will always be application/json or application/xml
+        // to make it easy for a response to be displayed in a browser or other tools
+        // The X-hedtech-Media-Type header will hold the custom media type (if any)
+        // describing the content in more detail.
+        //
         def mediaType = representation ? representation.mediaType : 'json'
         def contentType
         switch(mediaType) {
@@ -405,12 +438,14 @@ class RestfulApiController {
         return contentType
     }
 
+
     /**
      * Parses the content from the request.
      * Returns a map representing the properties of content.
      * @param request the request containing the content
      **/
     protected Map parseRequestContent(request) {
+
         def representation = getRequestRepresentation()
         switch(representation.mediaType) {
             case ~/.*json$/:
@@ -431,12 +466,12 @@ class RestfulApiController {
     }
 
 
-
     /**
      * Maps an exception to an error type known to the controller.
      * @param e the exception to map
      **/
     protected String getErrorType(e) {
+
         if (e.metaClass.respondsTo( e, "getHttpStatusCode") &&
             e.hasProperty( "returnMap" ) &&
             e.returnMap && (e.returnMap instanceof Closure)) {
@@ -461,26 +496,70 @@ class RestfulApiController {
 
 
     /**
+     * Returns the name of the service to which this controller will delgate.
+     * This implementation assumes the resource is a Grails 'domain'
+     * object, and that the service name can be constructed by using the pluralized
+     * 'resource' name found on the URL and appending 'Service'.
+     * For example: If a URL of /api/pluralizedResourceName/id was invoked,
+     * a service name of 'SingularizedResourceNameService' will be returned.
+     **/
+    protected String getServiceName() {
+        def svcName = "${domainName()}Service"
+        log.trace "getServiceName() will return $svcName"
+        svcName
+    }
+
+
+    /**
      * Returns the transactional service corresponding to this resource.
      * The default implementation assumes the resource is a Grails 'domain'
      * object, and that the service can be identified by using the pluralized
      * 'resource' name found on the URL.
      * For example: If a URL of /api/pluralizedResourceName/id was invoked,
-     * a service named
-     * 'SingularizedResourceNameController' will be retrieved from the IoC container.
+     * a service named 'SingularizedResourceNameService' will be retrieved
+     * from the IoC container.
+     * @see #getServiceName()
      **/
     protected def getService() {
 
-        def svcName = "${domainName()}Service"
         def svc
         try {
-            svc = applicationContext.getBean(svcName)
+            svc = applicationContext.getBean(getServiceName())
         } catch (e) {
             log.error "Caught exception ${e.message}", e
             //throw e
         }
-        log.trace "getService() is returning $svc"
+        log.trace "getService() will return service $svc"
         svc
+    }
+
+
+    // TODO: Register a map of adapters instead of a single adapter
+    //       (so that different service contracts may be used
+    //       for different resources.)
+    /**
+     * Returns an adapter supporting the service for which this
+     * controller will delegate.
+     * This implementation will look for the single adapter that has
+     * been registered within the Spring container.
+     * This adapter will be used when delegating to all services.
+     * If no adapter is found in the Spring container, this
+     * implementation will return a built-in pass-through adapter.
+     **/
+    protected RestfulServiceAdapter getServiceAdapter() {
+
+        def adapterName = 'restfulServiceAdapter' // name of the single adapter
+        log.trace "Looking for an adapter named $adapterName"
+        RestfulServiceAdapter adapter
+        try {
+            adapter = applicationContext.getBean(adapterName)
+        } catch (e) { // it is not an error if we cannot find an adapter
+            log.trace "Did not find an adapter - ${e.message}"
+        }
+
+        adapter = adapter ?: defaultServiceAdapter
+        log.trace "getServiceAdapter() will return adapter $adapter"
+        adapter
     }
 
 
@@ -497,6 +576,7 @@ class RestfulApiController {
     protected Class getNonDomainClass(String className) {
 
     }
+
 
     /**
      * Returns the best match, or null if no supported representation for the resource exists.
@@ -522,6 +602,7 @@ class RestfulApiController {
         Inflector.asPropertyName(params.pluralizedResourceName)
     }
 
+
     /**
      * If we try to use an unknown configuration for a grails converter, a ConverterException
      * is thrown, which can't be programmatically distinguished from other marshalling errors.
@@ -538,9 +619,11 @@ class RestfulApiController {
         JSON.use(config,closure)
     }
 
+
     private Object useJSON(RepresentationConfig config, Closure closure) {
         useJSON( "restfulapi:" + params.pluralizedResourceName + ":" + config.mediaType, closure )
     }
+
 
     /**
      * If we try to use an unknown configuration for a grails converter, a ConverterException
@@ -558,9 +641,11 @@ class RestfulApiController {
         XML.use(config,closure)
     }
 
+
     private Object useXML( RepresentationConfig config, Closure closure ) {
         useXML( "restfulapi:" + params.pluralizedResourceName + ":" + config.mediaType, closure )
     }
+
 
     private JSONElement toJSONElement( String s ) {
         if (s == null || s.trim().size() == 0) {
@@ -573,6 +658,7 @@ class RestfulApiController {
             return new JSONObject(s)
         }
     }
+
 
     private RepresentationConfig getResponseRepresentation() {
         def representation = request.getAttribute( RESPONSE_REPRESENTATION )
@@ -587,6 +673,7 @@ class RestfulApiController {
         representation
     }
 
+
     private RepresentationConfig getRequestRepresentation() {
         def type = mediaTypeParser.parse( request.getHeader(HttpHeaders.CONTENT_TYPE) )[0]
         def representation = getRepresentation( params.pluralizedResourceName, [type] )
@@ -595,6 +682,7 @@ class RestfulApiController {
         }
         return representation
     }
+
 
     private RepresentationConfig getJsonEquivalent( RepresentationConfig representation ) {
         def jsonType = getJSONMediaType( representation.mediaType )
@@ -605,9 +693,9 @@ class RestfulApiController {
         jsonRepresentation
     }
 
-     private unsupportedResponseRepresentation() {
+    private unsupportedResponseRepresentation() {
         throw new UnsupportedResponseRepresentationException( params.pluralizedResourceName, request.getHeader(HttpHeaders.ACCEPT) )
-     }
+    }
 
 
     private unsupportedRequestRepresentation() {
@@ -620,6 +708,7 @@ class RestfulApiController {
         extractJSON( request.JSON, mediaType )
     }
 
+
     private Map extractJSON( JSONObject json, String mediaType ) {
         JSONExtractor extractor = JSONExtractorConfigurationHolder.getExtractor( params.pluralizedResourceName, mediaType )
         if (!extractor) {
@@ -627,6 +716,7 @@ class RestfulApiController {
         }
         return extractor.extract( json )
     }
+
 
     private Map extractXML( String mediaType ) {
         XMLExtractor xmlExtractor = XMLExtractorConfigurationHolder.getExtractor( params.pluralizedResourceName, mediaType )
@@ -636,9 +726,11 @@ class RestfulApiController {
         return xmlExtractor.extract( request.XML )
     }
 
+
     private String getJSONMediaType( String xmlType ) {
         restConfig.getJsonEquivalentMediaType( xmlType )
     }
+
 
     private def exceptionHandlers = [
 

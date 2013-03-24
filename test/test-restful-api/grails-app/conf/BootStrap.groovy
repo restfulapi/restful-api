@@ -2,15 +2,9 @@
 Copyright 2013 Ellucian Company L.P. and its affiliates.
 ******************************************************************************/
 
-import grails.converters.JSON
-import grails.converters.XML
-
 import net.hedtech.restfulapi.*
-import net.hedtech.restfulapi.marshallers.json.*
-import net.hedtech.restfulapi.marshallers.xml.*
-import net.hedtech.restfulapi.extractors.json.*
-import net.hedtech.restfulapi.extractors.xml.*
-import net.hedtech.restfulapi.extractors.configuration.*
+
+import org.codehaus.groovy.grails.commons.ApplicationAttributes
 
 
 class BootStrap {
@@ -19,12 +13,12 @@ class BootStrap {
 
     def init = { servletContext ->
 
-        // Add rules to singularize resource names as needed here...
+        // Add custom rules to singularize resource names as needed here...
         //
         Inflector.addSingularize("mice\$", "\$1mouse")
 
-
-        // Our simple seed data
+        // Add some simple seed data
+        //
         createThing('AA')
         createThing('BB')
     }

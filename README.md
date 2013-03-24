@@ -178,6 +178,11 @@ The controller will first check that if the extracted map contains an 'id' prope
 
 The delete method returns void.
 
+##Adapting an Existing Service
+To support services that have a contract different than the service contract described above, a 'RestfulServiceAdapter' may be registered in the Spring application context. If an adapter is registered, it will be used by the RestfulApiController for all interaction with servcies. (Currently, only a single adapter may be registered, so it must be implemented to support all services that are used to support a RESTful API.)
+
+As a convenience, a 'RestfulServiceBaseAdapter' is included within this plugin to faciliate delegation to Banner XE services that extend the 'ServiceBase' found within the 'banner-core' plugin. (Note while this adapter is specific to Banner XE, this plugin has no dependencies on either Banner XE or the banner-core plugin.)
+
 ##Supplemental data/affordances/HATEOS
 Since the plugin does not use an envelope in the message body, any affordances must be present in the resource representations themselves.
 

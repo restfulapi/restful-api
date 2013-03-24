@@ -88,6 +88,7 @@ log4j = {
     error  'grails.app.services'
     error  'net.hedtech.restfulapi.marshallers'
 
+    error    'org.codehaus.groovy.grails.web'
     error  'org.codehaus.groovy.grails.web.servlet',        // controllers
            'org.codehaus.groovy.grails.web.pages',          // GSP
            'org.codehaus.groovy.grails.web.sitemesh'        // layouts
@@ -102,16 +103,15 @@ log4j = {
            'org.hibernate',
            'net.sf.ehcache.hibernate'
 
-    off    'RestfulApiController_messageLog'
+    error    'RestfulApiController_messageLog'
+    error    'net.hedtech.restfulapi'
 
     appenders {
-
         appender new ConsoleAppender(name: "console",
-//            threshold: Priority.WARN,
+            // threshold: Priority.WARN,
             layout: pattern(conversionPattern:'%d [%t] %-5p %c{2} %x - %m%n')
         )
     }
-
 
     root {
         error 'console', 'appFile'
