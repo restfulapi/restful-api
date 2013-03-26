@@ -17,7 +17,7 @@ class ThingWrapperService {
         params.max = Math.min( params.max ? params.max.toInteger() : 10,  100)
         def result
 
-        def things = Thing.list(fetch: [things: "eager"],
+        def things = Thing.list(fetch: [parts: "eager"],
                                         max: params.max,
                                         offset: params.offset ).sort { it.id }
 
@@ -27,7 +27,7 @@ class ThingWrapperService {
         //
         result = [] as List
         things?.eachWithIndex { thing, index ->
-            def wrapper = new ThingWrapper( complexCode: "C-{$index}",
+            def wrapper = new ThingWrapper( complexCode: "C-${index}",
                                               buildDate: new Date(),
                                               things: things )
             result << wrapper
@@ -37,7 +37,7 @@ class ThingWrapperService {
         result
     }
 
-    def count() {
+    def count(Map params) {
         log.trace "ThingWrapperService.count invoked"
         Thing.count()
     }
@@ -46,7 +46,7 @@ class ThingWrapperService {
     def show(Map params) {
         log.trace "ThingWrapperService.show invoked"
         def result
-        def things = Thing.list(fetch: [things: "eager"],
+        def things = Thing.list(fetch: [parts: "eager"],
                                         max: params.max,
                                         offset: params.offset ).sort { it.id }
 
@@ -69,8 +69,7 @@ class ThingWrapperService {
         def things = []
         Thing.withTransaction {
             content.things?.each {
-                def thing = new Thing(it)
-                thing.save(failOnError:true)
+                def thing = thingService.create(it)
                 things << thing
             }
             result = new ThingWrapper(complexCode: content.complexCode,

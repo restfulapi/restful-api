@@ -233,7 +233,7 @@ class RestfulApiControllerSpec extends Specification {
         params.pluralizedResourceName = 'things'
         if (id != null) params.id = id
         if (serviceMethod == 'list') {
-            1 * mock.count() >> {return 5}
+            1 * mock.count(_) >> {return 5}
         }
 
         when:

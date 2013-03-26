@@ -7,7 +7,6 @@ class Thing implements Serializable {
 
     static hasMany = [parts: PartOfThing]
 
-    Set        parts = [] as Set
     String     code
     String     description
     Date       dateManufactured
@@ -18,19 +17,13 @@ class Thing implements Serializable {
     String     dataOrigin
 
 
-    // Adds a part and returns 'this' to allow chaining.
-    public Thing addPart(PartOfThing part) {
-        parts.add(part)
-        this
-    }
-
-
     public String toString() {
         "Thing[id=$id, code=$code, description=$description, parts=${parts}]"
     }
 
 
     static mapping = {
+        parts lazy: false
     }
 
 

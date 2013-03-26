@@ -93,8 +93,8 @@ log4j = {
            'org.codehaus.groovy.grails.web.pages',          // GSP
            'org.codehaus.groovy.grails.web.sitemesh'        // layouts
 
-    error  'org.codehaus.groovy.grails.web.mapping.filter', // URL mapping
-           'org.codehaus.groovy.grails.web.mapping'         // URL mapping
+    error  'org.codehaus.groovy.grails.web.mapping.filter'  // URL mapping
+    error  'org.codehaus.groovy.grails.web.mapping'         // URL mapping
 
     error  'org.codehaus.groovy.grails.commons',            // core / classloading
            'org.codehaus.groovy.grails.plugins',            // plugins
@@ -103,8 +103,8 @@ log4j = {
            'org.hibernate',
            'net.sf.ehcache.hibernate'
 
-    error    'RestfulApiController_messageLog'
-    error    'net.hedtech.restfulapi'
+    error  'RestfulApiController_messageLog'
+    error  'net.hedtech.restfulapi'
 
     appenders {
         appender new ConsoleAppender(name: "console",
@@ -202,6 +202,18 @@ restfulApiConfig = {
 
     resource {
         name = 'complex-things'
+        representation {
+            mediaType = "application/json"
+            addMarshaller {
+                marshaller = new net.hedtech.restfulapi.marshallers.BasicDomainClassMarshaller(grailsApplication)
+                priority = 100
+            }
+            extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()
+        }
+    }
+
+    resource {
+        name = 'part-of-things'
         representation {
             mediaType = "application/json"
             addMarshaller {

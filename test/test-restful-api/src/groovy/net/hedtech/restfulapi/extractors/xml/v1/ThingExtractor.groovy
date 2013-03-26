@@ -17,7 +17,7 @@ class ThingExtractor implements XMLExtractor {
         if (content.parts?.part?.size() > 0) {
             map['parts'] = []
             content.parts[0].part.each { part ->
-                map['parts'].add( part.@id.text() )
+                map['parts'].add( [ code: part.code?.text(), description: part.description?.text() ] )
             }
         }
         return map

@@ -90,7 +90,6 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         0 == xml.'net-hedtech-object'[0].sha1.size()
     }
 
-
     def "Test list with version 0 json response"() {
         setup:
         createThing('AA')
@@ -129,7 +128,6 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         get( "$localBase/api/things" ) {
             headers['Content-Type']  = 'application/json'
             headers['Accept']        = 'application/vnd.hedtech.v0+xml'
-//            headers['Authorization'] = TestUtils.authHeader('user','password')
         }
 
         then:
@@ -153,6 +151,64 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         xml.'net-hedtech-object'[0]._href[0].text().contains('things')
         '2' == xml.'net-hedtech-object'[0].numParts[0].text()
         null != xml.'net-hedtech-object'[0].sha1[0].text()
+    }
+
+    def "Test list of part-of-thing with json response when not nested"() {
+        setup:
+        createThing('AA')
+        createThing('BB')
+
+        when:"list with  application/json accept"
+        get("$localBase/api/part-of-things") {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/json'
+        }
+
+        then:
+        200 == response.status
+        'application/json' == response.contentType
+        def json = JSON.parse response.text
+        4 == json.size()
+        "aa" == json[0].code
+        "aa part" == json[0].description
+
+        // assert localization of the message
+        "List of partOfThing resources" == responseHeader('X-hedtech-message')
+
+        //check pagination headers
+        "4" == responseHeader('X-hedtech-totalCount')
+        null != responseHeader('X-hedtech-pageOffset')
+        null != responseHeader('X-hedtech-pageMaxSize')
+        json[0]._href?.contains('part-of-things')
+    }
+
+    def "Test list of nested resource with json response"() {
+        setup:
+        def parentId = createThing('AA')
+        createThing('BB')
+
+        when:"list of nested resource with application/json accept"
+        get("$localBase/api/things/$parentId/part-of-things") {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/json'
+        }
+
+        then:
+        200 == response.status
+        'application/json' == response.contentType
+        def json = JSON.parse response.text
+        2 == json.size()
+        "aa" == json[0].code
+        "aa part" == json[0].description
+
+        // assert localization of the message
+        "List of partOfThing resources" == responseHeader('X-hedtech-message')
+
+        //check pagination headers
+        "2" == responseHeader('X-hedtech-totalCount')
+        null != responseHeader('X-hedtech-pageOffset')
+        null != responseHeader('X-hedtech-pageMaxSize')
+        json[0]._href?.contains('part-of-things')
     }
 
     def "Test validation error"() {
@@ -191,7 +247,6 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         get( "$localBase/api/things/$id" ) {
             headers['Content-Type']  = 'application/json'
             headers['Accept']        = 'application/json'
-//            headers['Authorization'] = TestUtils.authHeader('user','password')
         }
 
         then:
@@ -295,7 +350,7 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
                 """
                 {
                     "code": "AC",
-                    "description": "An AC thingy",
+                    "description": "An AC thingy"
                 }
                 """
             }
@@ -922,18 +977,20 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
     }
 
     def "Test version 1 custom xml extractor"() {
-        setup:
-        def part1 = createPartOfThing( 'aa', 'part a' )
-        def part2 = createPartOfThing( 'bb', 'part b' )
 
         when:
         post( "$localBase/api/things" ) {
             body {
                 headers['Content-Type']  = 'application/vnd.hedtech.thing.v1+xml'
                 headers['Accept']        = 'application/vnd.hedtech.thing.v1+xml'
-                """<?xml version="1.0" encoding="UTF-8"?>
-                   <Thing><code>AA</code><description>An AA thing</description><parts><part id="$part1"/><part id="$part2"/></parts></Thing>
-                """
+                """|<?xml version="1.0" encoding="UTF-8"?>
+                   |<Thing><code>AA</code><description>An AA thing</description>
+                   |<parts>
+                   |<part><code>xx</code><description>xx part</description></part>
+                   |<part><code>yy</code><description>yy part</description></part>
+                   |</parts>
+                   |</Thing>
+                """.stripMargin()
             }
         }
 
@@ -977,18 +1034,10 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         Thing.withTransaction {
             Thing thing = new Thing(code: code, description: "An $code thing",
                       dateManufactured: new Date(), isGood: 'Y', isLarge: true)
-            thing.addPart(new PartOfThing(code: 'aa', description: 'aa part').save())
-            thing.addPart(new PartOfThing(code: 'bb', description: 'bb part').save())
-            thing.save(failOnError:true, flush:true)
+                .addToParts(new PartOfThing(code: 'aa', description: 'aa part'))
+                .addToParts(new PartOfThing(code: 'bb', description: 'bb part'))
+                .save(failOnError:true, flush:true)
             thing.getId()
-        }
-    }
-
-    private def createPartOfThing( String code, String desc ) {
-        PartOfThing.withTransaction {
-            PartOfThing part = new PartOfThing( code:code, description:desc )
-            part.save(failOnError:true, flush:true)
-            part.getId()
         }
     }
 

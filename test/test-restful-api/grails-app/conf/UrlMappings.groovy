@@ -29,6 +29,22 @@ class UrlMappings {
             parseRequest = false
         }
 
+        // Support for nested resources. You may add additional URL mappings to handle
+        // additional nested resource requirements.
+        //
+        "/api/$parentPluralizedResourceName/$parentId/$pluralizedResourceName/$id"(controller:'restfulApi') {
+            action = [GET: "show", PUT: "update", DELETE: "delete"]
+            parseRequest = false
+            constraints {
+                // to constrain the id to numeric, uncomment the following:
+                // id matches: /\d+/
+            }
+        }
+
+        "/api/$parentPluralizedResourceName/$parentId/$pluralizedResourceName"(controller:'restfulApi') {
+            action = [GET: "list", POST: "save"]
+            parseRequest = false
+        }
 
 
         "/"(view:"/index")

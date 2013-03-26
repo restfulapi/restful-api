@@ -141,29 +141,25 @@ class ComplexThingResourceFunctionalSpec extends RestSpecification {
 
 
     private def createComplexThing(String code) {
-        def id
         ComplexThing thing
         Thing.withTransaction {
             thing = new ComplexThing(complexCode: code)
             thing.addThing(createThing('AA'))
             thing.addThing(createThing('BB'))
             thing.save(failOnError:true, flush:true)
-            thing.getId()
         }
         thing
     }
 
 
     private def createThing(String code) {
-        def id
         Thing thing
         Thing.withTransaction {
             thing = new Thing(code: code, description: "An $code thing",
                               dateManufactured: new Date(), isGood: 'Y', isLarge: true)
-            thing.addPart(new PartOfThing(code: 'aa', description: 'aa part').save())
-            thing.addPart(new PartOfThing(code: 'bb', description: 'bb part').save())
-            thing.save(failOnError:true, flush:true)
-            thing.getId()
+                .addToParts(new PartOfThing(code: 'aa', description: 'aa part'))
+                .addToParts(new PartOfThing(code: 'bb', description: 'bb part'))
+                .save(failOnError:true, flush:true)
         }
         thing
     }

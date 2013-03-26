@@ -22,8 +22,12 @@ class RestfulServiceBaseAdapter implements RestfulServiceAdapter {
         service.list(params)
     }
 
-    def count(def service) {
-        service.count()
+    def count(def service, Map params) {
+        if (service.metaClass.respondsTo(service, "count", Map)) {
+            service.count(params)
+        } else {
+            service.count()
+        }
     }
 
     def show(def service, Map params) {

@@ -63,7 +63,7 @@ class RestfulApiController {
     // RestfulServiceAdapter.
     private RestfulServiceAdapter defaultServiceAdapter =
         [ list:   { def service, Map params          -> service.list(params) },
-          count:  { def service                      -> service.count() },
+          count:  { def service, Map params          -> service.count(params) },
           show:   { def service, Map params          -> service.show(params) },
           create: { def service, Map content         -> service.create(content) },
           update: { def service, def id, Map content -> service.update(id, content) },
@@ -136,8 +136,13 @@ class RestfulApiController {
             def delegateToService = getServiceAdapter()
             log.trace "... will delegate list() to service $service using adapter $delegateToService"
             def result = delegateToService.list(service, params)
-            def count  = delegateToService.count(service)
             log.trace "... service returned $result"
+            def count
+            if (result instanceof grails.orm.PagedResultList) {
+                count = result.totalCount
+            } else {
+                count  = delegateToService.count(service, params)
+            }
             ResponseHolder holder = new ResponseHolder()
             holder.data = result
             holder.addHeader('X-hedtech-totalCount',count)

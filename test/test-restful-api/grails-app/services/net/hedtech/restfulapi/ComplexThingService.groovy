@@ -23,7 +23,7 @@ class ComplexThingService {
         result
     }
 
-    def count() {
+    def count(Map params) {
         log.trace "ComplexThingService.count invoked"
         ComplexThing.count()
     }

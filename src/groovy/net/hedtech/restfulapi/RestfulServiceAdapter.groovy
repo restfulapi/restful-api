@@ -15,7 +15,7 @@ interface RestfulServiceAdapter {
 
     def list(def service, Map params)
 
-    def count(def service)
+    def count(def service, Map params)
 
     def show(def service, Map params)
 

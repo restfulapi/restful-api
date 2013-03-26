@@ -31,8 +31,8 @@ class BootStrap {
         Thing.withTransaction {
             new Thing(code: code, description: "An $code thing",
                       dateManufactured: new Date(), isGood: 'Y', isLarge: true)
-                .addPart(new PartOfThing(code: 'aa', description: 'aa part').save())
-                .addPart(new PartOfThing(code: 'bb', description: 'bb part').save())
+                .addToParts(new PartOfThing(code: 'aa', description: 'aa part'))
+                .addToParts(new PartOfThing(code: 'bb', description: 'bb part'))
                 .save()
         }
 

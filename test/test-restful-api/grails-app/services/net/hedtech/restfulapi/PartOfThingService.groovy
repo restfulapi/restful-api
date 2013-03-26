@@ -16,49 +16,57 @@ import org.springframework.orm.hibernate3.HibernateOptimisticLockingFailureExcep
 
 import java.security.*
 
-class ThingService {
+class PartOfThingService {
+
+    def grailsApplication
 
     def list(Map params) {
 
-        log.trace "ThingService.list invoked with params $params"
-
-        def result
-
-        // TODO: Do validation testing in create or update -- this is temporary
-        if (params.forceValidationError == 'y') {
-            // This will throw a validation exception...
-            new Thing(code:'FAIL', description: 'Code exceeds 2 chars').save(failOnError:true)
-        }
+        log.trace "PartOfThingService.list invoked with params $params"
 
         params.max = Math.min( params.max ? params.max.toInteger() : 10,  100)
-        result = Thing.list(fetch: [parts: "eager"],
-                            max: params.max, offset: params.offset ).sort { it.id }
-        result.each {
-            supplementThing( it )
-        }
 
-        log.trace "ThingService.list returning ${result}"
+        def result
+        if ('things' == params.parentPluralizedResourceName) {
+            log.trace "... resource is nested within ${params.parentPluralizedResourceName}-${params.parentId}"
+
+            def parent = getDomainClass(params.parentPluralizedResourceName).get(params.parentId)
+            log.trace ".... parent is $parent"
+            result = PartOfThing.findAll(max: params.max, offset: params.offset, sort: 'code' ) {
+                thing.id == params.parentId
+            }
+        }
+        else {
+            result = PartOfThing.list( max: params.max, offset: params.offset, sort: 'code' )
+        }
+        log.trace "PartOfThingService.list returning ${result} of class ${result.getClass()}"
         result
     }
 
+
     def count(Map params) {
-        log.trace "ThingService.count invoked"
-        Thing.count()
+        log.trace "PartOfThingService.count invoked"
+        if ('things' == params?.parentPluralizedResourceName) {
+            PartOfThing.countByThing(Thing.get(params.parentId))
+        } else {
+            PartOfThing.count()
+        }
     }
 
 
     def show(Map params) {
-        log.trace "ThingService.show invoked"
+        log.trace "PartOfThingService.show invoked"
         def result
         result = Thing.get(params.id)
         result.parts // force lazy loading
         supplementThing( result )
-        log.trace "ThingService.show returning ${result}"
+        log.trace "PartOfThingService.show returning ${result}"
         result
     }
 
+
     def create(Map content) {
-        log.trace "ThingService.create invoked"
+        log.trace "PartOfThingService.create invoked"
 
         if (WebUtils.retrieveGrailsWebRequest().getParameterMap().forceGenericError == 'y') {
             throw new Exception( "generic failure" )
@@ -67,29 +75,21 @@ class ThingService {
         def result
 
         Thing.withTransaction {
-            def instance = new Thing()
-            instance.properties['code','description'] = content
-            if (content['parts']) {
-                content['parts']?.each { partMap ->
-                    def part = new PartOfThing()
-                    part.properties = partMap
-                    part.thing = instance
-                    instance.addToParts( part )
-                }
+            def instance = new Thing( content )
+            instance.parts = [] as Set //workaround for GRAILS-9775 until the bindable constraint works on associtations
+            content['parts'].each { partID ->
+                instance.addPart( PartOfThing.get( partID ) )
             }
             instance.save(failOnError:true)
             result = instance
-            if (content['parts']) result.parts //force lazy loading
-            else result.parts = [] as Set
+            result.parts //force lazy loading
         }
         supplementThing( result )
-        log.trace "ThingService.create returning $result"
         result
     }
 
-
     def update(def id, Map content) {
-        log.trace "ThingService.update invoked"
+        log.trace "PartOfThingService.update invoked"
 
         checkForExceptionRequest()
 
@@ -131,6 +131,19 @@ class ThingService {
 
     private def exceptionForOptimisticLock( domainObject, content ) {
         new OptimisticLockException( new StaleObjectStateException( domainObject.class.getName(), domainObject.id ) )
+    }
+
+    protected Class getDomainClass(String pluralizedResourceName) {
+        def singularizedName = Inflector.singularize(pluralizedResourceName)
+        def className = Inflector.camelCase(singularizedName, true)
+        def domainClass = grailsApplication.domainClasses.find { it.clazz.simpleName == className }?.clazz
+        if (!domainClass) domainClass = grailsApplication.allClasses.find { it.getClass().simpleName == className }
+
+        return domainClass ? domainClass : ''.getClass()
+    }
+
+    private String domainName(String pluralizedResourceName) {
+        Inflector.asPropertyName(pluralizedResourceName)
     }
 
     /**
