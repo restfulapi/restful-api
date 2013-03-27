@@ -145,9 +145,9 @@ class RestfulApiController {
             }
             ResponseHolder holder = new ResponseHolder()
             holder.data = result
-            holder.addHeader('X-hedtech-totalCount',count)
-            holder.addHeader('X-hedtech-pageOffset',params.max ? params?.max : result.count)
-            holder.addHeader('X-hedtech-pageMaxSize',params.offset ? params?.offset : 0)
+            holder.addHeader('X-hedtech-totalCount', count)
+            holder.addHeader('X-hedtech-pageOffset', params.offset ? params?.offset : 0)
+            holder.addHeader('X-hedtech-pageMaxSize', params.max ? params?.max : result.size())
             renderSuccessResponse( holder, 'default.rest.list.message' )
         }
         catch (e) {

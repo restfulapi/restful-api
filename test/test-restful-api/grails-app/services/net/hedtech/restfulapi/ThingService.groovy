@@ -21,7 +21,6 @@ class ThingService {
     def list(Map params) {
 
         log.trace "ThingService.list invoked with params $params"
-
         def result
 
         // TODO: Do validation testing in create or update -- this is temporary
@@ -29,17 +28,18 @@ class ThingService {
             // This will throw a validation exception...
             new Thing(code:'FAIL', description: 'Code exceeds 2 chars').save(failOnError:true)
         }
+        def max = Math.min( params.max ? params.max.toInteger() : 100,  100)
+        def offset = params.offset ?: 0
+        result = Thing.list( offset: offset, max: max, sort: 'code' )
 
-        params.max = Math.min( params.max ? params.max.toInteger() : 10,  100)
-        result = Thing.list(fetch: [parts: "eager"],
-                            max: params.max, offset: params.offset ).sort { it.id }
         result.each {
             supplementThing( it )
         }
 
-        log.trace "ThingService.list returning ${result}"
+        log.trace "ThingService.list is returning a ${result.getClass().simpleName} containing ${result.size()} things"
         result
     }
+
 
     def count(Map params) {
         log.trace "ThingService.count invoked"
@@ -56,6 +56,7 @@ class ThingService {
         log.trace "ThingService.show returning ${result}"
         result
     }
+
 
     def create(Map content) {
         log.trace "ThingService.create invoked"
@@ -108,12 +109,14 @@ class ThingService {
         result
     }
 
+
     void delete(id,Map content) {
         Thing.withTransaction {
             def thing = Thing.get(id)
             thing.delete(failOnError:true)
         }
     }
+
 
     public def checkOptimisticLock( domainObject, content ) {
 
@@ -129,9 +132,11 @@ class ThingService {
         }
     }
 
+
     private def exceptionForOptimisticLock( domainObject, content ) {
         new OptimisticLockException( new StaleObjectStateException( domainObject.class.getName(), domainObject.id ) )
     }
+
 
     /**
      * Checks the request for a flag asking for a specific exception to be thrown
@@ -148,6 +153,7 @@ class ThingService {
             throw new DummyApplicationException( params.appStatusCode, params.appMsgCode, params.appErrorType )
         }
     }
+
 
     private void supplementThing( Thing thing ) {
         MessageDigest digest = MessageDigest.getInstance("SHA1")

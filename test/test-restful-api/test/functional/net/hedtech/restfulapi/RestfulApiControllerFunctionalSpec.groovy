@@ -211,6 +211,39 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         json[0]._href?.contains('part-of-things')
     }
 
+    @Unroll
+    def "Test list paging with json response"( int max, int offset, int numReturned ) {
+        setup:
+        def totalNumber = 95
+        createManyThings(totalNumber)
+
+        when:"list with application/json accept"
+        get("$localBase/api/things?max=$max&offset=$offset") {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/json'
+        }
+
+        then:
+        200 == response.status
+        'application/json' == response.contentType
+        def json = JSON.parse response.text
+        numReturned == json.size()
+
+        // assert localization of the message
+        "List of thing resources" == responseHeader('X-hedtech-message')
+
+        //check pagination headers
+        totalNumber == responseHeader('X-hedtech-totalCount').toInteger()
+        offset      == responseHeader('X-hedtech-pageOffset').toInteger()
+        max         == responseHeader('X-hedtech-pageMaxSize').toInteger()
+
+        where:
+        max | offset | numReturned
+        10  | 0      | 10
+        10  | 10     | 10
+        10  | 90     | 5
+    }
+
     def "Test validation error"() {
         setup:
         createThing('AA')
@@ -1028,6 +1061,15 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         createThing('AA')
         createThing('BB')
 
+    }
+
+    private void createManyThings(int num = 99) {
+        assert num < 100 // index is used as 2 char code
+        int index = 0
+        num.times {
+            String code = String.format("%02d", index++)
+            createThing(code)
+        }
     }
 
     private def createThing(String code) {
