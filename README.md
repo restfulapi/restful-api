@@ -11,8 +11,27 @@ Early Access.  The plugin may be used gain familiarity and provide testing feedb
 The restful-api plugin is an implementation designed to conform to the Ellucian API Strategy Document.  It is not intended to implement all optional features of the Document.  It is not intended to provide support for multiple ways to accomplish the same requirements; in general, it implements the recommended approaches specified in the document.
 
 ##Installation
-The recommended approach is to install the plugin as a git submodule.  (Follow the rules for Banner XE on installing plugins as submodules.)  The plugin repo is located at ssh://git@devgit1/framework/plugins/restful-api.git.  Releases will be tagged as release-x.y.
+The recommended approach is to install the plugin as a git submodule.  Another option is to use a Maven repository.
 
+###Git submodule
+The plugin repo is located at ssh://git@devgit1/framework/plugins/restful-api.git.  Releases will be tagged as release-x.y.  For those familiar with Banner XE development please follow the rules for Banner XE on installing plugins as submodules.
+
+In general, add the submodule to your Grails application:
+
+        projects/restful_test_app (master)$ git submodule add ssh://git@devgit1/framework/plugins/restful-api.git plugins/restful-api.git
+        Cloning into 'plugins/restful-api.git'...
+        remote: Counting objects: 1585, done.
+        remote: Compressing objects: 100% (925/925), done.
+        remote: Total 1585 (delta 545), reused 309 (delta 72)
+        Receiving objects: 100% (1585/1585), 294.45 KiB | 215 KiB/s, done.
+        Resolving deltas: 100% (545/545), done.
+
+Add the in-place plugin definition to BuildConfig.groovy:
+
+        grails.plugin.location.'restful-api' = "plugins/restful-api.git"
+
+
+###Maven
 If you cannot use the recommended approach, you can also use the plugin via grail's dependency management.
 
 To do so, define a new repository in your project's BuildConfig.groovy repositories section:
@@ -20,22 +39,29 @@ To do so, define a new repository in your project's BuildConfig.groovy repositor
             mavenRepo name: "core-architecture",
                   root: "http://m039200.ellucian.com:8081/artifactory/core-architecture"
 
-Then include the plugin and its dependencies by adding the following to the plugin section of BuildConfig.groovy:
+In the plugins section of BuildConfig.groovy add:
 
         compile "core-architecture:grails-restful-api:0.1"
+
+
+Note that if you are using the artifactory repository, that this is a *internal only* site.  Source distributed to clients that depends on downloads from the internal artifactory repository will not work.  If you are not using the recommended git submodule approach, ensure that you package the plugin with your application or otherwise make it avaiable.
+
+###Configure plugin dependencies
+Irrespective of the method used to install the RESTful plugin, the following changes must be made to include the plugin dependencies.  The plugin depends on both the inflector plugin, and spock plugins.  (The spock dependency is for the RestSpecification testing class.)
+
+In the dependencies section of BuildConfig.groovy add:
+
+    test "org.spockframework:spock-grails-support:0.7-groovy-2.0"
+
+In the plugins section of BuildConfig.groovy add:
+
+
         compile ":inflector:0.2"
 
         test(":spock:0.7") {
           exclude "spock-grails-support"
         }
 
-In the dependencies section of BuildConfig.groovy, add:
-
-    test "org.spockframework:spock-grails-support:0.7-groovy-2.0"
-
-The plugin depends on both the inflector plugin, and spock plugins.  (The spock dependency is for the RestSpecification testing class.)
-
-Note that if you are using the artifactory repository, that this is a *internal only* site.  Source distributed to clients that depends on downloads from the internal artifactory repository will not work.  If you are not using the recommended git submodule approach, ensure that you package the plugin with your application or otherwise make it avaiable.
 
 ##Details
 
