@@ -88,7 +88,7 @@ log4j = {
     error  'grails.app.services'
     error  'net.hedtech.restfulapi.marshallers'
 
-    error    'org.codehaus.groovy.grails.web'
+    error  'org.codehaus.groovy.grails.web'
     error  'org.codehaus.groovy.grails.web.servlet',        // controllers
            'org.codehaus.groovy.grails.web.pages',          // GSP
            'org.codehaus.groovy.grails.web.sitemesh'        // layouts
@@ -118,6 +118,10 @@ log4j = {
         additivity = true
     }
 }
+
+cors.url.pattern = '/api/*'
+cors.allow.origin.regex='.*'
+cors.expose.headers='content-type,X-hedtech-totalCount,X-hedtech-pageOffset,X-hedtech-pageMaxSize,X-hedtech-message,X-hedtech-Media-Type'
 
 restfulApiConfig = {
 

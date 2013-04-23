@@ -78,6 +78,10 @@ abstract class RestSpecification extends Specification {
         }
 
         RestTemplate restTemplate = new RestTemplate()
+        if (requestCustomizer.getRequestFactory() != null) {
+            restTemplate.setRequestFactory( requestCustomizer.getRequestFactory() )
+        }
+
         try {
             def entity = requestCustomizer.createEntity()
             RestSpecUtils.dumpRequestInfo(url,method,entity)

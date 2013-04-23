@@ -122,8 +122,8 @@ class ThingService {
 
         if (domainObject.hasProperty( 'version' )) {
             if (!content?.version) {
-                thing.errors.reject( 'version', "net.hedtech.restfulapi.Thing.missingVersion")
-                throw new ValidationException( "Missing version field", thing.errors )
+                domainObject.errors.reject( 'version', "net.hedtech.restfulapi.Thing.missingVersion")
+                throw new ValidationException( "Missing version field", domainObject.errors )
             }
             int ver = content.version instanceof String ? content.version.toInteger() : content.version
             if (ver != domainObject.version) {

@@ -24,6 +24,7 @@ class RequestCustomizer {
     HttpHeaders headers = new HttpHeaders()
 
     def body
+    def requestFactory
 
     MultiValueMap<String, Object> mvm = new LinkedMultiValueMap<String, Object>()
 
@@ -53,6 +54,11 @@ class RequestCustomizer {
 
     RequestCustomizer body(Closure c) {
         body = c()?.toString()
+        return this
+    }
+
+    RequestCustomizer requestFactory(Object factory) {
+        this.requestFactory = factory
         return this
     }
 

@@ -3,14 +3,19 @@
 ******************************************************************** -->
 
 # TODO list for work (potential Jiras)
-* Nail down using map to pass data to the services, and issues with data binding.
 * Check the pageOffset and maxSize computations and ensure they are correct
 * Work out the rules for Accept and Content-Type headers when the request or response body is empty.
 * Make sure a 406 or 415 is returned for a resource not explicitly whitelisted
 * Move the date marshaller for JSON into the explicit config, and out of the RestfulApiGrailsPlugin initialization
 * If the selected representation has marshalling errors, fallback to other representations?
 * What's the scope of a resource name?  Is it considered scoped within the application that exposes it?
-* Move spock testing class from test app to the plugin itself and document.
+
+# JSON-P support
+* any impact to error handling?
+* only valid for GET, so limited to list and show operations
+* how to invoke?  use of callback parameter in combination with a json media type?  Is this acceptable as the actual return type
+is not actually indicated by the media type?  (The media type applies to the wrapped content)
+
 
 # TODO list (too small for JIRA)
 
