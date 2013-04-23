@@ -6,6 +6,8 @@ package net.hedtech.restfulapi
 
 import grails.validation.ValidationException
 
+import net.hedtech.restfulapi.query.HQLBuilder
+
 import org.codehaus.groovy.grails.web.util.WebUtils
 
 import org.hibernate.StaleObjectStateException
@@ -23,32 +25,29 @@ class PartOfThingService {
     def list(Map params) {
 
         log.trace "PartOfThingService.list invoked with params $params"
-
         params.max = Math.min( params.max ? params.max.toInteger() : 10,  100)
+        params.offset = params.offset ? params.offset.toInteger() : 0
 
-        def result
-        if ('things' == params.parentPluralizedResourceName) {
-            log.trace "... resource is nested within ${params.parentPluralizedResourceName}-${params.parentId}"
-
-            def parent = getDomainClass(params.parentPluralizedResourceName).get(params.parentId)
-            log.trace ".... parent is $parent"
-            result = PartOfThing.findAll(max: params.max, offset: params.offset, sort: 'code' ) {
-                thing.id == params.parentId
-            }
-        }
-        else {
-            result = PartOfThing.list( max: params.max, offset: params.offset, sort: 'code' )
-        }
+        def queryStatement = HQLBuilder.createHQL( grailsApplication, params )
+        def result = PartOfThing.executeQuery( queryStatement, [], params ) // TODO: Sorting, paging
         log.trace "PartOfThingService.list returning ${result} of class ${result.getClass()}"
         result
     }
 
 
     def count(Map params) {
+
         log.trace "PartOfThingService.count invoked"
-        if ('things' == params?.parentPluralizedResourceName) {
-            PartOfThing.countByThing(Thing.get(params.parentId))
-        } else {
+        if (params.pluralizedResourceName) {
+            // this may be a RESTful endpoint query and we can use the restful-api HQLBuilder
+            def queryStatement = HQLBuilder.createHQL( grailsApplication, params, true /*count*/ )
+            def argMap = params.clone()
+            if (argMap.max) argMap.remove('max')
+            if (argMap.offset) argMap.remove('offset')
+            def countResult = PartOfThing.executeQuery( queryStatement, [], argMap )
+            countResult[0]
+        }
+        else {
             PartOfThing.count()
         }
     }
@@ -134,13 +133,18 @@ class PartOfThingService {
     }
 
     protected Class getDomainClass(String pluralizedResourceName) {
+        def domainClass = getGrailsDomainClass(pluralizedResourceName)?.clazz
+        if (!domainClass) domainClass = grailsApplication.allClasses.find { it.getClass().simpleName == className }
+        domainClass ? domainClass : ''.getClass()
+    }
+
+
+    protected Class getGrailsDomainClass(String pluralizedResourceName) {
         def singularizedName = Inflector.singularize(pluralizedResourceName)
         def className = Inflector.camelCase(singularizedName, true)
-        def domainClass = grailsApplication.domainClasses.find { it.clazz.simpleName == className }?.clazz
-        if (!domainClass) domainClass = grailsApplication.allClasses.find { it.getClass().simpleName == className }
-
-        return domainClass ? domainClass : ''.getClass()
+        grailsApplication.domainClasses.find { it.clazz.simpleName == className }
     }
+
 
     private String domainName(String pluralizedResourceName) {
         Inflector.asPropertyName(pluralizedResourceName)

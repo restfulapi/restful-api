@@ -183,6 +183,10 @@ restfulApiConfig = {
         }
         representation {
             mediaType = 'application/vnd.hedtech.v1+json'
+            addMarshaller {
+                marshaller = new net.hedtech.restfulapi.marshallers.BasicDomainClassMarshaller(grailsApplication)
+                priority = 101
+            }
             extractor = new net.hedtech.restfulapi.extractors.json.ThingDefaultDescriptionExtractor()
         }
         representation {
