@@ -103,7 +103,7 @@ log4j = {
            'org.hibernate',
            'net.sf.ehcache.hibernate'
 
-    error  'RestfulApiController_messageLog'
+    fatal  'RestfulApiController_messageLog'
     error  'net.hedtech.restfulapi'
 
     appenders {

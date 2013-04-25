@@ -528,19 +528,12 @@ User agents typically apply same-origin restrictions to network requests; this p
 
 Applications using the RESTFul API plugin can optionally use the [grails-cors](http://grails.org/plugin/cors) plugin to allow cross-origin requests (via XMLHttpRequest).
 
-The official grails-cors plugin does not currently support the full W3C CORS specification; an Ellucian extended version of it is available from the internal artifactory repository.  In order to use it, edit your BuildConfig.groovy and add the following line to your repositories:
+To use it, add the following plugin-dependency (use at least verion 1.1.0 of the plugin):
 
-    mavenRepo name: "core-architecture",root: "http://m039200.ellucian.com:8081/artifactory/core-architecture"
+    runtime ":cors:1.1.0"
 
-Then add the following plugin dependency:
 
-    runtime "core-architecture:grails-cors:1.0.5-SNAPSHOT"
-
-(A pull request will be submitted to have the new functionality added to the official plugin.)
-
-The CORS support is implemented as a servlet filter.  In addition to the configuration options present in the official version, the SNAPSHOT version also supports the configuration property cors.expose.headers, which can be set to a comma-delimted string of response headers that should be exposed to cross-origin requests.
-
-For example, if your application is exposing the APIs at /apis, and you want to expose all the custom headers the plugin can return, and you want to allow cross-origin requests from any origin, you would add the following to your Config.groovy:
+In order for a client to fully access the api, you will need to configure the cors plugin to issue CORS headers, including exposing the custom headers the plugin returns.  For example, if your application is exposing the APIs at /apis, and you want to expose all the custom headers the plugin can return, and you want to allow cross-origin requests from any origin, you would add the following to your Config.groovy:
 
     cors.url.pattern = '/api/*'
     cors.allow.origin.regex='.*'

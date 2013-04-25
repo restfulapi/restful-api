@@ -26,7 +26,7 @@ grails.project.dependency.resolution = {
 
         mavenLocal()
         mavenCentral()
-        mavenRepo name: "core-architecture",root: "http://m039200.ellucian.com:8081/artifactory/core-architecture"
+        //mavenRepo name: "core-architecture",root: "http://m039200.ellucian.com:8081/artifactory/core-architecture"
     }
     dependencies {
         test "org.spockframework:spock-grails-support:0.7-groovy-2.0"
@@ -48,7 +48,7 @@ grails.project.dependency.resolution = {
         compile ":functional-spock:0.6"
         //plugin CORS testing.  currently using private fork until
         //changes are accepted in official plugin
-        runtime "core-architecture:grails-cors:1.0.5-SNAPSHOT"
+        runtime ":cors:1.1.0"
 
         // 'grails install-plugin inflector' updated
         // application.properties file.  Source code is at:
