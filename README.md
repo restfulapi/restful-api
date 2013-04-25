@@ -165,12 +165,12 @@ The plugin delegates to the following methods on a service:
 
 ###list method
 The list method will be passed the request parameters object directly.
-If paging support is being used, params.max, and params.offset should be used to indicate the maximum number of results to return and the offset.
+If paging support is being used, params.max, and params.offset should be used to indicate the maximum number of results to return and the offset. Support for filtering the list is also provided as discussed [below](#filter-list).
 
 The list method must return a list of the objects for the resource being listed.  These objects will be rendered as a resource representation via the configured marshallers.
 
 ###count method
-The count method must return the total number of intances of the resource.  It is used in conjunction with the list method when returning a list of resources.
+The count method must return the total number of intances of the resource.  It is used in conjunction with the list method when returning a list of resources.  Support for filtering the count is also provided as discussed [below](#filter-list).
 
 ###show method
 The show method will be passed the request parameters object directly.
@@ -208,6 +208,20 @@ The delete method returns void.
 To support services that have a contract different than the service contract described above, a 'RestfulServiceAdapter' may be registered in the Spring application context. If an adapter is registered, it will be used by the RestfulApiController for all interaction with servcies. (Currently, only a single adapter may be registered, so it must be implemented to support all services that are used to support a RESTful API.)
 
 As a convenience, a 'RestfulServiceBaseAdapter' is included within this plugin to faciliate delegation to Banner XE services that extend the 'ServiceBase' found within the 'banner-core' plugin. (Note while this adapter is specific to Banner XE, this plugin has no dependencies on either Banner XE or the banner-core plugin.)
+
+##<a id="filter-list"></a>Filtering
+As a convenience, the plugin provides a Filter class that includes a factory method (extractFilters) that may be used to create a list of Filter instances from the query parameters.  The URL query parameters that may be used with this class must be in the format:
+```
+part-of-things?filter[0][field]=description&filter[1][value]=6&filter[0][operator]=contains&filter[1][field]=thing&filter[1][operator]=eq&filter[0][value]=AZ&max=50
+```
+The filters may be used to filter on a resource's property whether a primitive property or one representing an associated resource.  Currently only single resource assocations are supported (i.e., not collections).  The operators include 'eq' (or 'equals') and 'contains' (which performs a case insensative 'ilike'-like comparison, although not actually using 'ilike' as that is not supported by Oracle).
+
+The plugin also includes an HQLBuilder utility class that will construct an HQL statement from the request params object. This will leverage the Filter class to extract filters and will then construct the HQL statement.  Following is an example usage:
+```
+def queryStatement = HQLBuilder.createHQL( grailsApplication, params )
+def result = PartOfThing.executeQuery( queryStatement, [], params )
+```
+The createHQL method accepts a third argument which is a boolean, and if true indicates the statement should be generated to perform a 'count(*)' versus a select. That is, the HQLBuilder may be used in both list() and count() service methods to ensure the totalCount properly reflects the filters provided on the request.
 
 ##Supplemental data/affordances/HATEOS
 Since the plugin does not use an envelope in the message body, any affordances must be present in the resource representations themselves.

@@ -29,7 +29,7 @@ class PartOfThingService {
         params.offset = params.offset ? params.offset.toInteger() : 0
 
         def queryStatement = HQLBuilder.createHQL( grailsApplication, params )
-        def result = PartOfThing.executeQuery( queryStatement, [], params ) // TODO: Sorting, paging
+        def result = PartOfThing.executeQuery( queryStatement, [], params )
         log.trace "PartOfThingService.list returning ${result} of class ${result.getClass()}"
         result
     }
