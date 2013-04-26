@@ -232,4 +232,20 @@ restfulApiConfig = {
         }
     }
 
+    //test overriding conventions for finding the service for a resource
+    //we will map thingamabobs to thingService.  There is no thingamabob domain
+    //object or service.
+    resource {
+        name = 'thingamabobs'
+        serviceName = 'thingService'
+        representation {
+            mediaType = "application/json"
+            addMarshaller {
+                marshaller = new net.hedtech.restfulapi.marshallers.BasicDomainClassMarshaller(grailsApplication)
+                priority = 100
+            }
+            extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()
+        }
+    }
+
 }

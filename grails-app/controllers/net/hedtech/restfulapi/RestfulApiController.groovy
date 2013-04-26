@@ -80,7 +80,9 @@ class RestfulApiController {
     void init() {
 
         log.trace 'Initializing RestfulApiController...'
-
+        if (!(grailsApplication.config.restfulApiConfig instanceof Closure)) {
+            throw new RuntimeException( "Missing restfulApiConfig" )
+        }
         restConfig = RestConfig.parse( grailsApplication, grailsApplication.config.restfulApiConfig )
         restConfig.validate()
 
@@ -251,13 +253,13 @@ class RestfulApiController {
      * Renders a successful response using the supplied map and the msg resource
      * code.
      * A message property with a value translated from the message resource code
-     * provided with a localized domainName will be automatically added to the map.
+     * provided with a localized and singularized resource name will be automatically
+     * added to the map.
      * @param responseMap the Map to render
      * @param msgResourceCode the resource code used to create a message entry
      **/
     protected void renderSuccessResponse(ResponseHolder holder, String msgResourceCode) {
-
-        String localizedName = localize(domainName())
+        String localizedName = localize(Inflector.singularize(params.pluralizedResourceName))
         holder.message = message( code: msgResourceCode, args: [ localizedName ] )
         renderResponse( holder )
     }
@@ -325,7 +327,7 @@ class RestfulApiController {
             if (!handler) {
                 handler = exceptionHandlers[ 'AnyOtherException' ]
             }
-            def result = handler(e)
+            def result = handler(params.pluralizedResourceName, e)
             if (result.headers) {
                 result.headers.each() { header ->
                     responseHolder.addHeader( header.key, header.value )
@@ -501,7 +503,7 @@ class RestfulApiController {
 
 
     /**
-     * Returns the name of the service to which this controller will delgate.
+     * Returns the name of the service to which this controller will delegate.
      * This implementation assumes the resource is a Grails 'domain'
      * object, and that the service name can be constructed by using the pluralized
      * 'resource' name found on the URL and appending 'Service'.
@@ -509,7 +511,10 @@ class RestfulApiController {
      * a service name of 'SingularizedResourceNameService' will be returned.
      **/
     protected String getServiceName() {
-        def svcName = "${domainName()}Service"
+        def svcName = restConfig.getResource( params.pluralizedResourceName )?.serviceName
+        if (svcName == null) {
+            svcName = "${domainName()}Service"
+        }
         log.trace "getServiceName() will return $svcName"
         svcName
     }
@@ -568,28 +573,12 @@ class RestfulApiController {
     }
 
 
-    protected Class getDomainClass() {
-        def singularizedName = Inflector.singularize(params.pluralizedResourceName)
-        def className = Inflector.camelCase(singularizedName, true)
-        def domainClass = grailsApplication.domainClasses.find { it.clazz.simpleName == className }?.clazz
-        if (!domainClass) domainClass = grailsApplication.allClasses.find { it.getClass().simpleName == className }
-
-        return domainClass ? domainClass : ''.getClass()
-    }
-
-
-    protected Class getNonDomainClass(String className) {
-
-    }
-
-
     /**
      * Returns the best match, or null if no supported representation for the resource exists.
      **/
     protected RepresentationConfig getRepresentation(pluralizedResourceName, allowedTypes) {
         return restConfig.getRepresentation( pluralizedResourceName, allowedTypes.name )
     }
-
 
     private String localize(String name) {
         message( code: "${name}.label", default: "$name" )
@@ -739,17 +728,16 @@ class RestfulApiController {
 
     private def exceptionHandlers = [
 
-        'ValidationException': { e->
+        'ValidationException': { pluralizededResourceName, e->
             [
                 httpStatusCode: 400,
                 headers: ['X-Status-Reason':'Validation failed'],
                 message: message( code: "default.rest.validation.errors.message",
-                                          args: [ localize(domainName()) ] ) as String,
+                                          args: [ Inflector.singularize( pluralizededResourceName ) ] ) as String,
                 returnMap: [
                     errors: [
                         [
                             type: "validation",
-                            resource: [ class: getDomainClass().name, id: params.id ],
                             errorMessage: e.message
                         ]
                     ]
@@ -757,16 +745,16 @@ class RestfulApiController {
             ]
         },
 
-        'OptimisticLockException': { e ->
+        'OptimisticLockException': { pluralizededResourceName, e ->
             [
                 httpStatusCode: 409,
                 message: message( code: "default.optimistic.locking.failure",
-                                          args: [ localize(domainName()) ] ) as String,
+                                          args: [ Inflector.singularize( pluralizededResourceName ) ] ) as String,
             ]
         },
 
 
-        'UnsupportedResponseRepresentationException': { e ->
+        'UnsupportedResponseRepresentationException': { pluralizededResourceName, e ->
             [
                 httpStatusCode: 406,
                 message: message( code: "default.rest.unknownrepresentation.message",
@@ -774,7 +762,7 @@ class RestfulApiController {
             ]
         },
 
-        'UnsupportedRequestRepresentationException': { e ->
+        'UnsupportedRequestRepresentationException': { pluralizededResourceName, e ->
             [
                 httpStatusCode: 415,
                 message: message( code: "default.rest.unknownrepresentation.message",
@@ -782,7 +770,7 @@ class RestfulApiController {
             ]
         },
 
-        'IdMismatchException': { e ->
+        'IdMismatchException': { pluralizededResourceName, e ->
             [
                 httpStatusCode: 400,
                 headers: ['X-Status-Reason':'Id mismatch'],
@@ -791,7 +779,7 @@ class RestfulApiController {
             ]
         },
 
-        'ApplicationException': { e ->
+        'ApplicationException': { pluralizededResourceName, e ->
             // wrap the 'message' invocation within a closure, so it can be passed into an ApplicationException to localize error messages
             def localizer = { mapToLocalize ->
                 this.message( mapToLocalize )
@@ -819,15 +807,14 @@ class RestfulApiController {
         },
 
         // Catch-all.  Unknown exception type.
-        'AnyOtherException': { e ->
+        'AnyOtherException': { pluralizededResourceName, e ->
             [
                 httpStatusCode: 500,
                 message: message( code: "default.rest.general.errors.message",
-                                          args: [ localize(domainName()) ] ) as String,
+                                  args: [ pluralizededResourceName ] ) as String,
                 returnMap: [
                     errors: [ [
                         type: "general",
-                        resource: [ class: getDomainClass().name, id: params.id ],
                         errorMessage: e.message
                         ]
                     ]

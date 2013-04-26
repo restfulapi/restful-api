@@ -158,7 +158,7 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         createThing('AA')
         createThing('BB')
 
-        when:"list with  application/json accept"
+        when:"list with application/json accept"
         get("$localBase/api/part-of-things?sort=code") {
             headers['Content-Type'] = 'application/json'
             headers['Accept']       = 'application/json'
@@ -174,7 +174,7 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         "aa part" == json[0].description
 
         // assert localization of the message
-        "List of partOfThing resources" == responseHeader('X-hedtech-message')
+        "List of part-of-thing resources" == responseHeader('X-hedtech-message')
 
         //check pagination headers
         "4" == responseHeader('X-hedtech-totalCount')
@@ -204,7 +204,7 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         "aa part" == json[0].description
 
         // assert localization of the message
-        "List of partOfThing resources" == responseHeader('X-hedtech-message')
+        "List of part-of-thing resources" == responseHeader('X-hedtech-message')
 
         //check pagination headers
         "2" == responseHeader('X-hedtech-totalCount')
@@ -269,7 +269,6 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         def json = JSON.parse response.text
         1 == json.errors.size()
         "validation" == json.errors[0].type
-        json.errors[0].resource.class == 'net.hedtech.restfulapi.Thing'
         null != json.errors[0].errorMessage
     }
 
@@ -489,7 +488,6 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         def json = JSON.parse response.text
         1 == json.errors.size()
         "validation" == json.errors[0].type
-        json.errors[0].resource.class == 'net.hedtech.restfulapi.Thing'
         null != json.errors[0].errorMessage
     }
 
@@ -513,7 +511,6 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         def json = JSON.parse response.text
         1 == json.errors.size()
         "general" == json.errors[0].type
-        json.errors[0].resource.class == 'net.hedtech.restfulapi.Thing'
         null != json.errors[0].errorMessage
     }
 

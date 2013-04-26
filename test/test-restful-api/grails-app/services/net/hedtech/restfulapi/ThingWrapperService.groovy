@@ -12,7 +12,7 @@ class ThingWrapperService {
 
     def list(Map params) {
 
-        log.trace "ComplexThingService.list invoked with params $params"
+        log.trace "ThingWrapperService.list invoked with params $params"
 
         params.max = Math.min( params.max ? params.max.toInteger() : 10,  100)
         def result
@@ -33,7 +33,7 @@ class ThingWrapperService {
             result << wrapper
         }
 
-        log.trace "ComplexWrapperService.list returning ${result}"
+        log.trace "ThingWrapperService.list returning ${result}"
         result
     }
 

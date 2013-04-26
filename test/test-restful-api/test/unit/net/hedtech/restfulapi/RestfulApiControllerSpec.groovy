@@ -313,6 +313,28 @@ class RestfulApiControllerSpec extends Specification {
 
     }
 
+    def "Test that service name can be overridden in configuration"() {
+      setup:
+        //use default extractor for any methods with a request body
+         config.restfulApiConfig = {
+            resource {
+                name = 'things'
+                serviceName = 'theThingService'
+                representation {
+                    mediaType = 'application/json'
+                    extractor = new DefaultJSONExtractor()
+                }
+            }
+        }
+        controller.init()
+        params.pluralizedResourceName = 'things'
+
+        when:
+        def serviceName = controller.getServiceName()
+
+        then:
+        'theThingService' == serviceName
+    }
 
 
 

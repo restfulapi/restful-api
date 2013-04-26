@@ -66,7 +66,9 @@ In the plugins section of BuildConfig.groovy add:
 ##Details
 
 ###Use of conventions
-The plugin relies heavily on convention-over-configuration.  A request to a resource named 'things' will be delegated to the 'ThingService'.  De-pluralization of the resource name happens automatically; it is also assumed that there is a unique ThingService that can be looked up in the grails application.
+The plugin relies heavily on convention-over-configuration.  A request to a resource named 'things' will be delegated to the bean registered as 'thingService'.  De-pluralization of the resource name happens automatically; it is also assumed that there is a unique bean registered as thingService that can be looked up in the grails application.
+
+You can override this convention by specifying a different service name in the configuration.
 
 ###Url Mapping
 To use the restful plugin, you need to configure your UrlMappings.groovy to route the requests to the controller.
@@ -455,6 +457,29 @@ Configuration elements are applied in the order in which they are encountered.  
     }
 
 Will result in an exception, as the first call to `getMarshallerGroup('student')` occurs before the marshallerGroup is defined.
+
+####Overriding the service used for a resource.
+By default, the name of the service to use is derived from the name of the resource.  You can override the name of the service bean to use for the resource with the 'serviceName' property when configuring a resource.  For example:
+
+    restfulApiConfig = {
+        resource {
+            name = 'students'
+            serviceName = 'studentFacadeService'
+            representation {
+                mediaType = 'application/json'
+                addMarshaller getMarshallerGroup('student')
+            }
+        }
+        marshallerGroup {
+            name = 'student'
+            addMarshaller {
+                marshaller = new net.hedtech.restfulapi.marshallers.json.StudentMarshaller(grailsApplication)
+                priority = 100
+            }
+        }
+    }
+
+Will cause the list, show, create, update, and delete methods for the resource 'students' to be delegated to the bean registered under the name 'studentFacadeService' instead of 'studentService'.
 
 
 ##JSON-as-xml
