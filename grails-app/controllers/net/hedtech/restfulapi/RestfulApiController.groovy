@@ -544,9 +544,6 @@ class RestfulApiController {
     }
 
 
-    // TODO: Register a map of adapters instead of a single adapter
-    //       (so that different service contracts may be used
-    //       for different resources.)
     /**
      * Returns an adapter supporting the service for which this
      * controller will delegate.

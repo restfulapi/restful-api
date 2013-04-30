@@ -36,7 +36,7 @@ class Filter {
 
     public String field
     public String operator
-    public String value
+    public def value
     public GrailsDomainClassProperty persistentProperty
     public boolean isAssociation
     public boolean isMany
@@ -74,8 +74,10 @@ class Filter {
         filters.each {
             def filter = it.value
             filter.persistentProperty = findProperty( properties, filter.field )
-            filter.isAssociation = isDomainClassProperty( filter.persistentProperty )
-            filter.isMany = isCollection( filter.persistentProperty.type )
+            if (filter.persistentProperty) {
+                filter.isAssociation = isDomainClassProperty( filter.persistentProperty )
+                filter.isMany = isCollection( filter.persistentProperty.type )
+            }
         }
         filters.sort().collect { it.value }
     }
@@ -129,7 +131,7 @@ class Filter {
 
 
     public static boolean isDomainClassProperty(GrailsDomainClassProperty property) {
-        property.getReferencedDomainClass() != null
+        property?.getReferencedDomainClass() != null
     }
 
 }

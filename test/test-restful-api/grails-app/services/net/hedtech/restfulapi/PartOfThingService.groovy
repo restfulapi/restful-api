@@ -28,8 +28,8 @@ class PartOfThingService {
         params.max = Math.min( params.max ? params.max.toInteger() : 10,  100)
         params.offset = params.offset ? params.offset.toInteger() : 0
 
-        def queryStatement = HQLBuilder.createHQL( grailsApplication, params )
-        def result = PartOfThing.executeQuery( queryStatement, [], params )
+        def query = HQLBuilder.createHQL( grailsApplication, params )
+        def result = PartOfThing.executeQuery( query.statement, query.parameters, params )
         log.trace "PartOfThingService.list returning ${result} of class ${result.getClass()}"
         result
     }
@@ -40,11 +40,11 @@ class PartOfThingService {
         log.trace "PartOfThingService.count invoked"
         if (params.pluralizedResourceName) {
             // this may be a RESTful endpoint query and we can use the restful-api HQLBuilder
-            def queryStatement = HQLBuilder.createHQL( grailsApplication, params, true /*count*/ )
+            def query = HQLBuilder.createHQL( grailsApplication, params, true /*count*/ )
             def argMap = params.clone()
             if (argMap.max) argMap.remove('max')
             if (argMap.offset) argMap.remove('offset')
-            def countResult = PartOfThing.executeQuery( queryStatement, [], argMap )
+            def countResult = PartOfThing.executeQuery( query.statement, query.parameters, argMap )
             countResult[0]
         }
         else {

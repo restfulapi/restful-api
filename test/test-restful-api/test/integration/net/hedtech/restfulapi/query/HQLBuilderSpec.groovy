@@ -91,6 +91,33 @@ class HQLBuilderSpec extends IntegrationSpec {
     }
 
 
+    def "Test reporting query parameters using unsupported filter operators"() {
+
+        // Note: We currently ignore bad terms and proceed with the query
+        // using the other filter criteria.
+
+        setup:
+        // URL:  things?filter[0][field]=code&filter[1][value]=science&filter[0][operator]=eq&
+        // filter[1][field]=description&filter[1][operator]=contains&filter[0][value]=ZZ&max=50
+        Map params = [ 'pluralizedResourceName':'things',
+                       'filter[0][field]':'code',
+                       'filter[1][value]':'science',
+                       'filter[0][operator]':'startsWith', // not supported!
+                       'filter[1][field]':'description',
+                       'filter[1][operator]':'contains',
+                       'filter[0][value]':'ZZ',
+                       'max':'50'
+                     ]
+
+        when:
+        def result = Filter.extractFilters( grailsApplication, params )
+
+        then:
+        !result[0].isValid()
+        result[1].isValid()
+    }
+
+
     def "Test creating unfiltered query"() {
 
         setup:
@@ -98,10 +125,10 @@ class HQLBuilderSpec extends IntegrationSpec {
         Map params = [ 'pluralizedResourceName':'things' ]
 
         when:
-        def queryStatement = HQLBuilder.createHQL(grailsApplication, params)
+        def query = HQLBuilder.createHQL(grailsApplication, params)
 
         then:
-        'SELECT a FROM Thing a' == queryStatement
+        'SELECT a FROM Thing a' == query.statement
     }
 
 
@@ -115,11 +142,11 @@ class HQLBuilderSpec extends IntegrationSpec {
                        'sort':'code', 'order':'desc' ]
 
         when:
-        def queryStatement = HQLBuilder.createHQL(grailsApplication, params)
+        def query = HQLBuilder.createHQL(grailsApplication, params)
 
         then:
-        'SELECT a FROM Thing a ORDER BY a.code desc' == queryStatement
-        def things = Thing.executeQuery(queryStatement, [], params)
+        "SELECT a FROM Thing a ORDER BY a.code desc" == query.statement
+        def things = Thing.executeQuery( query.statement, query.parameters, params )
         things?.size == 5
         things[0].code == 'K'
         things[4].code == 'G'
@@ -129,23 +156,53 @@ class HQLBuilderSpec extends IntegrationSpec {
     def "Test creating simple filtered query"() {
 
         setup:
+        def xxId = createThing('XX')
+        def yyId = createThing('yy')
+
         // URL: things?filter[0][field]=code&filter[1][value]=science&filter[0][operator]=eq&
         // filter[1][field]=description&filter[1][operator]=contains&filter[0][value]=ZZ&max=50
         Map params = [ 'pluralizedResourceName':'things',
                        'filter[0][field]':'code',
-                       'filter[1][value]':'science',
+                       'filter[1][value]':'An XX',
                        'filter[0][operator]':'eq',
                        'filter[1][field]':'description',
                        'filter[1][operator]':'contains',
-                       'filter[0][value]':'AA',
+                       'filter[0][value]':'XX',
                        'max':'50'
                      ]
 
         when:
-        def queryStatement = HQLBuilder.createHQL(grailsApplication, params)
+        def query = HQLBuilder.createHQL(grailsApplication, params)
 
         then:
-        "SELECT a FROM Thing a WHERE a.code = 'AA' AND lower(a.description) LIKE lower('%science%')" == queryStatement
+        "SELECT a FROM Thing a WHERE a.code = :code AND lower(a.description) LIKE lower(:description)" == query.statement
+
+        def things = Thing.executeQuery(query.statement, query.parameters, [:])
+        'XX' == things[0].code
+        'An XX thing' == things[0].description
+    }
+
+
+    def "Test reporting bad query"() {
+
+        setup:
+        // URL: things?filter[0][field]=code&filter[1][value]=science&filter[0][operator]=eq&
+        // filter[1][field]=description&filter[1][operator]=contains&filter[0][value]=ZZ&max=50
+        Map params = [ 'pluralizedResourceName':'things',
+                       'filter[0][field]':'you_will_not_find_me',
+                       'filter[1][value]':'An XX',
+                       'filter[0][operator]':'eq',
+                       'filter[1][field]':'description',
+                       'filter[1][operator]':'contains',
+                       'filter[0][value]':'XX',
+                       'max':'50'
+                     ]
+
+        when:
+            def query = HQLBuilder.createHQL(grailsApplication, params)
+
+        then:
+            thrown BadFilterException
     }
 
 
@@ -168,12 +225,12 @@ class HQLBuilderSpec extends IntegrationSpec {
                      ]
 
         when:
-        def queryStatement = HQLBuilder.createHQL(grailsApplication, params)
+        def query = HQLBuilder.createHQL(grailsApplication, params)
 
         then:
-        "SELECT a FROM PartOfThing a INNER JOIN a.thing b WHERE lower(a.description) LIKE lower('%p1%') AND b.id = $yyId" == queryStatement
+        "SELECT a FROM PartOfThing a INNER JOIN a.thing b WHERE lower(a.description) LIKE lower(:description) AND b.id = :thing" == query.statement
 
-        def things = Thing.executeQuery(queryStatement)
+        def things = Thing.executeQuery(query.statement, query.parameters, [:])
         things?.size == 1
         things[0].code == 'p1'
         things[0].thing.id == yyId
@@ -200,12 +257,12 @@ class HQLBuilderSpec extends IntegrationSpec {
                      ]
 
         when:
-        def queryStatement = HQLBuilder.createHQL(grailsApplication, params)
+        def query = HQLBuilder.createHQL(grailsApplication, params)
 
         then:
-        "SELECT a FROM PartOfThing a INNER JOIN a.thing b WHERE b.id = $yyId AND lower(a.description) LIKE lower('%p2%') ORDER BY a.code" == queryStatement
+        "SELECT a FROM PartOfThing a INNER JOIN a.thing b WHERE b.id = :thing AND lower(a.description) LIKE lower(:description) ORDER BY a.code" == query.statement
 
-        def things = Thing.executeQuery(queryStatement)
+        def things = Thing.executeQuery(query.statement, query.parameters)
         things?.size == 1
         things[0].code == 'p2'
         things[0].thing.id == yyId
@@ -228,10 +285,10 @@ class HQLBuilderSpec extends IntegrationSpec {
                      ]
 
         when:
-        def queryStatement = HQLBuilder.createHQL(grailsApplication, params, true /*count*/)
+        def query = HQLBuilder.createHQL(grailsApplication, params, true /*count*/)
 
         then:
-        "SELECT count(a) FROM Thing a WHERE a.code = 'AA' AND lower(a.description) LIKE lower('%science%')" == queryStatement
+        "SELECT count(a) FROM Thing a WHERE a.code = :code AND lower(a.description) LIKE lower(:description)" == query.statement
     }
 
 
@@ -255,12 +312,12 @@ class HQLBuilderSpec extends IntegrationSpec {
                      ]
 
         when:
-        def queryStatement = HQLBuilder.createHQL(grailsApplication, params, true /*count*/)
+        def query = HQLBuilder.createHQL(grailsApplication, params, true /*count*/)
 
         then:
-        "SELECT count(a) FROM PartOfThing a INNER JOIN a.thing b WHERE b.id = $yyId AND lower(a.description) LIKE lower('%p2%')" == queryStatement
+        "SELECT count(a) FROM PartOfThing a INNER JOIN a.thing b WHERE b.id = :thing AND lower(a.description) LIKE lower(:description)" == query.statement
 
-        def count = Thing.executeQuery(queryStatement)
+        def count = Thing.executeQuery(query.statement, query.parameters)
         1 == count[0].toInteger()
     }
 
