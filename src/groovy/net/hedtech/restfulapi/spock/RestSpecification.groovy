@@ -68,6 +68,10 @@ abstract class RestSpecification extends Specification {
         }
     }
 
+    def responseHeaders(String name) {
+        return response?.headers[name]
+    }
+
 
     protected doRequestInternal(String url, Closure customizer, HttpMethod method) {
 

@@ -248,4 +248,20 @@ restfulApiConfig = {
         }
     }
 
+    //test overriding supported methods on a resource
+    //allow show and update only
+    resource {
+        name = 'limitedthings'
+        serviceName = 'thingService'
+        methods = ['show','create','update']
+        representation {
+            mediaType = "application/json"
+            addMarshaller {
+                marshaller = new net.hedtech.restfulapi.marshallers.BasicDomainClassMarshaller(grailsApplication)
+                priority = 100
+            }
+            extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()
+        }
+    }
+
 }

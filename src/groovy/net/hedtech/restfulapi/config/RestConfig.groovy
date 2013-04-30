@@ -37,6 +37,7 @@ class RestConfig {
     }
 
     void validate() {
+        resources.values().each() { it.validate() }
         resources.values().each { resource ->
             resource.representations.values().each { representation ->
                 if (representation.jsonAsXml) {

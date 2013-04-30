@@ -427,4 +427,99 @@ class RestConfigSpec extends Specification {
         'TheThingService' == config.resources['things'].serviceName
     }
 
+    def "Test method overrides"() {
+        setup:
+        def src =
+        {
+            resource {
+                name = 'things'
+                methods = ['list','show']
+                representation {
+                    mediaType = 'application/vnd.hedtech.v0+json'
+                    addMarshaller {
+                        marshaller = 'a'
+                        priority = 5
+                    }
+                    addMarshaller {
+                        marshaller = 'b'
+                        priority = 6
+                    }
+                    extractor = 'net.hedtech.DynamicJsonExtractor'
+                }
+            }
+
+        }
+
+        when:
+        def config = RestConfig.parse( grailsApplication, src )
+        config.validate()
+
+        then:
+        ['list','show'] == config.getResource( 'things' ).getMethods()
+    }
+
+    def "Test invalid method name"() {
+        setup:
+        def src =
+        {
+            resource {
+                name = 'things'
+                methods = ['list','show','foo']
+                representation {
+                    mediaType = 'application/vnd.hedtech.v0+json'
+                    addMarshaller {
+                        marshaller = 'a'
+                        priority = 5
+                    }
+                    addMarshaller {
+                        marshaller = 'b'
+                        priority = 6
+                    }
+                    extractor = 'net.hedtech.DynamicJsonExtractor'
+                }
+            }
+
+        }
+
+        when:
+        def config = RestConfig.parse( grailsApplication, src )
+        config.validate()
+
+        then:
+        def e = thrown(UnknownMethodException)
+        'things' == e.resourceName
+        'foo' == e.methodName
+    }
+
+    def "Test methods on resource is not a collection"() {
+        setup:
+        def src =
+        {
+            resource {
+                name = 'things'
+                methods = "list,show"
+                representation {
+                    mediaType = 'application/vnd.hedtech.v0+json'
+                    addMarshaller {
+                        marshaller = 'a'
+                        priority = 5
+                    }
+                    addMarshaller {
+                        marshaller = 'b'
+                        priority = 6
+                    }
+                    extractor = 'net.hedtech.DynamicJsonExtractor'
+                }
+            }
+
+        }
+
+        when:
+        def config = RestConfig.parse( grailsApplication, src )
+        config.validate()
+
+        then:
+        def e = thrown(MethodsNotCollectionException)
+        'things' == e.resourceName
+    }
 }

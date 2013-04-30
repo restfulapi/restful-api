@@ -61,7 +61,7 @@ class RestfulApiControllerSpec extends Specification {
         controllerMethod | httpMethod | id   | serviceMethod | serviceReturn
         'list'           | 'GET'      | null | 'list'        | ['foo']
         'show'           | 'GET'      | '1'  | 'show'        | 'foo'
-        'save'           | 'POST'     | null | 'create'      | 'foo'
+        'create'         | 'POST'     | null | 'create'      | 'foo'
         'update'         | 'PUT'      | '1'  | 'update'      | 'foo'
     }
 
@@ -132,7 +132,7 @@ class RestfulApiControllerSpec extends Specification {
 
         where:
         controllerMethod | httpMethod | id   | serviceMethod | serviceReturn
-        'save'           | 'POST'     | null | 'create'      | 'foo'
+        'create'         | 'POST'     | null | 'create'      | 'foo'
         'update'         | 'PUT'      | '1'  | 'update'      | 'foo'
         'delete'         | 'DELETE'   | '1'  | 'delete'      | null
     }
@@ -193,16 +193,16 @@ class RestfulApiControllerSpec extends Specification {
         //json content, json-as-xml content (xml), and custom xml (any format not)
         //starting with 'xml'
         controllerMethod | httpMethod | mediaType                      | id   | serviceMethod | serviceReturn    | body
-        'save'           | 'POST'     | 'application/json'             | null | 'create'      | 'foo'            | null
+        'create'         | 'POST'     | 'application/json'             | null | 'create'      | 'foo'            | null
         'update'         | 'PUT'      | 'application/json'             | '1'  | 'update'      | 'foo'            | null
         'delete'         | 'DELETE'   | 'application/json'             | '1'  | 'delete'      | null             | null
-        'save'           | 'POST'     | 'application/xml'              | null | 'create'      | 'foo'            | """<?xml version="1.0" encoding="UTF-8"?><json><code>AC</code><description>An AC thingy</description></json>"""
+        'create'         | 'POST'     | 'application/xml'              | null | 'create'      | 'foo'            | """<?xml version="1.0" encoding="UTF-8"?><json><code>AC</code><description>An AC thingy</description></json>"""
         'update'         | 'PUT'      | 'application/xml'              | '1'  | 'update'      | 'foo'            | """<?xml version="1.0" encoding="UTF-8"?><json><code>AC</code><description>An AC thingy</description></json>"""
         'delete'         | 'DELETE'   | 'application/xml'              | '1'  | 'delete'      | null             | """<?xml version="1.0" encoding="UTF-8"?><json><code>AC</code><description>An AC thingy</description></json>"""
-        'save'           | 'POST'     | 'application/custom-xml'       | null | 'create'      | 'foo'            | null
+        'create'         | 'POST'     | 'application/custom-xml'       | null | 'create'      | 'foo'            | null
         'update'         | 'PUT'      | 'application/custom-xml'       | '1'  | 'update'      | 'foo'            | null
         'delete'         | 'DELETE'   | 'application/custom-xml'       | '1'  | 'delete'      | null             | null
-        'save'           | 'POST'     | 'application/custom-thing-xml' | null | 'create'      | 'foo'            | null
+        'create'         | 'POST'     | 'application/custom-thing-xml' | null | 'create'      | 'foo'            | null
         'update'         | 'PUT'      | 'application/custom-thing-xml' | '1'  | 'update'      | 'foo'            | null
         'delete'         | 'DELETE'   | 'application/custom-thing-xml' | '1'  | 'delete'      | null             | null
     }
@@ -334,6 +334,65 @@ class RestfulApiControllerSpec extends Specification {
 
         then:
         'theThingService' == serviceName
+    }
+
+    @Unroll
+    def "Unsupported method returns 405"(String controllerMethod, def allowedMethods, def allowHeader ) {
+        setup:
+        config.restfulApiConfig = {
+            resource {
+                name = 'things'
+                methods = allowedMethods
+                representation {
+                    mediaType = 'application/json'
+                }
+            }
+        }
+        controller.init()
+
+        //mock the appropriate service method, but expect no method calls
+        //(since the request cannot be understood, the service should not be contacted)
+        def mock = Mock(ThingService)
+        controller.metaClass.getService = {-> mock}
+
+        request.addHeader( 'Accept', 'application/json' )
+        request.addHeader( 'Content-Type', 'application/json' )
+        params.pluralizedResourceName = 'things'
+
+        when:
+        controller."$controllerMethod"()
+
+        then:
+        405          == response.status
+          0          == response.getContentLength()
+        allowHeader.size()  == response.headers( 'Allow' ).size()
+        allowHeader as Set == response.headers( 'Allow') as Set
+        0 * _._
+
+        where:
+        //test data for the current 3 'buckets' an incoming request falls into:
+        //json content, json-as-xml content (xml), and custom xml (any format not)
+        //starting with 'xml'
+        controllerMethod | allowedMethods                       | allowHeader
+        'list'           | ['show','update','delete']           | []
+        'list'           | ['create','show','update','delete']  | ["POST"]
+        'list'           | []                                   | []
+        'list'           | ['create']                           | ["POST"]
+        'create'         | ['show','update','delete']           | []
+        'create'         | ['list','show','update','delete']    | ["GET"]
+        'create'         | []                                   | []
+        'create'         | ['list']                             | ["GET"]
+        'show'           | []                                   | []
+        'show'           | ['update','delete']                  | ["PUT","DELETE"]
+        'show'           | ['update','list']                    | ["PUT"]
+        'update'         | []                                   | []
+        'update'         | ['delete','show']                    | ["DELETE","GET"]
+        'update'         | ['show','list','create']             | ["GET"]
+        'delete'         | []                                   | []
+        'delete'         | ['show','update']                    | ["GET","PUT"]
+        'delete'         | ['update','list','create']           | ["PUT"]
+        'delete'         | ['update','show', 'list','create']   | ["GET","PUT"]
+
     }
 
 

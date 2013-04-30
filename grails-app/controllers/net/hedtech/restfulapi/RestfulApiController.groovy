@@ -120,6 +120,7 @@ class RestfulApiController {
         XML.createNamedConfig('restapi-error:xml') {
             it.registerObjectMarshaller(new net.hedtech.restfulapi.marshallers.xml.JSONObjectMarshaller(), 200)
         }
+
         log.trace 'Done initializing RestfulApiController...'
     }
 
@@ -133,6 +134,7 @@ class RestfulApiController {
 
         log.trace "list invoked for ${params.pluralizedResourceName}"
         try {
+            checkMethod( Methods.LIST )
             getResponseRepresentation() // adds representation attribute to request
             def service = getService()
             def delegateToService = getServiceAdapter()
@@ -166,6 +168,7 @@ class RestfulApiController {
         log.trace "show() invoked for ${params.pluralizedResourceName}/${params.id}"
         def result
         try {
+            checkMethod( Methods.SHOW )
             getResponseRepresentation()
             result = getServiceAdapter().show( getService(), params )
             renderSuccessResponse( new ResponseHolder( data: result ),
@@ -180,17 +183,18 @@ class RestfulApiController {
 
     // POST /api/pluralizedResourceName
     //
-    public def save() {
-        log.trace "save() invoked for ${params.pluralizedResourceName}"
+    public def create() {
+        log.trace "create() invoked for ${params.pluralizedResourceName}"
         def result
 
         try {
+            checkMethod( Methods.CREATE )
             def content = parseRequestContent( request )
             getResponseRepresentation()
             result = getServiceAdapter().create( getService(), content )
             response.setStatus( 201 )
             renderSuccessResponse( new ResponseHolder( data: result ),
-                                   'default.rest.saved.message' )
+                                   'default.rest.created.message' )
         }
         catch (e) {
             messageLog.error "Caught exception ${e.message}", e
@@ -206,6 +210,7 @@ class RestfulApiController {
         def result
 
         try {
+            checkMethod( Methods.UPDATE )
             def content = parseRequestContent( request )
             if (content && content.id && content.id != params.id) {
                 throw new IdMismatchException( params.pluralizedResourceName )
@@ -229,6 +234,7 @@ class RestfulApiController {
     public def delete() {
         log.trace "delete() invoked for ${params.pluralizedResourceName}/${params.id}"
         try {
+            checkMethod( Methods.DELETE )
             def map = [:]
             map.id = params.id
             def content = parseRequestContent( request )
@@ -305,12 +311,8 @@ class RestfulApiController {
         }
 
         responseHolder.headers.each { header ->
-            if (header.value instanceof Collection) {
-                header.value.each() { val ->
-                    response.addHeader( header.key, val )
-                }
-            } else {
-                response.addHeader( header.key, header.value )
+            header.value.each() { val ->
+                response.addHeader( header.key, val )
             }
         }
         if (responseHolder.message) {
@@ -330,7 +332,13 @@ class RestfulApiController {
             def result = handler(params.pluralizedResourceName, e)
             if (result.headers) {
                 result.headers.each() { header ->
-                    responseHolder.addHeader( header.key, header.value )
+                    if (header.value instanceof Collection) {
+                        header.value.each { val ->
+                            responseHolder.addHeader( header.key, val )
+                        }
+                    } else {
+                        responseHolder.addHeader( header.key, header.value )
+                    }
                 }
             }
             responseHolder.data = result.returnMap
@@ -405,12 +413,8 @@ class RestfulApiController {
             response.addHeader( 'X-hedtech-Media-Type', representation.mediaType )
         }
         responseHolder.headers.each { header ->
-            if (header.value instanceof Collection) {
-                header.value.each() { val ->
-                    response.addHeader( header.key, val )
-                }
-            } else {
-                response.addHeader( header.key, header.value )
+            header.value.each() { val ->
+                response.addHeader( header.key, val )
             }
         }
         if (responseHolder.message) {
@@ -496,6 +500,8 @@ class RestfulApiController {
             return 'UnsupportedResponseRepresentationException'
         } else if (e instanceof IdMismatchException) {
             return 'IdMismatchException'
+        } else if (e instanceof UnsupportedMethodException) {
+            return 'UnsupportedMethodException'
         } else {
             return 'AnyOtherException'
         }
@@ -577,9 +583,6 @@ class RestfulApiController {
         return restConfig.getRepresentation( pluralizedResourceName, allowedTypes.name )
     }
 
-    private String localize(String name) {
-        message( code: "${name}.label", default: "$name" )
-    }
 
     protected String selectResponseFormat( String format = null) {
         if (!format) {
@@ -588,6 +591,20 @@ class RestfulApiController {
         format == 'json' ? 'default' : format
     }
 
+    protected void checkMethod( String method ) {
+        def resource = restConfig.getResource( params.pluralizedResourceName )
+        if (!resource) {
+            throw new UnsupportedMethodException( supportedMethods:[] )
+        }
+        if (!resource.allowsMethod( method ) ) {
+            def allowed = resource.getMethods().intersect( Methods.getMethodGroup( method ) )
+            throw new UnsupportedMethodException( supportedMethods:allowed )
+        }
+    }
+
+    private String localize(String name) {
+        message( code: "${name}.label", default: "$name" )
+    }
 
     private String domainName() {
         Inflector.asPropertyName(params.pluralizedResourceName)
@@ -722,7 +739,6 @@ class RestfulApiController {
         restConfig.getJsonEquivalentMediaType( xmlType )
     }
 
-
     private def exceptionHandlers = [
 
         'ValidationException': { pluralizededResourceName, e->
@@ -773,6 +789,18 @@ class RestfulApiController {
                 headers: ['X-Status-Reason':'Id mismatch'],
                 message: message( code: "default.rest.idmismatch.message",
                                   args: [ e.getPluralizedResourceName() ] ) as String
+            ]
+        },
+
+        'UnsupportedMethodException': { pluralizedResourceName, e ->
+            def allowedHTTPMethods = []
+            e.getSupportedMethods().each {
+                allowedHTTPMethods.add( Methods.getHttpMethod( it ) )
+            }
+            def r = [
+                httpStatusCode: 405,
+                headers: ['Allow':allowedHTTPMethods],
+                message: message( code: 'default.rest.method.not.allowed.message' ) as String
             ]
         },
 

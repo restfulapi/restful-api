@@ -5,27 +5,36 @@ Copyright 2013 Ellucian Company L.P. and its affiliates.
 package net.hedtech.restfulapi.config
 
 import org.codehaus.groovy.grails.commons.GrailsApplication
+import net.hedtech.restfulapi.Methods
 
 class ResourceConfig {
 
     String name
     String serviceName
-    def allowedMethods = [ 'list', 'show', 'save', 'update', 'delete' ]
+    def methods = [ 'list', 'show', 'create', 'update', 'delete' ]
     def representations = [:]
 
-    ResourceConfig name(String name) {
+    ResourceConfig setName(String name) {
         this.name = name
         return this
     }
 
-    ResourceConfig serviceName(String name) {
+    ResourceConfig setServiceName(String name) {
         this.serviceName = name
         return this
     }
 
-    ResourceConfig allowedMethods(def allowed) {
-        this.allowedMethods = allowed
+    ResourceConfig setMethods( def methods ) {
+        this.methods = methods
         return this
+    }
+
+    boolean allowsMethod( String method ) {
+        this.methods.contains( method )
+    }
+
+    def getMethods() {
+        return this.methods
     }
 
     ResourceConfig representation(Closure c) {
@@ -40,7 +49,7 @@ class ResourceConfig {
             RepresentationConfig config = new RepresentationConfig( mediaType:mediaType, jsonAsXml:delegate.jsonAsXml, marshallers:delegate.marshallers, extractor:delegate.extractor )
             representations[mediaType] = config
         }
-        this
+        return this
     }
 
     RepresentationConfig getRepresentation( String mediaType ) {
@@ -51,5 +60,16 @@ class ResourceConfig {
         return name
     }
 
-
+    void validate() {
+        if (!(methods instanceof Collection)) {
+            throw new MethodsNotCollectionException( resourceName: name )
+        }
+        if (methods != null) {
+            methods.each {
+                if (!(Methods.getAllMethods().contains( it ))) {
+                    throw new UnknownMethodException( resourceName:name, methodName: it )
+                }
+            }
+        }
+    }
 }

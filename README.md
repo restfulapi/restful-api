@@ -96,7 +96,24 @@ To use the restful plugin, you need to configure your UrlMappings.groovy to rout
             }
         }
         "/api/$pluralizedResourceName"(controller:'restfulApi') {
-            action = [GET: "list", POST: "save"]
+            action = [GET: "list", POST: "create"]
+            parseRequest = false
+        }
+
+        // Support for nested resources. You may add additional URL mappings to handle
+        // additional nested resource requirements.
+        //
+        "/api/$parentPluralizedResourceName/$parentId/$pluralizedResourceName/$id"(controller:'restfulApi') {
+            action = [GET: "show", PUT: "update", DELETE: "delete"]
+            parseRequest = false
+            constraints {
+                // to constrain the id to numeric, uncomment the following:
+                // id matches: /\d+/
+            }
+        }
+
+        "/api/$parentPluralizedResourceName/$parentId/$pluralizedResourceName"(controller:'restfulApi') {
+            action = [GET: "list", POST: "create"]
             parseRequest = false
         }
 
@@ -105,6 +122,8 @@ To use the restful plugin, you need to configure your UrlMappings.groovy to rout
         "/"(view:"/index")
         "500"(view:'/error')
     }
+
+Note that in order to conform to the strategy and for support for limiting methods exposed by a resource to operate correctly, all the api urls must conform to the pattern above.  That is, 'show', 'update', and 'delete' methods are mapped to urls that have an even number of parts after the api prefix; 'list' and 'create' methods map to urls that have an odd number of parts after the api prefix.
 
 ###Use of custom media types
 The plugin relies on custom media types to specify resource representations.  For requests, the media type in the Content-Type header is used to identify the resource representation in the request body, in order to extract parameters from it to be passed to the resource's service.
@@ -195,9 +214,9 @@ The update method is responsible for using the map to update an instance of the 
 
 For domain services, it is recommended that the extractor produce a map that will work with data binding, e.g., the object can be updated by
 
-`thing.properties = params.content`
+`thing.properties = params`
 
-The create method must return an object representing the resource that was updated.  This object will be rendered as a resource representation via the configured marshallers for the resource.  For example, create may simply return the domain instance created.
+The update method must return an object representing the resource that was updated.  This object will be rendered as a resource representation via the configured marshallers for the resource.  For example, create may simply return the domain instance created.
 
 ###delete method
 The delete method is passed the id of the resource to delete, and (optionally) a Map representing the content extracted from the request (if any).  For example, a resource representation may be included as part of a delete request to convey optimistic locking information.
@@ -481,6 +500,33 @@ By default, the name of the service to use is derived from the name of the resou
 
 Will cause the list, show, create, update, and delete methods for the resource 'students' to be delegated to the bean registered under the name 'studentFacadeService' instead of 'studentService'.
 
+####Limiting methods for a resource
+By default, any configured resource supports 'list', 'show', 'create', 'update', and 'delete' methods.  You can customize which methods are exposed by specifying a subset of the 5 methods as an array assigned to the methods property of a resource.
+
+For example, to expose students as a read-only resource that just supports list and show:
+
+    restfulApiConfig = {
+        resource {
+            name = 'students'
+            methods = ['list','show']
+            representation {
+                mediaType = 'application/json'
+                addMarshaller getMarshallerGroup('student')
+            }
+        }
+        marshallerGroup {
+            name = 'student'
+            addMarshaller {
+                marshaller = new net.hedtech.restfulapi.marshallers.json.StudentMarshaller(grailsApplication)
+                priority = 100
+            }
+        }
+    }
+
+If a request for an unsupported method is received, the plugin will respond with a 405 status code and an Allow header specifying the HTTP methods the url supports.
+
+Note that if you are using the grails-cors plugin to support CORS functionality, the OPTIONS method will return results that are inconsistent with the methods actually supported.  That is, an OPTIONS request to an api url will always return that all methods are supported, even if the configuration restricts the methods for a given resource.  This may be addressed in a contribution to a future release of the CORS plugin.
+
 
 ##JSON-as-xml
 The plugin supports a 'cheap' method of supporting both json and xml representation, while only requiring JSON marshallers/extractors to be created.
@@ -560,8 +606,6 @@ For example
 
 Clone the plugin's git repo and look at the tests under test-restful-api for more examples of using spock and the RestSpecification to do functional testing of your APIs.
 
-The RestSpecification
-
 ##Cross-Origin Resource Sharing
 User agents typically apply same-origin restrictions to network requests; this prevents a client-side Web application from invoking APIs provided by the plugin from a different origin.
 
@@ -577,6 +621,8 @@ In order for a client to fully access the api, you will need to configure the co
     cors.url.pattern = '/api/*'
     cors.allow.origin.regex='.*'
     cors.expose.headers='content-type,X-hedtech-totalCount,X-hedtech-pageOffset,X-hedtech-pageMaxSize,X-hedtech-message,X-hedtech-Media-Type'
+
+Note that at present, the cors plugin can produce responses to OPTIONS requests that are inconsistent with the restful plugin.  The cors plugin returns that all HTTP methods are supported by any url that matches cors.url.pattern; in reality, only some of the urls matched by the pattern will map to actual resources; and for those resources, the methods supported may be restricted.  In those cases, an OPTIONS request to a a given url may return that all methods are supported, while actually using one of those methods returns a 405.  We may make a future contribution to the cors plugin to eliminate this inconsistency.
 
 
 

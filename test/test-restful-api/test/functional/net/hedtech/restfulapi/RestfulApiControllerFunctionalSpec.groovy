@@ -1057,6 +1057,42 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         "Id in representation for resource 'things' did not match id of resource" == responseHeader( 'X-hedtech-message' )
     }
 
+    @Unroll
+    def "Test 405 response when a method is not supported on a resource"() {
+        setup:
+        def aaID = createThing('AA')
+        createThing('BB')
+        def url = id ? "$localBase/api/limitedthings/$aaID" : "$localBase/api/limitedthings"
+
+
+        when:
+        "$method"("$url") {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/json'
+            if(data) {
+                body {
+                    "$data"
+                }
+            }
+        }
+
+        then:
+        status == response.status
+        'application/json' == response.contentType
+        // assert localization of the message
+        null != responseHeader('X-hedtech-message')
+        allowHeader == responseHeaders('Allow')
+
+        where:
+        method     | id    | status | allowHeader   | data
+        'get'      | false | 405    | ['POST']      | null
+        'get'      | true  | 200    | null          | null
+        'post'     | false | 201    | null          | "{code:'ZZ',description:'ZZ thing'}"
+        'put'      | true  | 200    | null          | "{description:'changed',version:'0'}"
+        'delete'   | true  | 405    | ['GET','PUT'] | null
+
+    }
+
     private void createThings() {
         createThing('AA')
         createThing('BB')

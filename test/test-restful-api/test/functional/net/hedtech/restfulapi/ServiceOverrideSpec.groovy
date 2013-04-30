@@ -39,7 +39,6 @@ class ServiceOverrideSpec extends RestSpecification {
         "$method"("$url") {
             headers['Content-Type'] = 'application/json'
             headers['Accept']       = 'application/json'
-            headers['Origin']       = localBase
             if(data) {
                 body {
                     "$data"

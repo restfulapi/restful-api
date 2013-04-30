@@ -25,7 +25,7 @@ class UrlMappings {
             }
         }
         "/api/$pluralizedResourceName"(controller:'restfulApi') {
-            action = [GET: "list", POST: "save"]
+            action = [GET: "list", POST: "create"]
             parseRequest = false
         }
 
@@ -42,7 +42,7 @@ class UrlMappings {
         }
 
         "/api/$parentPluralizedResourceName/$parentId/$pluralizedResourceName"(controller:'restfulApi') {
-            action = [GET: "list", POST: "save"]
+            action = [GET: "list", POST: "create"]
             parseRequest = false
         }
 
