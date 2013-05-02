@@ -395,6 +395,75 @@ class RestfulApiControllerSpec extends Specification {
 
     }
 
+    def "Test optimistic lock returns 409"() {
+        setup:
+        //use default extractor for any methods with a request body
+         config.restfulApiConfig = {
+            resource {
+                name = 'things'
+                representation {
+                    mediaType = 'application/json'
+                    extractor = new DefaultJSONExtractor()
+                }
+            }
+        }
+        controller.init()
+
+        //mock the appropriate service method, expect exactly 1 invocation
+        def mock = Mock(ThingService)
+        controller.metaClass.getService = {-> mock}
+
+
+        request.addHeader( 'Accept', 'application/json' )
+        //incoming format always json, so no errors
+        request.addHeader( 'Content-Type', 'application/json' )
+        params.pluralizedResourceName = 'things'
+
+        when:
+        controller.update()
+
+        then:
+        1*mock.update(_,_) >> { throw new org.springframework.dao.OptimisticLockingFailureException( "foo" ) }
+        409 == response.status
+          0 == response.getContentLength()
+        'default.optimistic.locking.failure' == response.getHeaderValue( 'X-hedtech-message' )
+
+    }
+
+    def "Test generic error returns 500"() {
+        setup:
+        //use default extractor for any methods with a request body
+         config.restfulApiConfig = {
+            resource {
+                name = 'things'
+                representation {
+                    mediaType = 'application/json'
+                    extractor = new DefaultJSONExtractor()
+                }
+            }
+        }
+        controller.init()
+
+        //mock the appropriate service method, expect exactly 1 invocation
+        def mock = Mock(ThingService)
+        controller.metaClass.getService = {-> mock}
+
+
+        request.addHeader( 'Accept', 'application/json' )
+        //incoming format always json, so no errors
+        request.addHeader( 'Content-Type', 'application/json' )
+        params.pluralizedResourceName = 'things'
+
+        when:
+        controller.update()
+
+        then:
+        1*mock.update(_,_) >> { throw new Exception( 'foo' ) }
+        500 == response.status
+          0 == response.getContentLength()
+        'default.rest.general.errors.message' == response.getHeaderValue( 'X-hedtech-message' )
+
+    }
 
 
 }
