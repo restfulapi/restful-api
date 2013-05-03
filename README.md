@@ -228,8 +228,6 @@ The delete method returns void.
 ##Adapting an Existing Service
 To support services that have a contract different than the service contract described above, a 'RestfulServiceAdapter' may be registered in the Spring application context. If an adapter is registered, it will be used by the RestfulApiController for all interaction with servcies. (Currently, only a single adapter may be registered, so it must be implemented to support all services that are used to support a RESTful API.)
 
-As a convenience, a 'RestfulServiceBaseAdapter' is included within this plugin to faciliate delegation to Banner XE services that extend the 'ServiceBase' found within the 'banner-core' plugin. (Note while this adapter is specific to Banner XE, this plugin has no dependencies on either Banner XE or the banner-core plugin.)
-
 ##<a id="filter-list"></a>Filtering
 As a convenience, the plugin provides a Filter class that includes a factory method (extractFilters) that may be used to create a list of Filter instances from the query parameters.  The URL query parameters that may be used with this class must be in the format:
 ```
@@ -237,11 +235,21 @@ part-of-things?filter[0][field]=description&filter[1][value]=6&filter[0][operato
 ```
 The filters may be used to filter on a resource's property whether a primitive property or one representing an associated resource.  Currently only single resource assocations are supported (i.e., not collections).  The operators include 'eq' (or 'equals') and 'contains' (which performs a case insensative 'ilike'-like comparison, although not actually using 'ilike' as that is not supported by Oracle).
 
-The plugin also includes an HQLBuilder utility class that will construct an HQL statement from the request params object. This will leverage the Filter class to extract filters and will then construct the HQL statement.  Following is an example usage:
+The plugin also includes an HQLBuilder utility class that will construct an HQL statement (and a corresponding substitution parameters map) from the request params object, when the resource corresponds to a domain object. This will leverage the Filter class to extract filters and will then construct the HQL statement.  Following is an example usage:
 ```
-def queryStatement = HQLBuilder.createHQL( grailsApplication, params )
-def result = PartOfThing.executeQuery( queryStatement, [], params )
+def query = HQLBuilder.createHQL( application, params )
+def result = PartOfThing.executeQuery( query.statement, query.parameters, params )
 ```
+
+Note the 'pluralizedResourceName' entry within the params map is used to determine the domain class to be queried, unless the params map explicitly specifies the domain class (which is useful when the resource name differs from the domain class name).
+```
+params << [ domainClass: Filter.getGrailsDomainClass( application, 'things' ) ]
+def query = HQLBuilder.createHQL( application, params )
+def result = PartOfThing.executeQuery( query.statement, query.parameters, params )
+```
+
+HQLBuilder is not a sophisticated query engine, and provides limited support for filtering by a primitive property and by a property that represent an association to another domain object.  HQLBuilder also handles whether the resource has been nested under another resource (i.e., when the params map contains a 'parentPluralizedResourceName' entry).  HQLBuilder is provided as a convenience but may not be suitable in all situations. Complex queries may require a specific implementation.
+
 The createHQL method accepts a third argument which is a boolean, and if true indicates the statement should be generated to perform a 'count(*)' versus a select. That is, the HQLBuilder may be used in both list() and count() service methods to ensure the totalCount properly reflects the filters provided on the request.
 
 ##Supplemental data/affordances/HATEOS
@@ -623,16 +631,6 @@ In order for a client to fully access the api, you will need to configure the co
     cors.expose.headers='content-type,X-hedtech-totalCount,X-hedtech-pageOffset,X-hedtech-pageMaxSize,X-hedtech-message,X-hedtech-Media-Type'
 
 Note that at present, the cors plugin can produce responses to OPTIONS requests that are inconsistent with the restful plugin.  The cors plugin returns that all HTTP methods are supported by any url that matches cors.url.pattern; in reality, only some of the urls matched by the pattern will map to actual resources; and for those resources, the methods supported may be restricted.  In those cases, an OPTIONS request to a a given url may return that all methods are supported, while actually using one of those methods returns a 405.  We may make a future contribution to the cors plugin to eliminate this inconsistency.
-
-
-
-
-
-
-
-
-
-
 
 
 

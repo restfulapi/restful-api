@@ -2,6 +2,7 @@
 
 next release
 * NON-BACKWARD COMPATIBLE change: in the UrlMappings, the controller method 'save' has been replaced with 'create'
+* Inclusion of an HQL builder that constructs a statement and parameter map based upon 'filter' query parameters
 * Optional support for CORS via grails-cors plugin
 * Support for lists of nested resources
 * RestSpecification now supports a requestFactory attribute to use a custom connection factory for making requests; see CORSSpec for an example of usage
