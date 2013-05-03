@@ -59,9 +59,6 @@ class HQLBuilderSpec extends IntegrationSpec {
 
     def "Test reporting query parameters using unsupported filter terms"() {
 
-        // Note: We currently ignore bad terms and proceed with the query
-        // using the other filter criteria.
-
         setup:
         // URL:  things?filter[0][field]=code&filter[1][value]=science&filter[0][operator]=eq&
         // filter[1][field]=description&filter[1][operator]=contains&filter[0][value]=ZZ&max=50
@@ -93,9 +90,6 @@ class HQLBuilderSpec extends IntegrationSpec {
 
     def "Test reporting query parameters using unsupported filter operators"() {
 
-        // Note: We currently ignore bad terms and proceed with the query
-        // using the other filter criteria.
-
         setup:
         // URL:  things?filter[0][field]=code&filter[1][value]=science&filter[0][operator]=eq&
         // filter[1][field]=description&filter[1][operator]=contains&filter[0][value]=ZZ&max=50
@@ -118,6 +112,16 @@ class HQLBuilderSpec extends IntegrationSpec {
     }
 
 
+    def "Test determining the domain class corresponding to the resource"() {
+
+        when:
+        def grailsClass = Filter.getGrailsDomainClass( grailsApplication, 'things' )
+
+        then:
+        Thing == grailsClass.clazz
+    }
+
+
     def "Test creating unfiltered query"() {
 
         setup:
@@ -125,7 +129,7 @@ class HQLBuilderSpec extends IntegrationSpec {
         Map params = [ 'pluralizedResourceName':'things' ]
 
         when:
-        def query = HQLBuilder.createHQL(grailsApplication, params)
+        def query = HQLBuilder.createHQL( grailsApplication, params )
 
         then:
         'SELECT a FROM Thing a' == query.statement
@@ -142,7 +146,7 @@ class HQLBuilderSpec extends IntegrationSpec {
                        'sort':'code', 'order':'desc' ]
 
         when:
-        def query = HQLBuilder.createHQL(grailsApplication, params)
+        def query = HQLBuilder.createHQL( grailsApplication, params )
 
         then:
         "SELECT a FROM Thing a ORDER BY a.code desc" == query.statement
@@ -172,14 +176,41 @@ class HQLBuilderSpec extends IntegrationSpec {
                      ]
 
         when:
-        def query = HQLBuilder.createHQL(grailsApplication, params)
+        def query = HQLBuilder.createHQL( grailsApplication, params )
 
         then:
         "SELECT a FROM Thing a WHERE a.code = :code AND lower(a.description) LIKE lower(:description)" == query.statement
 
-        def things = Thing.executeQuery(query.statement, query.parameters, [:])
+        def things = Thing.executeQuery( query.statement, query.parameters, [:] )
         'XX' == things[0].code
         'An XX thing' == things[0].description
+    }
+
+
+    def "Test overriding the domain class"() {
+
+        setup:
+        def xxId = createThing('XX')
+        def yyId = createThing('yy')
+
+        // URL: complex-things?filter[0][field]=code&filter[1][value]=science&filter[0][operator]=eq&
+        // filter[1][field]=description&filter[1][operator]=contains&filter[0][value]=ZZ&max=50
+        Map params = [ 'pluralizedResourceName':'complex-things',
+                       'filter[0][field]':'code',
+                       'filter[1][value]':'An XX',
+                       'filter[0][operator]':'eq',
+                       'filter[1][field]':'description',
+                       'filter[1][operator]':'contains',
+                       'filter[0][value]':'XX',
+                       'max':'50'
+                     ]
+
+        when:
+        params << [ domainClass: Filter.getGrailsDomainClass( grailsApplication, 'things' ) ]
+        def query = HQLBuilder.createHQL( grailsApplication, params )
+
+        then:
+        "SELECT a FROM Thing a WHERE a.code = :code AND lower(a.description) LIKE lower(:description)" == query.statement
     }
 
 
@@ -199,7 +230,7 @@ class HQLBuilderSpec extends IntegrationSpec {
                      ]
 
         when:
-            def query = HQLBuilder.createHQL(grailsApplication, params)
+            def query = HQLBuilder.createHQL( grailsApplication, params )
 
         then:
             thrown BadFilterException
@@ -225,12 +256,12 @@ class HQLBuilderSpec extends IntegrationSpec {
                      ]
 
         when:
-        def query = HQLBuilder.createHQL(grailsApplication, params)
+        def query = HQLBuilder.createHQL( grailsApplication, params )
 
         then:
         "SELECT a FROM PartOfThing a INNER JOIN a.thing b WHERE lower(a.description) LIKE lower(:description) AND b.id = :thing" == query.statement
 
-        def things = Thing.executeQuery(query.statement, query.parameters, [:])
+        def things = Thing.executeQuery( query.statement, query.parameters, [:] )
         things?.size == 1
         things[0].code == 'p1'
         things[0].thing.id == yyId
@@ -257,12 +288,12 @@ class HQLBuilderSpec extends IntegrationSpec {
                      ]
 
         when:
-        def query = HQLBuilder.createHQL(grailsApplication, params)
+        def query = HQLBuilder.createHQL( grailsApplication, params )
 
         then:
         "SELECT a FROM PartOfThing a INNER JOIN a.thing b WHERE b.id = :thing AND lower(a.description) LIKE lower(:description) ORDER BY a.code" == query.statement
 
-        def things = Thing.executeQuery(query.statement, query.parameters)
+        def things = Thing.executeQuery( query.statement, query.parameters )
         things?.size == 1
         things[0].code == 'p2'
         things[0].thing.id == yyId
@@ -285,7 +316,7 @@ class HQLBuilderSpec extends IntegrationSpec {
                      ]
 
         when:
-        def query = HQLBuilder.createHQL(grailsApplication, params, true /*count*/)
+        def query = HQLBuilder.createHQL( grailsApplication, params, true /*count*/ )
 
         then:
         "SELECT count(a) FROM Thing a WHERE a.code = :code AND lower(a.description) LIKE lower(:description)" == query.statement
@@ -312,31 +343,31 @@ class HQLBuilderSpec extends IntegrationSpec {
                      ]
 
         when:
-        def query = HQLBuilder.createHQL(grailsApplication, params, true /*count*/)
+        def query = HQLBuilder.createHQL( grailsApplication, params, true /*count*/ )
 
         then:
         "SELECT count(a) FROM PartOfThing a INNER JOIN a.thing b WHERE b.id = :thing AND lower(a.description) LIKE lower(:description)" == query.statement
 
-        def count = Thing.executeQuery(query.statement, query.parameters)
+        def count = Thing.executeQuery( query.statement, query.parameters )
         1 == count[0].toInteger()
     }
 
 
     // TODO: Not DRY with RestfulApiControllerFunctionalTests -- move to helper class...
-    private def createThing(String code) {
+    private def createThing( String code ) {
         Thing.withTransaction {
-            Thing thing = new Thing(code: code, description: "An $code thing",
-                      dateManufactured: new Date(), isGood: 'Y', isLarge: true)
-                .addToParts(new PartOfThing(code: 'p1', description: "$code p1 part"))
-                .addToParts(new PartOfThing(code: 'p2', description: "$code p2 part"))
-                .save(failOnError:true, flush:true)
+            Thing thing = new Thing( code: code, description: "An $code thing",
+                      dateManufactured: new Date(), isGood: 'Y', isLarge: true )
+                .addToParts( new PartOfThing( code: 'p1', description: "$code p1 part" ) )
+                .addToParts( new PartOfThing( code: 'p2', description: "$code p2 part" ) )
+                .save( failOnError:true, flush:true )
             thing.getId()
         }
     }
 
     private void deleteThings() {
         Thing.withNewSession {
-            Thing.findAll().each() { it.delete(failOnError:true, flush:true) }
+            Thing.findAll().each() { it.delete( failOnError:true, flush:true ) }
         }
     }
 }

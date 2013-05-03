@@ -37,12 +37,14 @@ class HQLBuilder {
      * - Filter values are used as named parameters
      * - The 'sort' value is checked to ensure it represents a property of the domain class
      * - The 'order' value is constrained to 'asc' or 'desc'
+     * The GrailsDomainClass used within the query is determined using the params.pluralizedResourceName,
+     * however may be overriden by supplying a params.domainClass whose value is a GrailsDomainClass.
      **/
     public static def createHQL( GrailsApplication application, Map params, boolean count = false ) {
 
         log.debug "createHQL() invoked with params = $params"
 
-        GrailsDomainClass domainClass = Filter.getGrailsDomainClass(application, params.pluralizedResourceName)
+        GrailsDomainClass domainClass = params.domainClass ?: Filter.getGrailsDomainClass(application, params.pluralizedResourceName)
 
         char firstAlias    = ALIASES[0]
         int lastAliasIndex = 0

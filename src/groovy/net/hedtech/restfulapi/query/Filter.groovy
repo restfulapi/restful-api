@@ -65,7 +65,7 @@ class Filter {
 
         if (!params.pluralizedResourceName) throw new RuntimeException("params map must contain 'pluralizedResourceName'")
 
-        GrailsDomainClass domainClass = getGrailsDomainClass(application, params.pluralizedResourceName)
+        GrailsDomainClass domainClass = params.domainClass ?: getGrailsDomainClass( application, params.pluralizedResourceName )
         GrailsDomainClassProperty[] properties = domainClass.getProperties()
 
         // Now that we've created filters from the params map, we'll augment them
