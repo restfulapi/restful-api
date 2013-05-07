@@ -13,6 +13,8 @@ import org.codehaus.groovy.grails.commons.GrailsDomainClassProperty
 
 import org.springframework.beans.BeanWrapper
 
+import net.hedtech.restfulapi.marshallers.json.*
+
 
 /**
  * A JSON marshaller that supports HAL (http://stateless.co/hal_specification.html).

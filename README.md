@@ -324,7 +324,7 @@ For example, in Config.groovy:
             representation {
                 mediaType = "application/json"
                 addMarshaller {
-                    marshaller = new net.hedtech.restfulapi.marshallers.BasicDomainClassMarshaller(grailsApplication)
+                    marshaller = new net.hedtech.restfulapi.marshallers.json.BasicDomainClassMarshaller(grailsApplication)
                     priority = 100
                 }
                 extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()
