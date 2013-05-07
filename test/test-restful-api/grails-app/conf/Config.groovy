@@ -130,7 +130,7 @@ restfulApiConfig = {
         representation {
             mediaType = "application/json"
             addMarshaller {
-                marshaller = new net.hedtech.restfulapi.marshallers.json.BasicDomainClassMarshaller(grailsApplication)
+                marshaller = new net.hedtech.restfulapi.marshallers.json.BasicDomainClassMarshaller(app:grailsApplication)
                 priority = 100
             }
             extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()
@@ -147,7 +147,7 @@ restfulApiConfig = {
         representation {
             mediaType =  'application/vnd.hedtech.v0+json'
             addMarshaller {
-                marshaller = new net.hedtech.restfulapi.marshallers.json.BasicHalDomainClassMarshaller(grailsApplication)
+                marshaller = new net.hedtech.restfulapi.marshallers.json.BasicHalDomainClassMarshaller(app:grailsApplication)
                 priority = 100
             }
             addMarshaller {
@@ -184,7 +184,7 @@ restfulApiConfig = {
         representation {
             mediaType = 'application/vnd.hedtech.v1+json'
             addMarshaller {
-                marshaller = new net.hedtech.restfulapi.marshallers.json.BasicDomainClassMarshaller(grailsApplication)
+                marshaller = new net.hedtech.restfulapi.marshallers.json.BasicDomainClassMarshaller(app:grailsApplication)
                 priority = 101
             }
             extractor = new net.hedtech.restfulapi.extractors.json.ThingDefaultDescriptionExtractor()
@@ -201,7 +201,7 @@ restfulApiConfig = {
         representation {
             mediaType = "application/json"
             addMarshaller {
-                marshaller = new net.hedtech.restfulapi.marshallers.json.BasicDomainClassMarshaller(grailsApplication)
+                marshaller = new net.hedtech.restfulapi.marshallers.json.BasicDomainClassMarshaller(app:grailsApplication)
                 priority = 100
             }
             extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()
@@ -213,7 +213,7 @@ restfulApiConfig = {
         representation {
             mediaType = "application/json"
             addMarshaller {
-                marshaller = new net.hedtech.restfulapi.marshallers.json.BasicDomainClassMarshaller(grailsApplication)
+                marshaller = new net.hedtech.restfulapi.marshallers.json.BasicDomainClassMarshaller(app:grailsApplication)
                 priority = 100
             }
             extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()
@@ -225,7 +225,7 @@ restfulApiConfig = {
         representation {
             mediaType = "application/json"
             addMarshaller {
-                marshaller = new net.hedtech.restfulapi.marshallers.json.BasicDomainClassMarshaller(grailsApplication)
+                marshaller = new net.hedtech.restfulapi.marshallers.json.BasicDomainClassMarshaller(app:grailsApplication)
                 priority = 100
             }
             extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()
@@ -241,7 +241,7 @@ restfulApiConfig = {
         representation {
             mediaType = "application/json"
             addMarshaller {
-                marshaller = new net.hedtech.restfulapi.marshallers.json.BasicDomainClassMarshaller(grailsApplication)
+                marshaller = new net.hedtech.restfulapi.marshallers.json.BasicDomainClassMarshaller(app:grailsApplication)
                 priority = 100
             }
             extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()
@@ -257,7 +257,7 @@ restfulApiConfig = {
         representation {
             mediaType = "application/json"
             addMarshaller {
-                marshaller = new net.hedtech.restfulapi.marshallers.json.BasicDomainClassMarshaller(grailsApplication)
+                marshaller = new net.hedtech.restfulapi.marshallers.json.BasicDomainClassMarshaller(app:grailsApplication)
                 priority = 100
             }
             extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()

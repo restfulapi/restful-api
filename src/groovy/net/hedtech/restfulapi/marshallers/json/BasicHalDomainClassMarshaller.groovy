@@ -20,10 +20,6 @@ import org.springframework.beans.BeanWrapper
 class BasicHalDomainClassMarshaller extends BasicDomainClassMarshaller {
 
 
-    public BasicHalDomainClassMarshaller(app) {
-        super(true, new HibernateProxyHandler(), app)
-    }
-
 
     // @Override
     // public void marshalObject(Object value, JSON json) throws ConverterException {
@@ -33,21 +29,12 @@ class BasicHalDomainClassMarshaller extends BasicDomainClassMarshaller {
     // }
 
 
-    @Override
-    protected List getSkippedFields() { }
-
 
     @Override
-    protected String getAlternativeName(String originalName){
-        return null
-    }
-
-
-    @Override
-    protected boolean processSpecificFields(BeanWrapper beanWrapper,
+    protected boolean processField(BeanWrapper beanWrapper,
                                             GrailsDomainClassProperty property, JSON json) {
         // Object referenceObject = beanWrapper.getPropertyValue(property.getName())
-        false // continue to process these fields
+        true // continue to process these fields
     }
 
 

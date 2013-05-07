@@ -5,7 +5,6 @@
 # TODO list for work (potential Jiras)
 * Check the pageOffset and maxSize computations and ensure they are correct
 * Work out the rules for Accept and Content-Type headers when the request or response body is empty.
-* Make sure a 406 or 415 is returned for a resource not explicitly whitelisted
 * Move the date marshaller for JSON into the explicit config, and out of the RestfulApiGrailsPlugin initialization
 * If the selected representation has marshalling errors, fallback to other representations?
 * What's the scope of a resource name?  Is it considered scoped within the application that exposes it?
@@ -16,12 +15,18 @@
 * how to invoke?  use of callback parameter in combination with a json media type?  Is this acceptable as the actual return type
 is not actually indicated by the media type?  (The media type applies to the wrapped content)
 
+# Thoughts on making marshalling easier
+* Associations: recommend that object associations are exposed via references only if versioning is being used.  (That is, don't expose attributes
+of an associated object in the object holding the association for example.)  Otherwise, when a new field is added to the referenced object, you have to add a new media-type/marshaller/extractor for the resource holding the association.  If the resource holding the association only exposes the reference (just expose id), then a caller can get the IDs, then get that particular resource with a show, controlling what version to retrieve.
+* Need tools to generate what the entire marshaller/extractor chain looks like so you can see all the representations for a resource and how all classes are marshalled?
+* Extractor chain does not have a heirarchy like marshalling.  Need one?  Probably can't as there is no class information incoming on which to construct the heirarchy.  Another reason to limit resource representation complexity by limiting association representation to id and no other attributes.
+* Should warn users that if they create representations of associations that aren't simple references, then on create/update they have to deal with making the service layer smart enough to create/update associated objects as needed.
+
 
 # TODO list (too small for JIRA)
 
 # Code cleanup tasks
 * Remove unused codes from message.properties
-* Do the default messages belong in the plugin message.properties, since they are used by the plugin, and not the test app?
 * Remove OptimisticLock exception support.
 
 # Things to consider (may need user stories)

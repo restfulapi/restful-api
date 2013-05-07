@@ -25,12 +25,13 @@ class ThingClassMarshaller extends BasicHalDomainClassMarshaller {
 
 
     public ThingClassMarshaller(app) {
-        super(app)
+        super()
+        setApp( app )
     }
 
 
     @Override
-    protected boolean processSpecificFields(BeanWrapper beanWrapper,
+    protected boolean processField(BeanWrapper beanWrapper,
                                             GrailsDomainClassProperty property, JSON json) {
         Object referenceObject = beanWrapper.getPropertyValue(property.getName())
 
@@ -38,7 +39,7 @@ class ThingClassMarshaller extends BasicHalDomainClassMarshaller {
         if ("parts" == property.getName()) {
             json.property("numParts", referenceObject.size());
         }
-        return false // and we'll allow further processing of 'parts' by returning false
+        return true // and we'll allow the superlcass to process parts normally
     }
 
     @Override
