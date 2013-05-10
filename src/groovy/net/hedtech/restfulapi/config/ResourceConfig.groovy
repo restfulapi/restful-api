@@ -59,7 +59,7 @@ class ResourceConfig {
     }
 
     RepresentationConfig getRepresentation( String mediaType ) {
-        def config = representations[mediaType]
+        representations[mediaType]
     }
 
     String getResourceName() {

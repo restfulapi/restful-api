@@ -14,7 +14,7 @@ class RestfulApiGrailsPlugin {
 
     def version = "0.1"
     def grailsVersion = "2.1 > *"
-    def dependsOn = ['inflector': '0.2']
+    def dependsOn = [:]
     def pluginExcludes = [
         "grails-app/views/error.gsp"
     ]

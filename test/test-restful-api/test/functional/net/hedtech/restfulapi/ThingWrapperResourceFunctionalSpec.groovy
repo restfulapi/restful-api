@@ -30,7 +30,7 @@ class ThingWrapperResourceFunctionalSpec extends RestSpecification {
         createThings()
 
         when:
-        get( "$localBase/api/thing-wrapper" ) {
+        get( "$localBase/api/thing-wrappers" ) {
             headers['Content-Type']  = 'application/json'
             headers['Accept']        = 'application/json'
         }
@@ -48,7 +48,7 @@ class ThingWrapperResourceFunctionalSpec extends RestSpecification {
         createThings()
 
         when:
-        post( "$localBase/api/thing-wrapper") {
+        post( "$localBase/api/thing-wrappers") {
             headers['Content-Type'] = 'application/json'
             headers['Accept']       = 'application/json'
             body {

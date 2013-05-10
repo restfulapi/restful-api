@@ -4,7 +4,10 @@ Copyright 2013 Ellucian Company L.P. and its affiliates.
 
 package net.hedtech.restfulapi
 
+import com.grailsrocks.cacheheaders.CacheHeadersService
+
 import grails.test.mixin.*
+
 import spock.lang.*
 
 import net.hedtech.restfulapi.config.*
@@ -98,7 +101,6 @@ class RestfulApiControllerSpec extends Specification {
         200 == response.status
           0 == response.getContentLength()
           1 * mock.delete(_,_) >> {}
-
     }
 
     @Unroll
@@ -211,7 +213,6 @@ class RestfulApiControllerSpec extends Specification {
         'delete'         | 'DELETE'   | 'application/custom-thing-xml' | '1'  | 'delete'      | null             | null
     }
 
-    //test list and show edge cases. since there is no request body accepted, ignore content-type header?
     @Unroll
     def "Media type without extractor in Content-Type header for list and show is ignored"(String controllerMethod, String httpMethod, String id, String serviceMethod, def serviceReturn ) {
         setup:
@@ -227,7 +228,17 @@ class RestfulApiControllerSpec extends Specification {
         //mock the appropriate service method, but expect no method calls
         //(since the request cannot be understood, the service should not be contacted)
         def mock = Mock(ThingService)
-        controller.metaClass.getService = {-> mock}
+        controller.metaClass.getService = { -> mock }
+
+        // Since both our show and list methods use a closure from the cache-headers
+        // plugin, we need to mock that closure
+        def cacheHeadersService = new CacheHeadersService()
+        Closure withCacheHeadersClosure = { Closure c ->
+            c.delegate = controller
+            c.resolveStrategy = Closure.DELEGATE_ONLY
+            cacheHeadersService.withCacheHeaders( c.delegate, c )
+        }
+        controller.metaClass.withCacheHeaders = withCacheHeadersClosure
 
         request.addHeader('Accept','application/json')
         request.addHeader('Content-Type','application/json')
@@ -314,7 +325,6 @@ class RestfulApiControllerSpec extends Specification {
         controllerMethod | httpMethod | id   | body
         'update'         | 'PUT'      | '1'  | '{id:2}'
         'delete'         | 'DELETE'   | '1'  | '{id:2}'
-
     }
 
     def "Test that service name can be overridden in configuration"() {
@@ -396,7 +406,6 @@ class RestfulApiControllerSpec extends Specification {
         'delete'         | ['show','update']                    | ["GET","PUT"]
         'delete'         | ['update','list','create']           | ["PUT"]
         'delete'         | ['update','show', 'list','create']   | ["GET","PUT"]
-
     }
 
     def "Test optimistic lock returns 409"() {
@@ -431,7 +440,6 @@ class RestfulApiControllerSpec extends Specification {
         409 == response.status
           0 == response.getContentLength()
         'default.optimistic.locking.failure' == response.getHeaderValue( 'X-hedtech-message' )
-
     }
 
     def "Test generic error returns 500"() {

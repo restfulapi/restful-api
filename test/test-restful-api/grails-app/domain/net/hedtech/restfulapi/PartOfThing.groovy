@@ -12,6 +12,11 @@ class PartOfThing {
     String  description
 
 
+    public String getEtag() {
+        "TEST-ETag-$id" // NOT A GOOD ETAG; ONLY FOR TESTING - doesn't reflect change indicator...
+    }
+
+
     public String toString() {
         "PartOfThing[id=$id, code=$code, description=$description, thing=${thing?.id}]"
     }

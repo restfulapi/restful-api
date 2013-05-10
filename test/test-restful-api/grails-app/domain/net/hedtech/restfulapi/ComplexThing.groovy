@@ -25,11 +25,9 @@ class ComplexThing implements Serializable {
     // BigDecimal is used often within Banner XE domains
     BigDecimal size
 
-    // We'll include 'transient' properties that are not normally
-    // serialized but are included in converters unless excluded
+    // We'll include a 'transient' property that is not normally
+    // serialized but is included in converters unless excluded
     // by our marshallers. (We'll test the ability to exclude these.)
-    transient Date   lastModified
-    transient String lastModifiedBy
     transient String dataOrigin
 
 
@@ -58,8 +56,6 @@ class ComplexThing implements Serializable {
     static constraints = {
         complexCode        ( nullable: false, maxSize: 4, unique: true  )
         size               ( nullable: true )
-        lastModified       ( nullable: true )
-        lastModifiedBy     ( nullable: true,  maxSize: 30 )
         dataOrigin         ( nullable: true,  maxSize: 30 )
     }
 }

@@ -173,6 +173,14 @@ Currently, the following response headers are supported:
 * X-hedtech-message.  May optionally be returned with any response.  Contains a localized message for the response.
 * X-Status-Reason.  Optionally returned with a 400 response to provide additional information on why the request could not be understood.
 
+##Cache Headers
+The plugin supports client caching (unless disabled within Config.groovy).  When caching support is enabled, the plugin will include both 'ETag' and 'Last-Modified' HTTP Headers within responses to GET requests and will support conditional GET requests containing either an 'If-None-Match' or 'If-Modified-Since' header.  This support is provided by the [cache-headers](https://github.com/Grailsrocks/grails-cache-headers) plugin.
+
+Specifically, a GET request (for either a resource or collection of resources) will include an ETag header (whose value is a SHA1 specifically calculated for the resource representation) and a 'Last-Modified' header (whose value is based upon a 'lastUpdated' or 'lastModified' property when available).
+
+A subsequent conditional GET request containing an 'If-None-Match' header (whose value is an ETag value) will result in a '304 Not Modified' if processing the request results in a newly calculated ETag that is unchanged.  (Note this does not necessarily reduce server processing, but it does preclude sending unchanged content over the network.)  Similarly, when a GET request includes an 'If-Modified-Since' header, a 304 will be returned if the requested resource has not changed.  When the GET is for a collection, the latest 'lastUpdated' (or 'lastModified') date is used.
+
+Note that at this time, conditional PUT requests are not supported.  Although a conditional PUT request is not supported, optimistic lock violations will be reported (so the end result is that a client will receive a 409 'conflict' versus a 412 'precondition failure' when using a conditional PUT request).
 
 ##Service layer contract
 The plugin delegates to the following methods on a service:

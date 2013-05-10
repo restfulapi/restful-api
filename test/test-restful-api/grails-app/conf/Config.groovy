@@ -2,21 +2,7 @@
 Copyright 2013 Ellucian Company L.P. and its affiliates.
 ******************************************************************************/
 
-// locations to search for config files that get merged into the main config;
-// config files can be ConfigSlurper scripts, Java properties files, or classes
-// in the classpath in ConfigSlurper format
-
-// grails.config.locations = [ "classpath:${appName}-config.properties",
-//                             "classpath:${appName}-config.groovy",
-//                             "file:${userHome}/.grails/${appName}-config.properties",
-//                             "file:${userHome}/.grails/${appName}-config.groovy"]
-
-// if (System.properties["${appName}.config.location"]) {
-//    grails.config.locations << "file:" + System.properties["${appName}.config.location"]
-// }
-
-grails.project.groupId = appName // change this to alter the default package name and Maven publishing destination
-grails.mime.file.extensions = true // enables the parsing of file extensions from URLs into the request format
+grails.mime.file.extensions   = true // enables the parsing of file extensions from URLs into the request format
 grails.mime.use.accept.header = true
 grails.mime.types = [
     all:                   '*/*',
@@ -41,7 +27,7 @@ grails.resources.adhoc.patterns = ['/images/*', '/css/*', '/js/*', '/plugins/*']
 
 // The default codec used to encode data with ${}
 grails.views.default.codec = "none" // none, html, base64
-grails.views.gsp.encoding = "UTF-8"
+grails.views.gsp.encoding  = "UTF-8"
 grails.converters.encoding = "UTF-8"
 // enable Sitemesh preprocessing of GSP pages
 grails.views.gsp.sitemesh.preprocess = true
@@ -81,6 +67,10 @@ environments {
     }
 }
 
+// ******************************************************************************
+//                             Logging Configuration
+// ******************************************************************************
+//
 import org.apache.log4j.*
 log4j = {
 
@@ -119,10 +109,31 @@ log4j = {
     }
 }
 
+// ******************************************************************************
+//                          Date Format Configuration
+// ******************************************************************************
+// Note: This configuration is used by this test app's CustomPropertyEditorRegistrar
+//
+grails.date.formats = [ "yyyy-MM-dd'T'HH:mm:ssZ", "yyyy-MM-dd HH:mm:ss-SSSS", "dd.MM.yyyy HH:mm:ss" ]
+
+// ******************************************************************************
+//                          Client Caching Configuration
+// ******************************************************************************
+//
+//cache.headers.enabled = false // Uncomment to disable
+
+// ******************************************************************************
+//                              CORS Configuration
+// ******************************************************************************
+//
 cors.url.pattern = '/api/*'
 cors.allow.origin.regex='.*'
 cors.expose.headers='content-type,X-hedtech-totalCount,X-hedtech-pageOffset,X-hedtech-pageMaxSize,X-hedtech-message,X-hedtech-Media-Type'
 
+// ******************************************************************************
+//                       RESTful API Endpoint Configuration
+// ******************************************************************************
+//
 restfulApiConfig = {
 
     resource {
@@ -213,7 +224,7 @@ restfulApiConfig = {
     }
 
     resource {
-        name = 'thing-wrapper'
+        name = 'thing-wrappers'
         representation {
             mediaType = "application/json"
             addMarshaller {

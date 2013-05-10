@@ -8,6 +8,10 @@ import grails.converters.JSON
 import grails.converters.XML
 import grails.validation.ValidationException
 
+import java.security.*
+
+import static java.util.UUID.randomUUID
+
 import javax.annotation.PostConstruct
 
 import net.hedtech.restfulapi.config.*
@@ -34,7 +38,6 @@ import org.codehaus.groovy.grails.web.servlet.HttpHeaders
 
 import org.codehaus.groovy.grails.web.servlet.GrailsApplicationAttributes
 import org.apache.commons.logging.LogFactory
-
 
 /**
  * A default Restful API controller that delegates to a
@@ -76,6 +79,7 @@ class RestfulApiController {
      **/
     // NOTE: The timing of PostConstruct works only when running 'test-app'
     //       -- it does *not* work for 'run-app' or 'test-app functional:'.
+    //       'init()' is invoked explicitly from RestfulApiGrailsPlugin.
     // @PostConstruct
     void init() {
 
@@ -135,44 +139,85 @@ class RestfulApiController {
         log.trace "list invoked for ${params.pluralizedResourceName}"
         try {
             checkMethod( Methods.LIST )
-            getResponseRepresentation() // adds representation attribute to request
+            def responseRepresentation = getResponseRepresentation() // adds representation attribute to request
+
+            def requestParams = params  // accessible from within withCacheHeaders
+            def logger = log            // ditto
+
             def service = getService()
             def delegateToService = getServiceAdapter()
-            log.trace "... will delegate list() to service $service using adapter $delegateToService"
-            def result = delegateToService.list(service, params)
-            log.trace "... service returned $result"
+            logger.trace "... will delegate list() to service $service using adapter $delegateToService"
+
+            def result = delegateToService.list(service, requestParams)
+            logger.trace "... service returned $result"
+
             def count
             if (result instanceof grails.orm.PagedResultList) {
                 count = result.totalCount
             } else {
-                count  = delegateToService.count(service, params)
+                count  = delegateToService.count(service, requestParams)
             }
-            ResponseHolder holder = new ResponseHolder()
-            holder.data = result
-            holder.addHeader('X-hedtech-totalCount', count)
-            holder.addHeader('X-hedtech-pageOffset', params.offset ? params?.offset : 0)
-            holder.addHeader('X-hedtech-pageMaxSize', params.max ? params?.max : result.size())
-            renderSuccessResponse( holder, 'default.rest.list.message' )
+
+            // Need to create etagValue outside of 'etag' block:
+            // http://jira.grails.org/browse/GPCACHEHEADERS-14
+            String etagValue = shaFor( result, count, responseRepresentation.mediaType )
+
+            withCacheHeaders {
+                etag {
+                    etagValue
+                }
+                delegate.lastModified {
+                    lastModifiedFor( result )
+                }
+                generate {
+                    ResponseHolder holder = new ResponseHolder()
+                    holder.data = result
+                    holder.addHeader('X-hedtech-totalCount', count)
+                    holder.addHeader('X-hedtech-pageOffset', requestParams.offset ? requestParams?.offset : 0)
+                    holder.addHeader('X-hedtech-pageMaxSize', requestParams.max ? requestParams?.max : result.size())
+                    renderSuccessResponse( holder, 'default.rest.list.message' )
+                }
+            }
         }
         catch (e) {
             messageLog.error "Caught exception ${e.message}", e
             renderErrorResponse(e)
             return
         }
-   }
+    }
 
 
     // GET /api/pluralizedResourceName/id
     //
     public def show() {
         log.trace "show() invoked for ${params.pluralizedResourceName}/${params.id}"
-        def result
         try {
             checkMethod( Methods.SHOW )
-            getResponseRepresentation()
-            result = getServiceAdapter().show( getService(), params )
-            renderSuccessResponse( new ResponseHolder( data: result ),
-                                   'default.rest.shown.message' )
+            def responseRepresentation = getResponseRepresentation()
+
+            def requestParams = params  // accessible from within withCacheHeaders
+            def logger = log            // ditto
+
+            def result = getServiceAdapter().show( getService(), requestParams )
+            // Need to create etagValue outside of 'etag' block:
+            // http://jira.grails.org/browse/GPCACHEHEADERS-14
+            String etagValue = shaFor( result, responseRepresentation.mediaType )
+
+            withCacheHeaders {
+
+                etag {
+                    etagValue
+                }
+                delegate.lastModified {
+                    if (hasProperty( result, "lastUpdated" ))       result.lastUpdated
+                    else if (hasProperty( result, "lastModified" )) result.lastModified
+                    else                                            new Date()
+                }
+                generate {
+                    renderSuccessResponse( new ResponseHolder( data: result ),
+                                           'default.rest.shown.message' )
+                }
+            }
         }
         catch (e) {
             messageLog.error "Caught exception ${e.message}", e
@@ -271,7 +316,7 @@ class RestfulApiController {
      * @param responseMap the Map to render
      * @param msgResourceCode the resource code used to create a message entry
      **/
-    protected void renderSuccessResponse(ResponseHolder holder, String msgResourceCode) {
+     protected void renderSuccessResponse(ResponseHolder holder, String msgResourceCode) {
         String localizedName = localize(Inflector.singularize(params.pluralizedResourceName))
         holder.message = message( code: msgResourceCode, args: [ localizedName ] )
         renderResponse( holder )
@@ -404,7 +449,7 @@ class RestfulApiController {
      * @param mediaType if specified, use as the media type for the response.
      *        Otherwise, use the media-type type specified by the Accept header.
      **/
-    protected void renderResponse(ResponseHolder responseHolder) {
+    protected void renderResponse( ResponseHolder responseHolder ) {
         //def acceptedTypes = mediaTypeParser.parse( request.getHeader(HttpHeaders.ACCEPT) )
         def representation
         def content
@@ -454,6 +499,94 @@ class RestfulApiController {
             break
         }
         return contentType
+    }
+
+
+    protected boolean hasProperty( Object obj, String name ) {
+        obj.getMetaClass().hasProperty(obj, "$name") && obj."$name"
+    }
+
+
+    protected String shaFor( resourceModel, String requestedMediaType ) {
+        MessageDigest digest = MessageDigest.getInstance( 'SHA1' )
+        shaFor( resourceModel, digest, requestedMediaType )
+    }
+
+
+    protected String shaFor( resourceModel, MessageDigest digest, String requestedMediaType ) {
+
+        digest.update( requestedMediaType.getBytes( 'UTF-8' ) )
+
+        if (resourceModel.getMetaClass().respondsTo( resourceModel, "getEtag" )) {
+            log.trace "Will create ETag based upon a model's 'getEtag()' method"
+            digest.update( "${resourceModel.getEtag()}".getBytes( 'UTF-8' ) )
+            return "\"${new BigInteger( 1, digest.digest() ).toString( 16 ).padLeft( 40,'0' )}\""
+        }
+
+        if (!hasProperty( resourceModel, "id" )) {
+            log.trace "Cannot create ETag using a resource's identity, returning a UUID"
+            return randomUUID() as String
+        }
+        digest.update( "${resourceModel.id}".getBytes( 'UTF-8' ) )
+
+        // we'll require either version, lastModified, or (worst case) all properties
+        boolean changeIndictorFound = false
+        if (hasProperty( resourceModel, "version") ) {
+            changeIndictorFound = true
+            digest.update( "${resourceModel.version}".getBytes( 'UTF-8' ) )
+        }
+        else if (hasProperty( resourceModel, "lastUpdated" )) {
+            changeIndictorFound = true
+            digest.update( "${resourceModel.lastUpdated}".getBytes( 'UTF-8' ) )
+        }
+        else if (hasProperty( resourceModel, "lastModified" )) {
+            changeIndictorFound = true
+            digest.update( "${resourceModel.lastModified}".getBytes( 'UTF-8' ) )
+        }
+
+        if (changeIndictorFound) {
+            log.trace "Returning an ETag based on id and a known change indicator"
+            return "\"${new BigInteger( 1, digest.digest() ).toString( 16 ).padLeft( 40,'0' )}\""
+        } else {
+            // Note: we don't return empty ETags as doing so may cause some caching
+            //       infrastructure to reset connections.
+            log.trace "Cannot create ETag using a resource's change indicator, returning a UUID"
+            return randomUUID() as String
+        }
+    }
+
+
+    protected String shaFor( Collection resourceModels, long totalCount, String requestedMediaType ) {
+
+        if (!(resourceModels && totalCount)) return ''
+        MessageDigest digest = MessageDigest.getInstance( 'SHA1' )
+
+        // we'll use the collection size, the totalCount of resources,
+        // and the sha1 calculated for each item in the collection
+        digest.update( "${resourceModels.size()}".getBytes( 'UTF-8' ) )
+        digest.update( "${totalCount}".getBytes( 'UTF-8' ) )
+        resourceModels.each {
+            shaFor( it, digest, requestedMediaType )
+        }
+        "\"${new BigInteger( 1, digest.digest() ).toString( 16 ).padLeft( 40,'0' )}\""
+    }
+
+
+    protected Date lastModifiedFor( Collection resourceModels ) {
+
+        if (!resourceModels) return new Date()
+
+        Date latestDate
+        resourceModels.each {
+            if (hasProperty( it, 'lastUpdated' )) {
+                if (it.lastUpdated > latestDate) latestDate = it.lastUpdated
+            }
+            else if (hasProperty( it, 'lastModified' )) {
+                if (it.lastModified > latestDate) latestDate = it.lastModified
+            }
+        }
+        latestDate ?: new Date()
+        latestDate
     }
 
 
@@ -544,7 +677,6 @@ class RestfulApiController {
      * @see #getServiceName()
      **/
     protected def getService() {
-
         def svc
         try {
             svc = applicationContext.getBean(getServiceName())

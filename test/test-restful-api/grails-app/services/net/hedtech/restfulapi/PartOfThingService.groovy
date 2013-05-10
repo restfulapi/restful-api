@@ -55,10 +55,7 @@ class PartOfThingService {
 
     def show(Map params) {
         log.trace "PartOfThingService.show invoked"
-        def result
-        result = Thing.get(params.id)
-        result.parts // force lazy loading
-        supplementThing( result )
+        def result = PartOfThing.get(params.id)
         log.trace "PartOfThingService.show returning ${result}"
         result
     }
@@ -72,18 +69,11 @@ class PartOfThingService {
         }
 
         def result
-
-        Thing.withTransaction {
-            def instance = new Thing( content )
-            instance.parts = [] as Set //workaround for GRAILS-9775 until the bindable constraint works on associtations
-            content['parts'].each { partID ->
-                instance.addPart( PartOfThing.get( partID ) )
-            }
+        PartOfThing.withTransaction {
+            def instance = new PartOfThing( content )
             instance.save(failOnError:true)
             result = instance
-            result.parts //force lazy loading
         }
-        supplementThing( result )
         result
     }
 

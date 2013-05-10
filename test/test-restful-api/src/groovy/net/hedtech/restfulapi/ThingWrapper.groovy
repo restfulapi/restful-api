@@ -38,7 +38,7 @@ class ThingWrapper implements Serializable {
 
 
     public String toString() {
-        "ComplexWrapper[complexCode=$complexCode, things=${things}]"
+        "ThingWrapper[complexCode=$complexCode, things=${things}]"
     }
 
 

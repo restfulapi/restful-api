@@ -119,6 +119,24 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         "An AA thing" == json[0].description
     }
 
+    def "Test list when Content-Type is not recognized"() {
+        setup:
+        createThing('AA')
+        createThing('BB')
+
+        when:"list with  application/json accept"
+        get("$localBase/api/things") {
+            headers['Content-Type'] = 'application/something_unknown'
+            headers['Accept']       = 'application/json'
+        }
+
+        then:
+        200 == response.status
+        'application/json' == response.contentType
+        def json = JSON.parse response.text
+        2 == json.size()
+    }
+
     def "Test list with version 0 json-as-xml response"() {
         setup:
         createThing('AA')
@@ -246,6 +264,29 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         10  | 90     | 5
     }
 
+    def "Test list with matching Etag results in 304"() {
+        setup:
+        createThing('AA')
+        createThing('BB')
+
+        get("$localBase/api/things") {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/json'
+        }
+
+        def etagHeader = responseHeader('Etag')
+
+        when:"list with  application/json accept"
+        get("$localBase/api/things") {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/json'
+            headers['If-None-Match'] = etagHeader
+        }
+
+        then:
+        304 == response.status
+    }
+
     def "Test validation error"() {
         setup:
         createThing('AA')
@@ -335,7 +376,6 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         get( "$localBase/api/things/$id" ) {
             headers['Content-Type']  = 'application/json'
             headers['Accept']        = 'application/vnd.hedtech.v0+json'
-//            headers['Authorization'] = TestUtils.authHeader('user','password')
         }
 
         then:
@@ -359,7 +399,6 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         get( "$localBase/api/things/$id" ) {
             headers['Content-Type']  = 'application/json'
             headers['Accept']        = 'application/vnd.hedtech.v0+xml'
-//            headers['Authorization'] = TestUtils.authHeader('user','password')
         }
 
         then:
@@ -372,10 +411,175 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         "An AA thing" == xml.description[0].text()
         '2' == xml.numParts[0].text()
         null != xml.version[0].text()
+    }
 
+    def "Test show when Content-Type is not recognized"() {
+        setup:
+        def id = createThing('AA')
+        createThing('BB')
+
+        when:
+        get( "$localBase/api/things/$id" ) {
+            headers['Accept']        = 'application/json'
+            headers['Content-Type']  = 'application/something_unknown'
+        }
+
+        then:
+        200 == response.status
+        'application/json' == response.contentType
+
+        def json = JSON.parse response.text
+        "AA" == json.code
+    }
+
+    def "Test show with same etag results in 304"() {
+        setup:
+        def id = createThing('AA')
+
+        get( "$localBase/api/things/$id" ) {
+            headers['Content-Type']   = 'application/json'
+            headers['Accept']         = 'application/json'
+        }
+
+        def etagHeader = responseHeader('Etag')
+
+        when:
+        get( "$localBase/api/things/$id" ) {
+            headers['Content-Type']  = 'application/json'
+            headers['Accept']        = 'application/json'
+            headers['If-None-Match'] = etagHeader
+        }
+
+        then:
+        304 == response.status
+    }
+
+    def "Test show with model-created etag that matches results in 304"() {
+        setup:
+        def thingId = createThing('AA')
+        def id = Thing.get( thingId ).parts.toArray()[0].id
+        get( "$localBase/api/part-of-things/$id" ) {
+            headers['Content-Type']   = 'application/json'
+            headers['Accept']         = 'application/json'
+        }
+        def etagHeader = responseHeader('Etag')
+
+        when:
+        get( "$localBase/api/part-of-things/$id" ) {
+            headers['Content-Type']  = 'application/json'
+            headers['Accept']        = 'application/json'
+            headers['If-None-Match'] = etagHeader
+        }
+
+        then:
+        null != etagHeader
+        304 == response.status
+    }
+
+    def "Test show with UUID-based etag results in 200"() {
+        setup:
+        get( "$localBase/api/thing-wrappers/1" ) {
+            headers['Content-Type']   = 'application/json'
+            headers['Accept']         = 'application/json'
+        }
+        def etagHeader = responseHeader('Etag')
+
+        when:
+        get( "$localBase/api/thing-wrappers/1" ) {
+            headers['Content-Type']  = 'application/json'
+            headers['Accept']        = 'application/json'
+            headers['If-None-Match'] = etagHeader
+        }
+
+        then:
+        null != etagHeader
+        200 == response.status
+    }
+
+    def "Test show with different etag results in 200"() {
+        setup:
+        def id = createThing('AA')
+
+        get( "$localBase/api/things/$id" ) {
+            headers['Content-Type']   = 'application/json'
+            headers['Accept']         = 'application/json'
+        }
+
+        when:
+        get( "$localBase/api/things/$id" ) {
+            headers['Content-Type']  = 'application/json'
+            headers['Accept']        = 'application/json'
+            headers['If-None-Match'] = '5f167d1ef1ccNO_MATCH2b29a610d3cef0fc793e8'
+        }
+
+        then:
+        200 == response.status
+    }
+
+    def "Test show of unchanged resource with If-Modified-Since header results in 304"() {
+        setup:
+        def id = createThing('AA')
+
+        get( "$localBase/api/things/$id" ) {
+            headers['Content-Type']   = 'application/json'
+            headers['Accept']         = 'application/json'
+        }
+
+        def lastModifiedHeader = responseHeader('Last-Modified')
+
+        when:
+        get( "$localBase/api/things/$id" ) {
+            headers['Content-Type']      = 'application/json'
+            headers['Accept']            = 'application/json'
+            headers['If-Modified-Since'] = lastModifiedHeader
+        }
+
+        then:
+        304 == response.status
+    }
+
+    def "Test show of modified resource with 'old' If-Modified-Since header results in 200"() {
+        setup:
+        def id = createThing('AA')
+
+        get( "$localBase/api/things/$id" ) {
+            headers['Content-Type']   = 'application/json'
+            headers['Accept']         = 'application/json'
+        }
+
+        def lastModifiedHeader = responseHeader('Last-Modified')
+        sleep 1000
+
+        put( "$localBase/api/things/$id" ) {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/json'
+            body {
+                """
+                {
+                    "description": "updated description",
+                    "version": "0",
+                }
+                """
+            }
+        }
+
+        when:
+        get( "$localBase/api/things/$id" ) {
+            headers['Content-Type']      = 'application/json'
+            headers['Accept']            = 'application/json'
+            headers['If-Modified-Since'] = lastModifiedHeader
+        }
+
+        then:
+        200 == response.status
+        def json = JSON.parse response.text
+        1 == json.version
     }
 
     def "Test save as json"() {
+        setup:
+        def someDate = new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+
         when:
         post( "$localBase/api/things") {
             headers['Content-Type'] = 'application/json'
@@ -384,7 +588,8 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
                 """
                 {
                     "code": "AC",
-                    "description": "An AC thingy"
+                    "description": "An AC thingy",
+                    "dateManufactured": "$someDate"
                 }
                 """
             }
@@ -602,6 +807,33 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         // assert localization of the message
         "Another user has updated this thing while you were editing" == responseHeader('X-hedtech-message')
         "" == response.text
+    }
+
+    void "Test that optimistic lock returns 409 status, even with a conditional request"() {
+        // Currently, conditional PUT requests are not supported. Consequently, instead of
+        // returning a '412 Precondition Failure' a 'normal' '409 Conflict' error will be returned.
+        // This test simply shows that including the 'If-Match' header has no affect.
+        setup:
+        def id = createThing('AA')
+        updateThing( id, [description:'changed'] )
+
+        when:
+        put( "$localBase/api/things/$id" ) {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/vnd.hedtech.v0+json'
+            headers['If-Match']     = '5f167d1ef1ccNO_MATCH2b29a610d3cef0fc793e8'
+            body {
+                """
+                {
+                    "description": "updated description",
+                    "version": "0"
+                }
+                """
+            }
+        }
+
+        then:
+        409 == response.status
     }
 
     def "Test deleting a thing"() {
@@ -1129,7 +1361,7 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         }
     }
 
-    private def createThing(String code) {
+    private long createThing(String code) {
         Thing.withTransaction {
             Thing thing = new Thing(code: code, description: "An $code thing",
                       dateManufactured: new Date(), isGood: 'Y', isLarge: true)

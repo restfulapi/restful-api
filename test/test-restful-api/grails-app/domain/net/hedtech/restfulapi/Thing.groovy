@@ -12,7 +12,7 @@ class Thing implements Serializable {
     Date       dateManufactured
     long       weight = 100
     boolean    isLarge
-    Date       lastModified
+    Date       lastUpdated
     String     lastModifiedBy
     String     dataOrigin
 
@@ -23,6 +23,7 @@ class Thing implements Serializable {
 
 
     static mapping = {
+        autoTimestamp true
         parts lazy: false
     }
 
@@ -33,7 +34,7 @@ class Thing implements Serializable {
         description        ( nullable: false, maxSize: 30 )
         dateManufactured   ( nullable: true )
         weight             ( nullable: true )
-        lastModified       ( nullable: true )
+        lastUpdated        ( nullable: true )
         lastModifiedBy     ( nullable: true,  maxSize: 30 )
         dataOrigin         ( nullable: true,  maxSize: 30 )
 
