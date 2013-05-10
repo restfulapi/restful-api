@@ -129,9 +129,7 @@ restfulApiConfig = {
         name = 'things'
         representation {
             mediaType = "application/json"
-            addMarshaller {
-                marshaller = new net.hedtech.restfulapi.marshallers.json.BasicDomainClassMarshaller(app:grailsApplication)
-                priority = 100
+            addJSONDomainMarshaller {
             }
             extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()
         }
@@ -193,6 +191,24 @@ restfulApiConfig = {
             mediaType = 'application/vnd.hedtech.v1+xml'
             jsonAsXml = true
             extractor = new net.hedtech.restfulapi.extractors.xml.JSONObjectExtractor()
+        }
+        representation {
+            mediaType =  'application/vnd.hedtech.additional.field.closure+json'
+            addMarshaller {
+                marshaller = new net.hedtech.restfulapi.marshallers.json.BasicHalDomainClassMarshaller(app:grailsApplication)
+                priority = 100
+            }
+            addJSONDomainMarshaller {
+                supportClass = net.hedtech.restfulapi.Thing
+                priority = 101
+                additionalFields { map ->
+                    def json = map['json']
+                    def beanWrapper = map['beanWrapper']
+                    json.property("sha1", beanWrapper.getWrappedInstance().getSupplementalRestProperties()['sha1'])
+                    json.property("numParts", beanWrapper.getWrappedInstance().parts.size())
+                }
+            }
+            extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()
         }
     }
 

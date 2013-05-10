@@ -1093,6 +1093,27 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
 
     }
 
+    def "Test supplemental data from declarative marshalling"() {
+        setup:
+        def id = createThing('AA')
+
+        when:"list with  application/json accept"
+        get("$localBase/api/things/$id") {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/vnd.hedtech.additional.field.closure+json'
+        }
+        def json = JSON.parse response.text
+
+        then:
+        200                       == response.status
+        'application/json'        == response.contentType
+        "AA"                      == json.code
+        "An AA thing"             == json.description
+        // assert localization of the message
+        null                      != json.numParts
+        null                      != json.sha1
+    }
+
     private void createThings() {
         createThing('AA')
         createThing('BB')

@@ -39,7 +39,7 @@ class ThingClassMarshaller extends BasicHalDomainClassMarshaller {
         if ("parts" == property.getName()) {
             json.property("numParts", referenceObject.size());
         }
-        return true // and we'll allow the superlcass to process parts normally
+        return true // and we'll allow the superclass to process parts normally
     }
 
     @Override

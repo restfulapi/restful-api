@@ -31,12 +31,13 @@ import org.springframework.beans.BeanWrapperImpl
 
 class DeclarativeDomainClassMarshaller extends BasicDomainClassMarshaller {
 
-    Class marshalledClass
+    Class supportClass
     def substitutions = [:]
     def includedFields = []
     def excludedFields = []
     def includeId = true
     def includeVersion = true
+    def additionalFieldClosures = []
 
 
 
@@ -49,8 +50,8 @@ class DeclarativeDomainClassMarshaller extends BasicDomainClassMarshaller {
 
     @Override
     public boolean supports(Object object) {
-        if (marshalledClass) {
-            marshalledClass.isInstance(object)
+        if (supportClass) {
+            supportClass.isInstance(object)
         } else {
             super.supports(object)
         }
@@ -125,6 +126,14 @@ class DeclarativeDomainClassMarshaller extends BasicDomainClassMarshaller {
 
     @Override
     protected void processAdditionalFields(BeanWrapper beanWrapper, JSON json) {
+        Map map = [
+            'grailsApplication':app,
+            'beanWrapper':beanWrapper,
+            'json':json
+        ]
+        additionalFieldClosures.each { c ->
+            c.call( map )
+        }
     }
 
     /**

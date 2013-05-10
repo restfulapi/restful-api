@@ -13,6 +13,7 @@ class RestConfig {
     def resources = [:]
     def jsonAsXml
     def marshallerGroups = [:]
+    ConfigGroup jsonDomain = new ConfigGroup()
 
     RestConfig( GrailsApplication grailsApplication ) {
         this.grailsApplication = grailsApplication
@@ -67,7 +68,7 @@ class RestConfig {
     }
 
     RestConfig resource(Closure c) {
-        ResourceConfig rc = new ResourceConfig()
+        ResourceConfig rc = new ResourceConfig(this)
         c.delegate = rc
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c.call()
@@ -100,5 +101,18 @@ class RestConfig {
         }
         group
     }
+
+    def jsonDomainMarshaller(String name) {
+        def closure = { Closure c ->
+            DomainMarshallerConfig config = new DomainMarshallerConfig()
+            c.delegate = config
+            c.resolveStrategy = Closure.DELEGATE_FIRST
+            c.call()
+            jsonDomain.configs[name] = config
+        }
+        [params:closure]
+    }
+
+
 
 }

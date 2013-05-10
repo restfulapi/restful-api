@@ -5,13 +5,13 @@ Copyright 2013 Ellucian Company L.P. and its affiliates.
 package net.hedtech.restfulapi.config
 
 /**
- * Exception thrown when the methods defined for resource are not
- * a collection.
+ * Exception thrown when a domain class marshaller definition includes
+ * an unknown template.
  **/
-class MethodsNotCollectionException extends RuntimeException {
-    String resourceName
+class MissingDomainMarshallerTemplateException extends RuntimeException {
+    String name
 
     String getMessage() {
-        "Resource $resourceName methods does not define a collection"
+        "Domain Class Marshaller template $name not defined.  Marshaller templates must be defined before use."
     }
 }

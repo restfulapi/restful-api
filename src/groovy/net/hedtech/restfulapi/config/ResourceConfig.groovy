@@ -14,6 +14,12 @@ class ResourceConfig {
     def methods = [ 'list', 'show', 'create', 'update', 'delete' ]
     def representations = [:]
 
+    private RestConfig restConfig
+
+    ResourceConfig(RestConfig config) {
+        this.restConfig = config
+    }
+
     ResourceConfig setName(String name) {
         this.name = name
         return this
@@ -38,7 +44,7 @@ class ResourceConfig {
     }
 
     ResourceConfig representation(Closure c) {
-        RepresentationDelegate delegate = new RepresentationDelegate()
+        RepresentationDelegate delegate = new RepresentationDelegate(restConfig)
         c.delegate = delegate
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c.call()
