@@ -235,9 +235,16 @@ class RestfulApiController {
         log.trace "delete() invoked for ${params.pluralizedResourceName}/${params.id}"
         try {
             checkMethod( Methods.DELETE )
-            def map = [:]
-            map.id = params.id
-            def content = parseRequestContent( request )
+            def content = [:]
+            //Using angular in some browsers causes the Content-Type header
+            //to be set as application/xml or some other default for zero-length
+            //bodies, instead of a configured type.
+            //If we have a delete with a zero-length body,
+            //we will skip parsing the request content and use an
+            //empty map.
+            if (request.getContentLength() != 0) {
+                content = parseRequestContent( request )
+            }
             if (content && content.id && content.id != params.id) {
                 throw new IdMismatchException( params.pluralizedResourceName )
             }

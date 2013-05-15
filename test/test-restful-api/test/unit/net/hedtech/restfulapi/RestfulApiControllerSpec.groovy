@@ -119,6 +119,10 @@ class RestfulApiControllerSpec extends Specification {
         request.addHeader('Accept','application/json')
         request.addHeader('Content-Type','application/json')
         request.method = httpMethod
+        //make sure the body isn't zero length
+        //so that the controller has to look at the
+        //content-type for delete
+        request.setContent( new byte[1] )
         params.pluralizedResourceName = 'things'
         if (id != null) params.id = id
 
@@ -462,6 +466,39 @@ class RestfulApiControllerSpec extends Specification {
         500 == response.status
           0 == response.getContentLength()
         'default.rest.general.errors.message' == response.getHeaderValue( 'X-hedtech-message' )
+    }
+
+    def "Test that delete with empty body ignores Content-Type"() {
+        setup:
+        //use default extractor for any methods with a request body
+         config.restfulApiConfig = {
+            resource {
+                name = 'things'
+                representation {
+                    mediaType = 'application/json'
+                    extractor = new DefaultJSONExtractor()
+                }
+            }
+        }
+        controller.init()
+
+        //mock the appropriate service method, expect exactly 1 invocation
+        def mock = Mock(ThingService)
+        controller.metaClass.getService = {-> mock}
+
+        request.setContent( new byte[0] )
+        request.addHeader( 'Accept', 'application/json' )
+        request.addHeader( 'Content-Type', 'application/xml' )
+        params.pluralizedResourceName = 'things'
+
+        when:
+        controller.delete()
+
+        then:
+        200 == response.status
+          0 == response.getContentLength()
+          1*mock.delete(_,_) >> { }
+        'default.rest.deleted.message' == response.getHeaderValue( 'X-hedtech-message' )
 
     }
 
