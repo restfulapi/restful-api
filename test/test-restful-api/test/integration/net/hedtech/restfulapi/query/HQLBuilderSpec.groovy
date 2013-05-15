@@ -57,6 +57,86 @@ class HQLBuilderSpec extends IntegrationSpec {
     }
 
 
+    @Unroll
+    def "Test creating statements based on valid filters"( String field, String operator, def value, String filterType, String statement ) {
+
+        setup:
+        def xxId = createThing('XX')
+        def yyId = createThing('yy')
+
+        // URL: things?filter[0][field]=code&filter[1][value]=science&filter[0][operator]=eq&
+        // filter[1][field]=description&filter[1][operator]=contains&filter[0][value]=ZZ&max=50
+        Map params = [ 'pluralizedResourceName':'things',
+                       'filter[1][value]': value,
+                       'filter[1][field]': field,
+                       'filter[1][operator]': operator,
+                       'max':'50'
+                     ]
+        if (filterType) params << [ 'filter[1][type]': filterType ]
+
+        when:
+        def query = HQLBuilder.createHQL( grailsApplication, params )
+
+        then:
+        statement == query.statement
+
+        where:
+        field              | operator   | value           | filterType | statement
+        'code'             | 'eq'       | 'XX'            | null       | 'SELECT a FROM Thing a WHERE a.code = :code'
+        'code'             | 'eq'       | 'XX'            | 'string'   | 'SELECT a FROM Thing a WHERE a.code = :code'
+        'description'      | 'contains' | 'An XX'         | null       | 'SELECT a FROM Thing a WHERE lower(a.description) LIKE lower(:description)'
+        'dateManufactured' | 'gt'       | new Date().time | 'date'     | 'SELECT a FROM Thing a WHERE a.dateManufactured > :dateManufactured'
+        'weight'           | 'lt'       | 101             | 'num'      | 'SELECT a FROM Thing a WHERE a.weight < :weight'
+    }
+
+
+    @Unroll
+    def "Test filter validity"( String field, String operator, def value, def filterType, boolean isValid ) {
+
+        setup:
+        def xxId = createThing('XX')
+        def yyId = createThing('yy')
+
+        // URL: things?filter[0][field]=code&filter[1][value]=science&filter[0][operator]=eq&
+        // filter[1][field]=description&filter[1][operator]=contains&filter[0][value]=ZZ&max=50
+        Map params = [ 'pluralizedResourceName':'things',
+                       'max':'50'
+                     ]
+        if (field)      params << [ 'filter[1][field]': field ]
+        if (filterType) params << [ 'filter[1][type]': filterType ]
+        if (value)      params << [ 'filter[1][value]': value ]
+        if (operator)   params << [ 'filter[1][operator]': operator ]
+
+
+        when:
+        def filter = Filter.extractFilters( grailsApplication, params )[0]
+
+        then:
+        isValid == filter.isValid()
+
+        where:
+        field              | operator   | value           | filterType | isValid
+        'code'             | ''         | 'XX'            | null       | false
+        'code'             | null       | 'XX'            | null       | false
+        'code'             | 'eq'       | 'XX'            | null       | true
+        'code'             | 'eq'       | 'XX'            | 'string'   | true
+        'code'             | 'equals'   | 'XX'            | null       | true
+        'code'             | '='        | 'XX'            | null       | false
+        'description'      | 'contains' | 'An XX'         | null       | true
+        'description'      | 'eq'       | ''              | null       | false
+        'description'      | 'contains' | null            | null       | false
+        'dateManufactured' | 'contains' | new Date().time | 'date'     | false
+        'dateManufactured' | 'gt'       | new Date().time | 'date'     | true
+        'dateManufactured' | 'lt'       | new Date().time | 'date'     | true
+        'dateManufactured' | 'eq'       | new Date().time | 'date'     | true
+        'weight'           | 'eq'       | 101             | 'int'      | false
+        'weight'           | 'eq'       | 101             | 'long'     | false
+        'weight'           | 'lt'       | 101             | 'num'      | true
+        'weight'           | 'contains' | 101             | 'num'      | false
+        null               | 'eq'       | 101             | null       | false
+    }
+
+
     def "Test reporting query parameters using unsupported filter terms"() {
 
         setup:
@@ -179,11 +259,103 @@ class HQLBuilderSpec extends IntegrationSpec {
         def query = HQLBuilder.createHQL( grailsApplication, params )
 
         then:
-        "SELECT a FROM Thing a WHERE a.code = :code AND lower(a.description) LIKE lower(:description)" == query.statement
+        'SELECT a FROM Thing a WHERE a.code = :code AND lower(a.description) LIKE lower(:description)' == query.statement
 
         def things = Thing.executeQuery( query.statement, query.parameters, [:] )
         'XX' == things[0].code
         'An XX thing' == things[0].description
+    }
+
+
+    def "Test creating filter based on a numeric field"() {
+
+        setup:
+        def xxId = createThing('XX')
+        def yyId = createThing('yy')
+
+        // URL: things?filter[0][field]=code&filter[1][value]=science&filter[0][operator]=eq&
+        // filter[1][field]=description&filter[1][operator]=contains&filter[0][value]=ZZ&max=50
+        Map params = [ 'pluralizedResourceName':'things',
+                       'filter[1][value]':'An XX',
+                       'filter[1][field]':'description',
+                       'filter[1][operator]':'contains',
+                       'filter[0][field]':'weight',
+                       'filter[0][operator]':'lt',
+                       'filter[0][value]':'101',
+                       'filter[0][type]':'num',
+                       'max':'50'
+                     ]
+
+        when:
+        def query = HQLBuilder.createHQL( grailsApplication, params )
+
+        then:
+        "SELECT a FROM Thing a WHERE a.weight < :weight AND lower(a.description) LIKE lower(:description)" == query.statement
+
+        def things = Thing.executeQuery( query.statement, query.parameters, [:] )
+        1 == things.size()
+        'XX' == things[0].code
+    }
+
+
+    def "Test creating filter based on a date field using 'lt' operator"() {
+
+        setup:
+        def xxId = createThing('XX')
+        def yyId = createThing('yy')
+
+        // URL: things?filter[0][field]=code&filter[1][value]=science&filter[0][operator]=eq&
+        // filter[1][field]=description&filter[1][operator]=contains&filter[0][value]=ZZ&max=50
+        Map params = [ 'pluralizedResourceName':'things',
+                       'filter[1][value]':'An XX',
+                       'filter[1][field]':'description',
+                       'filter[1][operator]':'contains',
+                       'filter[0][field]':'dateManufactured',
+                       'filter[0][operator]':'lt',
+                       'filter[0][value]': new Date().time,
+                       'filter[0][type]':'date',
+                       'max':'50'
+                     ]
+
+        when:
+        def query = HQLBuilder.createHQL( grailsApplication, params )
+
+        then:
+        "SELECT a FROM Thing a WHERE a.dateManufactured < :dateManufactured AND lower(a.description) LIKE lower(:description)" == query.statement
+
+        def things = Thing.executeQuery( query.statement, query.parameters, [:] )
+        1 == things.size()
+        'XX' == things[0].code
+    }
+
+
+    def "Test creating filter based on a date field using 'gt' operator"() {
+
+        setup:
+        def xxId = createThing('XX')
+        def yyId = createThing('yy')
+
+        // URL: things?filter[0][field]=code&filter[1][value]=science&filter[0][operator]=eq&
+        // filter[1][field]=description&filter[1][operator]=contains&filter[0][value]=ZZ&max=50
+        Map params = [ 'pluralizedResourceName':'things',
+                       'filter[1][value]':'An XX',
+                       'filter[1][field]':'description',
+                       'filter[1][operator]':'contains',
+                       'filter[0][field]':'dateManufactured',
+                       'filter[0][operator]':'gt',
+                       'filter[0][value]': new Date().time,
+                       'filter[0][type]':'date',
+                       'max':'50'
+                     ]
+
+        when:
+        def query = HQLBuilder.createHQL( grailsApplication, params )
+
+        then:
+        "SELECT a FROM Thing a WHERE a.dateManufactured > :dateManufactured AND lower(a.description) LIKE lower(:description)" == query.statement
+
+        def things = Thing.executeQuery( query.statement, query.parameters, [:] )
+        0 == things.size()
     }
 
 
@@ -214,13 +386,36 @@ class HQLBuilderSpec extends IntegrationSpec {
     }
 
 
-    def "Test reporting bad query"() {
+    def "Test filtering on an unknown field results in exception"() {
 
         setup:
         // URL: things?filter[0][field]=code&filter[1][value]=science&filter[0][operator]=eq&
         // filter[1][field]=description&filter[1][operator]=contains&filter[0][value]=ZZ&max=50
         Map params = [ 'pluralizedResourceName':'things',
                        'filter[0][field]':'you_will_not_find_me',
+                       'filter[1][value]':'An XX',
+                       'filter[0][operator]':'eq',
+                       'filter[1][field]':'description',
+                       'filter[1][operator]':'contains',
+                       'filter[0][value]':'XX',
+                       'max':'50'
+                     ]
+
+        when:
+            def query = HQLBuilder.createHQL( grailsApplication, params )
+
+        then:
+            thrown BadFilterException
+    }
+
+
+    def "Test filtering on a 'many' association field results in exception"() {
+
+        setup:
+        // URL: things?filter[0][field]=code&filter[1][value]=science&filter[0][operator]=eq&
+        // filter[1][field]=description&filter[1][operator]=contains&filter[0][value]=ZZ&max=50
+        Map params = [ 'pluralizedResourceName':'things',
+                       'filter[0][field]':'parts',
                        'filter[1][value]':'An XX',
                        'filter[0][operator]':'eq',
                        'filter[1][field]':'description',

@@ -27,16 +27,27 @@ import org.codehaus.groovy.grails.commons.GrailsDomainClassProperty
  **/
 class Filter {
 
-    private static def filterRE = /filter\[([0-9]+)\]\[(field|operator|value)\]=(.*)/
-    private static final Range ALIASES = 'a'..'p'
-    private static List FILTER_TERMS = ['field', 'operator', 'value']
-    private static List SUPPORTED_OPERATORS = ['eq', 'equals', 'contains']
+    // Note the URL filters are not (yet) internationalizable
+    private static def filterRE = /filter\[([0-9]+)\]\[(field|operator|value|type)\]=(.*)/
+
+    private static final Range ALIASES      = 'a'..'p'
+    private static List FILTER_TERMS        = ['field', 'operator', 'value']
+    private static List STRING_OPERATORS    = ['eq', 'equals', 'contains']
+    private static List NUMERIC_OPERATORS   = ['eq', 'equals', 'lt', 'gt']
+    private static List DATE_OPERATORS      = ['eq', 'equals', 'lt', 'gt']
+    private static List SUPPORTED_OPERATORS = STRING_OPERATORS + NUMERIC_OPERATORS + DATE_OPERATORS
+
+    private static List NUMERIC_TYPES       = ['num', 'number']
+    private static List STRING_TYPES        = ['string']
+    private static List DATE_TYPES          = ['date']
+    private static List SUPPORTED_TYPES     = STRING_TYPES + NUMERIC_TYPES + DATE_TYPES
 
     protected static final Log log = LogFactory.getLog(Filter.class)
 
     public String field
     public String operator
-    public def value
+    public def    value
+    public String type // if null we'll assume the value is of type = String
     public GrailsDomainClassProperty persistentProperty
     public boolean isAssociation
     public boolean isMany
@@ -47,8 +58,17 @@ class Filter {
         if (valid) return true
         if (!field || !operator || !value || !persistentProperty) return false
         if (!(SUPPORTED_OPERATORS.contains(operator))) return false
+        if (('contains' == operator) && (null == value)) return false
+        if (type && !(SUPPORTED_TYPES.contains(type))) return false
+        if (isNumeric() && !(NUMERIC_OPERATORS.contains(operator))) return false
+        if (isDate() && !(DATE_OPERATORS.contains(operator))) return false
+        if (isMany) return false // we don't support filtering on collections (yet?)
         true
     }
+
+
+    public boolean isNumeric() { NUMERIC_TYPES.contains(type) }
+    public boolean isDate()    { DATE_TYPES.contains(type) }
 
     public String toString() {
         "Filter[field=$field,operator=$operator,value=$value,type=${persistentProperty?.type},isAssociation=$isAssociation,isMany=$isMany]"

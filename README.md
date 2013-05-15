@@ -233,7 +233,7 @@ As a convenience, the plugin provides a Filter class that includes a factory met
 ```
 part-of-things?filter[0][field]=description&filter[1][value]=6&filter[0][operator]=contains&filter[1][field]=thing&filter[1][operator]=eq&filter[0][value]=AZ&max=50
 ```
-The filters may be used to filter on a resource's property whether a primitive property or one representing an associated resource.  Currently only single resource assocations are supported (i.e., not collections).  The operators include 'eq' (or 'equals') and 'contains' (which performs a case insensative 'ilike'-like comparison, although not actually using 'ilike' as that is not supported by Oracle).
+The filters may be used to filter on a resource's property whether a primitive property or one representing an associated resource.  Currently only single resource assocations are supported (i.e., not collections).  The operators include 'eq' (or 'equals') and 'contains' (which performs a case insensative 'ilike'-like comparison, although not actually using 'ilike' as that is not supported by Oracle). When filtering on a date or number, a 'filter\[n\]\[type\]' should be included with a value of 'date' or 'num' respectively. When filtering on a String, the 'type' component may (should) be omitted. When filtering on 'num' or 'date', the filter 'operator' may contain 'eq', 'gt' or'lt' but not 'contains'.
 
 The plugin also includes an HQLBuilder utility class that will construct an HQL statement (and a corresponding substitution parameters map) from the request params object, when the resource corresponds to a domain object. This will leverage the Filter class to extract filters and will then construct the HQL statement.  Following is an example usage:
 ```
@@ -248,7 +248,7 @@ def query = HQLBuilder.createHQL( application, params )
 def result = PartOfThing.executeQuery( query.statement, query.parameters, params )
 ```
 
-HQLBuilder is not a sophisticated query engine, and provides limited support for filtering by a primitive property and by a property that represent an association to another domain object.  HQLBuilder also handles whether the resource has been nested under another resource (i.e., when the params map contains a 'parentPluralizedResourceName' entry).  HQLBuilder is provided as a convenience but may not be suitable in all situations. Complex queries may require a specific implementation.
+HQLBuilder is not a sophisticated query engine, and provides limited support for filtering by a primitive property and by a property that represent an association to another domain object.  HQLBuilder also handles whether the resource has been nested under another resource (i.e., when the params map contains a 'parentPluralizedResourceName' entry).  HQLBuilder is provided as a convenience but may not be suitable in all situations. Complex queries will likely require a specific implementation.
 
 The createHQL method accepts a third argument which is a boolean, and if true indicates the statement should be generated to perform a 'count(*)' versus a select. That is, the HQLBuilder may be used in both list() and count() service methods to ensure the totalCount properly reflects the filters provided on the request.
 

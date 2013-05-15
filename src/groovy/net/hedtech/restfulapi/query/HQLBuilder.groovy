@@ -40,7 +40,7 @@ class HQLBuilder {
      * The GrailsDomainClass used within the query is determined using the params.pluralizedResourceName,
      * however may be overriden by supplying a params.domainClass whose value is a GrailsDomainClass.
      **/
-    public static def createHQL( GrailsApplication application, Map params, boolean count = false ) {
+    public static Map createHQL( GrailsApplication application, Map params, boolean count = false ) {
 
         log.debug "createHQL() invoked with params = $params"
 
@@ -59,6 +59,7 @@ class HQLBuilder {
         List filters = Filter.extractFilters( application, params )
         List badFilters = filters.findAll { !(it.isValid()) }
         if (badFilters) {
+            log.debug "Cannot create query with bad filters: ${badFilters*.toString()}"
             throw new BadFilterException( params.pluralizedResourceName, badFilters )
         }
 
@@ -72,8 +73,8 @@ class HQLBuilder {
                 joinFragment += " INNER JOIN ${lastAlias}.${it.field} $alias"
                 if (whereFragment != "") whereFragment += " AND "
                 if (it.isMany) {
-                    // TODO: Deal with nested queries and or projections (e.g., count(*))
-                    log.error "extractFilters() - property $property is a collection and filtering on collections is not yet supported"
+                    // Should never be here (as when a filter.isMany=true it should not have been reported as a 'valid' filter)
+                    throw RuntimeException("HQLBuilder found field ${it.field} to be a collection and filtering on collections is not supported")
                 }
                 namedParameters."${it.field}" = "${it.value}".toLong()
                 whereFragment += "${ALIASES[lastAliasIndex]}.id = :${it.field}"
@@ -87,9 +88,14 @@ class HQLBuilder {
                     whereFragment += "LIKE lower(:${it.field})"
                 }
                 else {
-                    namedParameters."${it.field}" = "${it.value}"
+                    if (it.isNumeric()) namedParameters."${it.field}" = "${it.value}".toLong()
+                    else if (it.isDate()) namedParameters."${it.field}" = new Date( "${it.value}".toLong() )
+                    else  namedParameters."${it.field}" = "${it.value}"
+
                     whereFragment += "${firstAlias}.${it.field} "
-                    whereFragment += "= :${it.field}"
+                    if ('lt' == it.operator) whereFragment += "< :${it.field}"
+                    else if ('gt' == it.operator) whereFragment += "> :${it.field}"
+                    else whereFragment += "= :${it.field}"
                 }
             }
         }
