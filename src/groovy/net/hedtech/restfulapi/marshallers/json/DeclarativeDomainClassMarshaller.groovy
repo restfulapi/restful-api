@@ -38,6 +38,7 @@ class DeclarativeDomainClassMarshaller extends BasicDomainClassMarshaller {
     def includeId = true
     def includeVersion = true
     def additionalFieldClosures = []
+    def additionalFieldsMap = [:]
 
 
 
@@ -126,11 +127,20 @@ class DeclarativeDomainClassMarshaller extends BasicDomainClassMarshaller {
 
     @Override
     protected void processAdditionalFields(BeanWrapper beanWrapper, JSON json) {
-        Map map = [
-            'grailsApplication':app,
-            'beanWrapper':beanWrapper,
-            'json':json
-        ]
+        Map map = [:]
+        map.putAll( additionalFieldsMap )
+        map.putAll(
+            [
+                'grailsApplication':app,
+                'beanWrapper':beanWrapper,
+                'json':json
+            ]
+        )
+        if (!map['resourceName']) {
+            map['resourceName'] = getDerivedResourceName(beanWrapper)
+        }
+        GrailsDomainClass domainClass = app.getDomainClass(beanWrapper.getWrappedInstance().getClass().getName())
+        map['resourceId'] = beanWrapper.getPropertyValue(domainClass.getIdentifier().getName())
         additionalFieldClosures.each { c ->
             c.call( map )
         }

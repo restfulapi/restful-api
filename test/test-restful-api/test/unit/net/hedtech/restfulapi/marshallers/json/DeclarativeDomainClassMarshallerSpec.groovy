@@ -260,6 +260,102 @@ class DeclarativeDomainClassMarshallerSpec extends Specification {
         'not it'      == json.tag
     }
 
+    def "Test additional fields map"() {
+        setup:
+        def passedMap = [:]
+        def marshaller = new DeclarativeDomainClassMarshaller(
+            app:grailsApplication,
+            supportClass:MarshalledThing,
+            additionalFieldClosures:[
+                {map ->
+                    passedMap.putAll( map )
+                }
+            ],
+            additionalFieldsMap:['a1':'b1','a2':'b2','json':null,'beanWrapper':null,'grailsApplication':null]
+        )
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing" )
+
+        when:
+        def content = render( thing )
+
+        then:
+        thing == passedMap['beanWrapper'].getWrappedInstance()
+        grailsApplication == passedMap['grailsApplication']
+        null != passedMap['json']
+        'b1' == passedMap['a1']
+        'b2' == passedMap['a2']
+    }
+
+    def "Test map passed to additional fields closures has the derived resource name added"() {
+        setup:
+        def passedMap = [:]
+        def marshaller = new DeclarativeDomainClassMarshaller(
+            app:grailsApplication,
+            supportClass:MarshalledThing,
+            additionalFieldClosures:[
+                {map ->
+                    passedMap.putAll( map )
+                }
+            ]
+        )
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing" )
+
+        when:
+        def content = render( thing )
+
+        then:
+        'marshalled-things' == passedMap['resourceName']
+    }
+
+    def "Test resourceName is not overridden if specified"() {
+        setup:
+        def passedMap = [:]
+        def marshaller = new DeclarativeDomainClassMarshaller(
+            app:grailsApplication,
+            supportClass:MarshalledThing,
+            additionalFieldClosures:[
+                {map ->
+                    passedMap.putAll( map )
+                }
+            ],
+            additionalFieldsMap:['resourceName':'my-things']
+        )
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing" )
+
+        when:
+        def content = render( thing )
+
+        then:
+        'my-things' == passedMap['resourceName']
+    }
+
+    def "Test map passed to additional fields closures has the resource id added"() {
+        setup:
+        def passedMap = [:]
+        def marshaller = new DeclarativeDomainClassMarshaller(
+            app:grailsApplication,
+            supportClass:MarshalledThing,
+            additionalFieldClosures:[
+                {map ->
+                    passedMap.putAll( map )
+                }
+            ]
+        )
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing" )
+        thing.id = 50
+
+        when:
+        def content = render( thing )
+
+        then:
+        50 == passedMap['resourceId']
+
+    }
+
 
     private void register( String name, def marshaller ) {
         JSON.createNamedConfig( "DeclarativeDomainClassMarshaller:" + testName + ":$name" ) { json ->

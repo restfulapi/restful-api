@@ -161,11 +161,6 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         // assert localization of the message
         "List of thing resources" == responseHeader('X-hedtech-message')
 
-        // Assert that an '_href' property is present but not a 'numParts'
-        // property, which proves the plugin-registered marshaller is
-        // being used versus the built-in grails marshaller or the
-        // resource-specific marshaller registered by this test app.
-        //
         xml.'net-hedtech-object'[0]._href[0].text().contains('things')
         '2' == xml.'net-hedtech-object'[0].numParts[0].text()
         null != xml.'net-hedtech-object'[0].sha1[0].text()
@@ -1325,11 +1320,46 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
 
     }
 
+    @Unroll
+    def "Test overriding service spec for all operations"(def method, boolean id, def status, def data) {
+        setup:
+        def aaID = createThing('AA')
+        createThing('BB')
+        def url = id ? "$localBase/api/thingamabobs/$aaID" : "$localBase/api/thingamabobs"
+
+
+        when:
+        "$method"("$url") {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/json'
+            if(data) {
+                body {
+                    "$data"
+                }
+            }
+        }
+
+        then:
+        status == response.status
+        'application/json' == response.contentType
+        // assert localization of the message
+        null != responseHeader('X-hedtech-message')
+        responseHeader('X-hedtech-message').contains( 'thingamabob' )
+
+        where:
+        method     | id    | status | data
+        'get'      | false | 200    | null
+        'get'      | true  | 200    | null
+        'post'     | false | 201    | "{code:'ZZ',description:'ZZ thing'}"
+        'put'      | true  | 200    | "{description:'changed',version:'0'}"
+        'delete'   | true  | 200    | null
+    }
+
     def "Test supplemental data from declarative marshalling"() {
         setup:
         def id = createThing('AA')
 
-        when:"list with  application/json accept"
+        when:
         get("$localBase/api/things/$id") {
             headers['Content-Type'] = 'application/json'
             headers['Accept']       = 'application/vnd.hedtech.additional.field.closure+json'
@@ -1345,6 +1375,23 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         null                      != json.numParts
         null                      != json.sha1
     }
+
+    def "Test that affordances can be correctly generated when the domain name does not match the resource name"() {
+        setup:
+        def id = createThing('AA')
+
+        when:
+        get("$localBase/api/special-things/$id") {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/json'
+        }
+        def json = JSON.parse response.text
+
+        then:
+        "/special-things/$id" == json._href
+    }
+
+
 
     private void createThings() {
         createThing('AA')

@@ -40,6 +40,10 @@ class BasicHalDomainClassMarshaller extends BasicDomainClassMarshaller {
 
     @Override
     protected void processAdditionalFields(BeanWrapper beanWrapper, JSON json) {
+        GrailsDomainClass domainClass = app.getDomainClass(beanWrapper.getWrappedInstance().getClass().getName())
+        def id = beanWrapper.getPropertyValue(domainClass.getIdentifier().getName())
+        def resourceName = getDerivedResourceName(beanWrapper)
+        json.property("_href", "/${resourceName}/${id}")
     }
 
 

@@ -90,7 +90,7 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<JSON> {
         }
 
         // Add the 'href' link to 'self'
-        writer.key("_href").value(getResourceUri(clazz.simpleName, value.id))
+        //writer.key("_href").value(getResourceUri(clazz.simpleName, value.id))
 
         processAdditionalFields(beanWrapper, json)
 
@@ -360,6 +360,15 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<JSON> {
         def domainName = GrailsNameUtils.getPropertyName(simpleDomainClassName)
         def resourceName = hyphenate(pluralize(domainName))
         "/${resourceName}/${id}"
+    }
+
+    protected String getDerivedResourceName(Object o) {
+        def domainName = GrailsNameUtils.getPropertyName(o.getClass().simpleName)
+        hyphenate(pluralize(domainName))
+    }
+
+    protected String getDerivedResourceName(BeanWrapper wrapper) {
+        getDerivedResourceName(wrapper.getWrappedInstance())
     }
 
 

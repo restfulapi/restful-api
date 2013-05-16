@@ -136,11 +136,20 @@ cors.expose.headers='content-type,X-hedtech-totalCount,X-hedtech-pageOffset,X-he
 //
 restfulApiConfig = {
 
+    jsonDomainMarshaller 'domainAffordance' params {
+        additionalFieldClosures = [
+            {map ->
+                map['json'].property("_href", "/${map['resourceName']}/${map['resourceId']}" )
+            }
+        ]
+    }
+
     resource {
         name = 'things'
         representation {
             mediaType = "application/json"
             addJSONDomainMarshaller {
+                includes = ['domainAffordance']
             }
             extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()
         }
@@ -251,9 +260,8 @@ restfulApiConfig = {
         name = 'part-of-things'
         representation {
             mediaType = "application/json"
-            addMarshaller {
-                marshaller = new net.hedtech.restfulapi.marshallers.json.BasicDomainClassMarshaller(app:grailsApplication)
-                priority = 100
+            addJSONDomainMarshaller {
+                includes = ['domainAffordance']
             }
             extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()
         }
@@ -286,6 +294,22 @@ restfulApiConfig = {
             addMarshaller {
                 marshaller = new net.hedtech.restfulapi.marshallers.json.BasicDomainClassMarshaller(app:grailsApplication)
                 priority = 100
+            }
+            extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()
+        }
+    }
+
+    //Test that when the resource name is not obtained from the
+    //pluralized domain class name, that we can override
+    //as needed for affordances
+    resource {
+        name = 'special-things'
+        serviceName = 'thingService'
+        representation {
+            mediaType = "application/json"
+            addJSONDomainMarshaller {
+                includes = ['domainAffordance']
+                additionalFieldsMap = [resourceName:'special-things']
             }
             extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()
         }

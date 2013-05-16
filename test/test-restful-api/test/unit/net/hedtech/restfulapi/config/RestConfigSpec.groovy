@@ -783,6 +783,7 @@ class RestConfigSpec extends Specification {
             includedFields:['foo','bar'],
             excludedFields:['e1','e2'],
             additionalFieldClosures:[{app,bean,json ->}],
+            additionalFieldsMap:['one':'one','two':'two'],
             includeId:true,
             includeVersion:true
         )
@@ -792,6 +793,7 @@ class RestConfigSpec extends Specification {
             includedFields:['baz'],
             excludedFields:['e3'],
             additionalFieldClosures:[{app,bean,json ->}],
+            additionalFieldsMap:['two':'2','three':'3'],
             includeId:false,
             includeVersion:false
         )
@@ -807,6 +809,7 @@ class RestConfigSpec extends Specification {
         ['foo','bar','baz']                      == config.includedFields
         ['e1','e2','e3']                         == config.excludedFields
         2                                        == config.additionalFieldClosures.size()
+        ['one':'one',"two":'2','three':'3']      == config.additionalFieldsMap
         false                                    == config.includeId
         false                                    == config.includeVersion
     }
@@ -819,6 +822,7 @@ class RestConfigSpec extends Specification {
             includedFields:['foo','bar'],
             excludedFields:['e1','e2'],
             additionalFieldClosures:[{app,bean,json ->}],
+            additionalFieldsMap:['one':'1'],
             includeId:true,
             includeVersion:true
         )
@@ -828,6 +832,7 @@ class RestConfigSpec extends Specification {
             includedFields:['baz'],
             excludedFields:['e3'],
             additionalFieldClosures:[{app,bean,json ->}],
+            additionalFieldsMap:['two':'2'],
             includeId:false,
             includeVersion:false
         )
@@ -841,6 +846,7 @@ class RestConfigSpec extends Specification {
         ['foo','bar']               == one.includedFields
         ['e1','e2']                 == one.excludedFields
         1                           == one.additionalFieldClosures.size()
+        ['one':'1']                 == one.additionalFieldsMap
         true                        == one.includeId
         true                        == one.includeVersion
 
@@ -849,6 +855,7 @@ class RestConfigSpec extends Specification {
         ['baz']                     == two.includedFields
         ['e3']                      == two.excludedFields
         1                           == two.additionalFieldClosures.size()
+        ['two':'2']                 == two.additionalFieldsMap
         false                       == two.includeId
         false                       == two.includeVersion
 
@@ -916,6 +923,7 @@ class RestConfigSpec extends Specification {
                 includedFields = ['foo']
                 excludedFields = ['bar']
                 additionalFieldClosures = [{->}]
+                additionalFieldsMap = ['a':'b','c':'d']
                 includeId = false
                 includeVersion = false
             }
@@ -927,16 +935,59 @@ class RestConfigSpec extends Specification {
         def mConfig = config.jsonDomain.configs['two']
 
         then:
-        2             == config.jsonDomain.configs.size()
-        ['one']       == mConfig.includes
-        5             == mConfig.priority
-        Thing         == mConfig.supportClass
-        ['foo':'bar'] == mConfig.substitutions
-        ['foo']       == mConfig.includedFields
-        ['bar']       == mConfig.excludedFields
-        1             == mConfig.additionalFieldClosures.size()
-        false         == mConfig.includeId
-        false         == mConfig.includeVersion
+         2                 == config.jsonDomain.configs.size()
+         ['one']           == mConfig.includes
+         5                 == mConfig.priority
+         Thing             == mConfig.supportClass
+         ['foo':'bar']     == mConfig.substitutions
+         ['foo']           == mConfig.includedFields
+         ['bar']           == mConfig.excludedFields
+         1                 == mConfig.additionalFieldClosures.size()
+         ['a':'b','c':'d'] == mConfig.additionalFieldsMap
+         false             == mConfig.includeId
+         false             == mConfig.includeVersion
+    }
+
+    def "Test json domain marshaller creation"() {
+        setup:
+        def src =
+        {
+            resource {
+                name = 'things'
+                representation {
+                    mediaType = 'application/json'
+                    addJSONDomainMarshaller {
+                        supportClass = Thing
+                        include {
+                            field 'code' substitute 'productCode'
+                        }
+                        exclude {
+                            field 'description'
+                        }
+                        includeId      = false
+                        includeVersion = false
+                        additionalFieldClosures = [ {Map m ->}]
+                        additionalFieldsMap = ['foo':'bar']
+                    }
+                }
+            }
+        }
+
+        when:
+        def config = RestConfig.parse( grailsApplication, src )
+        config.validate()
+        def marshaller = config.getRepresentation( 'things', 'application/json' ).marshallers[0].marshaller
+
+        then:
+        Thing                  == marshaller.supportClass
+        ['code':'productCode'] == marshaller.substitutions
+        ['code']               == marshaller.includedFields
+        ['description']        == marshaller.excludedFields
+        false                  == marshaller.includeId
+        false                  == marshaller.includeVersion
+        1                      == marshaller.additionalFieldClosures.size()
+        ['foo':'bar']          == marshaller.additionalFieldsMap
+
     }
 
     def "Test json domain marshaller creation from merged configuration"() {

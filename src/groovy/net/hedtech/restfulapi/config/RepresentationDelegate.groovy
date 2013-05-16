@@ -68,6 +68,7 @@ class RepresentationDelegate {
         marshaller.includedFields.addAll            config.includedFields
         marshaller.excludedFields.addAll            config.excludedFields
         marshaller.additionalFieldClosures.addAll   config.additionalFieldClosures
+        marshaller.additionalFieldsMap.putAll       config.additionalFieldsMap
         if (config.isSupportClassSet)      marshaller.supportClass   = config.supportClass
         if (config.includeId != null)      marshaller.includeId      = config.includeId
         if (config.includeVersion != null) marshaller.includeVersion = config.includeVersion

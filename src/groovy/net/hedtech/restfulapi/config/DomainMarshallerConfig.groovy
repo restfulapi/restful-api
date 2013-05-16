@@ -19,6 +19,7 @@ class DomainMarshallerConfig implements MergeableConfig {
     def includedFields = []
     def excludedFields = []
     def additionalFieldClosures = []
+    def additionalFieldsMap = [:]
     Boolean includeId
     Boolean includeVersion
 
@@ -67,6 +68,11 @@ class DomainMarshallerConfig implements MergeableConfig {
         this
     }
 
+    def additionalFieldsMap( Map m ) {
+        this.additionalFieldsMap = m
+        this
+    }
+
     /**
      * Merges two DomainMarshallerConfig instances together
      * The values of the other instance augment or override
@@ -86,6 +92,7 @@ class DomainMarshallerConfig implements MergeableConfig {
         config.includedFields.addAll other.includedFields
         config.excludedFields.addAll other.excludedFields
         config.additionalFieldClosures.addAll other.additionalFieldClosures
+        config.additionalFieldsMap.putAll other.additionalFieldsMap
 
         config
 
