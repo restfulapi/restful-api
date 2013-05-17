@@ -17,8 +17,8 @@ class ConfigGroup {
 
     MergeableConfig getMergedConfig( MergeableConfig config ) {
         //resolve named references to domain templates in order
-        def includes = getIncludesChain( config )
-        def stack = includes.reverse(false)
+        def inherits = resolveInherited( config )
+        def stack = inherits.reverse(false)
         //merge all configurations, so that later named
         //configs override or augment earlier ones
         while (stack.size() > 1) {
@@ -33,13 +33,13 @@ class ConfigGroup {
     }
 
 
-    private def getIncludesChain( def config ) {
-        def includedConfigs = []
-        config.includes.each { name ->
+    private def resolveInherited( def config ) {
+        def configs = []
+        config.inherits.each { name ->
             def includeConfig = getConfig( name )
-            includedConfigs.addAll getIncludesChain( includeConfig )
+            configs.addAll resolveInherited( includeConfig )
         }
-        includedConfigs.add config
-        includedConfigs
+        configs.add config
+        configs
     }
 }

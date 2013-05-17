@@ -322,27 +322,30 @@ The overall processing of a request proceeds as follows:
 ##Configuration
 The controller uses the grails converter mechanism to marshall responses, and extractor classes to convert resource representations in requests to Map instances that are passed to the services.
 
-Configuration is currently performed by assigning a closure to the restfulApiConfig property in the grails configuration.
+Configuration is performed by assigning a closure to the restfulApiConfig property in the grails configuration.
 
 For example, in Config.groovy:
 
     restfulApiConfig = {
-        resource {
-            name = 'things'
+        resource 'things' config {
             representation {
-                mediaType = "application/json"
-                addMarshaller {
-                    marshaller = new net.hedtech.restfulapi.marshallers.json.BasicDomainClassMarshaller(grailsApplication)
-                    priority = 100
+                mediaTypes = ["application/json"]
+                marshallers {
+                    marshaller {
+                        instance = new net.hedtech.restfulapi.marshallers.json.BasicDomainClassMarshaller(grailsApplication)
+                        priority = 100
+                    }
                 }
                 extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()
             }
             representation {
-                mediaType = "application/xml"
+                mediaTypes = ["application/xml"]
                 jsonAsXml = true
-                addMarshaller {
-                    marshaller = new net.hedtech.restfulapi.marshallers.xml.JSONObjectMarshaller()
-                    priority = 200
+                marshallers {
+                    marshaller {
+                        instance = new net.hedtech.restfulapi.marshallers.xml.JSONObjectMarshaller()
+                        priority = 200
+                    }
                 }
                 extractor = new net.hedtech.restfulapi.extractors.xml.JSONObjectExtractor()
             }
@@ -358,32 +361,36 @@ grailsApplication can be used within the restfulApiConfig closure; and reference
 Consider another example in which we are supporting versioned json representations of two resources:
 
     restfulApiConfig = {
-        resource {
-            name = 'colleges'
+        resource 'colleges' config {
             representation {
-                mediaType = "application/vnd.hedtech.v0+json"
-                addMarshaller {
-                    marshaller = new net.hedtech.restfulapi.marshallers.json.v0.CollegeMarshaller(grailsApplication)
-                    priority = 100
+                mediaTypes = ["application/vnd.hedtech.v0+json"]
+                marshallers {
+                    marshaller {
+                        instance = new net.hedtech.restfulapi.marshallers.json.v0.CollegeMarshaller(grailsApplication)
+                        priority = 100
+                    }
                 }
                 extractor = new net.hedtech.restfulapi.extractors.json.v0.CollegeExtractor()
             }
             representation {
-                mediaType = "application/vnd.hedtech.v1+json"
-                addMarshaller {
-                    marshaller = new net.hedtech.restfulapi.marshallers.json.v1.CollegeMarshaller(grailsApplication)
-                    priority = 100
+                mediaTypes = ["application/vnd.hedtech.v1+json"]
+                marshallers {
+                    marshaller {
+                        instance = new net.hedtech.restfulapi.marshallers.json.v1.CollegeMarshaller(grailsApplication)
+                        priority = 100
+                    }
                 }
                 extractor = new net.hedtech.restfulapi.extractors.json.v1.CollegeExtractor()
             }
         }
-        resource {
-            name = 'students'
+        resource 'students' config {
             representation {
-                mediaType = "application/vnd.hedtech.v0+json"
-                addMarshaller {
-                    marshaller = new net.hedtech.restfulapi.marshallers.json.v0.StudentMarshaller(grailsApplication)
-                    priority = 100
+                mediaType = ["application/vnd.hedtech.v0+json"]
+                marshallers {
+                    marshaller {
+                        instance = new net.hedtech.restfulapi.marshallers.json.v0.StudentMarshaller(grailsApplication)
+                        priority = 100
+                    }
                 }
                 extractor = new net.hedtech.restfulapi.extractors.json.v0.StudentExtractor()
             }
@@ -396,22 +403,24 @@ This configuration exposes 2 resources, 'colleges' and 'students'.  The 'college
 You can also assign multiple media types to the same representation.  The most common use for this is to have a media type such as 'application/json' represent a particular version as a default.  For example:
 
     restfulApiConfig = {
-        resource {
-            name = 'colleges'
+        resource 'colleges' config {
             representation {
-                mediaType = "application/vnd.hedtech.v0+json"
-                addMarshaller {
-                    marshaller = new net.hedtech.restfulapi.marshallers.json.v0.CollegeMarshaller(grailsApplication)
-                    priority = 100
+                mediaTypes = ["application/vnd.hedtech.v0+json"]
+                marshallers {
+                    marshaller {
+                        instance = new net.hedtech.restfulapi.marshallers.json.v0.CollegeMarshaller(grailsApplication)
+                        priority = 100
+                    }
                 }
                 extractor = new net.hedtech.restfulapi.extractors.json.v0.CollegeExtractor()
             }
             representation {
-                mediaType = "application/vnd.hedtech.v1+json"
-                mediaType = "application/json"
-                addMarshaller {
-                    marshaller = new net.hedtech.restfulapi.marshallers.json.v1.CollegeMarshaller(grailsApplication)
-                    priority = 100
+                mediaTypes = ["application/vnd.hedtech.v1+json", "application/json"]
+                marshallers {
+                    marshaller {
+                        instance = new net.hedtech.restfulapi.marshallers.json.v1.CollegeMarshaller(grailsApplication)
+                        priority = 100
+                    }
                 }
                 extractor = new net.hedtech.restfulapi.extractors.json.v1.CollegeExtractor()
             }
@@ -424,25 +433,26 @@ Both 'application/vnd.hedtech.v1+json' and 'application/json' identify the same 
 It is likely that you will have marshallers that you will want to re-use across multiple resources/representations; for example, a common marshaller for objects like dates, addresses, etc.  You can configure a collection of marshallers as a marshaller group:
 
     restfulApiConfig = {
-        marshallerGroup {
-            name = 'defaultJSON'
-            addMarshaller {
-                marshaller = new net.hedtech.restulfapi.marshallers.json.DateMarshaller()
+        marshallerGroups {
+            groups 'defaultJSON' marshallers {
+            marshaller {
+                instance = new net.hedtech.restulfapi.marshallers.json.DateMarshaller()
                 priority = 100
             }
-            addMarshaller {
-                marshaller = new net.hedtech.restulfapi.marshallers.json.AddressMarshaller(grailsApplication)
+            marshaller {
+                instance = new net.hedtech.restulfapi.marshallers.json.AddressMarshaller(grailsApplication)
                 priority = 100
             }
         }
-        resource {
-            name = 'students'
+        resource 'students' config {
             representation {
-                mediaType = 'application/json'
-                addMarshaller getMarshallerGroup('defaultJSON')
-                addMarshaller {
-                    marshaller = new net.hedtech.restfulapi.marshallers.json.StudentMarshaller(grailsApplication)
-                    priority = 100
+                mediaTypes = ['application/json']
+                marshallers {
+                    marshallerGroup 'defaultJSON'
+                    marshaller {
+                        instance = new net.hedtech.restfulapi.marshallers.json.StudentMarshaller(grailsApplication)
+                        priority = 100
+                    }
                 }
             }
         }
@@ -451,21 +461,22 @@ It is likely that you will have marshallers that you will want to re-use across 
 This configuration defines a reusable group of marshallers named 'defaultJSON' containing marshallers for dates and addresses.  The 'students' resource representation is using those marshallers.  The above configuration is equivalent to:
 
     restfulApiConfig = {
-        resource {
-            name = 'students'
+        resource 'students' config {
             representation {
-                mediaType = 'application/json'
-                addMarshaller {
-                    marshaller = new net.hedtech.restulfapi.marshallers.json.DateMarshaller()
-                    priority = 100
-                }
-                addMarshaller {
-                    marshaller = new net.hedtech.restulfapi.marshallers.json.AddressMarshaller(grailsApplication)
-                    priority = 100
-                }
-                addMarshaller {
-                    marshaller = new net.hedtech.restfulapi.marshallers.json.StudentMarshaller(grailsApplication)
-                    priority = 100
+                mediaTypes = ['application/json']
+                marshallers {
+                    marshaller {
+                        instance = new net.hedtech.restulfapi.marshallers.json.DateMarshaller()
+                        priority = 100
+                    }
+                    marshaller {
+                        instance = new net.hedtech.restulfapi.marshallers.json.AddressMarshaller(grailsApplication)
+                        priority = 100
+                    }
+                    marshaller {
+                        instance = new net.hedtech.restfulapi.marshallers.json.StudentMarshaller(grailsApplication)
+                        priority = 100
+                    }
                 }
             }
         }
@@ -475,43 +486,47 @@ This configuration defines a reusable group of marshallers named 'defaultJSON' c
 Configuration elements are applied in the order in which they are encountered.  This means that ordering in the configuration is signficant.  For example:
 
     restfulApiConfig = {
-        resource {
-            name = 'students'
+        resource 'students' {
             representation {
-                mediaType = 'application/json'
-                addMarshaller getMarshallerGroup('student')
+                mediaTypes = ['application/json']
+                marshallers {
+                    marshallerGroup 'student'
+                }
             }
         }
-        marshallerGroup {
-            name = 'student'
-            addMarshaller {
-                marshaller = new net.hedtech.restfulapi.marshallers.json.StudentMarshaller(grailsApplication)
-                priority = 100
+        marshallerGroups {
+            group 'student' marshallers {
+                marshaller {
+                    instance = new net.hedtech.restfulapi.marshallers.json.StudentMarshaller(grailsApplication)
+                    priority = 100
+                }
             }
         }
     }
 
-Will result in an exception, as the first call to `getMarshallerGroup('student')` occurs before the marshallerGroup is defined.
+Will result in an exception, as the first reference to the 'student' marshaller group occurs before the group is defined.
 
 ####Overriding the service used for a resource.
 By default, the name of the service to use is derived from the name of the resource.  You can override the name of the service bean to use for the resource with the 'serviceName' property when configuring a resource.  For example:
 
     restfulApiConfig = {
-        resource {
-            name = 'students'
-            serviceName = 'studentFacadeService'
-            representation {
-                mediaType = 'application/json'
-                addMarshaller getMarshallerGroup('student')
-            }
-        }
         marshallerGroup {
             name = 'student'
-            addMarshaller {
-                marshaller = new net.hedtech.restfulapi.marshallers.json.StudentMarshaller(grailsApplication)
+            marshaller {
+                instance = new net.hedtech.restfulapi.marshallers.json.StudentMarshaller(grailsApplication)
                 priority = 100
             }
         }
+        resource 'students' config {
+            serviceName = 'studentFacadeService'
+            representation {
+                mediaTypes = ['application/json']
+                marshallers {
+                    marshallerGroup 'student'
+                }
+            }
+        }
+
     }
 
 Will cause the list, show, create, update, and delete methods for the resource 'students' to be delegated to the bean registered under the name 'studentFacadeService' instead of 'studentService'.
@@ -522,19 +537,20 @@ By default, any configured resource supports 'list', 'show', 'create', 'update',
 For example, to expose students as a read-only resource that just supports list and show:
 
     restfulApiConfig = {
-        resource {
-            name = 'students'
-            methods = ['list','show']
-            representation {
-                mediaType = 'application/json'
-                addMarshaller getMarshallerGroup('student')
-            }
-        }
         marshallerGroup {
             name = 'student'
-            addMarshaller {
-                marshaller = new net.hedtech.restfulapi.marshallers.json.StudentMarshaller(grailsApplication)
+            marshaller {
+                instance = new net.hedtech.restfulapi.marshallers.json.StudentMarshaller(grailsApplication)
                 priority = 100
+            }
+        }
+        resource 'students' config {
+            methods = ['list','show']
+            representation {
+                mediaTypes = ['application/json']
+                marshallers {
+                    marshallerGroup 'student'
+                }
             }
         }
     }
@@ -549,11 +565,13 @@ The plugin supports a 'cheap' method of supporting both json and xml representat
 To enable it for a representation, set jsonAsXml = true and specify the default jsonAsXml marshaller and extractor:
 
     representation {
-        mediaType = "application/xml"
+        mediaTypes = ["application/xml"]
         jsonAsXml = true
-        addMarshaller {
-            marshaller = new net.hedtech.restfulapi.marshallers.xml.JSONObjectMarshaller()
-            priority = 200
+        marshallers {
+            marshaller {
+                marshaller = new net.hedtech.restfulapi.marshallers.xml.JSONObjectMarshaller()
+                priority = 100
+            }
         }
         extractor = new net.hedtech.restfulapi.extractors.xml.JSONObjectExtractor()
     }
@@ -573,6 +591,503 @@ For handling request with a jsonAsXml representation, the controller will
 * use the extractor defined for the equivalent json media type to conver the (intermediate) json object to a map to pass to the service.
 
 The json-as-xml support is not intended as a complete replacement for custom xml marshallers and extractors, but could be used in situations where xml support is required, but clients can understand 'json-like' semantics, but are using an xml parser/marshaller toolkit.
+
+##Marshalling
+To fully take advantage of marshalling, you should understand how the grails converters for JSON and xml work.  The plugin takes advantage of named converter configurations.  Each resource/representation in the configuration results in a new named converter configuration for JSON or XML.  When marshalling an object, the restful-api controller will use that named configuration to marshall the object.  It does this by asking each marshaller in the named configuration (marshallers with higher priority first) if the marshaller supports the object.  This means that the marshallers registered for a resource/representation are used only for that representation, and is what allows the plugin to support different representations for the same resource.
+
+However, you should be aware that these named configurations will fallback to the default converter configurations if they cannot locate a marshaller within the named config.  For example, let's say in your application's bootstrap you add
+
+    JSON.registerObjectMarshaller(Date) { return it?.format("yyyy-MM-dd'T'HH:mm:ssZ") }
+
+This registers a JSON marshaller for java.util.Date.  If you have an object with a date field, and define a representation for it, when the grails converter tries to marshall the date field, it will fallback to the above object marshaller.  You can take advantage of this behavior to establish default marshalling behavior for common objects like dates.
+
+##Declarative Marshalling of Domain classes to JSON
+The plugin contains a BasicDomainClassMarshaller and a DeclarativeDomainClassMarshaller, designed to simplify marshalling of grails domain objects to a json representation.
+The BasicDomainClassMarshaller will marshall persistent fields (except for some excluded ones, such as 'password'), and contains a number of protected methods which can be overridden in subclasses to customize marshalling behavior.  For example, additional fields can be added to the representation to support affordances.
+
+Use of the BasicDomainClassMarshaller requires new subclasses to be created to customize marshalling behavior.  Marshalling of domain classes can be customized without resorting to writing custom marshallers however with the DeclarativeDomainClassMarshaller.
+
+The DeclarativeDomainClassMarshaller is a marshaller that can be used to customize json representations without code.
+
+By default, the DeclarativeDomainClassMarshaller behaves the same as the BasicDomainClassMarshaller; however, it can be configured to include or exclude fields, add custom affordances or other fields, rename fields, and customize how references to associated objects are rendered.
+
+To use the marshaller directly, see the javadocs for the class.
+
+The preferred way to utilize the class is to use the built-in support for the class in the configuration DSL.
+
+Anywhere you can add a marshaller (in a marshaller group or a representation), you can configure and add a json declarative domain marshaller with
+
+    jsonDomainMarshaller {}
+
+The closure specifies how to configure the marshaller.  Specifying no information will register a marshaller that behaves identically to BasicDomainClassMarshaller; that is, it will marshall all but the default excluded fields, and use conventions to determine resource names.
+
+The best way to describe the use of the marshaller is by examples.
+
+###Limiting the marshaller to a class (and it's subclasses)
+By default, a declarative domain marshaller will support any object whose class is a grails domain class.  If you are including or excluding fields however, it is likely that you want an instance of the marshaller for a particular class (or subclasses).  You can control this with the supports option:
+
+    resource 'things' config {
+        representation {
+            mediaTypes = ["application/json"]
+            marshallers {
+                jsonDomainMarshaller {
+                    supports net.hedtech.restfulapi.Thing
+                }
+            }
+        }
+    }
+
+
+This will register a declarative domain marshaller that will support the Thing class, and any subclasses of Thing.  Note that it is your responsibility to ensure that Thing is a grails domain class - if it is not, you should register a different type of marshaller for it.
+
+###Excluding specific fields from a representation
+By default, the json domain marshaller will ignore any non-persistent fields and any field named 'lastModified', 'lastModifiedBy', 'dataOrigin', 'createdBy', or 'password'.  You can exclude additional fields with the excludedFields block:
+
+    resource 'things' config {
+        representation {
+            mediaTypes = ["application/json"]
+            marshallers {
+                jsonDomainMarshaller {
+                    supports net.hedtech.restfulapi.Thing
+                    excludesFields {
+                        field 'description'
+                        field 'manufactureDate'
+                    }
+                }
+            }
+        }
+    }
+
+This will marshall all fields in Thing except for the default excluded ones and the 'description' and 'manufactureDate' fields.
+
+###Renaming fields
+By default, when a field is marshalled, its name in the representation is identical to its name in the class.  You can override this behavior by specifying a substitute name for a field:
+
+     resource 'things' config {
+        representation {
+            mediaTypes = ["application/json"]
+            marshallers {
+                jsonDomainMarshaller {
+                    supports net.hedtech.restfulapi.Thing
+                    field 'code'        name 'productCode'
+                    field 'description' name 'desc'
+                }
+            }
+        }
+    }
+
+This will marshall all fields in Thing, but the value of the 'code' field will be marshalled to 'productCode', and the value of the 'description' field will be marshalled to 'desc'.
+
+###Including only specified fields.
+There are times when you want to include only certain fields in a representation such as producing a 'lightweight' representation for a list, or when versioning representations.  You can do so with the includedFields block:
+
+    resource 'things' config {
+        representation {
+            mediaTypes = ["application/json"]
+            marshallers {
+                jsonDomainMarshaller {
+                    supports net.hedtech.restfulapi.Thing
+                    includesFields {
+                        field 'code'
+                        field 'description'
+                    }
+                }
+            }
+        }
+    }
+
+This will marshall only the 'code' and 'description' fields into the representation.  You can rename the fields as well.
+    resource 'things' config {
+        representation {
+            mediaTypes = ["application/json"]
+            marshallers {
+                jsonDomainMarshaller {
+                    supports net.hedtech.restfulapi.Thing
+                    includesFields {
+                        field 'code' name 'productCode'
+                        field 'description'
+                    }
+                }
+            }
+        }
+    }
+
+If you specify both an includedFields and excludedFields block, the excludedFields block will be ignored.
+
+###Representing associations
+By default, the declarative marshaller renders the objects in any assocation as 'short objects'.  The default rendering of a 'short object' is a JSON object containing a single '_link' property having a value of '/resource/id' where resource is the pluralized resource name of the associated object (as derived by convention), and id is the id of the object.  So, for example, if the Thing class had a field called customer  holding a reference to an instance of class Customer with id 15, the customer field would render as :
+
+    customer:{"_link":"/customers/15"}
+
+###Representing associations where conventions cannot be used.
+What happens when you are adding restful APIs to a legacy system, where domain class names do not represent singularized versions of the resource name?  For example, consider a class Thing with a field customer that is a 1-1 association to an instance of the LegacyCustomer class.
+
+We have decided that LegacyCustomer will be exposed as the 'customers' resource, but when the declarative marshaller marshallers the customer class as a short object, we will get:
+
+    customer:{"_link":"/legacy-customers/15"}
+
+In this case, we can override the default behavior of pluralizing and hyphenating the domain class name to get the resource name, and specify the resource name directly:
+
+    resource 'things' config {
+        representation {
+            mediaTypes = ["application/json"]
+            marshallers {
+                jsonDomainMarshaller {
+                    supports net.hedtech.restfulapi.Thing
+                    field 'customer' resource 'customers'
+                }
+            }
+        }
+    }
+
+Now when the customer field is marshalled, we will get:
+
+    customer:{"_link":"/customers/15"}
+
+Note that you can use both name and resource options on a field definition (both inside and outside of an include block), and in either order.  For example, the following are all equivalent:
+
+    field 'customer' name 'preferredCustomer' resource 'customers'
+
+    field 'customer' resource 'customers' name 'preferredCustomer'
+
+However, if you declare the same field multiple times, the final declaration is the one that will be used.  For example
+
+    field 'customer' name 'preferredCustomer' resource 'customized-customers'
+    includesFields {
+        field 'customer'
+    }
+
+will result in the 'customer' field being output with the default name ('customer') and the default resource name.  That is, the second "field 'customer'" declaration completely replaces the first one; they are not merged.
+
+
+###Customizing short-object behavior.
+You can override how a declarative json marshaller renders short-objects by specifying a closure that generates the content.  The marshaller will
+automatically pass the closure a Map containing the following keys:
+
+    grailsApplication,
+    property,
+    refObject,
+    json,
+    id,
+    resource
+
+where:
+grailsApplication is a reference to the grailsApplication context
+property is a GrailsDomainClassProperty instance for the field being marshalled
+refObject is the associated object to generate a short-object representation for
+json is the JSON converter that should be used to generate content
+id is the id of the refObject
+resource is the resource name that the refObject is exposed as by the API
+
+If the configuration specifies a resource name for the field being marshalled as a short object, that will be passed as a resource name, otherwise, resource will be the pluralized and hyphenated version of the associated class (per convention).
+
+For example, if you wanted the short-object representation to contain a "link" field, as well as separate fields for id and resource name, you could override the default behavior this way:
+
+    resource 'things' config {
+        representation {
+            mediaTypes = ["application/json"]
+            marshallers {
+                jsonDomainMarshaller {
+                    supports net.hedtech.restfulapi.Thing
+                    includesFields {
+                        field 'code'
+                        field 'description'
+                        shortObject { Map map ->
+                            def json = map['json']
+                            def writer = json.getWriter()
+                            writer.object()
+                            writer.key("link").value("/$resource/$id")
+                            writer.key("resource").value(map['resource'])
+                            writer.key("id").value(map['id'])
+                            writer.endObject()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+Note that since the map contains the grails applicatin context, you can also look up and delegate to services to generate content for the short-object representation, etc.
+
+###Changing short-object representations globally.
+Obviously, we don't want to copy the short object closure to every representation - in general, we would want consistent short object rendering for all resources.
+
+We can define the short object closure once, and re-use it for all declarative json marshallers with a domain marshaller template.  Templates must be defined before their use, but then any jsdon domain marshaller declaration can 'inherit' them.
+
+    jsonDomainMarshallerTemplates {
+        template 'json-shortObject' config {
+            shortObject { Map map ->
+                def json = map['json']
+                def writer = json.getWriter()
+                writer.object()
+                writer.key("link").value("/$resource/$id")
+                writer.key("resource").value(map['resource'])
+                writer.key("id").value(map['id'])
+                writer.endObject()
+            }
+        }
+    }
+
+    resource 'things' config {
+        representation {
+            mediaTypes = ["application/json"]
+            marshallers {
+                jsonDomainMarshaller {
+                    inherits=['json-shortObject']
+                    supports net.hedtech.restfulapi.Thing
+                }
+            }
+        }
+    }
+
+    resource 'customers' config {
+        representation {
+            mediaTypes = ["application/json"]
+            marshallers {
+                jsonDomainMarshaller {
+                    inherits=['json-shortObject']
+                    supports net.hedtech.restfulapi.Customer
+                }
+            }
+        }
+    }
+
+Now we have defined the short-object behavior in one location, and have multiple resource representations re-using it.  We will cover marshaller templates in more detail in a later section.
+
+###Adding additional fields
+In general, it is necessary to add non-persistent fields to the representation.  The most common requirement is to add affordances, such as an _href attribute referring to the resource, or supplemental data not present as persistent fields.
+
+The declarative domain marshaller allows any number of closures to be added to marshall additional content.  For example, let's say we want to add affordances to all of our json representations.  We will define a marshaller template containing the closure for the affordance, then add it to the marshallers:
+
+    jsonDomainMarshallerTemplates {
+        template 'json-affordance' config {
+            additionalFields {Map map ->
+                map['json'].property("_href", "/${map['resourceName']}/${map['resourceId']}" )
+            }
+        }
+    }
+
+    resource 'things' config {
+        representation {
+            mediaTypes = ["application/json"]
+            marshallers {
+                jsonDomainMarshaller {
+                    inherits=['json-affordance']
+                    supports net.hedtech.restfulapi.Thing
+                }
+            }
+        }
+    }
+
+    resource 'customers' config {
+        representation {
+            mediaTypes = ["application/json"]
+            marshallers {
+                jsonDomainMarshaller {
+                    inherits=['json-affordance']
+                    supports net.hedtech.restfulapi.Customer
+                }
+            }
+        }
+    }
+
+Like with overriding short-object behavior, the closure receives a map.  The map contains the following keys:
+
+    grailsApplication,
+    beanWrapper,
+    json
+
+where
+grailsApplication is a reference to the grailsApplication context
+beanWrapper is a BeanWrapper instance wrapping the object being marshalled
+json is the JSON converter that should be used to generate content
+
+You can use additionalFields multiple times on any declarative marshaller configuration.
+For example:
+
+    resource 'customers' config {
+        representation {
+            mediaTypes = ["application/json"]
+            marshallers {
+                jsonDomainMarshaller {
+                    supports net.hedtech.restfulapi.Customer
+                    additionalFields { Map m -> //some content}
+                    additionalFields { Map m -> //some more content}
+                }
+            }
+        }
+    }
+
+However, it is recommended to keep (resuable) field code, such as for supplemental data and affordances that cross-cut resources in separate templates.  For example
+
+    jsonDomainMarshallerTemplates {
+        template 'json-affordance' config {
+            additionalFields {Map map ->
+                //add affordances
+            }
+        }
+        template 'json-supplemental' config {
+            additionalFields {Map map ->
+                //add supplemental fields
+            }
+        }
+    }
+
+    resource 'things' config {
+        representation {
+            mediaTypes = ["application/json"]
+            marshallers {
+                jsonDomainMarshaller {
+                    inherits=['json-affordance','json-supplemental']
+                    supports net.hedtech.restfulapi.Thing
+                }
+            }
+        }
+    }
+
+    resource 'customers' config {
+        representation {
+            mediaTypes = ["application/json"]
+            marshallers {
+                jsonDomainMarshaller {
+                    inherits=['json-affordance']
+                    supports net.hedtech.restfulapi.Customer
+                }
+            }
+        }
+    }
+
+This allows specific behavior to be re-used as needed. For example, the 'things' representation will contain both affordances and supplemental data, while the 'customers' representation only has affordances added.
+
+###Controlling whether id and version information is included.
+By default the declarative domain marshaller will automatically add 'id' and 'version' fields for the object id and (optimistic lock) version values.  If they should not be included in a representation, you can turn them off:
+
+    resource 'customers' config {
+        representation {
+            mediaTypes = ["application/json"]
+            marshallers {
+                jsonDomainMarshaller {
+                    supports net.hedtech.restfulapi.Customer
+                    includesId false
+                    includesVersion false
+                }
+            }
+        }
+    }
+
+###Full list of configuration elements for a json domain marshaller
+The configuration block for the marshaller can contain the following in any order:
+
+    inherits = <array of json marshaller template names>
+    supports <class>
+    <field-block>*
+    includesFields {
+        <field-block>*
+    }
+    excludesFields {
+        <fieldsBlock>*
+    }
+    includesId <true|false>
+    includesVersion <true|false>
+    additionalFields <closure>
+    shortObject <closure>
+
+Where \<field-block\>* is any number of field-blocks, and a field-block is
+
+    field 'name' \[name 'output-name'\] \[resource 'resource-name'\]
+
+Where values in brackets are optional.
+
+The elements in the configuration block can occur in any order, and repeat any number of times; however, later values will override earlier values.  So, for example:
+
+    includesId true
+    includesId false
+
+is equivalent to
+
+    includesId false.
+
+Another example:
+
+    field 'foo' name 'bar'
+    includesFields {
+        field 'foo' name 'foobar'
+    }
+
+is equivalent to
+
+    includesFields {
+        field 'foo' name 'foobar'
+    }
+
+If an includedFields block is present, any excludedFields block is ignored:
+
+    includesFields {
+        field 'foo'
+        field 'bar'
+    }
+
+    excludesFields {
+        field 'baz'
+    }
+
+    includesFields {
+        field 'baz'
+    }
+
+is the same as
+
+    includesFields {
+        field 'foo'
+        field 'bar'
+        field 'baz'
+    }
+
+###Template inheritance order.
+When a json domain marshaller declaration includes an inherits directive, then the configuration of each template is merged with the declaration itself in depth-first order.  For example, consider the use of nested configuration:
+
+    jsonDomainMarshallerTemplates {
+        template 'one' config {
+            //some config
+        }
+        template 'two' config {
+            //some config
+        }
+        template 'three' config {
+            inherits = ['one','two']
+            //some config
+        }
+        template 'four' config {
+            //some config
+        }
+    }
+
+    resource 'customers' config {
+        representation {
+            mediaTypes = ["application/json"]
+            marshallers {
+                jsonDomainMarshaller {
+                    inherits = ['three','four']
+                    supports net.hedtech.restfulapi.Customer
+                    includesId false
+                    includesVersion false
+                }
+            }
+        }
+    }
+
+The domain marshaller will be configured with the results of merging the configuration blocks in the following order: 'one', 'two', 'three', 'four' and the contents of the jsonDomainMarshaller block itself.
+
+###Configuration merging
+The order in which configurations are merged is significant.  When two configurations, first and second are merged, boolean values, or single valued options that are set in the second config override the first.  Collection or map values are combined.
+
+
+###Domain marshaller templates
+JSON domain marshaller templates are configuration blocks that do not directly create a marshaller.  The 'config' block accepts any configuration that the jsonDomainMarshaller block does (including the inherits option).  When a jsonDomainMarshaller directive contains an 'inherits' element, the templates referenced will be merged with the configuration for the marshaller in a depth-first manner.  Elements that represent collections or maps are merged together (later templates overriding previous ones, if there is a conflict), with the configuration in the jsonDomainMarshaller block itself overriding any previous values.
+
+In general, templates are useful for defining affordances and short-object behavior that need to be applied across many representations.
+
+
 
 ##Logging
 Errors encountered while servicing a request are logged at error level to the log target 'RestfulApiController_messageLog'.  This is so errors occuring from the requests (which will typically be errors caused by invalid input, etc) can be separated from errors in the controller.

@@ -199,7 +199,7 @@ class DeclarativeDomainClassMarshallerSpec extends Specification {
         setup:
         def marshaller = new DeclarativeDomainClassMarshaller(
             app:grailsApplication,
-            substitutions:['description':'modDescription', 'parts':'modParts']
+            fieldNames:['description':'modDescription', 'parts':'modParts']
         )
         register( marshaller )
         MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing" )
@@ -353,7 +353,173 @@ class DeclarativeDomainClassMarshallerSpec extends Specification {
 
         then:
         50 == passedMap['resourceId']
+    }
 
+    def "Test Collection based association field resource name"() {
+        setup:
+        def marshaller = new DeclarativeDomainClassMarshaller(
+            app:grailsApplication,
+            fieldResourceNames:['parts':'customized-parts']
+        )
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing" )
+        def parts = []
+        def part = new MarshalledPartOfThing(code:'partA',desc:'part A')
+        part.setId(1)
+        parts.add part
+        thing.parts = parts
+
+        when:
+        def content = render( thing )
+        def json = JSON.parse content
+
+        then:
+        '/customized-parts/1' == json.parts[0]._link
+    }
+
+    def "Test Map based association field resource name"() {
+        setup:
+        def marshaller = new DeclarativeDomainClassMarshaller(
+            app:grailsApplication,
+            fieldResourceNames:['contributors':'customized-contributors']
+        )
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing" )
+        MarshalledThingContributor contrib = new MarshalledThingContributor( firstName:'John', lastName:'Smith' )
+        contrib.id = 5
+        thing.contributors=['smith':contrib]
+
+
+        when:
+        def content = render( thing )
+        def json = JSON.parse content
+
+        then:
+        1    == json.contributors.size()
+        '/customized-contributors/5' == json.contributors['smith']._link
+    }
+
+    def "Test many-to-one association field resource name"() {
+        setup:
+        def marshaller = new DeclarativeDomainClassMarshaller(
+            app:grailsApplication,
+            fieldResourceNames:['owner':'customized-owners']
+        )
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing" )
+        MarshalledOwnerOfThing owner = new MarshalledOwnerOfThing( firstName:'John', lastName:'Smith' )
+        owner.id = 5
+        thing.owner = owner
+
+        when:
+        def content = render( thing )
+        def json = JSON.parse content
+
+        then:
+        !json.owner.containsKey('firstName')
+        '/customized-owners/5' == json.owner._link
+    }
+
+    def "Test one-to-one association field resource name"() {
+        setup:
+        def marshaller = new DeclarativeDomainClassMarshaller(
+            app:grailsApplication,
+            fieldResourceNames:['subPart':'customized-subparts']
+        )
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing" )
+        MarshalledSubPartOfThing part = new MarshalledSubPartOfThing( code:'zz' )
+        part.id = 5
+        thing.subPart = part
+
+
+        when:
+        def content = render( thing )
+        def json = JSON.parse content
+
+        then:
+        !json.subPart.containsKey('code')
+        '/customized-subparts/5' == json.subPart._link
+    }
+
+    def "Test short object closure"() {
+        setup:
+        def marshaller = new DeclarativeDomainClassMarshaller(
+            app:grailsApplication,
+            supportClass:MarshalledThing,
+            shortObjectClosure:{ def map ->
+                def json = map['json']
+                def writer = json.getWriter()
+                writer.object()
+                writer.key("resource").value(map['resource'])
+                writer.key("id").value(map['id'])
+                writer.endObject()
+            }
+        )
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing" )
+        def parts = [new PartOfThing(code:'BB',description:'bb part')]
+        parts[0].id = 15
+        thing.parts = parts
+
+        when:
+        def content = render( thing )
+        def json = JSON.parse content
+
+        then:
+        15 == json.parts[0].id
+    }
+
+    def "Test map passed to short object closure"() {
+        setup:
+        def passedMap
+        def marshaller = new DeclarativeDomainClassMarshaller(
+            app:grailsApplication,
+            supportClass:MarshalledThing,
+            shortObjectClosure:{ def map ->
+                passedMap = map.clone()
+            }
+        )
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing" )
+        def parts = [new PartOfThing(code:'BB',description:'bb part')]
+        parts[0].id = 15
+        thing.parts = parts
+
+        when:
+        render( thing )
+
+        then:
+        grailsApplication == passedMap['grailsApplication']
+        'parts' == passedMap['property'].getName()
+        parts[0] == passedMap['refObject']
+        null != passedMap['json']
+        15 == passedMap['id']
+        'marshalled-part-of-things' == passedMap['resource']
+    }
+
+    def "Test map passed to short object closure has the overridden resource name"() {
+        setup:
+        def passedMap
+        def marshaller = new DeclarativeDomainClassMarshaller(
+            app:grailsApplication,
+            supportClass:MarshalledThing,
+            fieldResourceNames:['parts':'custom-parts'],
+            shortObjectClosure:{ def map ->
+                passedMap = map.clone()
+            }
+        )
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing" )
+        def parts = [new PartOfThing(code:'BB',description:'bb part')]
+        parts[0].id = 15
+        thing.parts = parts
+
+        when:
+        render( thing )
+
+        then:
+        'custom-parts' == passedMap['resource']
     }
 
 

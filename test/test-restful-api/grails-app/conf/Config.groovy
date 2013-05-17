@@ -136,132 +136,159 @@ cors.expose.headers='content-type,X-hedtech-totalCount,X-hedtech-pageOffset,X-he
 //
 restfulApiConfig = {
 
-    jsonDomainMarshaller 'domainAffordance' params {
-        additionalFieldClosures = [
-            {map ->
+    jsonDomainMarshallerTemplates {
+        template 'domainAffordance' config {
+            additionalFields {map ->
                 map['json'].property("_href", "/${map['resourceName']}/${map['resourceId']}" )
             }
-        ]
+        }
     }
 
-    resource {
-        name = 'things'
+    marshallerGroups {
+        group 'json-date-closure' marshallers {
+            marshaller {
+                instance = new org.codehaus.groovy.grails.web.converters.marshaller.ClosureOjectMarshaller<grails.converters.JSON>(
+                    java.util.Date, {return "customized-date:" + it?.format("yyyy-MM-dd'T'HH:mm:ssZ")})
+            }
+        }
+    }
+
+    resource 'things' config {
         representation {
-            mediaType = "application/json"
-            addJSONDomainMarshaller {
-                includes = ['domainAffordance']
+            mediaTypes = ["application/json"]
+            marshallers {
+                jsonDomainMarshaller {
+                    inherits = ['domainAffordance']
+                }
             }
             extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()
         }
         representation {
-            mediaType = "application/xml"
+            mediaTypes = ["application/xml"]
             jsonAsXml = true
-            addMarshaller {
-                marshaller = new net.hedtech.restfulapi.marshallers.xml.JSONObjectMarshaller()
-                priority = 200
+            marshallers {
+                marshaller {
+                    instance = new net.hedtech.restfulapi.marshallers.xml.JSONObjectMarshaller()
+                    priority = 200
+                }
             }
             extractor = new net.hedtech.restfulapi.extractors.xml.JSONObjectExtractor()
         }
         representation {
-            mediaType =  'application/vnd.hedtech.v0+json'
-            addMarshaller {
-                marshaller = new net.hedtech.restfulapi.marshallers.json.BasicHalDomainClassMarshaller(app:grailsApplication)
-                priority = 100
-            }
-            addMarshaller {
-                marshaller = new net.hedtech.restfulapi.marshallers.json.ThingClassMarshaller(grailsApplication)
-                priority = 101
+            mediaTypes =  ['application/vnd.hedtech.v0+json']
+            marshallers {
+                marshaller {
+                    instance = new net.hedtech.restfulapi.marshallers.json.BasicHalDomainClassMarshaller(app:grailsApplication)
+                    priority = 100
+                }
+                marshaller {
+                    instance = new net.hedtech.restfulapi.marshallers.json.ThingClassMarshaller(grailsApplication)
+                    priority = 101
+                }
             }
             extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()
         }
         representation {
-            mediaType =  'application/vnd.hedtech.v0+xml'
+            mediaTypes = ['application/vnd.hedtech.v0+xml']
             jsonAsXml = true
-            addMarshaller {
-                marshaller = new net.hedtech.restfulapi.marshallers.xml.JSONObjectMarshaller()
-                priority = 200
+            marshallers {
+                marshaller {
+                    instance = new net.hedtech.restfulapi.marshallers.xml.JSONObjectMarshaller()
+                    priority = 200
+                }
             }
             extractor = new net.hedtech.restfulapi.extractors.xml.JSONObjectExtractor()
         }
         representation {
-            mediaType = 'application/vnd.hedtech.thing.v0+xml'
-            addMarshaller {
-                marshaller = new net.hedtech.restfulapi.marshallers.xml.v0.ThingClassMarshaller()
-                priority = 101
+            mediaTypes = ['application/vnd.hedtech.thing.v0+xml']
+            marshallers {
+                marshaller {
+                    instance = new net.hedtech.restfulapi.marshallers.xml.v0.ThingClassMarshaller()
+                    priority = 101
+                }
             }
             extractor = new net.hedtech.restfulapi.extractors.xml.v0.ThingExtractor()
         }
         representation {
-            mediaType = 'application/vnd.hedtech.thing.v1+xml'
-            addMarshaller {
-                marshaller = new net.hedtech.restfulapi.marshallers.xml.v1.ThingClassMarshaller()
-                priority = 101
+            mediaTypes = ['application/vnd.hedtech.thing.v1+xml']
+            marshallers {
+                marshaller {
+                    instance = new net.hedtech.restfulapi.marshallers.xml.v1.ThingClassMarshaller()
+                    priority = 101
+                }
             }
             extractor = new net.hedtech.restfulapi.extractors.xml.v1.ThingExtractor()
         }
         representation {
-            mediaType = 'application/vnd.hedtech.v1+json'
-            addMarshaller {
-                marshaller = new net.hedtech.restfulapi.marshallers.json.BasicDomainClassMarshaller(app:grailsApplication)
-                priority = 101
+            mediaTypes = ['application/vnd.hedtech.v1+json']
+            marshallers {
+                marshaller {
+                    instance = new net.hedtech.restfulapi.marshallers.json.BasicDomainClassMarshaller(app:grailsApplication)
+                    priority = 101
+                }
             }
             extractor = new net.hedtech.restfulapi.extractors.json.ThingDefaultDescriptionExtractor()
         }
         representation {
-            mediaType = 'application/vnd.hedtech.v1+xml'
+            mediaTypes = ['application/vnd.hedtech.v1+xml']
             jsonAsXml = true
             extractor = new net.hedtech.restfulapi.extractors.xml.JSONObjectExtractor()
         }
         representation {
-            mediaType =  'application/vnd.hedtech.additional.field.closure+json'
-            addMarshaller {
-                marshaller = new net.hedtech.restfulapi.marshallers.json.BasicHalDomainClassMarshaller(app:grailsApplication)
-                priority = 100
-            }
-            addJSONDomainMarshaller {
-                supportClass = net.hedtech.restfulapi.Thing
-                priority = 101
-                additionalFields { map ->
-                    def json = map['json']
-                    def beanWrapper = map['beanWrapper']
-                    json.property("sha1", beanWrapper.getWrappedInstance().getSupplementalRestProperties()['sha1'])
-                    json.property("numParts", beanWrapper.getWrappedInstance().parts.size())
+            mediaTypes = ['application/vnd.hedtech.additional.field.closure+json']
+            marshallers {
+                marshaller {
+                    instance = new net.hedtech.restfulapi.marshallers.json.BasicHalDomainClassMarshaller(app:grailsApplication)
+                    priority = 100
+                }
+                jsonDomainMarshaller {
+                    supports net.hedtech.restfulapi.Thing
+                    priority = 101
+                    additionalFields { map ->
+                        def json = map['json']
+                        def beanWrapper = map['beanWrapper']
+                        json.property("sha1", beanWrapper.getWrappedInstance().getSupplementalRestProperties()['sha1'])
+                        json.property("numParts", beanWrapper.getWrappedInstance().parts.size())
+                    }
                 }
             }
             extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()
         }
     }
 
-    resource {
-        name = 'thing-wrappers'
+    resource 'thing-wrappers' config {
         representation {
-            mediaType = "application/json"
-            addMarshaller {
-                marshaller = new net.hedtech.restfulapi.marshallers.json.BasicDomainClassMarshaller(app:grailsApplication)
-                priority = 100
+            mediaTypes = ["application/json"]
+            marshallers {
+                marshaller {
+                    instance = new net.hedtech.restfulapi.marshallers.json.BasicDomainClassMarshaller(app:grailsApplication)
+                    priority = 100
+                }
             }
             extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()
         }
     }
 
-    resource {
-        name = 'complex-things'
+    resource 'complex-things' config {
         representation {
-            mediaType = "application/json"
-            addMarshaller {
-                marshaller = new net.hedtech.restfulapi.marshallers.json.BasicDomainClassMarshaller(app:grailsApplication)
-                priority = 100
+            mediaTypes = ["application/json"]
+            marshallers {
+                marshaller {
+                    instance = new net.hedtech.restfulapi.marshallers.json.BasicDomainClassMarshaller(app:grailsApplication)
+                    priority = 100
+                }
             }
             extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()
         }
     }
 
-    resource {
-        name = 'part-of-things'
+    resource 'part-of-things' config {
         representation {
-            mediaType = "application/json"
-            addJSONDomainMarshaller {
-                includes = ['domainAffordance']
+            mediaTypes = ["application/json"]
+            marshallers {
+                jsonDomainMarshaller {
+                    inherits = ['domainAffordance']
+                }
             }
             extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()
         }
@@ -270,14 +297,15 @@ restfulApiConfig = {
     //test overriding conventions for finding the service for a resource
     //we will map thingamabobs to thingService.  There is no thingamabob domain
     //object or service.
-    resource {
-        name = 'thingamabobs'
+    resource 'thingamabobs' config {
         serviceName = 'thingService'
         representation {
-            mediaType = "application/json"
-            addMarshaller {
-                marshaller = new net.hedtech.restfulapi.marshallers.json.BasicDomainClassMarshaller(app:grailsApplication)
-                priority = 100
+            mediaTypes = ["application/json"]
+            marshallers {
+                marshaller {
+                    instance = new net.hedtech.restfulapi.marshallers.json.BasicDomainClassMarshaller(app:grailsApplication)
+                    priority = 100
+                }
             }
             extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()
         }
@@ -285,15 +313,16 @@ restfulApiConfig = {
 
     //test overriding supported methods on a resource
     //allow show and update only
-    resource {
-        name = 'limitedthings'
+    resource 'limitedthings' config {
         serviceName = 'thingService'
         methods = ['show','create','update']
         representation {
-            mediaType = "application/json"
-            addMarshaller {
-                marshaller = new net.hedtech.restfulapi.marshallers.json.BasicDomainClassMarshaller(app:grailsApplication)
-                priority = 100
+            mediaTypes = ["application/json"]
+            marshallers {
+                marshaller {
+                    instance = new net.hedtech.restfulapi.marshallers.json.BasicDomainClassMarshaller(app:grailsApplication)
+                    priority = 100
+                }
             }
             extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()
         }
@@ -301,18 +330,38 @@ restfulApiConfig = {
 
     //Test that when the resource name is not obtained from the
     //pluralized domain class name, that we can override
-    //as needed for affordances
-    resource {
-        name = 'special-things'
+    //as needed for affordances.
+    //Also test that we can override the resource name for asShortObject
+    resource 'special-things' config {
         serviceName = 'thingService'
         representation {
-            mediaType = "application/json"
-            addJSONDomainMarshaller {
-                includes = ['domainAffordance']
-                additionalFieldsMap = [resourceName:'special-things']
+            mediaTypes = ["application/json"]
+            marshallers {
+                jsonDomainMarshaller {
+                    inherits = ['domainAffordance']
+                    additionalFieldsMap = [resourceName:'special-things']
+                    field 'parts' resource 'thing-parts'
+                }
             }
             extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()
         }
+    }
+
+    //Testing using marshalling groups that use a closure to marshall a date object
+    resource 'closure-things' config {
+        serviceName = 'thingService'
+        representation {
+            mediaTypes = ["application/json"]
+            marshallers {
+                jsonDomainMarshaller {
+                    inherits = ['domainAffordance']
+                    additionalFieldsMap = [resourceName:'closure-things']
+                }
+                marshallerGroup 'json-date-closure'
+            }
+            extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()
+        }
+
     }
 
 }

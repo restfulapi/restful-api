@@ -20,7 +20,7 @@ class MediaTypeParserSpec extends Specification {
         def types = parser.parse("text/xml; charset=UTF-8")
 
         then:
-        1 == types.size()
+        1                 == types.size()
         'application/xml' == types[0].name
     }
 

@@ -407,9 +407,7 @@ class BasicDomainClassMarshallerSpec extends Specification {
         def json = JSON.parse content
 
         then:
-        1    == json.parts.size()
-        1    == json.parts[0].id
-        null != json.parts[0].class
+        '/marshalled-part-of-things/1' == json.parts[0]._link
         !json.parts[0].containsKey('code')
         !json.parts[0].containsKey('description')
     }
@@ -432,8 +430,7 @@ class BasicDomainClassMarshallerSpec extends Specification {
 
         then:
         1    == json.contributors.size()
-        5    == json.contributors['smith'].id
-        null != json.contributors['smith'].class
+        '/marshalled-thing-contributors/5' == json.contributors['smith']._link
         !json.contributors['smith'].containsKey('lastName')
         !json.contributors['smith'].containsKey('firstName')
 
@@ -457,9 +454,7 @@ class BasicDomainClassMarshallerSpec extends Specification {
 
         then:
         !json.owner.containsKey('firstName')
-        5                        == json.owner.id
-        'MarshalledOwnerOfThing' == json.owner.class
-
+        '/marshalled-owner-of-things/5' == json.owner._link
     }
 
     def "Test one-to-one association field marshalled as short object"() {
@@ -480,9 +475,7 @@ class BasicDomainClassMarshallerSpec extends Specification {
 
         then:
         !json.subPart.containsKey('code')
-        5                          == json.subPart.id
-        'MarshalledSubPartOfThing' == json.subPart.class
-
+        '/marshalled-sub-part-of-things/5' == json.subPart._link
     }
 
     def "Test embedded association field marshalled as full object"() {

@@ -97,8 +97,8 @@ class RestfulApiController {
                         JSON.createNamedConfig("restfulapi:" + resource.name + ":" + representation.mediaType) { json ->
                             log.trace "Creating named config: 'restfulapi:${resource.name}:${representation.mediaType}'"
                             representation.marshallers.each() {
-                                log.trace "    ...registering json marshaller ${it.marshaller}"
-                                json.registerObjectMarshaller(it.marshaller,it.priority)
+                                log.trace "    ...registering json marshaller ${it.instance}"
+                                json.registerObjectMarshaller(it.instance,it.priority)
                             }
                         }
                         JSONExtractorConfigurationHolder.registerExtractor(resource.name, representation.mediaType, representation.extractor )
@@ -106,8 +106,8 @@ class RestfulApiController {
                     case ~/.*xml$/:
                         XML.createNamedConfig("restfulapi:" + resource.name + ":" + representation.mediaType) { xml ->
                             representation.marshallers.each() {
-                                log.trace "    ...registering xml marshaller ${it.marshaller}"
-                                xml.registerObjectMarshaller(it.marshaller,it.priority)
+                                log.trace "    ...registering xml marshaller ${it.instance}"
+                                xml.registerObjectMarshaller(it.instance,it.priority)
                             }
                         }
                         XMLExtractorConfigurationHolder.registerExtractor(resource.name, representation.mediaType, representation.extractor )

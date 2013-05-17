@@ -31,10 +31,9 @@ class RestfulApiControllerSpec extends Specification {
         setup:
         //use default extractor for any methods with a request body
          config.restfulApiConfig = {
-            resource {
-                name = 'things'
+            resource 'things' config {
                 representation {
-                    mediaType = 'application/json'
+                    mediaTypes = ['application/json']
                     extractor = new DefaultJSONExtractor()
                 }
             }
@@ -72,10 +71,9 @@ class RestfulApiControllerSpec extends Specification {
         setup:
         //use default extractor for any methods with a request body
         config.restfulApiConfig = {
-            resource {
-                name = 'things'
+            resource 'things' config {
                 representation {
-                    mediaType = 'application/json'
+                    mediaTypes = ['application/json']
                     extractor = new DefaultJSONExtractor()
                 }
             }
@@ -107,8 +105,7 @@ class RestfulApiControllerSpec extends Specification {
     def "Unsupported media type in Content-Type header returns 415"(String controllerMethod, String httpMethod, String id, String serviceMethod, def serviceReturn ) {
         setup:
          config.restfulApiConfig = {
-            resource {
-                name = 'things'
+            resource 'things' config {
             }
         }
         controller.init()
@@ -147,25 +144,24 @@ class RestfulApiControllerSpec extends Specification {
     def "Media type in Content-Type header without extractor returns 415"(String controllerMethod, String httpMethod, String mediaType, String id, String serviceMethod, def serviceReturn, def body ) {
         setup:
         config.restfulApiConfig = {
-            resource {
-                name = 'things'
+            resource 'things' config {
                 representation {
-                    mediaType = 'application/json'
+                    mediaTypes = ['application/json']
                 }
                 representation {
-                    mediaType = 'application/xml'
+                    mediaTypes = ['application/xml']
                     jsonAsXml = true
                     extractor = new net.hedtech.restfulapi.extractors.xml.JSONObjectExtractor()
                 }
                 representation {
-                    mediaType = 'application/custom-xml'
+                    mediaTypes = ['application/custom-xml']
                 }
                 representation {
-                    mediaType = 'application/custom-thing-json'
+                    mediaTypes = ['application/custom-thing-json']
                     extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()
                 }
                 representation {
-                    mediaType = 'application/custom-thing-xml'
+                    mediaTypes = ['application/custom-thing-xml']
                     jsonAsXml = true
                 }
             }
@@ -217,10 +213,9 @@ class RestfulApiControllerSpec extends Specification {
     def "Media type without extractor in Content-Type header for list and show is ignored"(String controllerMethod, String httpMethod, String id, String serviceMethod, def serviceReturn ) {
         setup:
         config.restfulApiConfig = {
-            resource {
-                name = 'things'
+            resource 'things' config {
                 representation {
-                    mediaType = 'application/json'
+                    mediaTypes = ['application/json']
                 }
             }
         }
@@ -269,10 +264,9 @@ class RestfulApiControllerSpec extends Specification {
         setup:
         config.restfulApiConfig =
         {
-            resource {
-                name = 'things'
+            resource 'things' config {
                 representation {
-                    mediaType = 'application/xml'
+                    mediaTypes = ['application/xml']
                     jsonAsXml = true
                 }
             }
@@ -291,10 +285,9 @@ class RestfulApiControllerSpec extends Specification {
         setup:
         //use default extractor for any methods with a request body
          config.restfulApiConfig = {
-            resource {
-                name = 'things'
+            resource 'things' config {
                 representation {
-                    mediaType = 'application/json'
+                    mediaTypes = ['application/json']
                     extractor = new DefaultJSONExtractor()
                 }
             }
@@ -329,13 +322,11 @@ class RestfulApiControllerSpec extends Specification {
 
     def "Test that service name can be overridden in configuration"() {
       setup:
-        //use default extractor for any methods with a request body
          config.restfulApiConfig = {
-            resource {
-                name = 'things'
+            resource 'things' config {
                 serviceName = 'theThingService'
                 representation {
-                    mediaType = 'application/json'
+                    mediaTypes = ['application/json']
                     extractor = new DefaultJSONExtractor()
                 }
             }
@@ -354,11 +345,10 @@ class RestfulApiControllerSpec extends Specification {
     def "Unsupported method returns 405"(String controllerMethod, def allowedMethods, def allowHeader ) {
         setup:
         config.restfulApiConfig = {
-            resource {
-                name = 'things'
+            resource 'things' config {
                 methods = allowedMethods
                 representation {
-                    mediaType = 'application/json'
+                    mediaTypes = ['application/json']
                 }
             }
         }
@@ -412,10 +402,9 @@ class RestfulApiControllerSpec extends Specification {
         setup:
         //use default extractor for any methods with a request body
          config.restfulApiConfig = {
-            resource {
-                name = 'things'
+            resource 'things' config {
                 representation {
-                    mediaType = 'application/json'
+                    mediaTypes = ['application/json']
                     extractor = new DefaultJSONExtractor()
                 }
             }
@@ -446,10 +435,9 @@ class RestfulApiControllerSpec extends Specification {
         setup:
         //use default extractor for any methods with a request body
          config.restfulApiConfig = {
-            resource {
-                name = 'things'
+            resource 'things' config {
                 representation {
-                    mediaType = 'application/json'
+                    mediaTypes = ['application/json']
                     extractor = new DefaultJSONExtractor()
                 }
             }
@@ -480,10 +468,9 @@ class RestfulApiControllerSpec extends Specification {
         setup:
         //use default extractor for any methods with a request body
          config.restfulApiConfig = {
-            resource {
-                name = 'things'
+            resource 'things' config {
                 representation {
-                    mediaType = 'application/json'
+                    mediaTypes = ['application/json']
                     extractor = new DefaultJSONExtractor()
                 }
             }
@@ -509,6 +496,4 @@ class RestfulApiControllerSpec extends Specification {
         'default.rest.deleted.message' == response.getHeaderValue( 'X-hedtech-message' )
 
     }
-
-
 }

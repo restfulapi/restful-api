@@ -32,15 +32,25 @@ import org.springframework.beans.BeanWrapperImpl
 class DeclarativeDomainClassMarshaller extends BasicDomainClassMarshaller {
 
     Class supportClass
-    def substitutions = [:]
+    def fieldNames = [:]
     def includedFields = []
     def excludedFields = []
     def includeId = true
     def includeVersion = true
     def additionalFieldClosures = []
     def additionalFieldsMap = [:]
+    def fieldResourceNames = [:]
+    def shortObjectClosure = DEFAULT_SHORT_OBJECT
 
-
+    private static DEFAULT_SHORT_OBJECT = { Map map ->
+        def resource = map['resource']
+        def id = map['id']
+        def json = map['json']
+        def writer = json.getWriter()
+        writer.object()
+        writer.key("_link").value("/$resource/$id")
+        writer.endObject()
+    }
 
 // ------------------- Setters ---------------------
 
@@ -66,7 +76,7 @@ class DeclarativeDomainClassMarshaller extends BasicDomainClassMarshaller {
      */
     @Override
     protected String getSubstitutionName(BeanWrapper beanWrapper,GrailsDomainClassProperty property) {
-        return substitutions.get( property.getName() )
+        return fieldNames.get( property.getName() )
     }
 
     /**
@@ -168,5 +178,34 @@ class DeclarativeDomainClassMarshaller extends BasicDomainClassMarshaller {
     @Override
     protected boolean includeVersionFor(Object o) {
         return includeVersion
+    }
+
+
+    /**
+     * Marshalls an object reference as a json object
+     * containing a link to the referenced object as a
+     * resource url.
+     * @param property the property containing the reference
+     * @param refObj the referenced object
+     * @param json the JSON converter to marshall to
+     */
+    @Override
+    protected void asShortObject(GrailsDomainClassProperty property, Object refObj, JSON json) throws ConverterException {
+        GrailsDomainClass refDomainClass = property.getReferencedDomainClass()
+        Object id = extractIdForReference( refObj, refDomainClass )
+        def resource = fieldResourceNames[property.getName()]
+        if (resource == null) {
+            def domainName = GrailsNameUtils.getPropertyName(refDomainClass.shortName)
+            resource = hyphenate(pluralize(domainName))
+        }
+        Map map = [
+            grailsApplication:app,
+            property:property,
+            refObject:refObj,
+            json:json,
+            id:id,
+            resource:resource
+        ]
+        this.shortObjectClosure.call(map)
     }
 }

@@ -6,30 +6,49 @@ package net.hedtech.restfulapi.config
 
 import org.codehaus.groovy.grails.commons.GrailsApplication
 
-class DomainMarshallerConfig implements MergeableConfig {
+class JSONDomainMarshallerConfig implements MergeableConfig {
 
     //Named domain marshaller configurations that this config should
     //be merged with
-    def includes = []
+    def inherits = []
 
     int priority = 100
     Class supportClass
     private boolean isSupportClassSet = false
-    def substitutions = [:]
+    //map of field name to the name the field should be marshalled as.
+    //allows fields to be renamed in the output
+    def fieldNames = [:]
+    //list of field names to explicity include
+    //overrides excludedFields
     def includedFields = []
+    //list of additional fields to ignore
     def excludedFields = []
+    //closures which will be invoked to add additional fields
+    //used for affordances, computed fields, etc
     def additionalFieldClosures = []
+    //map of additional input that will be passed into the
+    //additional field closures
     def additionalFieldsMap = [:]
+    //map of field names (that are associations)
+    //to the resource names the associated object
+    //represents.  Used to override the default
+    //behavior of pluralizing the simple domain name
+    def fieldResourceNames = [:]
+    //Contains a closure that will override the default
+    //rendering behavior for short objects.
+    def shortObjectClosure = null
+    boolean isShortObjectClosureSet = false
     Boolean includeId
     Boolean includeVersion
 
-    DomainMarshallerConfig() {
+
+    JSONDomainMarshallerConfig() {
 
     }
 
-    DomainMarshallerConfig( DomainMarshallerConfig other ) {
+    JSONDomainMarshallerConfig( JSONDomainMarshallerConfig other ) {
         other.getClass().declaredFields.findAll { !it.synthetic }*.name.each {
-            if (other."$it" instanceof Cloneable) {
+            if ((other."$it" instanceof Cloneable) && !(other."$it" instanceof Closure)) {
                 this."$it" = other."$it".clone()
             } else {
                 this."$it" = other."$it"
@@ -43,35 +62,11 @@ class DomainMarshallerConfig implements MergeableConfig {
         this
     }
 
-    def field(String fieldName) {
-        [substitute: { String otherName ->
-            substitutions[fieldName] = otherName
-        }]
+    void setShortObjectClosure(Closure c) {
+        this.shortObjectClosure = c
+        this.isShortObjectClosureSet = true
     }
 
-    def include( Closure c ) {
-        c.delegate = new FieldConfig( this )
-        c.resolveStrategy = Closure.DELEGATE_ONLY
-        c.call()
-        this
-    }
-
-    def exclude( Closure c ) {
-        c.delegate = new ExcludeField( this )
-        c.resolveStrategy = Closure.DELEGATE_ONLY
-        c.call()
-        this
-    }
-
-    def additionalFields( Closure c ) {
-        additionalFieldClosures.add c
-        this
-    }
-
-    def additionalFieldsMap( Map m ) {
-        this.additionalFieldsMap = m
-        this
-    }
 
     /**
      * Merges two DomainMarshallerConfig instances together
@@ -80,7 +75,7 @@ class DomainMarshallerConfig implements MergeableConfig {
      * @param other the other configuration to merge with
      */
     MergeableConfig merge( MergeableConfig other ) {
-        DomainMarshallerConfig config = new DomainMarshallerConfig( this )
+        JSONDomainMarshallerConfig config = new JSONDomainMarshallerConfig( this )
 
         if (other.isSupportClassSet) {
             config.setSupportClass( other.supportClass )
@@ -88,41 +83,17 @@ class DomainMarshallerConfig implements MergeableConfig {
         if (other.includeId != null)      config.includeId      = other.includeId
         if (other.includeVersion != null) config.includeVersion = other.includeVersion
 
-        config.substitutions.putAll  other.substitutions
+        config.fieldNames.putAll  other.fieldNames
         config.includedFields.addAll other.includedFields
         config.excludedFields.addAll other.excludedFields
         config.additionalFieldClosures.addAll other.additionalFieldClosures
         config.additionalFieldsMap.putAll other.additionalFieldsMap
+        config.fieldResourceNames.putAll other.fieldResourceNames
+        if (other.isShortObjectClosureSet) {
+            config.shortObjectClosure = other.shortObjectClosure
+        }
 
         config
 
     }
-
-
-    class FieldConfig {
-        DomainMarshallerConfig parent
-        FieldConfig( DomainMarshallerConfig parent ) {
-            this.parent = parent
-        }
-
-        def field( String name ) {
-            parent.includedFields.add name
-            [substitute: {String otherName ->
-                parent.substitutions[name] = otherName
-            }]
-        }
-    }
-
-    class ExcludeField {
-        DomainMarshallerConfig parent
-        ExcludeField( DomainMarshallerConfig parent ) {
-            this.parent = parent
-        }
-
-        def field( String name ) {
-            parent.excludedFields.add name
-        }
-    }
-
-
 }

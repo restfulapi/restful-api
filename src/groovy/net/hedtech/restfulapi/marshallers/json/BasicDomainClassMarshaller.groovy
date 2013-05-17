@@ -257,25 +257,39 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<JSON> {
         return beanWrapper.getPropertyValue(property.getName());
     }
 
-    protected void asShortObject(Object refObj, JSON json, GrailsDomainClassProperty idProperty, GrailsDomainClass referencedDomainClass) throws ConverterException {
-
+    protected Object extractIdForReference( Object refObj, GrailsDomainClass refDomainClass ) {
         Object idValue;
-
         if (proxyHandler instanceof EntityProxyHandler) {
             idValue = ((EntityProxyHandler) proxyHandler).getProxyIdentifier(refObj);
             if (idValue == null) {
-                idValue = extractValue(refObj, idProperty);
+                idValue = extractValue(refObj, refDomainClass.getIdentifier());
             }
         }
         else {
-            idValue = extractValue(refObj, idProperty);
+            idValue = extractValue(refObj, refDomainClass.getIdentifier());
         }
-        JSONWriter writer = json.getWriter();
-        writer.object();
-        writer.key("class").value(referencedDomainClass.getName());
-        writer.key("id").value(idValue);
-        writer.endObject();
+        idValue
     }
+
+    /**
+     * Marshalls an object reference as a json object
+     * containing a link to the referenced object as a
+     * resource url.
+     * @param property the property containing the reference
+     * @param refObj the referenced object
+     * @param json the JSON converter to marshall to
+     */
+    protected void asShortObject(GrailsDomainClassProperty property, Object refObj, JSON json) throws ConverterException {
+        GrailsDomainClass refDomainClass = property.getReferencedDomainClass()
+        Object id = extractIdForReference( refObj, refDomainClass )
+        def domainName = GrailsNameUtils.getPropertyName(refDomainClass.shortName)
+        def resource = hyphenate(pluralize(domainName))
+        JSONWriter writer = json.getWriter()
+        writer.object()
+        writer.key("_link").value("/$resource/$id")
+        writer.endObject()
+    }
+
 
     protected void marshallSimpleField(BeanWrapper beanWrapper, GrailsDomainClassProperty property, JSON json) {
         log.trace "$this marshalObject() handling field '${property.getName()}' for ${beanWrapper.getWrappedInstance().getClass().getName()} as a simple field"
@@ -306,60 +320,55 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<JSON> {
             if (referenceObject == null) {
                 writer.value(null)
             } else {
-                asShortObject(referenceObject, json, referencedDomainClass.getIdentifier(), referencedDomainClass);
+                asShortObject(property, referenceObject, json);
             }
         } else {
             writeFieldName(beanWrapper, property, json)
             if (referenceObject == null) {
                 writer.value(null)
             } else {
-                GrailsDomainClassProperty referencedIdProperty = referencedDomainClass.getIdentifier()
-                @SuppressWarnings("unused")
-                String refPropertyName = referencedDomainClass.getPropertyName()
-
                 if (referenceObject instanceof Collection) {
                     log.trace( "$this marshalObject() handling field '${property.getName()}' for $clazz as a Collection")
-                    marshallAssociationCollection(referenceObject, json, referencedIdProperty, referencedDomainClass)
+                    marshallAssociationCollection(property, referenceObject, json)
                 } else if (referenceObject instanceof Map) {
                     log.trace( "$this marshalObject() handling field ${property.getName()} for $clazz as a Map")
-                    marshallAssociationMap(referenceObject, json, referencedIdProperty, referencedDomainClass)
+                    marshallAssociationMap(property, referenceObject, json)
                 }
             }
         }
     }
 
-    protected void marshallAssociationCollection(Object referenceObject, JSON json,
-            GrailsDomainClassProperty referencedIdProperty, GrailsDomainClass referencedDomainClass) {
+    protected void marshallAssociationCollection(GrailsDomainClassProperty property, Object referenceObject, JSON json) {
         Collection o = (Collection) referenceObject
+        GrailsDomainClass referencedDomainClass = property.getReferencedDomainClass()
+        GrailsDomainClassProperty referencedIdProperty = referencedDomainClass.getIdentifier()
+        @SuppressWarnings("unused")
+        String refPropertyName = referencedDomainClass.getPropertyName()
+
         JSONWriter writer = json.getWriter()
         writer.array()
         for (Object el: o) {
-            asShortObject(el, json, referencedIdProperty, referencedDomainClass)
+            asShortObject(property, el, json)
         }
         writer.endArray()
     }
 
-    protected void marshallAssociationMap(Object referenceObject, JSON json,
-            GrailsDomainClassProperty referencedIdProperty, GrailsDomainClass referencedDomainClass) {
+    protected void marshallAssociationMap(GrailsDomainClassProperty property, Object referenceObject, JSON json) {
         Map<Object, Object> map = (Map<Object, Object>) referenceObject
+        GrailsDomainClass referencedDomainClass = property.getReferencedDomainClass()
+        GrailsDomainClassProperty referencedIdProperty = referencedDomainClass.getIdentifier()
+        @SuppressWarnings("unused")
+        String refPropertyName = referencedDomainClass.getPropertyName()
+
         JSONWriter writer = json.getWriter()
         for (Map.Entry<Object, Object> entry: map.entrySet()) {
             String key = String.valueOf(entry.getKey())
             Object o = entry.getValue()
             writer.object()
             writer.key(key)
-            asShortObject(o, json, referencedIdProperty, referencedDomainClass)
+            asShortObject(property, o, json)
             writer.endObject()
         }
-    }
-
-    // TODO: Determine whether to use IRI or full absolute URI
-
-
-    protected String getResourceUri(String simpleDomainClassName, id) {
-        def domainName = GrailsNameUtils.getPropertyName(simpleDomainClassName)
-        def resourceName = hyphenate(pluralize(domainName))
-        "/${resourceName}/${id}"
     }
 
     protected String getDerivedResourceName(Object o) {
@@ -369,21 +378,6 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<JSON> {
 
     protected String getDerivedResourceName(BeanWrapper wrapper) {
         getDerivedResourceName(wrapper.getWrappedInstance())
-    }
-
-
-    /**
-     * Returns the URI for the resource.
-     * This method should be called from a 'asShortObject' method implementation
-     * (it uses a subset of the argments from that method to facilitate usage).
-     **/
-    protected String getResourceUri(java.lang.Object refObj,
-                                    GrailsDomainClassProperty idProperty,
-                                    GrailsDomainClass referencedDomainClass) {
-
-        def domainName = GrailsNameUtils.getPropertyName(referencedDomainClass.shortName)
-        def resourceName = hyphenate(pluralize(domainName))
-        "/${resourceName}/${extractValue(refObj, idProperty)}"
     }
 
 

@@ -1,4 +1,4 @@
-/*****************************************************************************
+/* ****************************************************************************
 Copyright 2013 Ellucian Company L.P. and its affiliates.
 ******************************************************************************/
 
@@ -13,6 +13,7 @@ import net.hedtech.restfulapi.*
 import grails.test.mixin.support.*
 import net.hedtech.restfulapi.marshallers.json.*
 
+
 @TestMixin(GrailsUnitTestMixin)
 class RestConfigSpec extends Specification {
 
@@ -20,17 +21,18 @@ class RestConfigSpec extends Specification {
         setup:
         def src =
         {
-            resource {
-                name = 'things'
+            resource 'things' config {
                 representation {
-                    mediaType = 'application/vnd.hedtech.v0+json'
-                    addMarshaller {
-                        marshaller = 'a'
-                        priority = 5
-                    }
-                    addMarshaller {
-                        marshaller = 'b'
-                        priority = 6
+                    mediaTypes = ['application/vnd.hedtech.v0+json']
+                    marshallers {
+                        marshaller {
+                            instance = 'a'
+                            priority = 5
+                        }
+                        marshaller {
+                            instance = 'b'
+                            priority = 6
+                        }
                     }
                     extractor = 'net.hedtech.DynamicJsonExtractor'
                 }
@@ -46,25 +48,46 @@ class RestConfigSpec extends Specification {
         1 == config.resources['things'].representations.size()
     }
 
+    def "Test that attempt to rename resource fails"() {
+        setup:
+        def src =
+        {
+            resource 'things' config {
+                name = 'changed'
+            }
+        }
+
+        when:
+        def config = RestConfig.parse( grailsApplication, src )
+
+        then:
+        def e = thrown(RuntimeException)
+        "Name of resource illegally changed" == e.message
+
+    }
+
     def "Test a resource with 2 representations defined"() {
         setup:
         def src =
         {
-            resource {
-                name = 'things'
+            resource 'things' config {
                 representation {
-                    mediaType = 'application/vnd.hedtech.v0+json'
-                    addMarshaller {
-                        marshaller = 'v0'
-                        priority = 5
+                    mediaTypes = ['application/vnd.hedtech.v0+json']
+                    marshallers {
+                        marshaller {
+                            instance = 'v0'
+                            priority = 5
+                        }
                     }
                     extractor = 'v0'
                 }
                 representation {
-                    mediaType = 'application/vnd.hedtech.v1+json'
-                    addMarshaller {
-                        marshaller = 'v1'
-                        priority = 5
+                    mediaTypes = ['application/vnd.hedtech.v1+json']
+                    marshallers {
+                        marshaller {
+                            instance = 'v1'
+                            priority = 5
+                        }
                     }
                     extractor = 'v1'
                 }
@@ -83,26 +106,29 @@ class RestConfigSpec extends Specification {
         setup:
         def src =
         {
-            resource {
-                name = 'things'
+            resource 'things' config {
                 representation {
-                    mediaType = 'application/vnd.hedtech.v0+xml'
+                    mediaTypes = ['application/vnd.hedtech.v0+xml']
                     jsonAsXml = true
                 }
                 representation {
-                    mediaType = 'application/vnd.hedtech.v1+xml'
+                    mediaTypes = ['application/vnd.hedtech.v1+xml']
                     jsonAsXml = false
-                    addMarshaller {
-                        marshaller = 'v1'
-                        priority = 5
+                    marshallers {
+                        marshaller {
+                            instance = 'v1'
+                            priority = 5
+                        }
                     }
                     extractor = 'v1'
                 }
                 representation {
-                    mediaType = 'application/vnd.hedtech.v2+xml'
-                    addMarshaller {
-                        marshaller = 'v2'
-                        priority = 5
+                    mediaTypes = ['application/vnd.hedtech.v2+xml']
+                    marshallers {
+                        marshaller {
+                            instance = 'v2'
+                            priority = 5
+                        }
                     }
                     extractor = 'v2'
                 }
@@ -125,25 +151,26 @@ class RestConfigSpec extends Specification {
     def "Test resources missing extractors and marshallers"(String foo,String bar) {
         setup:
         def src = {
-            resource {
-                name = 'things'
+            resource 'things' config {
                 representation {
-                    mediaType = 'application/json'
-                    addMarshaller {
-                        marshaller = 'foo'
-                        priority = 5
+                    mediaTypes = ['application/json']
+                    marshallers {
+                        marshaller {
+                            instance = 'foo'
+                            priority = 5
+                        }
                     }
                 }
                 representation {
-                    mediaType = 'application/xml'
+                    mediaTypes = ['application/xml']
                     jsonAsXml = true
                     extractor = new net.hedtech.restfulapi.extractors.xml.JSONObjectExtractor()
                 }
                 representation {
-                    mediaType = 'application/custom-xml'
+                    mediaTypes = ['application/custom-xml']
                 }
                 representation {
-                    mediaType = 'application/custom-json-as-xml'
+                    mediaTypes = ['application/custom-json-as-xml']
                     jsonAsXml = true
                 }
             }
@@ -163,51 +190,28 @@ class RestConfigSpec extends Specification {
         'foo' | 'bar'
     }
 
-    def "Test global json as xml settings"() {
-        setup:
-        def src =
-        {
-            jsonAsXml {
-                enableDefault = true
-                addMarshaller {
-                    marshaller = "xml1"
-                    priority 5
-                }
-                addMarshaller {
-                    marshaller = "xml2"
-                    priority = 6
-                }
-                extractor = "extractor"
-            }
-        }
-
-        when:
-        def conf = RestConfig.parse( grailsApplication, src )
-
-        then:
-        null  != conf.jsonAsXml
-        true  == conf.jsonAsXml.enableDefault
-    }
-
     def "Test content negotiation for representation"() {
         setup:
         def src =
         {
-            resource {
-                name = 'things'
+            resource 'things' config {
                 representation {
-                    mediaType = 'application/vnd.hedtech.v0+json'
-                    addMarshaller {
-                        marshaller = 'v0'
-                        priority = 5
+                    mediaTypes = ['application/vnd.hedtech.v0+json']
+                    marshallers {
+                        marshaller {
+                            instance = 'v0'
+                            priority = 5
+                        }
                     }
                     extractor = 'v0'
                 }
                 representation {
-                    mediaType = 'application/vnd.hedtech.v1+json'
-                    addMarshaller {
-                        marshaller = 'v1'
-                        priority = 5
+                    mediaTypes = ['application/vnd.hedtech.v1+json']
+                    marshallers {
+                        marshaller {
+                            instance = 'v1'
+                            priority = 5
+                        }
                     }
                     extractor = 'v1'
                 }
@@ -229,22 +233,24 @@ class RestConfigSpec extends Specification {
         setup:
         def src =
         {
-            resource {
-                name = 'things'
+            resource 'things' config {
                 representation {
-                    mediaType = 'application/vnd.hedtech.v0+json'
-                    mediaType = 'application/json'
-                    addMarshaller {
-                        marshaller = 'v0'
-                        priority = 5
+                    mediaTypes = ['application/vnd.hedtech.v0+json','application/json']
+                    marshallers {
+                        marshaller {
+                            instance = 'v0'
+                            priority = 5
+                        }
                     }
                     extractor = 'v0'
                 }
                 representation {
-                    mediaType = 'application/vnd.hedtech.v1+json'
-                    addMarshaller {
-                        marshaller = 'v1'
-                        priority = 5
+                    mediaTypes = ['application/vnd.hedtech.v1+json']
+                    marshallers {
+                        marshaller {
+                            instance = 'v1'
+                            priority = 5
+                        }
                     }
                     extractor = 'v1'
                 }
@@ -259,13 +265,13 @@ class RestConfigSpec extends Specification {
 
         then:
         'application/json' == defaultConfig.mediaType
-        'v0' == defaultConfig.marshallers[0].marshaller
+        'v0' == defaultConfig.marshallers[0].instance
         'v0' == defaultConfig.extractor
         'application/vnd.hedtech.v0+json' == version0.mediaType
-        'v0' == version0.marshallers[0].marshaller
+        'v0' == version0.marshallers[0].instance
         'v0' == version0.extractor
         'application/vnd.hedtech.v1+json' == version1.mediaType
-        'v1' == version1.marshallers[0].marshaller
+        'v1' == version1.marshallers[0].instance
         'v1' == version1.extractor
     }
 
@@ -273,21 +279,24 @@ class RestConfigSpec extends Specification {
         setup:
         def src =
         {
-            resource {
-                name = 'things'
+            resource 'things' config {
                 representation {
-                    mediaType = 'application/json'
-                    addMarshaller {
-                        marshaller = 'v0'
-                        priority = 5
+                    mediaTypes = ['application/json']
+                    marshallers {
+                        marshaller {
+                            instance = 'v0'
+                            priority = 5
+                        }
                     }
                     extractor = 'v0'
                 }
                 representation {
-                    mediaType = 'application/json'
-                    addMarshaller {
-                        marshaller = 'v1'
-                        priority = 5
+                    mediaTypes = ['application/json']
+                    marshallers {
+                        marshaller {
+                            instance = 'v1'
+                            priority = 5
+                        }
                     }
                     extractor = 'v1'
                 }
@@ -298,8 +307,8 @@ class RestConfigSpec extends Specification {
         RestConfig.parse( grailsApplication, src )
 
         then:
-        def e = thrown(AmbiguousRepresentationException)
-        'things' == e.resourceName
+        AmbiguousRepresentationException e = thrown()
+        'things'           == e.resourceName
         'application/json' == e.mediaType
     }
 
@@ -307,38 +316,40 @@ class RestConfigSpec extends Specification {
         setup:
         def src =
         {
-            marshallerGroup {
-                name = 'defaultJSON'
-                addMarshaller {
-                    marshaller = 'defaultJsonDate'
-                    priority = 5
+            marshallerGroups {
+                group 'defaultJSON' marshallers {
+                    marshaller {
+                        instance = 'defaultJsonDate'
+                        priority = 5
+                    }
+                    marshaller {
+                        instance = 'foo'
+                        priority = 10
+                    }
                 }
-                addMarshaller {
-                    marshaller = 'foo'
-                    priority = 10
+                group 'thingDefaults' marshallers {
+                    marshaller {
+                        instance = 'defaultThing'
+                        priority = 5
+                    }
                 }
             }
-            marshallerGroup {
-                name = 'thingDefaults'
-                addMarshaller {
-                    marshaller = 'defaultThing'
-                    priority = 5
-                }
-            }
-            resource {
-                name = 'things'
+
+            resource 'things' config {
                 representation {
-                    mediaType = 'application/json'
-                    addMarshaller {
-                        marshaller = 'customThing'
-                        priority = 15
+                    mediaTypes = ['application/json']
+                    marshallers {
+                        marshaller {
+                            instance = 'customThing'
+                            priority = 15
+                        }
+                        marshallerGroup 'defaultJSON'
+                        marshaller {
+                            instance = 'customDate'
+                            priority = 15
+                        }
+                        marshallerGroup 'thingDefaults'
                     }
-                    addMarshaller getMarshallerGroup('defaultJSON')
-                    addMarshaller {
-                        marshaller = 'customDate'
-                        priority = 15
-                    }
-                    addMarshaller getMarshallerGroup('thingDefaults')
                 }
             }
 
@@ -349,7 +360,7 @@ class RestConfigSpec extends Specification {
         RepresentationConfig rep = config.getRepresentation( 'things', 'application/json' )
 
         then:
-        ['customThing','defaultJsonDate','foo','customDate','defaultThing'] == rep.marshallers.marshaller
+        ['customThing','defaultJsonDate','foo','customDate','defaultThing'] == rep.marshallers.instance
         [15,5,10,15,5] == rep.marshallers.priority
     }
 
@@ -357,11 +368,12 @@ class RestConfigSpec extends Specification {
         setup:
         def src =
         {
-            resource {
-                name = 'things'
+            resource 'things' config {
                 representation {
-                    mediaType = 'application/json'
-                    addMarshaller getMarshallerGroup('defaultJSON')
+                    mediaTypes = ['application/json']
+                    marshallers {
+                        marshallerGroup 'defaultJSON'
+                    }
                 }
             }
         }
@@ -374,14 +386,45 @@ class RestConfigSpec extends Specification {
         'defaultJSON' == e.name
     }
 
+    def "Test json domain marshaller in marshaller group"() {
+        setup:
+        def src =
+        {
+            marshallerGroups {
+                group 'domain' marshallers {
+                    jsonDomainMarshaller {
+                        supports Thing
+                        field 'foo' name 'bar' resource 'custom-foos'
+                        includesFields {
+                            field 'bar' name 'customBar' resource 'custom-bars'
+                        }
+                        excludesFields {
+                            field 'foobar'
+                        }
+                    }
+                }
+            }
+        }
+
+        when:
+        def config = RestConfig.parse( grailsApplication, src )
+        def marshaller = config.marshallerGroups['domain'].marshallers[0].instance
+
+        then:
+        Thing == marshaller.supportClass
+        ['foo':'bar','bar':'customBar'] == marshaller.fieldNames
+        ['foo':'custom-foos','bar':'custom-bars'] == marshaller.fieldResourceNames
+        ['bar'] == marshaller.includedFields
+        ['foobar'] == marshaller.excludedFields
+    }
+
     def "Test xmlAsJSON missing equivalent json representation for marshaller"() {
         setup:
         def src =
         {
-            resource {
-                name = 'things'
+            resource 'things' config {
                 representation {
-                    mediaType = 'application/xml'
+                    mediaTypes = ['application/xml']
                     jsonAsXml = true
                 }
             }
@@ -401,18 +444,19 @@ class RestConfigSpec extends Specification {
         setup:
         def src =
         {
-            resource {
-                name = 'things'
+            resource 'things' config {
                 serviceName = 'TheThingService'
                 representation {
-                    mediaType = 'application/vnd.hedtech.v0+json'
-                    addMarshaller {
-                        marshaller = 'a'
-                        priority = 5
-                    }
-                    addMarshaller {
-                        marshaller = 'b'
-                        priority = 6
+                    mediaTypes = ['application/vnd.hedtech.v0+json']
+                    marshallers {
+                        marshaller {
+                            instance = 'a'
+                            priority = 5
+                        }
+                        marshaller {
+                            instance = 'b'
+                            priority = 6
+                        }
                     }
                     extractor = 'net.hedtech.DynamicJsonExtractor'
                 }
@@ -432,18 +476,19 @@ class RestConfigSpec extends Specification {
         setup:
         def src =
         {
-            resource {
-                name = 'things'
+            resource 'things' config {
                 methods = ['list','show']
                 representation {
-                    mediaType = 'application/vnd.hedtech.v0+json'
-                    addMarshaller {
-                        marshaller = 'a'
-                        priority = 5
-                    }
-                    addMarshaller {
-                        marshaller = 'b'
-                        priority = 6
+                    mediaTypes = ['application/vnd.hedtech.v0+json']
+                    marshallers {
+                        marshaller {
+                            instance = 'a'
+                            priority = 5
+                        }
+                        marshaller {
+                            instance = 'b'
+                            priority = 6
+                        }
                     }
                     extractor = 'net.hedtech.DynamicJsonExtractor'
                 }
@@ -463,18 +508,19 @@ class RestConfigSpec extends Specification {
         setup:
         def src =
         {
-            resource {
-                name = 'things'
+            resource 'things' config {
                 methods = ['list','show','foo']
                 representation {
-                    mediaType = 'application/vnd.hedtech.v0+json'
-                    addMarshaller {
-                        marshaller = 'a'
-                        priority = 5
-                    }
-                    addMarshaller {
-                        marshaller = 'b'
-                        priority = 6
+                    mediaTypes = ['application/vnd.hedtech.v0+json']
+                    marshallers {
+                        marshaller {
+                            instance = 'a'
+                            priority = 5
+                        }
+                        marshaller {
+                            instance = 'b'
+                            priority = 6
+                        }
                     }
                     extractor = 'net.hedtech.DynamicJsonExtractor'
                 }
@@ -496,18 +542,19 @@ class RestConfigSpec extends Specification {
         setup:
         def src =
         {
-            resource {
-                name = 'things'
+            resource 'things' config {
                 methods = "list,show"
                 representation {
-                    mediaType = 'application/vnd.hedtech.v0+json'
-                    addMarshaller {
-                        marshaller = 'a'
-                        priority = 5
-                    }
-                    addMarshaller {
-                        marshaller = 'b'
-                        priority = 6
+                    mediaTypes = ['application/vnd.hedtech.v0+json']
+                    marshallers {
+                        marshaller {
+                            instance = 'a'
+                            priority = 5
+                        }
+                        marshaller {
+                            instance = 'b'
+                            priority = 6
+                        }
                     }
                     extractor = 'net.hedtech.DynamicJsonExtractor'
                 }
@@ -529,12 +576,13 @@ class RestConfigSpec extends Specification {
         setup:
         def src =
         {
-            resource {
-                name = 'things'
+            resource 'things' config {
                 representation {
-                    mediaType = 'application/json'
-                    addJSONDomainMarshaller {
-                        supportClass = Thing
+                    mediaTypes = ['application/json']
+                    marshallers {
+                        jsonDomainMarshaller {
+                            supports Thing
+                        }
                     }
                     extractor = 'net.hedtech.DynamicJsonExtractor'
                 }
@@ -548,23 +596,24 @@ class RestConfigSpec extends Specification {
         def representation = config.getResource('things').getRepresentation('application/json')
 
         then:
-        DeclarativeDomainClassMarshaller.getName() == representation.marshallers[0].marshaller.getClass().getName()
+        DeclarativeDomainClassMarshaller.getName() == representation.marshallers[0].instance.getClass().getName()
         1     == representation.marshallers.size()
         100   == representation.marshallers[0].priority
-        Thing == representation.marshallers[0].marshaller.supportClass
+        Thing == representation.marshallers[0].instance.supportClass
     }
 
     def "Test domain marshaller priority"() {
         setup:
         def src =
         {
-            resource {
-                name = 'things'
+            resource 'things' config {
                 representation {
-                    mediaType = 'application/json'
-                    addJSONDomainMarshaller {
-                        supportClass = Thing
-                        priority = 90
+                    mediaTypes = ['application/json']
+                    marshallers {
+                        jsonDomainMarshaller {
+                            supports Thing
+                            priority = 90
+                        }
                     }
                     extractor = 'net.hedtech.DynamicJsonExtractor'
                 }
@@ -586,14 +635,15 @@ class RestConfigSpec extends Specification {
         setup:
         def src =
         {
-            resource {
-                name = 'things'
+            resource 'things' config {
                 representation {
-                    mediaType = 'application/json'
-                    addJSONDomainMarshaller {
-                        supportClass = Thing
-                        field 'code' substitute 'serialNumber'
-                        field 'description' substitute 'desc'
+                    mediaTypes = ['application/json']
+                    marshallers {
+                        jsonDomainMarshaller {
+                            supports Thing
+                            field 'code' name 'serialNumber'
+                            field 'description' name 'desc'
+                        }
                     }
                     extractor = 'net.hedtech.DynamicJsonExtractor'
                 }
@@ -605,11 +655,11 @@ class RestConfigSpec extends Specification {
         def config = RestConfig.parse( grailsApplication, src )
         config.validate()
         def representation = config.getResource('things').getRepresentation('application/json')
-        def marshaller = representation.marshallers[0].marshaller
+        def marshaller = representation.marshallers[0].instance
 
         then:
         1                                            == representation.marshallers.size()
-        ['code':'serialNumber','description':'desc'] == marshaller.substitutions
+        ['code':'serialNumber','description':'desc'] == marshaller.fieldNames
 
     }
 
@@ -617,15 +667,16 @@ class RestConfigSpec extends Specification {
        setup:
         def src =
         {
-            resource {
-                name = 'things'
+            resource 'things' config {
                 representation {
-                    mediaType = 'application/json'
-                    addJSONDomainMarshaller {
-                        supportClass = Thing
-                        include {
-                            field 'code'
-                            field 'description'
+                    mediaTypes = ['application/json']
+                    marshallers {
+                        jsonDomainMarshaller {
+                            supports Thing
+                            includesFields {
+                                field 'code'
+                                field 'description'
+                            }
                         }
                     }
                     extractor = 'net.hedtech.DynamicJsonExtractor'
@@ -638,27 +689,28 @@ class RestConfigSpec extends Specification {
         def config = RestConfig.parse( grailsApplication, src )
         config.validate()
         def representation = config.getResource('things').getRepresentation('application/json')
-        def marshaller = representation.marshallers[0].marshaller
+        def marshaller = representation.marshallers[0].instance
 
         then:
         1                      == representation.marshallers.size()
         ['code','description'] == marshaller.includedFields
-        [:]                    == marshaller.substitutions
+        [:]                    == marshaller.fieldNames
     }
 
     def "Test domain marshaller includes with substitutions"() {
        setup:
         def src =
         {
-            resource {
-                name = 'things'
+            resource 'things' config {
                 representation {
-                    mediaType = 'application/json'
-                    addJSONDomainMarshaller {
-                        supportClass = Thing
-                        include {
-                            field 'code'
-                            field 'description' substitute 'desc'
+                    mediaTypes = ['application/json']
+                    marshallers {
+                        jsonDomainMarshaller {
+                            supports Thing
+                            includesFields {
+                                field 'code'
+                                field 'description' name 'desc'
+                            }
                         }
                     }
                     extractor = 'net.hedtech.DynamicJsonExtractor'
@@ -671,27 +723,28 @@ class RestConfigSpec extends Specification {
         def config = RestConfig.parse( grailsApplication, src )
         config.validate()
         def representation = config.getResource('things').getRepresentation('application/json')
-        def marshaller = representation.marshallers[0].marshaller
+        def marshaller = representation.marshallers[0].instance
 
         then:
         1                      == representation.marshallers.size()
         ['code','description'] == marshaller.includedFields
-        ['description':'desc'] == marshaller.substitutions
+        ['description':'desc'] == marshaller.fieldNames
     }
 
     def "Test domain marshaller excludes"() {
        setup:
         def src =
         {
-            resource {
-                name = 'things'
+            resource 'things' config {
                 representation {
-                    mediaType = 'application/json'
-                    addJSONDomainMarshaller {
-                        supportClass = Thing
-                        exclude {
-                            field 'dateManufactured'
-                            field 'isGood'
+                    mediaTypes = ['application/json']
+                    marshallers {
+                        jsonDomainMarshaller {
+                            supports Thing
+                            excludesFields {
+                                field 'dateManufactured'
+                                field 'isGood'
+                            }
                         }
                     }
                     extractor = 'net.hedtech.DynamicJsonExtractor'
@@ -704,7 +757,7 @@ class RestConfigSpec extends Specification {
         def config = RestConfig.parse( grailsApplication, src )
         config.validate()
         def representation = config.getResource('things').getRepresentation('application/json')
-        def marshaller = representation.marshallers[0].marshaller
+        def marshaller = representation.marshallers[0].instance
 
         then:
         1                             == representation.marshallers.size()
@@ -715,13 +768,14 @@ class RestConfigSpec extends Specification {
        setup:
         def src =
         {
-            resource {
-                name = 'things'
+            resource 'things' config {
                 representation {
-                    mediaType = 'application/json'
-                    addJSONDomainMarshaller {
-                        includeId = false
-                        includeVersion = false
+                    mediaTypes = ['application/json']
+                    marshallers {
+                        jsonDomainMarshaller {
+                            includesId false
+                            includesVersion false
+                        }
                     }
                     extractor = 'net.hedtech.DynamicJsonExtractor'
                 }
@@ -733,7 +787,7 @@ class RestConfigSpec extends Specification {
         def config = RestConfig.parse( grailsApplication, src )
         config.validate()
         def representation = config.getResource('things').getRepresentation('application/json')
-        def marshaller = representation.marshallers[0].marshaller
+        def marshaller = representation.marshallers[0].instance
 
         then:
         false == marshaller.includeId
@@ -745,16 +799,17 @@ class RestConfigSpec extends Specification {
        int counter = 0
         def src =
         {
-            resource {
-                name = 'things'
+            resource 'things' config {
                 representation {
-                    mediaType = 'application/json'
-                    addJSONDomainMarshaller {
-                        additionalFields { app, bean, json ->
-                            counter++
-                        }
-                        additionalFields { app, bean, json ->
-                            counter++
+                    mediaTypes = ['application/json']
+                    marshallers {
+                        jsonDomainMarshaller {
+                            additionalFields { Map m ->
+                                counter++
+                            }
+                            additionalFields { Map m ->
+                                counter++
+                            }
                         }
                     }
                     extractor = 'net.hedtech.DynamicJsonExtractor'
@@ -767,165 +822,41 @@ class RestConfigSpec extends Specification {
         def config = RestConfig.parse( grailsApplication, src )
         config.validate()
         def representation = config.getResource('things').getRepresentation('application/json')
-        def marshaller = representation.marshallers[0].marshaller
-        marshaller.additionalFieldClosures.each { it.call( null, null, null ) }
+        def marshaller = representation.marshallers[0].instance
+        marshaller.additionalFieldClosures.each { it.call( [:] ) }
 
         then:
         2 == marshaller.additionalFieldClosures.size()
         2 == counter
     }
 
-    def "Test merging domain marshaller configurations"() {
-        setup:
-        DomainMarshallerConfig one = new DomainMarshallerConfig(
-            supportClass:Thing,
-            substitutions:['foo':'foo1','bar':'bar1'],
-            includedFields:['foo','bar'],
-            excludedFields:['e1','e2'],
-            additionalFieldClosures:[{app,bean,json ->}],
-            additionalFieldsMap:['one':'one','two':'two'],
-            includeId:true,
-            includeVersion:true
-        )
-        DomainMarshallerConfig two = new DomainMarshallerConfig(
-            supportClass:PartOfThing,
-            substitutions:['foo':'foo2','baz':'baz1'],
-            includedFields:['baz'],
-            excludedFields:['e3'],
-            additionalFieldClosures:[{app,bean,json ->}],
-            additionalFieldsMap:['two':'2','three':'3'],
-            includeId:false,
-            includeVersion:false
-        )
-
-        when:
-        def config = one.merge(two)
-
-        then:
-        true                                     == one.isSupportClassSet
-        true                                     == two.isSupportClassSet
-        PartOfThing                              == two.supportClass
-        ['foo':'foo2','bar':'bar1','baz':'baz1'] == config.substitutions
-        ['foo','bar','baz']                      == config.includedFields
-        ['e1','e2','e3']                         == config.excludedFields
-        2                                        == config.additionalFieldClosures.size()
-        ['one':'one',"two":'2','three':'3']      == config.additionalFieldsMap
-        false                                    == config.includeId
-        false                                    == config.includeVersion
-    }
-
-    def "Test merging domain marshaller configurations does not alter either object"() {
-        setup:
-        DomainMarshallerConfig one = new DomainMarshallerConfig(
-            supportClass:Thing,
-            substitutions:['foo':'foo1','bar':'bar1'],
-            includedFields:['foo','bar'],
-            excludedFields:['e1','e2'],
-            additionalFieldClosures:[{app,bean,json ->}],
-            additionalFieldsMap:['one':'1'],
-            includeId:true,
-            includeVersion:true
-        )
-        DomainMarshallerConfig two = new DomainMarshallerConfig(
-            supportClass:PartOfThing,
-            substitutions:['foo':'foo2','baz':'baz1'],
-            includedFields:['baz'],
-            excludedFields:['e3'],
-            additionalFieldClosures:[{app,bean,json ->}],
-            additionalFieldsMap:['two':'2'],
-            includeId:false,
-            includeVersion:false
-        )
-
-        when:
-        one.merge(two)
-
-        then:
-        true                        == one.isSupportClassSet
-        ['foo':'foo1','bar':'bar1'] == one.substitutions
-        ['foo','bar']               == one.includedFields
-        ['e1','e2']                 == one.excludedFields
-        1                           == one.additionalFieldClosures.size()
-        ['one':'1']                 == one.additionalFieldsMap
-        true                        == one.includeId
-        true                        == one.includeVersion
-
-        true                        == two.isSupportClassSet
-        ['foo':'foo2','baz':'baz1'] == two.substitutions
-        ['baz']                     == two.includedFields
-        ['e3']                      == two.excludedFields
-        1                           == two.additionalFieldClosures.size()
-        ['two':'2']                 == two.additionalFieldsMap
-        false                       == two.includeId
-        false                       == two.includeVersion
-
-    }
-
-    def "Test resolution of domain marshaller configuration includes"() {
-        setup:
-        DomainMarshallerConfig part1 = new DomainMarshallerConfig(
-        )
-        DomainMarshallerConfig part2 = new DomainMarshallerConfig(
-        )
-        DomainMarshallerConfig part3 = new DomainMarshallerConfig(
-        )
-        DomainMarshallerConfig combined = new DomainMarshallerConfig(
-            includes:['part1','part2']
-        )
-        DomainMarshallerConfig actual = new DomainMarshallerConfig(
-            includes:['combined','part3']
-        )
-        ConfigGroup group = new ConfigGroup()
-        group.configs = ['part1':part1,'part2':part2,'part3':part3,'combined':combined]
-
-        when:
-        def resolvedList = group.getIncludesChain( actual )
-
-        then:
-        [part1,part2,combined,part3,actual] == resolvedList
-    }
-
-    def "Test merge order of domain marshaller configuration includes"() {
-        setup:
-        DomainMarshallerConfig part1 = new DomainMarshallerConfig(
-            substitutions:['1':'part1','2':'part1','3':'part1']
-        )
-        DomainMarshallerConfig part2 = new DomainMarshallerConfig(
-            substitutions:['2':'part2','3':'part2']
-
-        )
-        DomainMarshallerConfig actual = new DomainMarshallerConfig(
-            includes:['part1','part2'],
-            substitutions:['3':'actual']
-        )
-        ConfigGroup group = new ConfigGroup()
-        group.configs = ['part1':part1,'part2':part2]
-
-        when:
-        def config = group.getMergedConfig( actual )
-
-        then:
-        ['1':'part1','2':'part2','3':'actual'] == config.substitutions
-    }
-
     def "Test json domain marshaller template parsing"() {
         setup:
         def src =
         {
-            jsonDomainMarshaller 'one' params {
-            }
+            jsonDomainMarshallerTemplates {
+                template 'one' config {
+                }
 
-            jsonDomainMarshaller 'two' params {
-                includes = ['one']
-                priority = 5
-                supportClass = Thing
-                substitutions = ['foo':'bar']
-                includedFields = ['foo']
-                excludedFields = ['bar']
-                additionalFieldClosures = [{->}]
-                additionalFieldsMap = ['a':'b','c':'d']
-                includeId = false
-                includeVersion = false
+                template 'two' config {
+                    inherits = ['one']
+                    priority = 5
+                    supports Thing
+                    field 'foo' name 'bar'
+                    field 'f1' resource 'r1'
+                    field 'f2' resource 'r2'
+                    includesFields {
+                        field 'foo' name 'foobar'
+                    }
+                    excludesFields {
+                        field 'bar'
+                    }
+                    additionalFields {->}
+                    additionalFieldsMap = ['a':'b','c':'d']
+                    shortObject {Map m -> return 'foo'}
+                    includesId false
+                    includesVersion false
+                }
             }
         }
 
@@ -933,41 +864,48 @@ class RestConfigSpec extends Specification {
         def config = RestConfig.parse( grailsApplication, src )
         config.validate()
         def mConfig = config.jsonDomain.configs['two']
+        def shortObject = mConfig.shortObjectClosure.call([:])
 
         then:
-         2                 == config.jsonDomain.configs.size()
-         ['one']           == mConfig.includes
-         5                 == mConfig.priority
-         Thing             == mConfig.supportClass
-         ['foo':'bar']     == mConfig.substitutions
-         ['foo']           == mConfig.includedFields
-         ['bar']           == mConfig.excludedFields
-         1                 == mConfig.additionalFieldClosures.size()
-         ['a':'b','c':'d'] == mConfig.additionalFieldsMap
-         false             == mConfig.includeId
-         false             == mConfig.includeVersion
+         2                     == config.jsonDomain.configs.size()
+         ['one']               == mConfig.inherits
+         5                     == mConfig.priority
+         Thing                 == mConfig.supportClass
+         ['foo':'foobar']      == mConfig.fieldNames
+         ['foo']               == mConfig.includedFields
+         ['bar']               == mConfig.excludedFields
+         1                     == mConfig.additionalFieldClosures.size()
+         ['a':'b','c':'d']     == mConfig.additionalFieldsMap
+         ['f1':'r1','f2':'r2'] == mConfig.fieldResourceNames
+         'foo'                 == shortObject
+         false                 == mConfig.includeId
+         false                 == mConfig.includeVersion
     }
 
     def "Test json domain marshaller creation"() {
         setup:
         def src =
         {
-            resource {
-                name = 'things'
+            resource 'things' config {
                 representation {
-                    mediaType = 'application/json'
-                    addJSONDomainMarshaller {
-                        supportClass = Thing
-                        include {
-                            field 'code' substitute 'productCode'
+                    mediaTypes = ['application/json']
+                    marshallers {
+                        jsonDomainMarshaller {
+                            supports Thing
+                            field 'owner' resource 't-owners'
+                            includesFields {
+                                field 'code' name 'productCode'
+                                field 'parts' resource 't-parts'
+                            }
+                            excludesFields {
+                                field 'description'
+                            }
+                            includesId      false
+                            includesVersion false
+                            additionalFields {Map m ->}
+                            shortObject {Map m -> return 'foo'}
+                            additionalFieldsMap = ['foo':'bar']
                         }
-                        exclude {
-                            field 'description'
-                        }
-                        includeId      = false
-                        includeVersion = false
-                        additionalFieldClosures = [ {Map m ->}]
-                        additionalFieldsMap = ['foo':'bar']
                     }
                 }
             }
@@ -976,42 +914,51 @@ class RestConfigSpec extends Specification {
         when:
         def config = RestConfig.parse( grailsApplication, src )
         config.validate()
-        def marshaller = config.getRepresentation( 'things', 'application/json' ).marshallers[0].marshaller
+        def marshaller = config.getRepresentation( 'things', 'application/json' ).marshallers[0].instance
+        def shortObject = marshaller.shortObjectClosure.call([:])
 
         then:
-        Thing                  == marshaller.supportClass
-        ['code':'productCode'] == marshaller.substitutions
-        ['code']               == marshaller.includedFields
-        ['description']        == marshaller.excludedFields
-        false                  == marshaller.includeId
-        false                  == marshaller.includeVersion
-        1                      == marshaller.additionalFieldClosures.size()
-        ['foo':'bar']          == marshaller.additionalFieldsMap
-
+        Thing                                  == marshaller.supportClass
+        ['code':'productCode']                 == marshaller.fieldNames
+        ['code','parts']                       == marshaller.includedFields
+        ['description']                        == marshaller.excludedFields
+        false                                  == marshaller.includeId
+        false                                  == marshaller.includeVersion
+        1                                      == marshaller.additionalFieldClosures.size()
+        ['foo':'bar']                          == marshaller.additionalFieldsMap
+        ['owner':'t-owners','parts':'t-parts'] == marshaller.fieldResourceNames
+        'foo'                                  == shortObject
     }
 
     def "Test json domain marshaller creation from merged configuration"() {
         setup:
         def src =
         {
-            jsonDomainMarshaller 'one' params {
-                includedFields = ['field1']
+            jsonDomainMarshallerTemplates {
+                template 'one' config {
+                    includesFields {
+                        field 'field1'
+                    }
+                }
+
+                template 'two' config {
+                    includesFields {
+                        field 'field2'
+                    }
+                }
             }
 
-            jsonDomainMarshaller 'two' params {
-                includedFields = ['field2']
-            }
-
-            resource {
-                name = 'things'
+            resource 'things' config {
                 representation {
-                    mediaType = 'application/json'
-                    addJSONDomainMarshaller {
-                        includes = ['one','two']
-                        supportClass = Thing
-                        include {
-                            field 'code'
-                            field 'description'
+                    mediaTypes = ['application/json']
+                    marshallers {
+                        jsonDomainMarshaller {
+                            inherits = ['one','two']
+                            supports Thing
+                            includesFields {
+                                field 'code'
+                                field 'description'
+                            }
                         }
                     }
                     extractor = 'net.hedtech.DynamicJsonExtractor'
@@ -1022,7 +969,7 @@ class RestConfigSpec extends Specification {
         when:
         def config = RestConfig.parse( grailsApplication, src )
         config.validate()
-        def marshaller = config.getRepresentation( 'things', 'application/json' ).marshallers[0].marshaller
+        def marshaller = config.getRepresentation( 'things', 'application/json' ).marshallers[0].instance
 
         then:
         ['field1','field2','code','description'] == marshaller.includedFields

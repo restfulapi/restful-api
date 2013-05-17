@@ -16,15 +16,6 @@ class ResourceConfig {
 
     private RestConfig restConfig
 
-    ResourceConfig(RestConfig config) {
-        this.restConfig = config
-    }
-
-    ResourceConfig setName(String name) {
-        this.name = name
-        return this
-    }
-
     ResourceConfig setServiceName(String name) {
         this.serviceName = name
         return this

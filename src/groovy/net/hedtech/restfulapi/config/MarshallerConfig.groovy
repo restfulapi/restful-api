@@ -1,4 +1,4 @@
-/*****************************************************************************
+/* ****************************************************************************
 Copyright 2013 Ellucian Company L.P. and its affiliates.
 ******************************************************************************/
 
@@ -8,11 +8,11 @@ import org.codehaus.groovy.grails.commons.GrailsApplication
 
 class MarshallerConfig {
 
-    def marshaller
-    int priority
+    def instance
+    int priority = 0
 
-    MarshallerConfig marshaller(Object marshaller) {
-        this.marshaller = marshaller
+    MarshallerConfig instance(Object instance) {
+        this.instance = instance
         this
     }
 

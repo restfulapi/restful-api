@@ -54,25 +54,4 @@ class BasicHalDomainClassMarshaller extends BasicDomainClassMarshaller {
         // proxyHandler.unwrapIfProxy(object).getClass().isAssignableFrom(Xyz.class)
     }
 
-
-    @Override
-    protected void asShortObject(java.lang.Object refObj, JSON json,
-                                 GrailsDomainClassProperty idProperty,
-                                 GrailsDomainClass referencedDomainClass) {
-
-        log.trace "asShortObject is processing ${referencedDomainClass.shortName}"
-        def domainObj = proxyHandler.unwrapIfProxy(refObj)
-
-        if (referencedDomainClass.shortName == 'PartOfThing') {
-            json.writer.object()
-            json.writer.key("class").value(referencedDomainClass.name)
-            json.writer.key("id").value(extractValue(refObj, idProperty))
-
-            // TODO: Use format like "_links": { "self": { "href":"xxx", "rel":"xxx" } }
-            json.writer.key("_href").value(getResourceUri(refObj, idProperty, referencedDomainClass))
-            json.writer.endObject()
-
-        }
-    }
-
 }

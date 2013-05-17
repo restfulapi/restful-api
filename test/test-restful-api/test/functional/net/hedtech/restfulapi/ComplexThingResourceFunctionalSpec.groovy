@@ -80,8 +80,8 @@ class ComplexThingResourceFunctionalSpec extends RestSpecification {
         'application/json' == response.contentType
         def json = JSON.parse response.text
         2 == json.things?.size()
-        0 <= json.things[0].id
-        0 <= json.things[1].id
+        null != json.things[0]._link
+        null != json.things[1]._link
     }
 
     def "Test transient serialization property in json response"() {

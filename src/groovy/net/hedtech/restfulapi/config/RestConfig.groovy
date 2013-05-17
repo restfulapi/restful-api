@@ -12,6 +12,7 @@ class RestConfig {
 
     def resources = [:]
     def jsonAsXml
+    //map of group name to MarshallerGroupConfig instance
     def marshallerGroups = [:]
     ConfigGroup jsonDomain = new ConfigGroup()
 
@@ -67,30 +68,23 @@ class RestConfig {
         return config
     }
 
-    RestConfig resource(Closure c) {
-        ResourceConfig rc = new ResourceConfig(this)
-        c.delegate = rc
-        c.resolveStrategy = Closure.DELEGATE_FIRST
-        c.call()
-        resources.put( rc.name, rc )
-        return this
+    def resource(String name) {
+        ResourceConfig rc = new ResourceConfig(restConfig:this,name:name)
+        Closure closure = { Closure c->
+            c.delegate = rc
+            c.resolveStrategy = Closure.DELEGATE_FIRST
+            c.call()
+            if (rc.name != name) throw new RuntimeException("Name of resource illegally changed")
+            resources.put( name, rc )
+        }
+        [config:closure]
     }
 
-    RestConfig jsonAsXml(Closure c) {
-        JsonAsXmlConfig config = new JsonAsXmlConfig()
-        c.delegate = config
+    RestConfig marshallerGroups(Closure c) {
+        MarshallerGroupsDelegate delegate = new MarshallerGroupsDelegate( this )
+        c.delegate = delegate
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c.call()
-        jsonAsXml = config
-        this
-    }
-
-    RestConfig marshallerGroup(Closure c) {
-        MarshallerGroupConfig group = new MarshallerGroupConfig()
-        c.delegate = group
-        c.resolveStrategy = Closure.DELEGATE_FIRST
-        c.call()
-        marshallerGroups[group.name] = group
         this
     }
 
@@ -102,17 +96,30 @@ class RestConfig {
         group
     }
 
-    def jsonDomainMarshaller(String name) {
-        def closure = { Closure c ->
-            DomainMarshallerConfig config = new DomainMarshallerConfig()
-            c.delegate = config
-            c.resolveStrategy = Closure.DELEGATE_FIRST
-            c.call()
-            jsonDomain.configs[name] = config
-        }
-        [params:closure]
+    def jsonDomainMarshallerTemplates(Closure c) {
+        JSONDomainTemplates delegate = new JSONDomainTemplates(this)
+        c.delegate = delegate
+        c.resolveStrategy = Closure.DELEGATE_FIRST
+        c.call()
+        this
     }
 
+    class JSONDomainTemplates {
+        RestConfig parent
+        JSONDomainTemplates(RestConfig parent) {
+            this.parent = parent
+        }
 
+        def template(String name) {
+            def closure = { Closure c ->
+                JSONDomainMarshallerDelegate delegate = new JSONDomainMarshallerDelegate()
+                c.delegate = delegate
+                c.resolveStrategy = Closure.DELEGATE_FIRST
+                c.call()
+                parent.jsonDomain.configs[name] = delegate.config
+            }
+            [config:closure]
+        }
+    }
 
 }

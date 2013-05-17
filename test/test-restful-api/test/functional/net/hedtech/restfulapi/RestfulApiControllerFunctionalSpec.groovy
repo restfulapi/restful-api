@@ -1391,6 +1391,39 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         "/special-things/$id" == json._href
     }
 
+    def "Test that resource name can be overridden for short objects"() {
+        setup:
+        def id = createThing('AA')
+
+        when:
+        get("$localBase/api/special-things/$id") {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/json'
+        }
+        def json = JSON.parse response.text
+
+        then:
+        2 == json.parts.size()
+        json.parts.each {
+            it._link.startsWith('/thing-parts')
+        }
+    }
+
+    def "Test using closures to controll marshalling of dates"() {
+        setup:
+        def id = createThing('AA')
+
+        when:
+        get("$localBase/api/closure-things/$id") {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/json'
+        }
+        def json = JSON.parse response.text
+
+        then:
+        json.dateManufactured.startsWith('customized-date:')
+    }
+
 
 
     private void createThings() {
