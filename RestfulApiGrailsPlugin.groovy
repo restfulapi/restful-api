@@ -24,7 +24,7 @@ class RestfulApiGrailsPlugin {
     def authorEmail = ""
     def description = '''\
         |The resful-api plugin facilitates exposing a RESTful API that is
-        |compliant with the Ellucian API Strategy document.
+        |compliant with our API Strategy document.
         |Both JSON and XML representations are supported using a
         |singleton controller and both custom and default marshallers.
         |'''.stripMargin()
