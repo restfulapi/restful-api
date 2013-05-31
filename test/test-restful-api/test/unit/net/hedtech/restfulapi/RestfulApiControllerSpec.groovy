@@ -15,6 +15,8 @@ import net.hedtech.restfulapi.extractors.configuration.*
 import net.hedtech.restfulapi.extractors.json.*
 import net.hedtech.restfulapi.extractors.xml.*
 
+import grails.converters.JSON
+
 @TestFor(RestfulApiController)
 class RestfulApiControllerSpec extends Specification {
 
@@ -141,7 +143,7 @@ class RestfulApiControllerSpec extends Specification {
     }
 
     @Unroll
-    def "Media type in Content-Type header without extractor returns 415"(String controllerMethod, String httpMethod, String mediaType, String id, String serviceMethod, def serviceReturn, def body ) {
+    def "Media type in Content-Type header without extractor returns 415"(String controllerMethod, String httpMethod, String mediaType, String id, def serviceReturn, def body ) {
         setup:
         config.restfulApiConfig = {
             resource 'things' config {
@@ -192,21 +194,21 @@ class RestfulApiControllerSpec extends Specification {
 
         where:
         //test data for the current 3 'buckets' an incoming request falls into:
-        //json content, json-as-xml content (xml), and custom xml (any format not)
-        //starting with 'xml'
-        controllerMethod | httpMethod | mediaType                      | id   | serviceMethod | serviceReturn    | body
-        'create'         | 'POST'     | 'application/json'             | null | 'create'      | 'foo'            | null
-        'update'         | 'PUT'      | 'application/json'             | '1'  | 'update'      | 'foo'            | null
-        'delete'         | 'DELETE'   | 'application/json'             | '1'  | 'delete'      | null             | null
-        'create'         | 'POST'     | 'application/xml'              | null | 'create'      | 'foo'            | """<?xml version="1.0" encoding="UTF-8"?><json><code>AC</code><description>An AC thingy</description></json>"""
-        'update'         | 'PUT'      | 'application/xml'              | '1'  | 'update'      | 'foo'            | """<?xml version="1.0" encoding="UTF-8"?><json><code>AC</code><description>An AC thingy</description></json>"""
-        'delete'         | 'DELETE'   | 'application/xml'              | '1'  | 'delete'      | null             | """<?xml version="1.0" encoding="UTF-8"?><json><code>AC</code><description>An AC thingy</description></json>"""
-        'create'         | 'POST'     | 'application/custom-xml'       | null | 'create'      | 'foo'            | null
-        'update'         | 'PUT'      | 'application/custom-xml'       | '1'  | 'update'      | 'foo'            | null
-        'delete'         | 'DELETE'   | 'application/custom-xml'       | '1'  | 'delete'      | null             | null
-        'create'         | 'POST'     | 'application/custom-thing-xml' | null | 'create'      | 'foo'            | null
-        'update'         | 'PUT'      | 'application/custom-thing-xml' | '1'  | 'update'      | 'foo'            | null
-        'delete'         | 'DELETE'   | 'application/custom-thing-xml' | '1'  | 'delete'      | null             | null
+        //json content, json-as-xml content (xml), and custom xml (any format not
+        //starting with 'xml')
+        controllerMethod | httpMethod | mediaType                      | id   | serviceReturn    | body
+        'create'         | 'POST'     | 'application/json'             | null | 'foo'            | null
+        'update'         | 'PUT'      | 'application/json'             | '1'  | 'foo'            | null
+        'delete'         | 'DELETE'   | 'application/json'             | '1'  | null             | null
+        'create'         | 'POST'     | 'application/xml'              | null | 'foo'            | """<?xml version="1.0" encoding="UTF-8"?><json><code>AC</code><description>An AC thingy</description></json>"""
+        'update'         | 'PUT'      | 'application/xml'              | '1'  | 'foo'            | """<?xml version="1.0" encoding="UTF-8"?><json><code>AC</code><description>An AC thingy</description></json>"""
+        'delete'         | 'DELETE'   | 'application/xml'              | '1'  | null             | """<?xml version="1.0" encoding="UTF-8"?><json><code>AC</code><description>An AC thingy</description></json>"""
+        'create'         | 'POST'     | 'application/custom-xml'       | null | 'foo'            | null
+        'update'         | 'PUT'      | 'application/custom-xml'       | '1'  | 'foo'            | null
+        'delete'         | 'DELETE'   | 'application/custom-xml'       | '1'  | null             | null
+        'create'         | 'POST'     | 'application/custom-thing-xml' | null | 'foo'            | null
+        'update'         | 'PUT'      | 'application/custom-thing-xml' | '1'  | 'foo'            | null
+        'delete'         | 'DELETE'   | 'application/custom-thing-xml' | '1'  | null             | null
     }
 
     @Unroll

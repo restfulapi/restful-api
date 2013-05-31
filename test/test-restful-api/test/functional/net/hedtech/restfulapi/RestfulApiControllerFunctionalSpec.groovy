@@ -1424,6 +1424,26 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         json.dateManufactured.startsWith('customized-date:')
     }
 
+    def "Test groovy bean marshalling with domain fields"() {
+        setup:
+        createThing('AA')
+        createThing('BB')
+
+        when:
+        get("$localBase/api/groovy-thing-wrappers") {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/json'
+        }
+        def json = JSON.parse response.text
+
+        then:
+        2 == json.size()
+        3 == json[0].keySet().size()
+        json[0].containsKey('things')
+        json[0].containsKey('complexCode')
+        json[0].containsKey('xlarge')
+    }
+
 
 
     private void createThings() {

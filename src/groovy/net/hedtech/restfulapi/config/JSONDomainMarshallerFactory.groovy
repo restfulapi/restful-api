@@ -7,12 +7,12 @@ package net.hedtech.restfulapi.config
 import net.hedtech.restfulapi.marshallers.json.DeclarativeDomainClassMarshaller
 
 /**
- * A mixin for creating DeclarativeDomainClassMarshaller instances
+ * A factory for creating DeclarativeDomainClassMarshaller instances
  * from configuration.
  */
 class JSONDomainMarshallerFactory {
 
-    static DeclarativeDomainClassMarshaller instantiateDomainClassMarshaller(JSONDomainMarshallerConfig config, RestConfig restConfig) {
+    static DeclarativeDomainClassMarshaller instantiateMarshaller(JSONDomainMarshallerConfig config, RestConfig restConfig) {
         //Merge the include chain into a final config
         config = restConfig.jsonDomain.getMergedConfig( config )
 

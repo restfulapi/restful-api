@@ -702,6 +702,7 @@ There are times when you want to include only certain fields in a representation
     }
 
 This will marshall only the 'code' and 'description' fields into the representation.  You can rename the fields as well.
+
     resource 'things' config {
         representation {
             mediaTypes = ["application/json"]
@@ -727,7 +728,7 @@ By default, the declarative marshaller renders the objects in any assocation as 
 ###Representing associations where conventions cannot be used.
 What happens when you are adding restful APIs to a legacy system, where domain class names do not represent singularized versions of the resource name?  For example, consider a class Thing with a field customer that is a 1-1 association to an instance of the LegacyCustomer class.
 
-We have decided that LegacyCustomer will be exposed as the 'customers' resource, but when the declarative marshaller marshallers the customer class as a short object, we will get:
+We have decided that LegacyCustomer will be exposed as the 'customers' resource, but when the declarative marshaller marshalls the customer class as a short object, we will get:
 
     customer:{"_link":"/legacy-customers/15"}
 
@@ -769,20 +770,21 @@ will result in the 'customer' field being output with the default name ('custome
 You can override how a declarative json marshaller renders short-objects by specifying a closure that generates the content.  The marshaller will
 automatically pass the closure a Map containing the following keys:
 
-    grailsApplication,
-    property,
-    refObject,
-    json,
-    id,
-    resource
+        grailsApplication
+        property
+        refObject
+        json
+        resourceId
+        resourceName
 
 where:
-grailsApplication is a reference to the grailsApplication context
-property is a GrailsDomainClassProperty instance for the field being marshalled
-refObject is the associated object to generate a short-object representation for
-json is the JSON converter that should be used to generate content
-id is the id of the refObject
-resource is the resource name that the refObject is exposed as by the API
+
+* grailsApplication is a reference to the grailsApplication context
+* property is a GrailsDomainClassProperty instance for the field being marshalled
+* refObject is the associated object to generate a short-object representation for
+* json is the JSON converter that should be used to generate content
+* resourceId is the id of the refObject
+* resourceName is the resource name that the refObject is exposed as by the API.  If a field declaration for the field being rendered contains a 'resource' option, that value is passed in resourceName.  Otherwise, the pluralized, hyphenated domain name will be passed.
 
 If the configuration specifies a resource name for the field being marshalled as a short object, that will be passed as a resource name, otherwise, resource will be the pluralized and hyphenated version of the associated class (per convention).
 
@@ -800,10 +802,12 @@ For example, if you wanted the short-object representation to contain a "link" f
                         shortObject { Map map ->
                             def json = map['json']
                             def writer = json.getWriter()
+                            def resource = map['resourceName']
+                            def id = map['resourceId']
                             writer.object()
                             writer.key("link").value("/$resource/$id")
-                            writer.key("resource").value(map['resource'])
-                            writer.key("id").value(map['id'])
+                            writer.key("resource").value(resource)
+                            writer.key("id").value(id)
                             writer.endObject()
                         }
                     }
@@ -815,19 +819,21 @@ For example, if you wanted the short-object representation to contain a "link" f
 Note that since the map contains the grails applicatin context, you can also look up and delegate to services to generate content for the short-object representation, etc.
 
 ###Changing short-object representations globally.
-Obviously, we don't want to copy the short object closure to every representation - in general, we would want consistent short object rendering for all resources.
+Obviously, you don't want to copy the short object closure to every representation - in general, you would want consistent short object rendering for all resources.
 
-We can define the short object closure once, and re-use it for all declarative json marshallers with a domain marshaller template.  Templates must be defined before their use, but then any jsdon domain marshaller declaration can 'inherit' them.
+You can define the short object closure once, and re-use it for all declarative json marshallers with a domain marshaller template.  Templates must be defined before their use, but then any jsdon domain marshaller declaration can inherit them.
 
     jsonDomainMarshallerTemplates {
         template 'json-shortObject' config {
             shortObject { Map map ->
                 def json = map['json']
                 def writer = json.getWriter()
+                def resource = map['resourceName']
+                def id = map['resourceId']
                 writer.object()
                 writer.key("link").value("/$resource/$id")
-                writer.key("resource").value(map['resource'])
-                writer.key("id").value(map['id'])
+                writer.key("resource").value(resource)
+                writer.key("id").value(id)
                 writer.endObject()
             }
         }
@@ -898,14 +904,64 @@ The declarative domain marshaller allows any number of closures to be added to m
 
 Like with overriding short-object behavior, the closure receives a map.  The map contains the following keys:
 
-    grailsApplication,
-    beanWrapper,
+    grailsApplication
+    beanWrapper
     json
+    resourceName
+    resourceId
 
 where
-grailsApplication is a reference to the grailsApplication context
-beanWrapper is a BeanWrapper instance wrapping the object being marshalled
-json is the JSON converter that should be used to generate content
+
+* grailsApplication is a reference to the grailsApplication context
+* beanWrapper is a BeanWrapper instance wrapping the object being marshalled
+* json is the JSON converter that should be used to generate content
+* resourceName is the resource name obtained as the pluralized, hyphenated version of the domain class
+* resourceId is the id of the domain object
+
+You can pass in additional values to the closures by specifying an additionalFieldsMap:
+
+    resource 'customers' config {
+        representation {
+            mediaTypes = ["application/json"]
+            marshallers {
+                jsonDomainMarshaller {
+                    supports net.hedtech.restfulapi.Customer
+                    additionalFields { Map m -> //some content}
+                    additionalFieldsMap = ['a':'b']
+                }
+            }
+        }
+    }
+
+The values specified in the additionalFieldsMap will be merged into the map passed into the additional fields closures.  Note that this can be used to override the resourceName when creating affordances.  For example:
+
+    jsonDomainMarshallerTemplates {
+        template 'json-affordance' config {
+            additionalFields {Map map ->
+                map['json'].property("_href", "/${map['resourceName']}/${map['resourceId']}" )
+            }
+        }
+    }
+
+    resource 'some-things' config {
+        representation {
+            mediaTypes = ["application/json"]
+            serviceName = 'thingService'
+            marshallers {
+                jsonDomainMarshaller {
+                    inherits=['json-affordance']
+                    supports net.hedtech.restfulapi.Thing
+                    additionalFieldsMap = ['resourceName':'some-things']
+                }
+            }
+        }
+    }
+
+This will cause the affordances generated for the 'some-things' resource to look like
+
+    "_href":"/some-things/123"
+
+instead of using the derived resource name of 'things'.
 
 You can use additionalFields multiple times on any declarative marshaller configuration.
 For example:
@@ -999,54 +1055,59 @@ The configuration block for the marshaller can contain the following in any orde
 
 Where \<field-block\>* is any number of field-blocks, and a field-block is
 
-    field 'name' \[name 'output-name'\] \[resource 'resource-name'\]
+    field 'name' [name 'output-name'] [resource 'resource-name']
 
 Where values in brackets are optional.
 
 The elements in the configuration block can occur in any order, and repeat any number of times; however, later values will override earlier values.  So, for example:
 
-    includesId true
-    includesId false
+        includesId true
+        includesId false
 
 is equivalent to
 
-    includesId false.
+        includesId false.
 
 Another example:
 
-    field 'foo' name 'bar'
-    includesFields {
-        field 'foo' name 'foobar'
-    }
+        field 'foo' name 'bar'
+        includesFields {
+            field 'foo' name 'foobar'
+        }
 
 is equivalent to
 
-    includesFields {
-        field 'foo' name 'foobar'
-    }
+        includesFields {
+            field 'foo' name 'foobar'
+        }
 
 If an includedFields block is present, any excludedFields block is ignored:
 
-    includesFields {
-        field 'foo'
-        field 'bar'
-    }
+        includesFields {
+            field 'foo'
+            field 'bar'
+        }
 
-    excludesFields {
-        field 'baz'
-    }
+        excludesFields {
+            field 'baz'
+        }
 
-    includesFields {
-        field 'baz'
-    }
+        includesFields {
+            field 'baz'
+        }
 
 is the same as
 
-    includesFields {
-        field 'foo'
-        field 'bar'
-        field 'baz'
-    }
+        includesFields {
+            field 'foo'
+            field 'bar'
+            field 'baz'
+        }
+
+###Domain marshaller templates
+JSON domain marshaller templates are configuration blocks that do not directly create a marshaller.  The 'config' block accepts any configuration that the jsonDomainMarshaller block does (including the inherits option).  When a jsonDomainMarshaller directive contains an 'inherits' element, the templates referenced will be merged with the configuration for the marshaller in a depth-first manner.  Elements that represent collections or maps are merged together (later templates overriding previous ones, if there is a conflict), with the configuration in the jsonDomainMarshaller block itself overriding any previous values.
+
+In general, templates are useful for defining affordances and short-object behavior that need to be applied across many representations.
 
 ###Template inheritance order.
 When a json domain marshaller declaration includes an inherits directive, then the configuration of each template is merged with the declaration itself in depth-first order.  For example, consider the use of nested configuration:
@@ -1086,13 +1147,285 @@ The domain marshaller will be configured with the results of merging the configu
 ###Configuration merging
 The order in which configurations are merged is significant.  When two configurations, first and second are merged, boolean values, or single valued options that are set in the second config override the first.  Collection or map values are combined.
 
+##Declarative Marshalling of Groovy Beans to JSON
+The plugin contains a GroovyBeanMarshaller and a DeclarativeGroovyBeanMarshaller, designed to simplify marshalling of groovy beans to a json representation.  The functioning of the marshallers is similar to the domain class marshallers, but operate against groovy bean instances, intead of domain objects.  (Of course, where a domain object can be treated as a groovy bean, the bean marshallers can also be used.)  The options these marshallers support are very similar to those of the domain marshallers, except that the bean marshallers do not have support for recognizes object associations.
 
-###Domain marshaller templates
-JSON domain marshaller templates are configuration blocks that do not directly create a marshaller.  The 'config' block accepts any configuration that the jsonDomainMarshaller block does (including the inherits option).  When a jsonDomainMarshaller directive contains an 'inherits' element, the templates referenced will be merged with the configuration for the marshaller in a depth-first manner.  Elements that represent collections or maps are merged together (later templates overriding previous ones, if there is a conflict), with the configuration in the jsonDomainMarshaller block itself overriding any previous values.
+The GroovyBeanMarshaller will marshall properties, and public non-static/non-transient fields of a groovy bean.  The properties 'class', 'metaClass', and 'pasword' are automatically excluded from being marshalled.
 
-In general, templates are useful for defining affordances and short-object behavior that need to be applied across many representations.
+Use of the GroovyBeanMarshaller requires new subclasses to be created to customize marshalling behavior.  Marshalling of groovy beans can be customized without resorting to writing custom marshallers with the DeclarativeGroovyBeanMarshaller.
+
+The DeclarativeGroovyBeanMarshaller is a marshaller that can be used to customize json representations without code.
+
+By default, the DeclarativeGroovyBeanMarshaller behaves the same as the GroovyBeanMarshaller; however, it can be configured to include or exclude fields, add custom affordances or other fields, and rename fields.
+
+To use the marshaller directly, see the javadocs for the class.
+
+The preferred way to utilize the class is to use the built-in support for the class in the configuration DSL.
+
+Anywhere you can add a marshaller (in a marshaller group or a representation), you can configure and add a json declarative groovy bean marshaller with
+
+    jsonGroovyBeanMarshaller {}
+
+The closure specifies how to configure the marshaller.  Specifying no information will register a marshaller that behaves identically to GroovyBeanMarshaller; that is, it will marshall all but the default excluded fields.
+
+The best way to describe the use of the marshaller is by examples.
+
+###Limiting the marshaller to a class (and it's subclasses)
+By default, a declarative groovy bean marshaller will support any object that is an instance of GroovyObject.  If you are including or excluding fields however, it is likely that you want an instance of the marshaller for a particular class (or subclasses).  You can control this with the supports option:
+
+    resource 'things' config {
+        representation {
+            mediaTypes = ["application/json"]
+            marshallers {
+                jsonGroovyBeanMarshaller {
+                    supports net.hedtech.restfulapi.Thing
+                }
+            }
+        }
+    }
 
 
+This will register a declarative groovy bean marshaller that will support the Thing class, and any subclasses of Thing.  Note that it is your responsibility to ensure that Thing can be treated as a groovy bean - if it is not, you should register a different type of marshaller for it.
+
+###Excluding specific fields from a representation
+By default, the json groovy bean marshaller marshall all properties, and any public non-static non-transient field.  You can exclude additional fields or properties with the excludedFields block:
+
+    resource 'things' config {
+        representation {
+            mediaTypes = ["application/json"]
+            marshallers {
+                jsonGroovyBeanMarshaller {
+                    supports net.hedtech.restfulapi.Thing
+                    excludesFields {
+                        field 'description'
+                        field 'manufactureDate'
+                    }
+                }
+            }
+        }
+    }
+
+This will marshall all fields in Thing except for the default excluded ones and the 'description' and 'manufactureDate' fields.
+
+###Renaming fields
+By default, when a field is marshalled, its name in the representation is identical to its name in the class.  You can override this behavior by specifying a substitute name for a field:
+
+     resource 'things' config {
+        representation {
+            mediaTypes = ["application/json"]
+            marshallers {
+                jsonGroovyBeanMarshaller {
+                    supports net.hedtech.restfulapi.Thing
+                    field 'code'        name 'productCode'
+                    field 'description' name 'desc'
+                }
+            }
+        }
+    }
+
+This will marshall all fields in Thing, but the value of the 'code' field will be marshalled to 'productCode', and the value of the 'description' field will be marshalled to 'desc'.
+
+###Including only specified fields.
+There are times when you want to include only certain fields in a representation such as producing a 'lightweight' representation for a list, or when versioning representations.  You can do so with the includedFields block:
+
+    resource 'things' config {
+        representation {
+            mediaTypes = ["application/json"]
+            marshallers {
+                jsonGroovyBeanMarshaller {
+                    supports net.hedtech.restfulapi.Thing
+                    includesFields {
+                        field 'code'
+                        field 'description'
+                    }
+                }
+            }
+        }
+    }
+
+This will marshall only the 'code' and 'description' fields into the representation.  You can rename the fields as well.
+
+    resource 'things' config {
+        representation {
+            mediaTypes = ["application/json"]
+            marshallers {
+                jsonGroovyBeanMarshaller {
+                    supports net.hedtech.restfulapi.Thing
+                    includesFields {
+                        field 'code' name 'productCode'
+                        field 'description'
+                    }
+                }
+            }
+        }
+    }
+
+If you specify both an includedFields and excludedFields block, the excludedFields block will be ignored.
+
+###Adding additional fields
+You can add additional fields not directly present in a groovy bean to its marshalled representation.
+
+The declarative groovy bean marshaller allows any number of closures to be added to marshall additional content.  For example, let's say we want to add affordances to all of our json representations.  We will define a marshaller template containing the closure for the affordance, then add it to the marshallers:
+
+    jsonGroovyBeanMarshallerTemplates {
+        template 'json-bean-affordance' config {
+            additionalFields {Map map ->
+                map['json'].property("_href", "/${map['resourceName']}/${map['resourceId']}" )
+            }
+        }
+    }
+
+    resource 'things' config {
+        representation {
+            mediaTypes = ["application/json"]
+            marshallers {
+                jsonGroovyBeanMarshaller {
+                    inherits=['json-bean-affordance']
+                    supports net.hedtech.restfulapi.Thing
+                }
+            }
+        }
+    }
+
+the closure receives a map.  The map contains the following keys:
+
+    grailsApplication
+    beanWrapper
+    json
+    resourceName
+    resourceId (optional)
+
+where
+
+* grailsApplication is a reference to the grailsApplication context
+* beanWrapper is a BeanWrapper instance wrapping the object being marshalled
+* json is the JSON converter that should be used to generate content
+* resourceName is the resource name obtained as the pluralized, hyphenated version of the domain class
+* resourceId is the id (if available) of the groovy bean
+
+Note that if resourceName is specified in the additionalFieldsMap (see below), then that value is passed instead of the derived name.
+
+Note that resourceId may not be present in the map. The marshaller attempts to provide a value for resourceId as follows:
+
+* if the bean's metaClass has an id property, it's value is used
+* if the bean's metaClass responds to a 'getId' method taking zero-arguments, the value the method returns is used
+* if the bean has an 'id' property, the value of the property is used
+* if the bean has a public, non-transient, non-static id field, the value of the id field is used
+
+If none of the above conditions apply, then resourceId will not be passed in the map.
+
+You can use additionalFields multiple times on any declarative marshaller configuration.
+For example:
+
+    resource 'customers' config {
+        representation {
+            mediaTypes = ["application/json"]
+            marshallers {
+                jsonGroovyBeanMarshaller {
+                    supports net.hedtech.restfulapi.Customer
+                    additionalFields { Map m -> //some content}
+                    additionalFields { Map m -> //some more content}
+                }
+            }
+        }
+    }
+
+###Full list of configuration elements for a json groovy bean marshaller
+The configuration block for the marshaller can contain the following in any order:
+
+    inherits = <array of json groovy bean marshaller template names>
+    supports <class>
+    <field-block>*
+    includesFields {
+        <field-block>*
+    }
+    excludesFields {
+        <fieldsBlock>*
+    }
+    additionalFields <closure>
+
+Where \<field-block\>* is any number of field-blocks, and a field-block is
+
+    field 'name' [name 'output-name']
+
+Where values in brackets are optional.
+
+Example:
+
+        field 'foo' name 'bar'
+        includesFields {
+            field 'foo' name 'foobar'
+        }
+
+is equivalent to
+
+        includesFields {
+            field 'foo' name 'foobar'
+        }
+
+If an includedFields block is present, any excludedFields block is ignored:
+
+        includesFields {
+            field 'foo'
+            field 'bar'
+        }
+
+        excludesFields {
+            field 'baz'
+        }
+
+        includesFields {
+            field 'baz'
+        }
+
+is the same as
+
+        includesFields {
+            field 'foo'
+            field 'bar'
+            field 'baz'
+        }
+
+###Groovy bean marshaller templates
+JSON groovy bean marshaller templates are configuration blocks that do not directly create a marshaller.  The 'config' block accepts any configuration that the jsonGroovyBeanMarshaller block does (including the inherits option).  When a jsonGroovyBeanMarshaller directive contains an 'inherits' element, the templates referenced will be merged with the configuration for the marshaller in a depth-first manner.  Elements that represent collections or maps are merged together (later templates overriding previous ones, if there is a conflict), with the configuration in the jsonGroovyBeanMarshaller block itself overriding any previous values.
+
+In general, templates are useful for defining affordances and other behavior that need to be applied across many representations.
+
+###Template inheritance order.
+When a json groovy bean marshaller declaration includes an inherits directive, then the configuration of each template is merged with the declaration itself in depth-first order.  For example, consider the use of nested configuration:
+
+    jsonGroovyBeanMarshallerTemplates {
+        template 'one' config {
+            //some config
+        }
+        template 'two' config {
+            //some config
+        }
+        template 'three' config {
+            inherits = ['one','two']
+            //some config
+        }
+        template 'four' config {
+            //some config
+        }
+    }
+
+    resource 'customers' config {
+        representation {
+            mediaTypes = ["application/json"]
+            marshallers {
+                jsonGroovyBeanMarshaller {
+                    inherits = ['three','four']
+                    supports net.hedtech.restfulapi.Customer
+                }
+            }
+        }
+    }
+
+The domain marshaller will be configured with the results of merging the configuration blocks in the following order: 'one', 'two', 'three', 'four' and the contents of the jsonGroovyBeanMarshaller block itself.
+
+###Configuration merging
+The order in which configurations are merged is significant.  When two configurations, first and second are merged, boolean values, or single valued options that are set in the second config override the first.  Collection or map values are combined.
 
 ##Logging
 Errors encountered while servicing a request are logged at error level to the log target 'RestfulApiController_messageLog'.  This is so errors occuring from the requests (which will typically be errors caused by invalid input, etc) can be separated from errors in the controller.

@@ -35,7 +35,22 @@ class MarshallersDelegate {
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c.call()
 
-        def marshaller = JSONDomainMarshallerFactory.instantiateDomainClassMarshaller(delegate.config,parent.restConfig)
+        def marshaller = JSONDomainMarshallerFactory.instantiateMarshaller(delegate.config,parent.restConfig)
+
+        MarshallerConfig marshallerConfig = new MarshallerConfig()
+        marshallerConfig.instance = marshaller
+        marshallerConfig.priority = delegate.config.priority
+        parent.marshallers.add marshallerConfig
+        this
+    }
+
+    MarshallersDelegate jsonGroovyBeanMarshaller(Closure c) {
+        JSONGroovyBeanMarshallerDelegate delegate = new JSONGroovyBeanMarshallerDelegate()
+        c.delegate = delegate
+        c.resolveStrategy = Closure.DELEGATE_FIRST
+        c.call()
+
+        def marshaller = JSONGroovyBeanMarshallerFactory.instantiateMarshaller(delegate.config,parent.restConfig)
 
         MarshallerConfig marshallerConfig = new MarshallerConfig()
         marshallerConfig.instance = marshaller

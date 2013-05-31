@@ -364,4 +364,25 @@ restfulApiConfig = {
 
     }
 
+    resource 'groovy-thing-wrappers' config {
+        representation {
+            mediaTypes = ["application/json"]
+            serviceName = 'thingWrapperService'
+            marshallers {
+                jsonDomainMarshaller {
+                    priority = 100
+                }
+                jsonGroovyBeanMarshaller {
+                    supports net.hedtech.restfulapi.ThingWrapper
+                    includesFields {
+                        field 'things'
+                        field 'complexCode'
+                        field 'xlarge'
+                    }
+                }
+            }
+            extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()
+        }
+    }
+
 }

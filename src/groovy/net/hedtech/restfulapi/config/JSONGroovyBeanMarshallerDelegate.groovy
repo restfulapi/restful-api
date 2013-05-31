@@ -6,31 +6,21 @@ package net.hedtech.restfulapi.config
 
 import org.codehaus.groovy.grails.commons.GrailsApplication
 
-class JSONDomainMarshallerDelegate {
+class JSONGroovyBeanMarshallerDelegate {
 
-    JSONDomainMarshallerConfig config = new JSONDomainMarshallerConfig()
+    JSONGroovyBeanMarshallerConfig config = new JSONGroovyBeanMarshallerConfig()
 
-    JSONDomainMarshallerDelegate supports( Class clazz ) {
+    JSONGroovyBeanMarshallerDelegate supports( Class clazz ) {
         config.setSupportClass( clazz )
         this
     }
 
-    JSONDomainMarshallerDelegate setPriority(int priority) {
+    JSONGroovyBeanMarshallerDelegate setPriority(int priority) {
         config.setPriority(priority)
         this
     }
 
-    JSONDomainMarshallerDelegate includesId(boolean b) {
-        config.includeId = b
-        this
-    }
-
-    JSONDomainMarshallerDelegate includesVersion(boolean b) {
-        config.includeVersion = b
-        this
-    }
-
-    JSONDomainMarshallerDelegate setInherits(Collection c) {
+    JSONGroovyBeanMarshallerDelegate setInherits(Collection c) {
         config.inherits = c
         this
     }
@@ -42,43 +32,32 @@ class JSONDomainMarshallerDelegate {
         return handleField(fieldName)
     }
 
-    JSONDomainMarshallerDelegate includesFields(Closure c) {
+    JSONGroovyBeanMarshallerDelegate includesFields(Closure c) {
         c.delegate = new IncludeConfig()
         c.resolveStrategy = Closure.DELEGATE_ONLY
         c.call()
         this
     }
 
-    JSONDomainMarshallerDelegate excludesFields(Closure c) {
+    JSONGroovyBeanMarshallerDelegate excludesFields(Closure c) {
         c.delegate = new ExcludeConfig()
         c.resolveStrategy = Closure.DELEGATE_ONLY
         c.call()
         this
     }
 
-    JSONDomainMarshallerDelegate additionalFields(Closure c) {
+    JSONGroovyBeanMarshallerDelegate additionalFields(Closure c) {
         config.additionalFieldClosures.add c
         this
     }
 
-    JSONDomainMarshallerDelegate setAdditionalFieldsMap(Map m) {
+    JSONGroovyBeanMarshallerDelegate setAdditionalFieldsMap(Map m) {
         config.additionalFieldsMap = m
-        this
-    }
-
-    JSONDomainMarshallerDelegate setShortObjectClosure(Closure c) {
-        config.setShortObjectClosure(c)
-        this
-    }
-
-    JSONDomainMarshallerDelegate shortObject(Closure c) {
-        setShortObjectClosure( c )
         this
     }
 
     private FieldOptions handleField(String name) {
         config.fieldNames.remove(name)
-        config.fieldResourceNames.remove(name)
         return new FieldOptions(name)
     }
 
@@ -91,11 +70,6 @@ class JSONDomainMarshallerDelegate {
         FieldOptions name(String name) {
             config.fieldNames[fieldName] = name
             this
-        }
-
-        FieldOptions resource(String name) {
-            config.fieldResourceNames[fieldName] = name
-            return this
         }
 
     }

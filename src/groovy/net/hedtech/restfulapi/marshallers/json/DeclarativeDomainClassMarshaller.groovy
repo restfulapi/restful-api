@@ -31,6 +31,9 @@ import org.springframework.beans.BeanWrapperImpl
 
 class DeclarativeDomainClassMarshaller extends BasicDomainClassMarshaller {
 
+    protected static final Log log =
+        LogFactory.getLog(DeclarativeDomainClassMarshaller.class)
+
     Class supportClass
     def fieldNames = [:]
     def includedFields = []
@@ -43,8 +46,8 @@ class DeclarativeDomainClassMarshaller extends BasicDomainClassMarshaller {
     def shortObjectClosure = DEFAULT_SHORT_OBJECT
 
     private static DEFAULT_SHORT_OBJECT = { Map map ->
-        def resource = map['resource']
-        def id = map['id']
+        def resource = map['resourceName']
+        def id = map['resourceId']
         def json = map['json']
         def writer = json.getWriter()
         writer.object()
@@ -85,15 +88,15 @@ class DeclarativeDomainClassMarshaller extends BasicDomainClassMarshaller {
      *<p>
      * If a null or zero-size list is returned, then
      * all fields except those specified by
-     * {@link #getSkippedField(Object) getSkippedFields} and
-     * {@link #getCommonSkippedFields} will be marshalled.
+     * {@link #getExcludedFields(Object) getExcludedFields} and
+     * {@link #getCommonExcludedFields} will be marshalled.
      * If a non-zero sized list is returned, then only
      * the fields listed in it are marshalled.  Included fields
      * overrides any skipped fields.  That is, if a field is returned
      * by {@link getIncludedFields(Object) #getIncludedFields} then it
      * will be marshalled even if it is also returned by
-     * {@link #getSkippedField(Object) getSkippedFields} and
-     * {@link #getCommonSkippedFields}
+     * {@link #getExcludedFields(Object) getExcludedFields} and
+     * {@link #getCommonExcludedFields}
      *
      * @return list of field names to marshall
      */
@@ -203,8 +206,8 @@ class DeclarativeDomainClassMarshaller extends BasicDomainClassMarshaller {
             property:property,
             refObject:refObj,
             json:json,
-            id:id,
-            resource:resource
+            resourceId:id,
+            resourceName:resource
         ]
         this.shortObjectClosure.call(map)
     }

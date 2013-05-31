@@ -147,7 +147,6 @@ class DeclarativeDomainClassMarshallerSpec extends Specification {
 
     }
 
-
     def "Test including fields"() {
         setup:
         def marshaller = new DeclarativeDomainClassMarshaller(
@@ -451,8 +450,8 @@ class DeclarativeDomainClassMarshallerSpec extends Specification {
                 def json = map['json']
                 def writer = json.getWriter()
                 writer.object()
-                writer.key("resource").value(map['resource'])
-                writer.key("id").value(map['id'])
+                writer.key("resource").value(map['resourceName'])
+                writer.key("id").value(map['resourceId'])
                 writer.endObject()
             }
         )
@@ -490,12 +489,12 @@ class DeclarativeDomainClassMarshallerSpec extends Specification {
         render( thing )
 
         then:
-        grailsApplication == passedMap['grailsApplication']
-        'parts' == passedMap['property'].getName()
-        parts[0] == passedMap['refObject']
-        null != passedMap['json']
-        15 == passedMap['id']
-        'marshalled-part-of-things' == passedMap['resource']
+        grailsApplication           == passedMap['grailsApplication']
+        'parts'                     == passedMap['property'].getName()
+        parts[0]                    == passedMap['refObject']
+        null                        != passedMap['json']
+        15                          == passedMap['resourceId']
+        'marshalled-part-of-things' == passedMap['resourceName']
     }
 
     def "Test map passed to short object closure has the overridden resource name"() {
@@ -519,7 +518,7 @@ class DeclarativeDomainClassMarshallerSpec extends Specification {
         render( thing )
 
         then:
-        'custom-parts' == passedMap['resource']
+        'custom-parts' == passedMap['resourceName']
     }
 
 

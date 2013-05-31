@@ -89,9 +89,6 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<JSON> {
             json.property("version", version);
         }
 
-        // Add the 'href' link to 'self'
-        //writer.key("_href").value(getResourceUri(clazz.simpleName, value.id))
-
         processAdditionalFields(beanWrapper, json)
 
         def propertiesToMarshall
@@ -103,7 +100,7 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<JSON> {
             }
         } else {
             //use exclusion list
-            List excludedFields = EXCLUDED_FIELDS + getExcludedFields( value )
+            List excludedFields = getCommonExcludedFields() + getExcludedFields( value )
             propertiesToMarshall = persistentProperties.findAll {
                 !excludedFields.contains( it.getName() )
             }
@@ -164,7 +161,7 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<JSON> {
      *
      * @return list of field names to marshall
      */
-    protected List getIncludedFields(Object value) {
+    protected List<String> getIncludedFields(Object value) {
         []
     }
 
@@ -181,7 +178,7 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<JSON> {
      * @param value the object being marshalled
      * @return list of fields that should be skipped
      */
-    protected List getExcludedFields(Object value) {
+    protected List<String> getExcludedFields(Object value) {
         []
     }
 
@@ -193,7 +190,7 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<JSON> {
      * @return list of fields that should be skipped in all
      *          objects this marshaller supports
      */
-    protected List getCommonExcludedFields() {
+    protected List<String> getCommonExcludedFields() {
         EXCLUDED_FIELDS
     }
 

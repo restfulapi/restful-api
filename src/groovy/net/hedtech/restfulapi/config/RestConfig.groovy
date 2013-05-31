@@ -15,6 +15,7 @@ class RestConfig {
     //map of group name to MarshallerGroupConfig instance
     def marshallerGroups = [:]
     ConfigGroup jsonDomain = new ConfigGroup()
+    ConfigGroup groovyBean = new ConfigGroup()
 
     RestConfig( GrailsApplication grailsApplication ) {
         this.grailsApplication = grailsApplication
@@ -104,6 +105,14 @@ class RestConfig {
         this
     }
 
+    def jsonGroovyBeanMarshallerTemplates(Closure c) {
+        JSONGroovyBeanTemplates delegate = new JSONGroovyBeanTemplates(this)
+        c.delegate = delegate
+        c.resolveStrategy = Closure.DELEGATE_FIRST
+        c.call()
+        this
+    }
+
     class JSONDomainTemplates {
         RestConfig parent
         JSONDomainTemplates(RestConfig parent) {
@@ -117,6 +126,24 @@ class RestConfig {
                 c.resolveStrategy = Closure.DELEGATE_FIRST
                 c.call()
                 parent.jsonDomain.configs[name] = delegate.config
+            }
+            [config:closure]
+        }
+    }
+
+    class JSONGroovyBeanTemplates {
+        RestConfig parent
+        JSONGroovyBeanTemplates(RestConfig parent) {
+            this.parent = parent
+        }
+
+        def template(String name) {
+            def closure = { Closure c ->
+                JSONGroovyBeanMarshallerDelegate delegate = new JSONGroovyBeanMarshallerDelegate()
+                c.delegate = delegate
+                c.resolveStrategy = Closure.DELEGATE_FIRST
+                c.call()
+                parent.groovyBean.configs[name] = delegate.config
             }
             [config:closure]
         }
