@@ -38,17 +38,16 @@ class ComplexThingService {
         result
     }
 
-    def create(Map params) {
+    def create(Map content, Map params) {
         throw new RuntimeException("Not yet implemented!")
     }
 
-    def update(def id,Map params) {
+    def update(def id, Map content, Map params) {
         throw new RuntimeException("Not yet implemented!")
     }
 
-    def delete(Map params) {
+    def delete(def id, Map content, Map params) {
         throw new RuntimeException("Not yet implemented!")
     }
-
 
 }

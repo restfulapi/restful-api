@@ -44,6 +44,7 @@ class ThingWrapperService {
 
 
     def show(Map params) {
+
         log.trace "ThingWrapperService.show invoked"
         def result
         def things = Thing.list(fetch: [parts: "eager"],
@@ -58,7 +59,8 @@ class ThingWrapperService {
     }
 
 
-    def create(Map content) {
+    def create(Map content, Map params) {
+
         log.trace "ThingWrapperService.create invoked"
 
         if (WebUtils.retrieveGrailsWebRequest().getParameterMap().forceGenericError == 'y') {
@@ -69,7 +71,7 @@ class ThingWrapperService {
         def things = []
         Thing.withTransaction {
             content.things?.each {
-                def thing = thingService.create(it)
+                def thing = thingService.create(it, params)
                 things << thing
             }
             result = new ThingWrapper(complexCode: content.complexCode,
@@ -78,13 +80,12 @@ class ThingWrapperService {
         result
     }
 
-    def update(def id, Map content) {
-        throw new RuntimeException("Not yet implemented!")
+    def update(def id, Map content, Map params) {
+        throw new RuntimeException("Not implemented!")
     }
 
-    def delete(def id, Map content) {
-        throw new RuntimeException("Not yet implemented!")
+    def delete(def id, Map content, Map params) {
+        throw new RuntimeException("Not implemented!")
     }
-
 
 }

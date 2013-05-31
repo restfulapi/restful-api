@@ -18,7 +18,7 @@ import java.security.*
 
 class ThingService {
 
-    def list(Map params) {
+    def list( Map params ) {
 
         log.trace "ThingService.list invoked with params $params"
         def result
@@ -41,13 +41,14 @@ class ThingService {
     }
 
 
-    def count(Map params) {
+    def count( Map params ) {
         log.trace "ThingService.count invoked"
         Thing.count()
     }
 
 
-    def show(Map params) {
+    def show( Map params ) {
+
         log.trace "ThingService.show invoked"
         def result
         result = Thing.get(params.id)
@@ -58,7 +59,8 @@ class ThingService {
     }
 
 
-    def create(Map content) {
+    def create( Map content, Map params ) {
+
         log.trace "ThingService.create invoked"
 
         if (WebUtils.retrieveGrailsWebRequest().getParameterMap().forceGenericError == 'y') {
@@ -89,9 +91,9 @@ class ThingService {
     }
 
 
-    def update(def id, Map content) {
-        log.trace "ThingService.update invoked"
+    def update( def id, Map content, Map params ) {
 
+        log.trace "ThingService.update invoked"
         checkForExceptionRequest()
 
         def result
@@ -110,7 +112,8 @@ class ThingService {
     }
 
 
-    void delete(id,Map content) {
+    void delete( def id, Map content, Map params ) {
+
         Thing.withTransaction {
             def thing = Thing.get(id)
             thing.delete(failOnError:true)

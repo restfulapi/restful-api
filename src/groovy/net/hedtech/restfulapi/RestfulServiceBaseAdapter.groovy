@@ -34,18 +34,18 @@ class RestfulServiceBaseAdapter implements RestfulServiceAdapter {
         service.show(params)
     }
 
-    def create(def service, Map content) {
+    def create(def service, Map content, Map params) {
         service.create(content)
     }
 
     // adapts update() since ServiceBase expects only a Map
-    def update(def service, def id, Map content) {
+    def update(def service, def id, Map content, Map params) {
         if (!content.id) content.id = id
         service.update(content)
     }
 
     // adapts delete() since ServiceBase expects only a Map
-    void delete(def service, def id, Map content) {
+    void delete(def service, def id, Map content, Map params) {
         if (!content.id) content.id = id
         service.delete(content)
     }

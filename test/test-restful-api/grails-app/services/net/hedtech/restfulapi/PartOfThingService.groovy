@@ -22,6 +22,7 @@ class PartOfThingService {
 
     def grailsApplication
 
+
     def list(Map params) {
 
         log.trace "PartOfThingService.list invoked with params $params"
@@ -54,6 +55,7 @@ class PartOfThingService {
 
 
     def show(Map params) {
+
         log.trace "PartOfThingService.show invoked"
         def result = PartOfThing.get(params.id)
         log.trace "PartOfThingService.show returning ${result}"
@@ -61,7 +63,8 @@ class PartOfThingService {
     }
 
 
-    def create(Map content) {
+    def create(Map content, Map params) {
+
         log.trace "PartOfThingService.create invoked"
 
         if (WebUtils.retrieveGrailsWebRequest().getParameterMap().forceGenericError == 'y') {
@@ -77,9 +80,10 @@ class PartOfThingService {
         result
     }
 
-    def update(def id, Map content) {
-        log.trace "PartOfThingService.update invoked"
 
+    def update(def id, Map content, Map params) {
+
+        log.trace "PartOfThingService.update invoked"
         checkForExceptionRequest()
 
         def result
@@ -97,12 +101,15 @@ class PartOfThingService {
         result
     }
 
-    void delete(id,Map content) {
+
+    void delete(def id, Map content, Map params) {
+
         Thing.withTransaction {
             def thing = Thing.get(id)
             thing.delete(failOnError:true)
         }
     }
+
 
     public def checkOptimisticLock( domainObject, content ) {
 
@@ -118,9 +125,11 @@ class PartOfThingService {
         }
     }
 
+
     private def exceptionForOptimisticLock( domainObject, content ) {
         new OptimisticLockException( new StaleObjectStateException( domainObject.class.getName(), domainObject.id ) )
     }
+
 
     protected Class getDomainClass(String pluralizedResourceName) {
         def domainClass = getGrailsDomainClass(pluralizedResourceName)?.clazz

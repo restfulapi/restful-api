@@ -19,10 +19,10 @@ interface RestfulServiceAdapter {
 
     def show(def service, Map params)
 
-    def create(def service, Map content)
+    def create(def service, Map content, Map params)
 
-    def update(def service, def id, Map content)
+    def update(def service, def id, Map content, Map params)
 
-    void delete(def service, def id, Map content)
+    void delete(def service, def id, Map content, Map params)
 
 }

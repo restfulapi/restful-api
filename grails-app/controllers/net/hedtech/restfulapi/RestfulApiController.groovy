@@ -65,12 +65,12 @@ class RestfulApiController {
     // The default adapter simply passes through the method invocations to the service.
     // RestfulServiceAdapter.
     private RestfulServiceAdapter defaultServiceAdapter =
-        [ list:   { def service, Map params          -> service.list(params) },
-          count:  { def service, Map params          -> service.count(params) },
-          show:   { def service, Map params          -> service.show(params) },
-          create: { def service, Map content         -> service.create(content) },
-          update: { def service, def id, Map content -> service.update(id, content) },
-          delete: { def service, def id, Map content -> service.delete(id, content) }
+        [ list:   { def service, Map params                      -> service.list(params) },
+          count:  { def service, Map params                      -> service.count(params) },
+          show:   { def service, Map params                      -> service.show(params) },
+          create: { def service, Map content, Map params         -> service.create(content, params) },
+          update: { def service, def id, Map content, Map params -> service.update(id, content, params) },
+          delete: { def service, def id, Map content, Map params -> service.delete(id, content, params) }
         ] as RestfulServiceAdapter
 
 
@@ -236,7 +236,7 @@ class RestfulApiController {
             checkMethod( Methods.CREATE )
             def content = parseRequestContent( request )
             getResponseRepresentation()
-            result = getServiceAdapter().create( getService(), content )
+            result = getServiceAdapter().create( getService(), content, params )
             response.setStatus( 201 )
             renderSuccessResponse( new ResponseHolder( data: result ),
                                    'default.rest.created.message' )
@@ -262,7 +262,7 @@ class RestfulApiController {
             }
 
             getResponseRepresentation()
-            result = getServiceAdapter().update( getService(), params.id, content )
+            result = getServiceAdapter().update( getService(), params.id, content, params )
             response.setStatus( 200 )
             renderSuccessResponse( new ResponseHolder( data: result ),
                                    'default.rest.updated.message' )
@@ -293,7 +293,7 @@ class RestfulApiController {
             if (content && content.id && content.id != params.id) {
                 throw new IdMismatchException( params.pluralizedResourceName )
             }
-            getServiceAdapter().delete( getService(), params.id, content )
+            getServiceAdapter().delete( getService(), params.id, content, params )
             response.setStatus( 200 )
             renderSuccessResponse( new ResponseHolder(), 'default.rest.deleted.message' )
         }

@@ -98,7 +98,7 @@ class RestfulApiControllerSpec extends Specification {
         then:
         200 == response.status
           0 == response.getContentLength()
-          1 * mock.delete(_,_) >> {}
+          1 * mock.delete(_,_,_) >> {}
     }
 
     @Unroll
@@ -425,7 +425,7 @@ class RestfulApiControllerSpec extends Specification {
         controller.update()
 
         then:
-        1*mock.update(_,_) >> { throw new org.springframework.dao.OptimisticLockingFailureException( "foo" ) }
+        1*mock.update(_,_,_) >> { throw new org.springframework.dao.OptimisticLockingFailureException( "foo" ) }
         409 == response.status
           0 == response.getContentLength()
         'default.optimistic.locking.failure' == response.getHeaderValue( 'X-hedtech-message' )
@@ -458,7 +458,7 @@ class RestfulApiControllerSpec extends Specification {
         controller.update()
 
         then:
-        1*mock.update(_,_) >> { throw new Exception( 'foo' ) }
+        1*mock.update(_,_,_) >> { throw new Exception( 'foo' ) }
         500 == response.status
           0 == response.getContentLength()
         'default.rest.general.errors.message' == response.getHeaderValue( 'X-hedtech-message' )
@@ -492,7 +492,7 @@ class RestfulApiControllerSpec extends Specification {
         then:
         200 == response.status
           0 == response.getContentLength()
-          1*mock.delete(_,_) >> { }
+          1*mock.delete(_,_,_) >> { }
         'default.rest.deleted.message' == response.getHeaderValue( 'X-hedtech-message' )
 
     }
