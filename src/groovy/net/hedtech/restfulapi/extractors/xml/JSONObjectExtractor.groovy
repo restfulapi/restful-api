@@ -11,7 +11,8 @@ import groovy.util.slurpersupport.GPathResult
 import net.hedtech.restfulapi.extractors.XMLExtractor
 
 /**
- * Extracts a JSONObject from json-as-xml.
+ * Extracts content from json-as-xml by
+ * extracting the json format, then
  **/
 class JSONObjectExtractor implements XMLExtractor {
 

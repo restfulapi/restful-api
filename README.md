@@ -337,7 +337,7 @@ For example, in Config.groovy:
                 mediaTypes = ["application/json"]
                 marshallers {
                     marshaller {
-                        instance = new net.hedtech.restfulapi.marshallers.json.BasicDomainClassMarshaller(grailsApplication)
+                        instance = new net.hedtech.restfulapi.marshallers.json.BasicDomainClassMarshaller(app:grailsApplication)
                         priority = 100
                     }
                 }
