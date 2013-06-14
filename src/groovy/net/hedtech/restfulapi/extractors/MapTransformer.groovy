@@ -22,58 +22,12 @@ class MapTransformer {
 
     //map of paths (lists of string) to arrays of closures
     //that define transformations to apply to that path
-    def actions = [:]
+    protected def actions = [:]
+    protected MapTransformerRules rules
 
-    def renameRules = [:]
-    def flattenPaths = []
-
-    private boolean initialized = false
-
-    /**
-     * Renames the final element of the path to a new
-     * value.
-     * @param path a list of strings denoting the path to rename
-     * @param newKey the new name for the last element of the path
-     */
-    void addRenameRule(List<String> path, String newKey) {
-        renameRules.put(path, newKey)
-
-    }
-
-    /**
-     * Adds a default value for the specified path
-     * if the key denoted by the path is not already present.
-     * @param path a list of strings denoting the path to rename
-     * @param newKey the new name for the last element of the path
-     **/
-    void addDefaultValueRule(List<String> path, def defaultValue) {
-        path = path.clone()
-        def localKey = path.pop()
-        Closure c = {Map m ->
-            if (!m.containsKey(localKey)) {
-                m.put(localKey, defaultValue)
-            }
-        }
-        addDefaultValueClosure(path, c)
-    }
-
-    void addModifyValueRule(List<String> path, Closure closure) {
-        path = path.clone()
-        def localKey = path.pop()
-        Closure c = {Map m ->
-            if (m.containsKey(localKey)) {
-                def val = m.get(localKey)
-                val = closure.call(val)
-                m.put(localKey, val)
-            }
-        }
-        addModifyValueClosure(path, c)
-    }
-
-    void addFlattenRule(List<String> path) {
-        if (!flattenPaths.contains(path)) {
-            flattenPaths.add path
-        }
+    MapTransformer(MapTransformerRules rules) {
+        this.rules = rules
+        init()
     }
 
     /**
@@ -81,7 +35,6 @@ class MapTransformer {
      * @param map the map to transform
      **/
     def transform(Map map) {
-        init()
         def keys = actions.keySet()
         //sort longest to shortest paths
         keys = keys.sort { a,b -> b.size() <=> a.size() }
@@ -133,53 +86,89 @@ class MapTransformer {
     }
 
     protected void init() {
-        if (!initialized) {
-            renameRules.entrySet().each { Map.Entry entry ->
-                def path = entry.key
-                def newKey = entry.value
-                path = path.clone()
-                def oldKey = path.pop()
-                Closure c = {Map m ->
-                    if (m.containsKey(oldKey)) {
-                        def val = m.remove(oldKey)
-                        m.put(newKey, val)
-                    }
-                }
-                addRenameClosure(path, c)
-            }
+        addRenameActions()
+        addDefaultValueActions()
+        addModifyValueActions()
+        addFlattenActions()
+    }
 
-            flattenPaths.each { def path ->
-                def newKey = renameRules.get(path)
-                if (newKey != null) {
-                    path.pop()
-                    path.add newKey
+    private void addRenameActions() {
+        rules.renameRules.entrySet().each { Map.Entry entry ->
+            def path = entry.key
+            def newKey = entry.value
+            path = path.clone()
+            def oldKey = path.pop()
+            Closure c = {Map m ->
+                if (m.containsKey(oldKey)) {
+                    def val = m.remove(oldKey)
+                    m.put(newKey, val)
                 }
-                path = path.clone()
-                def localKey = path.pop()
-                Closure c = {Map m ->
-                    if (m.containsKey(localKey)) {
-                        def val = m.get(localKey)
-                        if (val instanceof Collection) {
+            }
+            addRenameClosure(path, c)
+        }
+    }
+
+    private void addDefaultValueActions() {
+        rules.defaultValueRules.entrySet().each { Map.Entry entry ->
+            def path = entry.key.clone()
+            def localKey = path.pop()
+            def defaultValue = entry.value
+            Closure c = {Map m ->
+                if (!m.containsKey(localKey)) {
+                    m.put(localKey, defaultValue)
+                }
+            }
+            addDefaultValueClosure(path, c)
+        }
+    }
+
+    private void addModifyValueActions() {
+        rules.modifyValueRules.each() { Map.Entry entry ->
+            def path = entry.key.clone()
+            def localKey = path.pop()
+            def closure = entry.value
+            Closure c = {Map m ->
+                if (m.containsKey(localKey)) {
+                    def val = m.get(localKey)
+                    val = closure.call(val)
+                    m.put(localKey, val)
+                }
+            }
+            addModifyValueClosure(path, c)
+        }
+    }
+
+    private void addFlattenActions() {
+        rules.flattenPaths.each { def path ->
+            def newKey = rules.renameRules.get(path)
+            if (newKey != null) {
+                path.pop()
+                path.add newKey
+            }
+            path = path.clone()
+            def localKey = path.pop()
+            Closure c = {Map m ->
+                if (m.containsKey(localKey)) {
+                    def val = m.get(localKey)
+                    if (val instanceof Collection) {
+                        m.remove(localKey)
+                        int index = 0
+                        val.each {
+                            if (it instanceof Map) {
+                                flattenInto(m, it, "$localKey[$index]")
+                                index++
+                            }
+                        }
+                    } else {
+                        if (val instanceof Map) {
                             m.remove(localKey)
-                            int index = 0
-                            val.each {
-                                if (it instanceof Map) {
-                                    flattenInto(m, it, "$localKey[$index]")
-                                    index++
-                                }
-                            }
-                        } else {
-                            if (val instanceof Map) {
-                                m.remove(localKey)
-                                flattenInto(m, val, localKey)
-                            }
+                            flattenInto(m, val, localKey)
                         }
                     }
                 }
-                addFlattenClosure(path, c)
             }
+            addFlattenClosure(path, c)
         }
-        initialized = true
     }
 
     private void addRenameClosure(List<String> path, Closure c) {

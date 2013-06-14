@@ -15,9 +15,10 @@ class MapTransformerSpec extends Specification {
     def "Test top-level rename"() {
         setup:
         def map = ['one':'v1','two':'v2','three':'v3']
-        def transformer = new MapTransformer()
-        transformer.addRenameRule(['one'], 'fieldOne')
-        transformer.addRenameRule(['three'], 'fieldThree')
+        def rules = new MapTransformerRules()
+        rules.addRenameRule(['one'], 'fieldOne')
+        rules.addRenameRule(['three'], 'fieldThree')
+        MapTransformer transformer = new MapTransformer(rules)
 
         when:
         map = transformer.transform(map)
@@ -30,8 +31,9 @@ class MapTransformerSpec extends Specification {
         setup:
         def map = ['outer1':['inner1':'v1','inner2':'v2'],
                    'outer2':['inner1':'v1'] ]
-        def transformer = new MapTransformer()
-        transformer.addRenameRule(['outer1','inner1'],'renamed')
+        def rules = new MapTransformerRules()
+        rules.addRenameRule(['outer1','inner1'],'renamed')
+        MapTransformer transformer = new MapTransformer(rules)
 
         when:
         map = transformer.transform(map)
@@ -48,8 +50,9 @@ class MapTransformerSpec extends Specification {
             ['customer':'456'],
             ['customer':'789']
         ]]
-        def transformer = new MapTransformer()
-        transformer.addRenameRule(['collection','customer'],'customerId')
+        def rules = new MapTransformerRules()
+        rules.addRenameRule(['collection','customer'],'customerId')
+        MapTransformer transformer = new MapTransformer(rules)
 
         when:
         map = transformer.transform(map)
@@ -65,9 +68,10 @@ class MapTransformerSpec extends Specification {
     def "Test depth-first transformation"() {
         setup:
         def map = [outer:[inner:'123']]
-        def transformer = new MapTransformer()
-        transformer.addRenameRule(['outer'], 'newOuter')
-        transformer.addRenameRule(['outer','inner'], 'newInner')
+        def rules = new MapTransformerRules()
+        rules.addRenameRule(['outer'], 'newOuter')
+        rules.addRenameRule(['outer','inner'], 'newInner')
+        MapTransformer transformer = new MapTransformer(rules)
 
         when:
         map = transformer.transform(map)
@@ -79,8 +83,9 @@ class MapTransformerSpec extends Specification {
     def "Test simple default"() {
         setup:
         def map = [field1:'123']
-        def transformer = new MapTransformer()
-        transformer.addDefaultValueRule(['field2'],true)
+        def rules = new MapTransformerRules()
+        rules.addDefaultValueRule(['field2'],true)
+        MapTransformer transformer = new MapTransformer(rules)
 
         when:
         map = transformer.transform(map)
@@ -93,8 +98,9 @@ class MapTransformerSpec extends Specification {
         setup:
         def map = ['outer1':['inner1':'v1'],
                    'outer2':['inner1':'v1'] ]
-        def transformer = new MapTransformer()
-        transformer.addDefaultValueRule(['outer1','default'],true)
+        def rules = new MapTransformerRules()
+        rules.addDefaultValueRule(['outer1','default'],true)
+        MapTransformer transformer = new MapTransformer(rules)
 
         when:
         map = transformer.transform(map)
@@ -111,8 +117,9 @@ class MapTransformerSpec extends Specification {
             ['customer':'456'],
             ['customer':'789']
         ]]
-        def transformer = new MapTransformer()
-        transformer.addDefaultValueRule(['collection','boolean'],true)
+        def rules = new MapTransformerRules()
+        rules.addDefaultValueRule(['collection','boolean'],true)
+        MapTransformer transformer = new MapTransformer(rules)
 
         when:
         map = transformer.transform(map)
@@ -128,8 +135,9 @@ class MapTransformerSpec extends Specification {
     def "Test default does not overwrite non-null value"() {
         setup:
         def map = [name:'foo']
-        def transformer = new MapTransformer()
-        transformer.addDefaultValueRule(['name'],'bar')
+        def rules = new MapTransformerRules()
+        rules.addDefaultValueRule(['name'],'bar')
+        MapTransformer transformer = new MapTransformer(rules)
 
         when:
         map = transformer.transform(map)
@@ -141,8 +149,9 @@ class MapTransformerSpec extends Specification {
     def "Test default does not overwrite null value"() {
         setup:
         def map = [name:null]
-        def transformer = new MapTransformer()
-        transformer.addDefaultValueRule(['name'],'bar')
+        def rules = new MapTransformerRules()
+        rules.addDefaultValueRule(['name'],'bar')
+        MapTransformer transformer = new MapTransformer(rules)
 
         when:
         map = transformer.transform(map)
@@ -154,9 +163,10 @@ class MapTransformerSpec extends Specification {
     def "Test renaming and defaulting same optional property"() {
         setup:
         def map = [collection:[['req':123,'optional':456],['req':234]]]
-        def transformer = new MapTransformer()
-        transformer.addRenameRule(['collection','optional'],'req2')
-        transformer.addDefaultValueRule(['collection','optional'],0)
+        def rules = new MapTransformerRules()
+        rules.addRenameRule(['collection','optional'],'req2')
+        rules.addDefaultValueRule(['collection','optional'],0)
+        MapTransformer transformer = new MapTransformer(rules)
 
         when:
         map = transformer.transform(map)
@@ -168,9 +178,10 @@ class MapTransformerSpec extends Specification {
     def "Test intermediate objects are not created"() {
         setup:
         def map = [collection:[],map:null]
-        def transformer = new MapTransformer()
-        transformer.addDefaultValueRule(['collection','req'],0)
-        transformer.addDefaultValueRule(['map','req'],0)
+        def rules = new MapTransformerRules()
+        rules.addDefaultValueRule(['collection','req'],0)
+        rules.addDefaultValueRule(['map','req'],0)
+        MapTransformer transformer = new MapTransformer(rules)
 
         when:
         map = transformer.transform(map)
@@ -182,8 +193,9 @@ class MapTransformerSpec extends Specification {
     def "Test modify value"() {
         setup:
         def map = [_link:"/customers/12"]
-        def transformer = new MapTransformer()
-        transformer.addModifyValueRule(['_link'],{def v -> v.substring(v.lastIndexOf('/')+1)})
+        def rules = new MapTransformerRules()
+        rules.addModifyValueRule(['_link'],{def v -> v.substring(v.lastIndexOf('/')+1)})
+        MapTransformer transformer = new MapTransformer(rules)
 
         when:
         map = transformer.transform(map)
@@ -195,8 +207,9 @@ class MapTransformerSpec extends Specification {
     def "Test modify nested value"() {
         setup:
         def map = [inner:[name:'foo','customer':['_link':'/customers/15']]]
-        def transformer = new MapTransformer()
-        transformer.addModifyValueRule(['inner','customer'],{def m -> def v = m['_link']; v.substring(v.lastIndexOf('/')+1)})
+        def rules = new MapTransformerRules()
+        rules.addModifyValueRule(['inner','customer'],{def m -> def v = m['_link']; v.substring(v.lastIndexOf('/')+1)})
+        MapTransformer transformer = new MapTransformer(rules)
 
         when:
         map = transformer.transform(map)
@@ -208,8 +221,8 @@ class MapTransformerSpec extends Specification {
     def "Test modify collection"() {
         setup:
         def map  = [customers:[['_link':'/customers/1'],['_link':'/customers/2']]]
-        def transformer = new MapTransformer()
-        transformer.addModifyValueRule(['customers'],
+        def rules = new MapTransformerRules()
+        rules.addModifyValueRule(['customers'],
             { value ->
                 def result = []
                 value.each {
@@ -221,6 +234,7 @@ class MapTransformerSpec extends Specification {
                 return result
             }
         )
+        MapTransformer transformer = new MapTransformer(rules)
 
         when:
         map = transformer.transform(map)
@@ -233,8 +247,9 @@ class MapTransformerSpec extends Specification {
     def "Test flatten map"() {
         setup:
         def map = [name:'foo',customer:[name:'widgetco',preferred:true]]
-        def transformer = new MapTransformer()
-        transformer.addFlattenRule(['customer'])
+        def rules = new MapTransformerRules()
+        rules.addFlattenRule(['customer'])
+        MapTransformer transformer = new MapTransformer(rules)
 
         when:
         map = transformer.transform(map)
@@ -246,8 +261,9 @@ class MapTransformerSpec extends Specification {
     def "Test flatten maps in a collection"() {
         setup:
         def map = [name:'foo',customers:[[name:'w1',preferred:true],[name:'w2',preferred:false]]]
-        def transformer = new MapTransformer()
-        transformer.addFlattenRule(['customers'])
+        def rules = new MapTransformerRules()
+        rules.addFlattenRule(['customers'])
+        MapTransformer transformer = new MapTransformer(rules)
 
         when:
         map = transformer.transform(map)
@@ -265,11 +281,12 @@ class MapTransformerSpec extends Specification {
             ],
             product:[name:'p1', parts:[ [partNo:123, desc:'part1'], [partNo:456, desc:'part2'] ]]
         ]
-        def transformer = new MapTransformer()
-        transformer.addFlattenRule(['customers'])
-        transformer.addFlattenRule(['customers','address'])
-        transformer.addFlattenRule(['product','parts'])
-        transformer.addFlattenRule(['product'])
+        def rules = new MapTransformerRules()
+        rules.addFlattenRule(['customers'])
+        rules.addFlattenRule(['customers','address'])
+        rules.addFlattenRule(['product','parts'])
+        rules.addFlattenRule(['product'])
+        MapTransformer transformer = new MapTransformer(rules)
 
         def expected = [name:'foo',
         'customers[0].name':'w1', 'customers[0].address.street':'street1', 'customers[0].address.zip':'11111',
@@ -289,9 +306,10 @@ class MapTransformerSpec extends Specification {
     def "Test flatten after rename"() {
         setup:
         def map = [name:'foo',customer:[name:'widgetco',preferred:true]]
-        def transformer = new MapTransformer()
-        transformer.addFlattenRule(['customer'])
-        transformer.addRenameRule(['customer'],'myCustomer')
+        def rules = new MapTransformerRules()
+        rules.addFlattenRule(['customer'])
+        rules.addRenameRule(['customer'],'myCustomer')
+        MapTransformer transformer = new MapTransformer(rules)
 
         when:
         map = transformer.transform(map)
@@ -304,10 +322,11 @@ class MapTransformerSpec extends Specification {
     def "Test flatten maps in a collection after rename"() {
         setup:
         def map = [name:'foo',customers:[[name:'w1',preferred:true],[name:'w2',preferred:false]]]
-        def transformer = new MapTransformer()
-        transformer.addFlattenRule(['customers'])
-        transformer.addRenameRule(['customers'],'myCustomers')
-        transformer.addRenameRule(['customers','name'],'companyName')
+        def rules = new MapTransformerRules()
+        rules.addFlattenRule(['customers'])
+        rules.addRenameRule(['customers'],'myCustomers')
+        rules.addRenameRule(['customers','name'],'companyName')
+        MapTransformer transformer = new MapTransformer(rules)
 
         when:
         map = transformer.transform(map)
@@ -325,15 +344,16 @@ class MapTransformerSpec extends Specification {
             ],
             product:[name:'p1', parts:[ [partNo:123, desc:'part1'], [partNo:456, desc:'part2'] ]]
         ]
-        def transformer = new MapTransformer()
-        transformer.addFlattenRule(['customers'])
-        transformer.addFlattenRule(['customers','address'])
-        transformer.addFlattenRule(['product','parts'])
-        transformer.addFlattenRule(['product'])
-        transformer.addRenameRule(['customers'], 'myCustomers')
-        transformer.addRenameRule(['customers','address'],'companyAddress')
-        transformer.addRenameRule(['product','parts'],'myParts')
-        transformer.addRenameRule(['product'],'myProduct')
+        def rules = new MapTransformerRules()
+        rules.addFlattenRule(['customers'])
+        rules.addFlattenRule(['customers','address'])
+        rules.addFlattenRule(['product','parts'])
+        rules.addFlattenRule(['product'])
+        rules.addRenameRule(['customers'], 'myCustomers')
+        rules.addRenameRule(['customers','address'],'companyAddress')
+        rules.addRenameRule(['product','parts'],'myParts')
+        rules.addRenameRule(['product'],'myProduct')
+        MapTransformer transformer = new MapTransformer(rules)
 
         def expected = [name:'foo',
         'myCustomers[0].name':'w1', 'myCustomers[0].companyAddress.street':'street1', 'myCustomers[0].companyAddress.zip':'11111',
