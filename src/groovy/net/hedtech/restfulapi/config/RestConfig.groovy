@@ -16,6 +16,7 @@ class RestConfig {
     def marshallerGroups = [:]
     ConfigGroup jsonDomain = new ConfigGroup()
     ConfigGroup groovyBean = new ConfigGroup()
+    ConfigGroup jsonExtractor = new ConfigGroup()
 
     RestConfig( GrailsApplication grailsApplication ) {
         this.grailsApplication = grailsApplication
@@ -113,6 +114,14 @@ class RestConfig {
         this
     }
 
+    def jsonExtractorTemplates(Closure c) {
+        JSONExtractorTemplates delegate = new JSONExtractorTemplates(this)
+        c.delegate = delegate
+        c.resolveStrategy = Closure.DELEGATE_FIRST
+        c.call()
+        this
+    }
+
     class JSONDomainTemplates {
         RestConfig parent
         JSONDomainTemplates(RestConfig parent) {
@@ -144,6 +153,24 @@ class RestConfig {
                 c.resolveStrategy = Closure.DELEGATE_FIRST
                 c.call()
                 parent.groovyBean.configs[name] = delegate.config
+            }
+            [config:closure]
+        }
+    }
+
+    class JSONExtractorTemplates {
+        RestConfig parent
+        JSONExtractorTemplates(RestConfig parent) {
+            this.parent = parent
+        }
+
+        def template(String name) {
+            def closure = { Closure c ->
+                JSONExtractorDelegate delegate = new JSONExtractorDelegate()
+                c.delegate = delegate
+                c.resolveStrategy = Closure.DELEGATE_FIRST
+                c.call()
+                parent.jsonExtractor.configs[name] = delegate.config
             }
             [config:closure]
         }

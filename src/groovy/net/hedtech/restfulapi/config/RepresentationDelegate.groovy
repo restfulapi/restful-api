@@ -27,6 +27,15 @@ class RepresentationDelegate {
         return this
     }
 
+    RepresentationDelegate jsonExtractor(Closure c) {
+        JSONExtractorDelegate delegate = new JSONExtractorDelegate()
+        c.delegate = delegate
+        c.resolveStrategy = Closure.DELEGATE_FIRST
+        c.call()
+        extractor = JSONExtractorFactory.instantiate(delegate.config, restConfig)
+        this
+    }
+
     RepresentationDelegate marshallers(Closure c) {
         MarshallersDelegate delegate = new MarshallersDelegate(this)
         c.delegate = delegate

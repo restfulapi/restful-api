@@ -161,7 +161,7 @@ restfulApiConfig = {
                     inherits = ['domainAffordance']
                 }
             }
-            extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()
+            jsonExtractor {}
         }
         representation {
             mediaTypes = ["application/xml"]
@@ -186,7 +186,7 @@ restfulApiConfig = {
                     priority = 101
                 }
             }
-            extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()
+            jsonExtractor {}
         }
         representation {
             mediaTypes = ['application/vnd.hedtech.v0+xml']
@@ -228,9 +228,30 @@ restfulApiConfig = {
                 }
             }
             extractor = new net.hedtech.restfulapi.extractors.json.ThingDefaultDescriptionExtractor()
+            jsonExtractor {
+                property 'description' defaultValue 'Default description'
+            }
+        }
+        //same as v1, but demonstrate declarative extraction
+        representation {
+            mediaTypes = ['application/vnd.hedtech.v2+json']
+            marshallers {
+                marshaller {
+                    instance = new net.hedtech.restfulapi.marshallers.json.BasicDomainClassMarshaller(app:grailsApplication)
+                    priority = 101
+                }
+            }
+            jsonExtractor {
+                property 'description' defaultValue 'Default description'
+            }
         }
         representation {
             mediaTypes = ['application/vnd.hedtech.v1+xml']
+            jsonAsXml = true
+            extractor = new net.hedtech.restfulapi.extractors.xml.JSONObjectExtractor()
+        }
+        representation {
+            mediaTypes = ['application/vnd.hedtech.v2+xml']
             jsonAsXml = true
             extractor = new net.hedtech.restfulapi.extractors.xml.JSONObjectExtractor()
         }
@@ -252,7 +273,7 @@ restfulApiConfig = {
                     }
                 }
             }
-            extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()
+            jsonExtractor {}
         }
     }
 
@@ -265,7 +286,7 @@ restfulApiConfig = {
                     priority = 100
                 }
             }
-            extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()
+            jsonExtractor {}
         }
     }
 
@@ -278,7 +299,7 @@ restfulApiConfig = {
                     priority = 100
                 }
             }
-            extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()
+            jsonExtractor {}
         }
     }
 
@@ -290,7 +311,7 @@ restfulApiConfig = {
                     inherits = ['domainAffordance']
                 }
             }
-            extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()
+            jsonExtractor {}
         }
     }
 
@@ -307,7 +328,7 @@ restfulApiConfig = {
                     priority = 100
                 }
             }
-            extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()
+            jsonExtractor {}
         }
     }
 
@@ -324,7 +345,7 @@ restfulApiConfig = {
                     priority = 100
                 }
             }
-            extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()
+            jsonExtractor {}
         }
     }
 
@@ -343,7 +364,7 @@ restfulApiConfig = {
                     field 'parts' resource 'thing-parts'
                 }
             }
-            extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()
+            jsonExtractor {}
         }
     }
 
@@ -359,7 +380,7 @@ restfulApiConfig = {
                 }
                 marshallerGroup 'json-date-closure'
             }
-            extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()
+            jsonExtractor {}
         }
 
     }
@@ -381,7 +402,7 @@ restfulApiConfig = {
                     }
                 }
             }
-            extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()
+            jsonExtractor {}
         }
     }
 

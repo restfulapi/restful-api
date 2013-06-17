@@ -15,7 +15,7 @@ class DeclarativeJSONExtractorSpec extends Specification {
     def "Test rename paths"() {
         setup:
         DeclarativeJSONExtractor extractor = new DeclarativeJSONExtractor(
-            renamePaths:['outer.inner':'renamed','name':'lastName']
+            dottedRenamedPaths:['outer.inner':'renamed','name':'lastName']
         )
 
         when:
@@ -30,7 +30,7 @@ class DeclarativeJSONExtractorSpec extends Specification {
     def "Test default value paths"() {
         setup:
         DeclarativeJSONExtractor extractor = new DeclarativeJSONExtractor(
-            defaultValuePaths:['outer.inner':true, 'name':'Smith']
+            dottedValuePaths:['outer.inner':true, 'name':'Smith']
         )
 
         when:
@@ -46,7 +46,7 @@ class DeclarativeJSONExtractorSpec extends Specification {
     def "Test default short object paths"() {
         setup:
         DeclarativeJSONExtractor extractor = new DeclarativeJSONExtractor(
-            shortObjectPaths:['outer.inner','customer']
+            dottedShortObjectPaths:['outer.inner','customer']
         )
 
         when:
@@ -62,7 +62,7 @@ class DeclarativeJSONExtractorSpec extends Specification {
         setup:
         Closure shortObject = { def value -> }
         DeclarativeJSONExtractor extractor = new DeclarativeJSONExtractor(
-            shortObjectPaths:['outer.inner','customer'],
+            dottedShortObjectPaths:['outer.inner','customer'],
             shortObjectClosure:shortObject
         )
 
@@ -78,7 +78,7 @@ class DeclarativeJSONExtractorSpec extends Specification {
     def "Test flatten paths"() {
         setup:
         DeclarativeJSONExtractor extractor = new DeclarativeJSONExtractor(
-            flattenPaths:['outer.inner','customer']
+            dottedFlattenedPaths:['outer.inner','customer']
         )
 
         when:
@@ -92,7 +92,7 @@ class DeclarativeJSONExtractorSpec extends Specification {
     def "Test default short object closure for singletons"() {
         setup:
         DeclarativeJSONExtractor extractor = new DeclarativeJSONExtractor(
-            shortObjectPaths:['customer']
+            dottedShortObjectPaths:['customer']
         )
         JSONObject json = new JSONObject([customer:[_link:'/customers/1234']])
 
@@ -107,7 +107,7 @@ class DeclarativeJSONExtractorSpec extends Specification {
     def "Test default short object closure for collections"() {
         setup:
         DeclarativeJSONExtractor extractor = new DeclarativeJSONExtractor(
-            shortObjectPaths:['customers']
+            dottedShortObjectPaths:['customers']
         )
         JSONObject json = new JSONObject([customers:[[_link:'/customers/1'],[_link:'/customers/2']]])
 

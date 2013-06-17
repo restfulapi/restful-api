@@ -1044,7 +1044,60 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         // null != json.version
     }
 
+    def "Test saving a thing with version 2 json representation"() {
+        when:
+        post( "$localBase/api/things") {
+            headers['Content-Type'] = 'application/vnd.hedtech.v2+json'
+            headers['Accept']       = 'application/vnd.hedtech.v2+json'
+            body {
+                """
+                {
+                    "code": "AC",
+                }
+                """
+            }
+        }
+
+        then:
+        201 == response.status
+        'application/json' == response.contentType
+
+        def json = JSON.parse response.text
+        null != json.id
+        "AC" == json.code
+        "Default description" == json.description
+        0 == json.parts.size()
+        // null != json.version
+    }
+
     def "Test saving a thing with version 1 json-as-xml representation"() {
+        when:
+        post( "$localBase/api/things") {
+            headers['Content-Type'] = 'application/vnd.hedtech.v1+xml'
+            headers['Accept']       = 'application/json'
+            body {
+                """<?xml version="1.0" encoding="UTF-8"?>
+                <json>
+                    <code>AC</code>
+                </json>
+                """
+            }
+        }
+
+        then:
+        201 == response.status
+
+        'application/json' == response.contentType
+
+        def json = JSON.parse response.text
+        null != json.id
+        "AC" == json.code
+        "Default description" == json.description
+        0 == json.parts.size()
+        null != json.version
+    }
+
+    def "Test saving a thing with version 2 json-as-xml representation"() {
         when:
         post( "$localBase/api/things") {
             headers['Content-Type'] = 'application/vnd.hedtech.v1+xml'

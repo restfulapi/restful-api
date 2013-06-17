@@ -94,6 +94,5 @@ class JSONDomainMarshallerConfig implements MergeableConfig {
         }
 
         config
-
     }
 }

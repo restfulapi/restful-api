@@ -314,8 +314,6 @@ class JSONDomainMarshallerConfigSpec extends Specification {
 
     def "Test merging domain marshaller with support class set only on the left"() {
         setup:
-        def c1 = { Map m -> }
-        def c2 = { Map m -> }
         JSONDomainMarshallerConfig one = new JSONDomainMarshallerConfig(
             supportClass:Thing
         )

@@ -9,10 +9,10 @@ import org.codehaus.groovy.grails.web.json.JSONObject
 
 class DeclarativeJSONExtractor extends BasicJSONExtractor {
 
-    Map<String,String> renamePaths = [:]
-    Map<String,Object> defaultValuePaths = [:]
-    List<String> shortObjectPaths = []
-    List<String> flattenPaths = []
+    Map<String,String> dottedRenamedPaths = [:]
+    Map<String,Object> dottedValuePaths = [:]
+    List<String> dottedShortObjectPaths = []
+    List<String> dottedFlattenedPaths = []
     Closure shortObjectClosure
 
 
@@ -24,7 +24,7 @@ class DeclarativeJSONExtractor extends BasicJSONExtractor {
     @Override
     protected Map<List<String>,String> getRenamePaths() {
         def result = [:]
-        renamePaths.entrySet().each { Map.Entry entry ->
+        dottedRenamedPaths.entrySet().each { Map.Entry entry ->
             result.put(parse(entry.key),entry.value)
         }
         result
@@ -39,7 +39,7 @@ class DeclarativeJSONExtractor extends BasicJSONExtractor {
     @Override
     protected Map<List<String>,Object> getDefaultValuePaths() {
         def result = [:]
-        defaultValuePaths.entrySet().each { Map.Entry entry ->
+        dottedValuePaths.entrySet().each { Map.Entry entry ->
             result.put(parse(entry.key),entry.value)
         }
         result
@@ -53,7 +53,7 @@ class DeclarativeJSONExtractor extends BasicJSONExtractor {
     @Override
     protected List<List<String>> getShortObjectPaths() {
         def result = []
-        shortObjectPaths.each { String path ->
+        dottedShortObjectPaths.each { String path ->
             result.add(parse(path))
         }
         result
@@ -66,7 +66,7 @@ class DeclarativeJSONExtractor extends BasicJSONExtractor {
     @Override
      protected List<List<String>> getFlattenPaths() {
         def result = []
-        flattenPaths.each { String path ->
+        dottedFlattenedPaths.each { String path ->
             result.add(parse(path))
         }
         result
