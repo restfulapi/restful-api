@@ -1427,6 +1427,277 @@ The domain marshaller will be configured with the results of merging the configu
 ###Configuration merging
 The order in which configurations are merged is significant.  When two configurations, first and second are merged, boolean values, or single valued options that are set in the second config override the first.  Collection or map values are combined.
 
+##Declarative extraction of JSON content
+If JSON content needs to be manipulated before being bound to domain objects, POGOs, etc, it is possible to do so declaratively.  Any incoming JSON content will be a single object containing other JSON objects or JSON arrays.  This ability is not intended to deal with type coercion or data binding, but to provide a simple way to rename keys, provide default values, or convert 'short object' representations back into plain IDs.  It functions as a counterpart to the declarative json marshalling support.
+
+The best way to describe the use of declarative extraction is by examples.
+
+###Renaming keys
+Consider a JSON object for a purchase order:
+
+    {
+        "productId":"123",
+        "quantity":50,
+        "customer":{
+            "name":"Smith"
+        }
+    }
+
+Suppose that the domain objects for purchase order and customer expected the productId to be called productNumber and the name to be lastName.  We can configure an extractor that will handle the renaming automatically:
+
+    resource 'purchase-orders' config {
+        representation {
+            mediaTypes = ["application/json"]
+            jsonExtractor {
+                property 'productId'     name 'productNumber'
+                property 'customer.name' name 'lastName'
+            }
+        }
+    }
+
+This will automatically register an extractor for the representation that will product the map:
+
+    ['productNumber':'123', 'quantity':50, 'customer':['lastName':'Smith'] ]
+
+Note the use of dot-notation to identify the key to rename.
+
+When the path of a key to rename traverserses one or more JSON arrays, the rename is applied to all elements of the array that are JSON objects:
+
+    resource 'purchase-orders' config {
+        representation {
+            mediaTypes = ["application/json"]
+            jsonExtractor {
+                property 'customers.name' name 'lastName'
+            }
+        }
+    }
+
+This configuration will produce an extractor that when applied to
+
+        {
+            "customers": [
+                {"name":"Smith"},
+                {"name":"Jones"}
+            ]
+        }
+
+Would result in the map
+
+    [ "customers":[ ["lastName":"Smith"], ["lastName":"Jones" ] ] ]
+
+When specifying paths, alway do so in terms of the incoming JSON.  The extractor will automatically rename keys correctly, regardless of what order they are specified in.  For example:
+
+    resource 'purchase-orders' config {
+        representation {
+            mediaTypes = ["application/json"]
+            jsonExtractor {
+                property 'customers'      name 'preferredCustomers'
+                property 'customers.name' name 'lastName'
+            }
+        }
+    }
+
+Will work correctly.
+
+###Providing default values.
+As your system evolves, you may introduce new, required fields to domain objects.  If you are using versioned APIs, the new field cannot be added to existing representation(s) without breaking them, so when a caller uses one of these representations, it will be necessary to add a default value.  This can, of course, be done at the service layer, but only if the service layer can provide an appropriate default - it is more likely that the service will treat the missing value as a validation exception.  The declarative extractor can be configured to provide a default value for any missing key.
+
+    resource 'purchase-orders' config {
+        representation {
+            mediaTypes = ["application/json"]
+            jsonExtractor {
+                property 'orderType' defaultValue 'standard'
+            }
+        }
+    }
+
+This will create an extractor that will added the key/value pair 'orderType'/'standard' to the map, if 'orderType' does not already exist as a key.  If 'orderType' exists as a key (even with a null value), then no action is taken.
+
+As with renaming keys, if any part of the property path traverses a JSON array, the defaultValue rule will apply to all members of the collection that are JSON objects.
+
+###Treating a value as a short-object representation
+The declarative domain class marshalling renders associations as 'short-objects' by default.  When consuming the same representation, it may be desirable to have the short object representations converted back to plain IDs, or some other format conducive to data binding.  This can be accomplished by declaring the field to be a short object representation.
+
+        resource 'purchase-orders' config {
+            representation {
+                mediaTypes = ["application/json"]
+                jsonExtractor {
+                    property 'customer' shortObject true
+                }
+            }
+        }
+
+For input
+
+    { "orderId":12345,
+      "customer": { "_link": "/customers/123"}
+    }
+
+The above configuration would produce the map:
+
+    ['orderID':12345, 'customer': [ 'id':'123' ] ]
+
+If a property is declared as a short-object, by default the extractor will assume the short-object format is a json object containing a '_link' property, that has a url or url fragment as the value.  It takes anything after the last '/' as the id value, and converts the json object into a map of [id:\<idvalue\>].  Note that this is compatible with the default short-object behavior of the declarative json marshaller.
+
+A field that represents an array of short-objects is converted as you would expect: each json object that represents the object references is converted to an id:value map, and all the maps are returned in a list.  For example:
+
+        resource 'purchase-orders' config {
+            representation {
+                mediaTypes = ["application/json"]
+                jsonExtractor {
+                    property 'customers' shortObject true
+                }
+            }
+        }
+
+Given input
+
+    { "orderId":12345,
+      "customers": [ { "_link": "/customers/123" }, { "_link":"/customers/456" } ]
+    }
+
+Will convert to
+
+    ['orderID':12345, 'customers': [ [ 'id':'123' ], ['id':'456' ] ]
+
+If you have customized what a short-object reference looks like, you can override the behavior by assigning a closure specifying how to convert short-objects.  For example, suppose that your short-object representations instead of containing a url, are a json object containing resource-name and id separately, like:
+
+    { "orderId":12345,
+      "customers": [ { "resource-name": "customers", "id":123 }, { "resource-name":'customers', "id":123 } ]
+    }
+
+    To convert that back into id:value maps, you could override the short-object behavior like so:
+
+    resource 'purchase-orders' config {
+        representation {
+            mediaTypes = ["application/json"]
+            jsonExtractor {
+                property 'customers' shortObject true
+            }
+            shortObject { def value ->
+                if (value == null) return value
+                if (Collection.class.isAssignableFrom(value.getClass())) {
+                    def result = []
+                    value.each() {
+                        if (it !=null && Map.class.isAssignableFrom(it.getClass())) {
+                            def v = it['id']
+                            result.add( [id:v] )
+                        } else {
+                            throw new Exception( "Cannot convert from short object for $it" )
+                        }
+                    }
+                    return result
+                } else {
+                    if (Map.class.isAssignableFrom(value.getClass())) {
+                        def v = value['id']
+                        return [id:v]
+                    } else {
+                        throw new Exception( "Cannot convert from short object for $value" )
+                    }
+                }
+            }
+        }
+    }
+
+Which would result in the map:
+
+    ['orderID':12345, 'customers': [ [ 'id':'123' ], ['id':'456' ] ]
+
+Note that the closure must be able to handle both single short-object references, and collections of them.  In general, if you are overriding the short-object behavior, you would want to override it for all representations.  This is possible by using templates; see below for more details on how to do so.
+
+###Flattening the final map
+If you intend to use grails data binding to bind the output of a declarative extractor to grails domain objects or POGOs, then you will need to flatten parts of the map that represent sub-objects.  This is because the data binding is designed to work with parameters submitted from web forms, so when dealing with nested objects, it expects key names to describe the associations, rather than nested maps.  For example it expects
+
+    ['orderID':12345, 'customers[0].id':'123', 'customers[1].id':'123']
+
+instead of
+
+    ['orderID':12345, 'customers': [ [ 'id':'123' ], ['id':'456' ] ]
+
+You can instruct the declarative extractor to 'flatten' a property whose value is a map.  This will cause the original property to be removed, and replaced with a new property for each key in the map.  The new property name will be formed by joining the original property name with the key in the map value, joined with a '.'.
+
+For example, suppose you have a deep-rendered representation that looks like the following:
+
+    {"orderId":123,
+     "customer": {
+        "name":"Smith"
+        "id":456,
+        "phone-number":"555-555-5555"
+     }
+    }
+
+    resource 'purchase-orders' config {
+        representation {
+            mediaTypes = ["application/json"]
+            jsonExtractor {
+                property 'customer' flatObject true
+            }
+        }
+    }
+
+Will generate a final map that looks like:
+
+    ['orderId':123, 'customer.name':'Smith', 'customer.id':456, 'customer.phone-number':'555-555-5555']
+
+Which is suitable for grails data binding.
+
+Note that definining a property as a flat object only applies directly to the map (or collection of maps) representing the sub-object..  That is, it does not automatically handle further nested sub-objects.  If the customer sub-object in the above example also contained an address sub-object that needed to be flattened, that would need to be specified separately:
+
+    resource 'purchase-orders' config {
+        representation {
+            mediaTypes = ["application/json"]
+            jsonExtractor {
+                property 'customer'         flatObject true
+                property 'customer.address' flatObject true
+            }
+        }
+    }
+
+If the value of the property declared as a flat-object is a collection, then the extractor will automatically index the new keys created, e.g.
+
+        ['orderID':12345, 'customers[0].id':'123', 'customers[1].id':'123']
+
+The extractor will index based solely on the order in which it encounters sub-ojects.  Make certain you understand grails data binding and how it works when using collections of sub-objects, particularly if using sets of objects with no ordering.  The declarative extractor can flatten json objects into formats suitable for grails data-binding, but has no knowledge of the objects (domain or otherwise) that the output will be bound to.  Any of the challenges inherent to grails data binding from data submitted via a form stil remain.
+
+###JSON extractor templates
+JSON extractor templates are configuration blocks that do not directly create an extractor.  The 'config' block accepts any configuration that the jsonExractor block does (including the inherits option).  When a jsonExractor directive contains an 'inherits' element, the templates referenced will be merged with the configuration for the extractor in a depth-first manner.  Elements that represent collections or maps are merged together (later templates overriding previous ones, if there is a conflict), with the configuration in the jsonDomainMarshaller block itself overriding any previous values.
+
+In general, json domain templates are useful for overriding short-object handling, or defining rules that apply to properties present in all incoming JSON objects.
+
+###Template inheritance order.
+When a json extractor declaration includes an inherits directive, then the configuration of each template is merged with the declaration itself in depth-first order.  For example, consider the use of nested configuration:
+
+    jsonExtractorTemplates {
+        template 'one' config {
+            //some config
+        }
+        template 'two' config {
+            //some config
+        }
+        template 'three' config {
+            inherits = ['one','two']
+            //some config
+        }
+        template 'four' config {
+            //some config
+        }
+    }
+
+    resource 'customers' config {
+        representation {
+            mediaTypes = ["application/json"]
+            jsonExractor {
+                inherits = ['three','four']
+            }
+        }
+    }
+
+The extractor will be configured with the results of merging the configuration blocks in the following order: 'one', 'two', 'three', 'four' and the contents of the jsonExractor block itself.
+
+###Configuration merging
+The order in which configurations are merged is significant.  When two configurations, first and second are merged, boolean values, or single valued options that are set in the second config override the first.  Collection or map values are combined.
+
+
 ##Logging
 Errors encountered while servicing a request are logged at error level to the log target 'RestfulApiController_messageLog'.  This is so errors occuring from the requests (which will typically be errors caused by invalid input, etc) can be separated from errors in the controller.
 
