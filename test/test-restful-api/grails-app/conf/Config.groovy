@@ -178,7 +178,7 @@ restfulApiConfig = {
             mediaTypes =  ['application/vnd.hedtech.v0+json']
             marshallers {
                 marshaller {
-                    instance = new net.hedtech.restfulapi.marshallers.json.BasicHalDomainClassMarshaller(app:grailsApplication)
+                    instance = new net.hedtech.restfulapi.marshallers.json.BasicDomainClassMarshaller(app:grailsApplication)
                     priority = 100
                 }
                 marshaller {
@@ -259,7 +259,7 @@ restfulApiConfig = {
             mediaTypes = ['application/vnd.hedtech.additional.field.closure+json']
             marshallers {
                 marshaller {
-                    instance = new net.hedtech.restfulapi.marshallers.json.BasicHalDomainClassMarshaller(app:grailsApplication)
+                    instance = new net.hedtech.restfulapi.marshallers.json.BasicDomainClassMarshaller(app:grailsApplication)
                     priority = 100
                 }
                 jsonDomainMarshaller {

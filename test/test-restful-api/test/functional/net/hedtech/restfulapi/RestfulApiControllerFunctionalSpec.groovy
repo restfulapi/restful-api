@@ -161,7 +161,6 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         // assert localization of the message
         "List of thing resources" == responseHeader('X-hedtech-message')
 
-        xml.'net-hedtech-object'[0]._href[0].text().contains('things')
         '2' == xml.'net-hedtech-object'[0].numParts[0].text()
         null != xml.'net-hedtech-object'[0].sha1[0].text()
     }
@@ -1424,7 +1423,6 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         'application/json'        == response.contentType
         "AA"                      == json.code
         "An AA thing"             == json.description
-        // assert localization of the message
         null                      != json.numParts
         null                      != json.sha1
     }

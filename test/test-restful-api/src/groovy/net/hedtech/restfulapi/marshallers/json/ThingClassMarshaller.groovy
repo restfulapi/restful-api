@@ -17,7 +17,7 @@ import org.springframework.beans.BeanWrapper
 /**
  * A JSON marshaller that supports HAL (http://stateless.co/hal_specification.html).
  **/
-class ThingClassMarshaller extends BasicHalDomainClassMarshaller {
+class ThingClassMarshaller extends BasicDomainClassMarshaller {
 
 
     protected static final Log log =
