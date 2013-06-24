@@ -1539,7 +1539,9 @@ The above configuration would produce the map:
 
 If a property is declared as a short-object, by default the extractor will assume the short-object format is a json object containing a '_link' property, that has a url or url fragment as the value.  It takes anything after the last '/' as the id value, and converts the json object into a map of [id:\<idvalue\>].  Note that this is compatible with the default short-object behavior of the declarative json marshaller.
 
-A field that represents an array of short-objects is converted as you would expect: each json object that represents the object references is converted to an id:value map, and all the maps are returned in a list.  For example:
+Note that if you intend to use grails data binding, then for single references, like in the above example, you will also need to 'flatten' the customer reference; see "Flattening the final map" below.
+
+A field that represents an array of short-objects is converted to an array of IDs. For example:
 
         resource 'purchase-orders' config {
             representation {
@@ -1558,7 +1560,9 @@ Given input
 
 Will convert to
 
-    ['orderID':12345, 'customers': [ [ 'id':'123' ], ['id':'456' ] ]
+    ['orderID':12345, 'customers': [ '123', '456' ] ]
+
+The reason collections are treated differently than a single reference is due to how grails data-binding operates.
 
 If you have customized what a short-object reference looks like, you can override the behavior by assigning a closure specifying how to convert short-objects.  For example, suppose that your short-object representations instead of containing a url, are a json object containing resource-name and id separately, like:
 
@@ -1580,13 +1584,12 @@ If you have customized what a short-object reference looks like, you can overrid
                     def result = []
                     value.each() {
                         if (it !=null && Map.class.isAssignableFrom(it.getClass())) {
-                            def v = it['id']
-                            result.add( [id:v] )
+                            result.add( it['id'] )
                         } else {
                             throw new Exception( "Cannot convert from short object for $it" )
                         }
                     }
-                    return result
+                    return result.toArray() //grails data binding requires a java array
                 } else {
                     if (Map.class.isAssignableFrom(value.getClass())) {
                         def v = value['id']
@@ -1601,18 +1604,18 @@ If you have customized what a short-object reference looks like, you can overrid
 
 Which would result in the map:
 
-    ['orderID':12345, 'customers': [ [ 'id':'123' ], ['id':'456' ] ]
+    ['orderID':12345, 'customers': [ '123', '456' ] ]
 
 Note that the closure must be able to handle both single short-object references, and collections of them.  In general, if you are overriding the short-object behavior, you would want to override it for all representations.  This is possible by using templates; see below for more details on how to do so.
 
 ###Flattening the final map
-If you intend to use grails data binding to bind the output of a declarative extractor to grails domain objects or POGOs, then you will need to flatten parts of the map that represent sub-objects.  This is because the data binding is designed to work with parameters submitted from web forms, so when dealing with nested objects, it expects key names to describe the associations, rather than nested maps.  For example it expects
+If you intend to use grails data binding to bind the output of a declarative extractor to grails domain objects or POGOs, then you may need to flatten parts of the map that represent sub-objects.  This is because the data binding is designed to work with parameters submitted from web forms, so when dealing with nested objects, it expects key names to describe the associations, rather than nested maps.  For example it expects
 
-    ['orderID':12345, 'customers[0].id':'123', 'customers[1].id':'123']
+    ['orderID':12345, 'customer.name':'Smith']
 
 instead of
 
-    ['orderID':12345, 'customers': [ [ 'id':'123' ], ['id':'456' ] ]
+    ['orderID':12345, 'customer': [ 'name':'Smith' ] ]
 
 You can instruct the declarative extractor to 'flatten' a property whose value is a map.  This will cause the original property to be removed, and replaced with a new property for each key in the map.  The new property name will be formed by joining the original property name with the key in the map value, joined with a '.'.
 
@@ -1658,6 +1661,32 @@ If the value of the property declared as a flat-object is a collection, then the
         ['orderID':12345, 'customers[0].id':'123', 'customers[1].id':'123']
 
 The extractor will index based solely on the order in which it encounters sub-ojects.  Make certain you understand grails data binding and how it works when using collections of sub-objects, particularly if using sets of objects with no ordering.  The declarative extractor can flatten json objects into formats suitable for grails data-binding, but has no knowledge of the objects (domain or otherwise) that the output will be bound to.  Any of the challenges inherent to grails data binding from data submitted via a form stil remain.
+
+In general, for collections of sub-objects, it is recommened to not use grails data binding (that is, not flatten the sub-objects).  This is because grails data binding operates against collections based on the index of entries in the collection, not their IDs.
+
+For example, suppose we have a one-to-many relations of Author to Book.  We have an existing Author, that has three books having IDs 1, 2, and 3 and titles 'Book1', 'Book2', and 'Book3'.  If we print the books for this author, it would look like:
+
+    [[Book id=1, title=Book1], [Book id=2, title=Book2], [Book id=3, title=Book3] ]
+
+Now suppose we receive a JSON representation where we are using full rendered version of the Books instead of short-objects, say something like:
+
+    {"books":[ "id":2, "title":"ChangedTitle"]}
+
+We flatten the map to look like
+
+    def m = ["books[0].id":2, "books[0].title":"ChangedTitle"]
+
+And use grails data binding against the Author:
+
+    author.properties = m
+
+If we save this and print the books collection for that author, we will get:
+
+    [[Book id=2, title=ChangedTitle], [Book id=2, title=ChangedTitle], [Book id=3, title=Book3] ]
+
+This is because when using the index and dot notation for grails data binding, grails is being told to change what the index zero reference in the books collection points to.
+
+In other words, representations that deep-render associated objects, and use grails-data binding by flattening the objects, require the consumer of the API to worry about ordering within collections when performing an update.  For this reason, it is recommended that representations either use short-objects (i.e, representations only control the association of objects, but do not allow properties of sub-objects to be manipulated in the same API call), or the backing services should implement their own data binding strategies rather than rely on grails indexed data binding.  For example, the service could iterate through an array of associated objects on an update, retrieve them by ID instead of index position, and then bind the sub-map to them directly.
 
 ###JSON extractor templates
 JSON extractor templates are configuration blocks that do not directly create an extractor.  The 'config' block accepts any configuration that the jsonExractor block does (including the inherits option).  When a jsonExractor directive contains an 'inherits' element, the templates referenced will be merged with the configuration for the extractor in a depth-first manner.  Elements that represent collections or maps are merged together (later templates overriding previous ones, if there is a conflict), with the configuration in the jsonDomainMarshaller block itself overriding any previous values.

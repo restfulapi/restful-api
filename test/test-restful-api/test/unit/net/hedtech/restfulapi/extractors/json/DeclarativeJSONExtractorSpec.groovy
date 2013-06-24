@@ -115,6 +115,7 @@ class DeclarativeJSONExtractorSpec extends Specification {
         def map = extractor.extract(json)
 
         then:
-        [customers:[[id:'1'],[id:'2']]] == map
+        [customers:['1','2']] == map
+        true                  == map['customers'].getClass().isArray()
     }
 }

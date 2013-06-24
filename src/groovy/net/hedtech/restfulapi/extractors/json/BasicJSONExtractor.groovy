@@ -20,12 +20,12 @@ class BasicJSONExtractor implements JSONExtractor {
             value.each() {
                 if (it !=null && Map.class.isAssignableFrom(it.getClass())) {
                     def v = it['_link']
-                    result.add( [id:v.substring(v.lastIndexOf('/')+1)] )
+                    result.add( v.substring(v.lastIndexOf('/') + 1) )
                 } else {
                     throw new Exception( "Cannot convert from short object for $it" )
                 }
             }
-            return result
+            return result.toArray()
         } else {
             if (Map.class.isAssignableFrom(value.getClass())) {
                 def v = value['_link']
