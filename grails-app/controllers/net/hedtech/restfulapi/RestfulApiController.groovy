@@ -657,7 +657,7 @@ class RestfulApiController {
      * a service name of 'SingularizedResourceNameService' will be returned.
      **/
     protected String getServiceName() {
-        def svcName = restConfig.getResource( params.pluralizedResourceName )?.serviceName
+        def svcName = getResourceConfig()?.serviceName
         if (svcName == null) {
             svcName = "${domainName()}Service"
         }
@@ -731,7 +731,7 @@ class RestfulApiController {
     }
 
     protected void checkMethod( String method ) {
-        def resource = restConfig.getResource( params.pluralizedResourceName )
+        def resource = getResourceConfig()
         if (!resource) {
             throw new UnsupportedMethodException( supportedMethods:[] )
         }
@@ -768,7 +768,8 @@ class RestfulApiController {
 
 
     private Object useJSON(RepresentationConfig config, Closure closure) {
-        useJSON( "restfulapi:" + params.pluralizedResourceName + ":" + config.mediaType, closure )
+        ResourceConfig resource = getResourceConfig()
+        useJSON( "restfulapi:" + resource.name + ":" + config.mediaType, closure )
     }
 
 
@@ -790,7 +791,8 @@ class RestfulApiController {
 
 
     private Object useXML( RepresentationConfig config, Closure closure ) {
-        useXML( "restfulapi:" + params.pluralizedResourceName + ":" + config.mediaType, closure )
+        ResourceConfig resource = getResourceConfig()
+        useXML( "restfulapi:" + resource.name + ":" + config.mediaType, closure )
     }
 
 
@@ -857,7 +859,8 @@ class RestfulApiController {
 
 
     private Map extractJSON( JSONObject json, String mediaType ) {
-        JSONExtractor extractor = JSONExtractorConfigurationHolder.getExtractor( params.pluralizedResourceName, mediaType )
+        ResourceConfig resourceConfig = getResourceConfig()
+        JSONExtractor extractor = JSONExtractorConfigurationHolder.getExtractor( resourceConfig.name, mediaType )
         if (!extractor) {
             unsupportedRequestRepresentation()
         }
@@ -866,7 +869,8 @@ class RestfulApiController {
 
 
     private Map extractXML( String mediaType ) {
-        XMLExtractor xmlExtractor = XMLExtractorConfigurationHolder.getExtractor( params.pluralizedResourceName, mediaType )
+        ResourceConfig resourceConfig = getResourceConfig()
+        XMLExtractor xmlExtractor = XMLExtractorConfigurationHolder.getExtractor( resourceConfig.name, mediaType )
         if (!xmlExtractor) {
             unsupportedRequestRepresentation()
         }
@@ -876,6 +880,10 @@ class RestfulApiController {
 
     private String getJSONMediaType( String xmlType ) {
         restConfig.getJsonEquivalentMediaType( xmlType )
+    }
+
+    private ResourceConfig getResourceConfig() {
+        restConfig.getResource( params.pluralizedResourceName )
     }
 
     private def exceptionHandlers = [

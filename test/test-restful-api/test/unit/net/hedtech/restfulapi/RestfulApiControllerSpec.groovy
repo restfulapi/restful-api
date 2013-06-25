@@ -42,7 +42,7 @@ class RestfulApiControllerSpec extends Specification {
         }
         controller.init()
 
-        //mock the appropriate service method, expect exactly 1 invocation
+        //mock the appropriate service method, expect 0 invocations
         def mock = Mock(ThingService)
         controller.metaClass.getService = {-> mock}
 
@@ -496,6 +496,61 @@ class RestfulApiControllerSpec extends Specification {
           0 == response.getContentLength()
           1*mock.delete(_,_,_) >> { }
         'default.rest.deleted.message' == response.getHeaderValue( 'X-hedtech-message' )
+    }
 
+    def "Test anyResource support"() {
+        setup:
+        //use default extractor for any methods with a request body
+         config.restfulApiConfig = {
+            anyResource {
+                representation {
+                    mediaTypes = ['application/json']
+                    marshallers {
+                        jsonGroovyBeanMarshaller {}
+                    }
+                    jsonExtractor {}
+                }
+            }
+        }
+        controller.init()
+
+        //mock the appropriate service method, expect exactly 1 invocation
+        def mock = Mock(ThingService)
+        controller.metaClass.getService = {-> mock}
+        def cacheHeadersService = new CacheHeadersService()
+        Closure withCacheHeadersClosure = { Closure c ->
+            c.delegate = controller
+            c.resolveStrategy = Closure.DELEGATE_ONLY
+            cacheHeadersService.withCacheHeaders( c.delegate, c )
+        }
+        controller.metaClass.withCacheHeaders = withCacheHeadersClosure
+
+        request.addHeader( 'Accept', 'application/json' )
+        request.addHeader( 'Content-Type', 'application/json' )
+        request.method = httpMethod
+        params.pluralizedResourceName = 'things'
+        if (id != null) params.id = id
+
+        when:
+        controller."$controllerMethod"()
+
+        then:
+        status == response.status
+        listCount * mock.list(_) >> { serviceReturn }
+        listCount * mock.count(_) >> { serviceReturn.size() }
+        showCount * mock.show(_) >> { serviceReturn }
+        updateCount * mock.update(_,_,_) >> { serviceReturn }
+        createCount * mock.create(_,_) >> { serviceReturn }
+        deleteCount * mock.delete(_,_,_) >> {}
+        0 * _._
+
+
+        where:
+        controllerMethod | httpMethod | id   | status | listCount | showCount | updateCount | createCount | deleteCount | serviceReturn
+        'list'           | 'GET'      | null | 200    | 1         | 0         | 0           | 0           | 0           | ['foo']
+        'show'           | 'GET'      | '1'  | 200    | 0         | 1         | 0           | 0           | 0           | [name:'foo']
+        'create'         | 'POST'     | null | 201    | 0         | 0         | 0           | 1           | 0           | [name:'foo']
+        'update'         | 'PUT'      | '1'  | 200    | 0         | 0         | 1           | 0           | 0           | [name:'foo']
+        'delete'         | 'DELETE'   | '1'  | 200    | 0         | 0         | 0           | 0           | 1           | null
     }
 }

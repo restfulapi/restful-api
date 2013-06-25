@@ -10,6 +10,10 @@ class RestConfig {
 
     GrailsApplication grailsApplication
 
+    //map of resource name to its configuration
+    //A resource with an empty name "" is treated as
+    //a default resource block matching any resource
+    //not explicitly named
     def resources = [:]
     def jsonAsXml
     //map of group name to MarshallerGroupConfig instance
@@ -23,14 +27,18 @@ class RestConfig {
     }
 
     ResourceConfig getResource( String pluralizedName ) {
-        return resources[pluralizedName]
+        def resource = resources[pluralizedName]
+        if (resource == null) {
+            resource = resources[""]
+        }
+        resource
     }
 
     RepresentationConfig getRepresentation(String pluralizedResourceName, String type ) {
         getRepresentation(pluralizedResourceName, [type])
     }
 
-    RepresentationConfig getRepresentation(pluralizedResourceName, allowedTypes) {
+    RepresentationConfig getRepresentation(String pluralizedResourceName, allowedTypes) {
         ResourceConfig resource = getResource( pluralizedResourceName )
         if (!resource) return null
         for (def type : allowedTypes) {
@@ -80,6 +88,16 @@ class RestConfig {
             resources.put( name, rc )
         }
         [config:closure]
+    }
+
+    RestConfig anyResource(Closure c) {
+        ResourceConfig rc = new ResourceConfig(restConfig:this,name:"")
+        c.delegate = rc
+        c.resolveStrategy = Closure.DELEGATE_FIRST
+        c.call()
+        if (rc.name != "") throw new RuntimeException("Name of resource illegally changed")
+        resources.put( "", rc )
+        this
     }
 
     RestConfig marshallerGroups(Closure c) {

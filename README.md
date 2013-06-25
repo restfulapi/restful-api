@@ -404,6 +404,59 @@ Consider another example in which we are supporting versioned json representatio
 
 This configuration exposes 2 resources, 'colleges' and 'students'.  The 'colleges' resource support two versioned representations, while the 'students' resource only has one.  Note that the custom media types are re-used across the resources.
 
+####Whitelisting vs dynamic exposure of resources
+The plugin allows you to explicitly whitelist resources to be exposed - an appropriate error response code will be thrown for resources not listed.  You can also dynamically expose resources, in which case any resource name that maps by convention to a service can be serviced.
+
+To dynamically expose services, you specify an anyResource block:
+
+    restfulApiConfig = {
+        anyResource {
+            representation {
+                mediaTypes = ["application/json"]
+                marshallers {
+                    jsonDomainMarshaller {
+                        priority = 101
+                    }
+                    jsonGroovyBeanMarshaller {
+                        priority = 100
+                    }
+                }
+                jsonExtractor {}
+            }
+        }
+    }
+
+The configuration in the anyResource block applies to any resource that isn't explicitly listed in the configuration.  anyResource would be primarily used when you want to dynamically expose resources, and are not using versioned representations; e.g., you have a 'simple' system in which the resource representations can map directly to the objects they represent and the json or xml can be dynamically generated.  The above example uses the declarative domain and groovy bean marshallers to handle all resources.
+
+Any configuration options for a resource/representation listed below can be applied to the anyResource block as well.  (So you can assign affordances, etc.)
+
+If you define an anyResource block, and then expose one or more resources explicitly, the whitelisted resource configuration is used for that resource, with no fallback.  For example:
+
+    restfulApiConfig = {
+        anyResource {
+            representation {
+                mediaTypes = ["application/json"]
+                marshallers {
+                    jsonDomainMarshaller {
+                        priority = 101
+                    }
+                    jsonGroovyBeanMarshaller {
+                        priority = 100
+                    }
+                }
+                jsonExtractor {}
+            }
+        }
+
+        resource 'things' config {
+            representation {
+                mediaTypes = ["application/xml"]
+            }
+        }
+    }
+
+In this configuration, 'things' does not have a json representation.  The configuration in an anyResource block only applies to a resource that is not explicitly listed.
+
 ####Default representations
 You can also assign multiple media types to the same representation.  The most common use for this is to have a media type such as 'application/json' represent a particular version as a default.  For example:
 

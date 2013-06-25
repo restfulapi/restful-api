@@ -538,4 +538,185 @@ class RestConfigSpec extends Specification {
         def e = thrown(MethodsNotCollectionException)
         'things' == e.resourceName
     }
+
+    def "Test anyResource"() {
+        setup:
+        def src =
+        {
+            anyResource {
+                methods = ['list','show']
+                representation {
+                    mediaTypes = ['application/json']
+                    marshallers {
+                        marshaller {
+                            instance = 'a'
+                            priority = 5
+                        }
+                        marshaller {
+                            instance = 'b'
+                            priority = 6
+                        }
+                    }
+                    extractor = 'DynamicJsonExtractor'
+                }
+            }
+        }
+
+        when:
+        def config = RestConfig.parse( grailsApplication, src )
+        config.validate()
+        def resource = config.getResource("")
+        def rep = resource.getRepresentation('application/json')
+
+        then:
+        ['list','show']        == resource.getMethods()
+        ['a','b']              == rep.marshallers*.instance
+        [5,6]                  == rep.marshallers*.priority
+        'DynamicJsonExtractor' == rep.extractor
+    }
+
+    def "Test getting a resource with a default resource config"() {
+        setup:
+        def src =
+        {
+            anyResource {
+                representation {
+                    mediaTypes = ['application/json']
+                }
+            }
+        }
+
+        when:
+        def config = RestConfig.parse( grailsApplication, src )
+        config.validate()
+        def resourceConfig = config.getResource( 'things' )
+
+        then:
+        null != resourceConfig
+        resourceConfig instanceof ResourceConfig
+    }
+
+    def "Test getting a representation with a default resource config"() {
+        setup:
+        def src =
+        {
+            anyResource {
+                representation {
+                    mediaTypes = ['application/json']
+                    marshallers {
+                        marshaller {
+                            instance = 'a'
+                            priority = 5
+                        }
+                        marshaller {
+                            instance = 'b'
+                            priority = 6
+                        }
+                    }
+                    extractor = 'DynamicJsonExtractor'
+                }
+            }
+        }
+
+        when:
+        def config = RestConfig.parse( grailsApplication, src )
+        config.validate()
+        def rep = config.getRepresentation( 'things', ['application/json'] )
+
+        then:
+        null      != rep
+        ['a','b'] == rep.marshallers*.instance
+    }
+
+    def "Test that whitelisting overrides default resource config"() {
+        setup:
+        def src =
+        {
+            anyResource {
+                representation {
+                    mediaTypes = ['application/xml']
+                    marshallers {
+                        marshaller {
+                            instance = 'a'
+                            priority = 5
+                        }
+                    }
+                    extractor = 'DynamicJsonExtractor'
+                }
+            }
+            resource 'things' config {
+                representation {
+                    mediaTypes = ['application/json']
+                    serviceName = 'foo'
+                    marshallers {
+                        marshaller {
+                            instance = 'local'
+                        }
+                    }
+                }
+            }
+        }
+
+        when:
+        def config = RestConfig.parse( grailsApplication, src )
+        config.validate()
+        def resource = config.getResource('things')
+        def rep = config.getRepresentation( 'things', ['application/json'] )
+
+        then:
+        'foo'     == resource.serviceName
+        ['local'] == rep.marshallers*.instance
+    }
+
+    def "Test that if a resource is whitelisted there is no fallback to default for representations"() {
+        setup:
+        def src =
+        {
+            anyResource {
+                representation {
+                    mediaTypes = ['application/xml']
+                    marshallers {
+                        marshaller {
+                            instance = 'a'
+                            priority = 5
+                        }
+                    }
+                    extractor = 'DynamicJsonExtractor'
+                }
+            }
+            resource 'things' config {
+                representation {
+                    mediaTypes = ['application/json']
+                    marshallers {
+                        marshaller {
+                            instance = 'local'
+                        }
+                    }
+                }
+            }
+        }
+
+        when:
+        def config = RestConfig.parse( grailsApplication, src )
+        config.validate()
+        def thingRep = config.getRepresentation( 'things', ['application/xml'] )
+        def otherThingRep = config.getRepresentation( 'otherThing', ['application/xml'] )
+
+        then:
+        null == thingRep
+        null != otherThingRep
+    }
+
+    def "Test getting config for a non-whitelisted resource without default"() {
+        setup:
+        def src = {}
+
+        when:
+        def config = RestConfig.parse( grailsApplication, src )
+        config.validate()
+
+        then:
+        null == config.getResource( 'things' )
+        null == config.getRepresentation('things', ['application/json'])
+    }
 }
