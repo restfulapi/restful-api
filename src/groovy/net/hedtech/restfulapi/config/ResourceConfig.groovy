@@ -43,7 +43,7 @@ class ResourceConfig {
             if (representations[mediaType] != null) {
                throw new AmbiguousRepresentationException( resourceName:name, mediaType:mediaType )
             }
-            RepresentationConfig config = new RepresentationConfig( mediaType:mediaType, jsonAsXml:delegate.jsonAsXml, marshallers:delegate.marshallers, extractor:delegate.extractor )
+            RepresentationConfig config = new RepresentationConfig( mediaType:mediaType, marshallers:delegate.marshallers, extractor:delegate.extractor )
             representations[mediaType] = config
         }
         return this

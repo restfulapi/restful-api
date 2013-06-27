@@ -102,53 +102,7 @@ class RestConfigSpec extends Specification {
         2 == conf.resources['things'].representations.size()
     }
 
-    def "Test jsonAsXml settings and defaults"() {
-        setup:
-        def src =
-        {
-            resource 'things' config {
-                representation {
-                    mediaTypes = ['application/vnd.hedtech.v0+xml']
-                    jsonAsXml = true
-                }
-                representation {
-                    mediaTypes = ['application/vnd.hedtech.v1+xml']
-                    jsonAsXml = false
-                    marshallers {
-                        marshaller {
-                            instance = 'v1'
-                            priority = 5
-                        }
-                    }
-                    extractor = 'v1'
-                }
-                representation {
-                    mediaTypes = ['application/vnd.hedtech.v2+xml']
-                    marshallers {
-                        marshaller {
-                            instance = 'v2'
-                            priority = 5
-                        }
-                    }
-                    extractor = 'v2'
-                }
-
-            }
-        }
-
-        when:
-        def conf = RestConfig.parse( grailsApplication, src )
-
-        then:
-        1     == conf.resources.size()
-        3     == conf.resources['things'].representations.size()
-        true  == conf.resources['things'].representations['application/vnd.hedtech.v0+xml'].jsonAsXml
-        false == conf.resources['things'].representations['application/vnd.hedtech.v1+xml'].jsonAsXml
-        false == conf.resources['things'].representations['application/vnd.hedtech.v2+xml'].jsonAsXml
-    }
-
-    @Unroll
-    def "Test resources missing extractors and marshallers"(String foo,String bar) {
+    def "Test resources missing extractors and marshallers"() {
         setup:
         def src = {
             resource 'things' config {
@@ -163,15 +117,10 @@ class RestConfigSpec extends Specification {
                 }
                 representation {
                     mediaTypes = ['application/xml']
-                    jsonAsXml = true
-                    extractor = new net.hedtech.restfulapi.extractors.xml.JSONObjectExtractor()
+                    extractor = 'foo'
                 }
                 representation {
-                    mediaTypes = ['application/custom-xml']
-                }
-                representation {
-                    mediaTypes = ['application/custom-json-as-xml']
-                    jsonAsXml = true
+                    mediaTypes = ['application/custom-json']
                 }
             }
         }
@@ -181,13 +130,11 @@ class RestConfigSpec extends Specification {
 
         then:
         1     == conf.resources.size()
-        4     == conf.resources['things'].representations.size()
+        3     == conf.resources['things'].representations.size()
         conf.resources['things'].representations.values().each {
             null != it.mediaType
         }
-        where:
-        foo   | bar
-        'foo' | 'bar'
+
     }
 
     def "Test content negotiation for representation"() {
@@ -384,28 +331,6 @@ class RestConfigSpec extends Specification {
         then:
         def e = thrown(MissingMarshallerGroupException)
         'defaultJSON' == e.name
-    }
-
-    def "Test xmlAsJSON missing equivalent json representation for marshaller"() {
-        setup:
-        def src =
-        {
-            resource 'things' config {
-                representation {
-                    mediaTypes = ['application/xml']
-                    jsonAsXml = true
-                }
-            }
-        }
-
-        when:
-        def config = RestConfig.parse( grailsApplication, src )
-        config.validate()
-
-        then:
-        def e = thrown(MissingJSONEquivalent)
-        'things' == e.resourceName
-        'application/xml' == e.mediaType
     }
 
     def "Test service name override"() {

@@ -7,7 +7,6 @@ package net.hedtech.restfulapi.config
 class RepresentationDelegate {
 
     def mediaTypes = []
-    boolean jsonAsXml = false
     def marshallers = []
     def extractor
 
@@ -15,11 +14,6 @@ class RepresentationDelegate {
 
     RepresentationDelegate(RestConfig config) {
         this.restConfig = config
-    }
-
-    RepresentationDelegate jsonAsXml(boolean b) {
-        this.jsonAsXml = b
-        this
     }
 
     RepresentationDelegate extractor(Object obj) {

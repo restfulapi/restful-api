@@ -165,14 +165,13 @@ restfulApiConfig = {
         }
         representation {
             mediaTypes = ["application/xml"]
-            jsonAsXml = true
             marshallers {
                 marshaller {
-                    instance = new net.hedtech.restfulapi.marshallers.xml.JSONObjectMarshaller()
+                    instance = new net.hedtech.restfulapi.marshallers.xml.AffordanceDomainClassMarshaller(app:grailsApplication)
                     priority = 200
                 }
             }
-            extractor = new net.hedtech.restfulapi.extractors.xml.JSONObjectExtractor()
+            extractor = new net.hedtech.restfulapi.extractors.xml.MapExtractor()
         }
         representation {
             mediaTypes =  ['application/vnd.hedtech.v0+json']
@@ -190,14 +189,17 @@ restfulApiConfig = {
         }
         representation {
             mediaTypes = ['application/vnd.hedtech.v0+xml']
-            jsonAsXml = true
             marshallers {
                 marshaller {
-                    instance = new net.hedtech.restfulapi.marshallers.xml.JSONObjectMarshaller()
-                    priority = 200
+                    instance = new net.hedtech.restfulapi.marshallers.xml.AffordanceDomainClassMarshaller(app:grailsApplication)
+                    priority = 100
+                }
+                marshaller {
+                    instance = new net.hedtech.restfulapi.marshallers.xml.ThingClassMarshaller(grailsApplication)
+                    priority = 101
                 }
             }
-            extractor = new net.hedtech.restfulapi.extractors.xml.JSONObjectExtractor()
+            extractor = new net.hedtech.restfulapi.extractors.xml.MapExtractor()
         }
         representation {
             mediaTypes = ['application/vnd.hedtech.thing.v0+xml']
@@ -228,9 +230,6 @@ restfulApiConfig = {
                 }
             }
             extractor = new net.hedtech.restfulapi.extractors.json.ThingDefaultDescriptionExtractor()
-            jsonExtractor {
-                property 'description' defaultValue 'Default description'
-            }
         }
         //same as v1, but demonstrate declarative extraction
         representation {
@@ -247,13 +246,13 @@ restfulApiConfig = {
         }
         representation {
             mediaTypes = ['application/vnd.hedtech.v1+xml']
-            jsonAsXml = true
-            extractor = new net.hedtech.restfulapi.extractors.xml.JSONObjectExtractor()
-        }
-        representation {
-            mediaTypes = ['application/vnd.hedtech.v2+xml']
-            jsonAsXml = true
-            extractor = new net.hedtech.restfulapi.extractors.xml.JSONObjectExtractor()
+            marshallers {
+                marshaller {
+                    instance = new net.hedtech.restfulapi.marshallers.xml.BasicDomainClassMarshaller(app:grailsApplication)
+                    priority = 100
+                }
+            }
+            extractor = new net.hedtech.restfulapi.extractors.xml.MapExtractor()
         }
         representation {
             mediaTypes = ['application/vnd.hedtech.additional.field.closure+json']

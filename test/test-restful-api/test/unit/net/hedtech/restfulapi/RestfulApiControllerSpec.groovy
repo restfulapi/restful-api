@@ -152,19 +152,6 @@ class RestfulApiControllerSpec extends Specification {
                 }
                 representation {
                     mediaTypes = ['application/xml']
-                    jsonAsXml = true
-                    extractor = new net.hedtech.restfulapi.extractors.xml.JSONObjectExtractor()
-                }
-                representation {
-                    mediaTypes = ['application/custom-xml']
-                }
-                representation {
-                    mediaTypes = ['application/custom-thing-json']
-                    extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()
-                }
-                representation {
-                    mediaTypes = ['application/custom-thing-xml']
-                    jsonAsXml = true
                 }
             }
         }
@@ -193,9 +180,8 @@ class RestfulApiControllerSpec extends Specification {
         0 * _._
 
         where:
-        //test data for the current 3 'buckets' an incoming request falls into:
-        //json content, json-as-xml content (xml), and custom xml (any format not
-        //starting with 'xml')
+        //test data for the current 2 'buckets' an incoming request falls into:
+        //json content or xml content
         controllerMethod | httpMethod | mediaType                      | id   | serviceReturn    | body
         'create'         | 'POST'     | 'application/json'             | null | 'foo'            | null
         'update'         | 'PUT'      | 'application/json'             | '1'  | 'foo'            | null
@@ -203,12 +189,6 @@ class RestfulApiControllerSpec extends Specification {
         'create'         | 'POST'     | 'application/xml'              | null | 'foo'            | """<?xml version="1.0" encoding="UTF-8"?><json><code>AC</code><description>An AC thingy</description></json>"""
         'update'         | 'PUT'      | 'application/xml'              | '1'  | 'foo'            | """<?xml version="1.0" encoding="UTF-8"?><json><code>AC</code><description>An AC thingy</description></json>"""
         'delete'         | 'DELETE'   | 'application/xml'              | '1'  | null             | """<?xml version="1.0" encoding="UTF-8"?><json><code>AC</code><description>An AC thingy</description></json>"""
-        'create'         | 'POST'     | 'application/custom-xml'       | null | 'foo'            | null
-        'update'         | 'PUT'      | 'application/custom-xml'       | '1'  | 'foo'            | null
-        'delete'         | 'DELETE'   | 'application/custom-xml'       | '1'  | null             | null
-        'create'         | 'POST'     | 'application/custom-thing-xml' | null | 'foo'            | null
-        'update'         | 'PUT'      | 'application/custom-thing-xml' | '1'  | 'foo'            | null
-        'delete'         | 'DELETE'   | 'application/custom-thing-xml' | '1'  | null             | null
     }
 
     @Unroll
@@ -260,27 +240,6 @@ class RestfulApiControllerSpec extends Specification {
         controllerMethod | httpMethod | id   | serviceMethod | serviceReturn
         'list'           | 'GET'      | null | 'list'        | ['foo']
         'show'           | 'GET'      | '1'  | 'show'        | [foo:'foo']
-    }
-
-    def "Test the controller validates the configuration"() {
-        setup:
-        config.restfulApiConfig =
-        {
-            resource 'things' config {
-                representation {
-                    mediaTypes = ['application/xml']
-                    jsonAsXml = true
-                }
-            }
-        }
-
-        when:
-        controller.init()
-
-        then:
-        def e = thrown(MissingJSONEquivalent)
-        'things' == e.resourceName
-        'application/xml' == e.mediaType
     }
 
     def "Test that mismatch between id in url and resource representation returns 400"(def controllerMethod, def httpMethod, def id, def body) {
@@ -376,9 +335,6 @@ class RestfulApiControllerSpec extends Specification {
         0 * _._
 
         where:
-        //test data for the current 3 'buckets' an incoming request falls into:
-        //json content, json-as-xml content (xml), and custom xml (any format not)
-        //starting with 'xml'
         controllerMethod | allowedMethods                       | allowHeader
         'list'           | ['show','update','delete']           | []
         'list'           | ['create','show','update','delete']  | ["POST"]

@@ -343,17 +343,6 @@ For example, in Config.groovy:
                 }
                 extractor = new net.hedtech.restfulapi.extractors.json.DefaultJSONExtractor()
             }
-            representation {
-                mediaTypes = ["application/xml"]
-                jsonAsXml = true
-                marshallers {
-                    marshaller {
-                        instance = new net.hedtech.restfulapi.marshallers.xml.JSONObjectMarshaller()
-                        priority = 200
-                    }
-                }
-                extractor = new net.hedtech.restfulapi.extractors.xml.JSONObjectExtractor()
-            }
         }
     }
 
@@ -616,39 +605,6 @@ For example, to expose students as a read-only resource that just supports list 
 If a request for an unsupported method is received, the plugin will respond with a 405 status code and an Allow header specifying the HTTP methods the url supports.
 
 Note that if you are using the grails-cors plugin to support CORS functionality, the OPTIONS method will return results that are inconsistent with the methods actually supported.  That is, an OPTIONS request to an api url will always return that all methods are supported, even if the configuration restricts the methods for a given resource.  This may be addressed in a contribution to a future release of the CORS plugin.
-
-
-##JSON-as-xml
-The plugin supports a 'cheap' method of supporting both json and xml representation, while only requiring JSON marshallers/extractors to be created.
-To enable it for a representation, set jsonAsXml = true and specify the default jsonAsXml marshaller and extractor:
-
-    representation {
-        mediaTypes = ["application/xml"]
-        jsonAsXml = true
-        marshallers {
-            marshaller {
-                marshaller = new net.hedtech.restfulapi.marshallers.xml.JSONObjectMarshaller()
-                priority = 100
-            }
-        }
-        extractor = new net.hedtech.restfulapi.extractors.xml.JSONObjectExtractor()
-    }
-
-For producing responses with this representation, the controller will:
-
-* convert the xml media type to the equivalent json by means of convention.  For example, 'application/xml' becomes 'application/json'.
-* use the json marshaller chain for that media type to produce a JSON resource representation.
-* parses the json representation into a JSONObject, then uses the marshaller chain for the xml format to render the JSONObject as xml.
-
-The plugin includes a JSONObjectMarshaller designed to convert a JSONObject to xml in a consistent manner.  Note that it is not possible to achieve a 1-to-1 mapping between JSON an xml.  For example, JSON allows backspaces and form-feeds to be encoded, while these characters are illegal in xml 1.0.
-
-For handling request with a jsonAsXml representation, the controller will
-
-* parse the xml content and use the configured extractor to construct a JSONObject from it.
-* convert the xml media type to the equivalent json by means of convention.  For example, 'application/xml' becomes 'application/json'.
-* use the extractor defined for the equivalent json media type to conver the (intermediate) json object to a map to pass to the service.
-
-The json-as-xml support is not intended as a complete replacement for custom xml marshallers and extractors, but could be used in situations where xml support is required, but clients can understand 'json-like' semantics, but are using an xml parser/marshaller toolkit.
 
 ##Marshalling
 To fully take advantage of marshalling, you should understand how the grails converters for JSON and xml work.  The plugin takes advantage of named converter configurations.  Each resource/representation in the configuration results in a new named converter configuration for JSON or XML.  When marshalling an object, the restful-api controller will use that named configuration to marshall the object.  It does this by asking each marshaller in the named configuration (marshallers with higher priority first) if the marshaller supports the object.  This means that the marshallers registered for a resource/representation are used only for that representation, and is what allows the plugin to support different representations for the same resource.

@@ -58,7 +58,7 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         null == json[0].sha1
     }
 
-    def "Test list with json as xml response"() {
+    def "Test list with xml response"() {
         setup:
         createThing('AA')
         createThing('BB')
@@ -68,7 +68,7 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
             headers['Content-Type']  = 'application/json'
             headers['Accept']        = 'application/xml'
         }
-
+        def list = XML.parse response.text
 
         then:
         200 == response.status
@@ -79,15 +79,14 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         null != responseHeader('X-hedtech-pageOffset')
         null != responseHeader('X-hedtech-pageMaxSize')
 
-        def xml = XML.parse response.text
-        2                         == xml.'net-hedtech-object'.size()
-        "AA"                      == xml.'net-hedtech-object'[0].code[0].text()
-        "An AA thing"             == xml.'net-hedtech-object'[0].description[0].text()
+        2                         == list.thing.size()
+        "AA"                      == list.thing[0].code.text()
+        "An AA thing"             == list.thing[0].description.text()
         "List of thing resources" == responseHeader('X-hedtech-message')
 
-        xml.'net-hedtech-object'[0]._href[0].text().contains('things')
-        0 == xml.'net-hedtech-object'[0].numParts.size()
-        0 == xml.'net-hedtech-object'[0].sha1.size()
+        list.thing[0]._href[0].text().contains('things')
+        0 == list.thing[0].numParts.size()
+        0 == list.thing[0].sha1.size()
     }
 
     def "Test list with version 0 json response"() {
@@ -137,7 +136,7 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         2 == json.size()
     }
 
-    def "Test list with version 0 json-as-xml response"() {
+    def "Test list with version 0 xml response"() {
         setup:
         createThing('AA')
         createThing('BB')
@@ -154,15 +153,15 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         'application/vnd.hedtech.v0+xml' == responseHeader("X-hedtech-Media-Type")
 
         def xml = XML.parse response.text
-        2 == xml.'net-hedtech-object'.size()
-        "AA" == xml.'net-hedtech-object'[0].code[0].text()
-        "An AA thing" == xml.'net-hedtech-object'[0].description[0].text()
+        2             == xml.children().size()
+        "AA"          == xml.thing[0].code.text()
+        "An AA thing" == xml.thing[0].description.text()
 
         // assert localization of the message
         "List of thing resources" == responseHeader('X-hedtech-message')
 
-        '2' == xml.'net-hedtech-object'[0].numParts[0].text()
-        null != xml.'net-hedtech-object'[0].sha1[0].text()
+        '2'  == xml.thing[0].numParts.text()
+        null != xml.thing[0].sha1.text()
     }
 
     def "Test list of part-of-thing with json response when not nested"() {
@@ -334,7 +333,7 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
          "Details for the thing resource" == responseHeader('X-hedtech-message')
     }
 
-    def "Test show thing with json-as-xml response"() {
+    def "Test show thing with xml response"() {
         setup:
         def id = createThing('AA')
         createThing('BB')
@@ -384,7 +383,7 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         null != json.version
     }
 
-    def "Test show thing with json-as-xml version 0"() {
+    def "Test show thing with xml version 0"() {
         setup:
         def id = createThing('AA')
         createThing('BB')
@@ -634,7 +633,7 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         null != json.version
     }
 
-    def "Test saving json-as-xml"() {
+    def "Test saving xml"() {
         when:
         post( "$localBase/api/things") {
             headers['Content-Type'] = 'application/xml'
@@ -937,15 +936,15 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
                 """
             }
         }
+        def xml = XML.parse response.text
 
         then:
-        400 == response.status
-        'Validation failed' == responseHeader("X-Status-Reason")
+        400                       == response.status
+        'Validation failed'       == responseHeader("X-Status-Reason")
         // assert localization of the message
         "foo resource had errors" == responseHeader('X-hedtech-message')
-
-        def xml = XML.parse response.text
-        1 == xml.errors.size()
+        1                         == xml.entry.size()
+        "errors"                  == xml.entry.'@key'.text()
     }
 
     def "Test delegating to an application exception that generates no message or error block"() {
@@ -1069,16 +1068,17 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         // null != json.version
     }
 
-    def "Test saving a thing with version 1 json-as-xml representation"() {
+    def "Test saving a thing with version 1 json representation"() {
         when:
         post( "$localBase/api/things") {
             headers['Content-Type'] = 'application/vnd.hedtech.v1+xml'
             headers['Accept']       = 'application/json'
             body {
                 """<?xml version="1.0" encoding="UTF-8"?>
-                <json>
+                <thing>
                     <code>AC</code>
-                </json>
+                    <description>a thing</description>
+                </thing>
                 """
             }
         }
@@ -1091,34 +1091,7 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         def json = JSON.parse response.text
         null != json.id
         "AC" == json.code
-        "Default description" == json.description
-        0 == json.parts.size()
-        null != json.version
-    }
-
-    def "Test saving a thing with version 2 json-as-xml representation"() {
-        when:
-        post( "$localBase/api/things") {
-            headers['Content-Type'] = 'application/vnd.hedtech.v1+xml'
-            headers['Accept']       = 'application/json'
-            body {
-                """<?xml version="1.0" encoding="UTF-8"?>
-                <json>
-                    <code>AC</code>
-                </json>
-                """
-            }
-        }
-
-        then:
-        201 == response.status
-
-        'application/json' == response.contentType
-
-        def json = JSON.parse response.text
-        null != json.id
-        "AC" == json.code
-        "Default description" == json.description
+        "a thing" == json.description
         0 == json.parts.size()
         null != json.version
     }

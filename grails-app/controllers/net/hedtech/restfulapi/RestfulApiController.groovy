@@ -122,7 +122,6 @@ class RestfulApiController {
         }
 
         XML.createNamedConfig('restapi-error:xml') {
-            it.registerObjectMarshaller(new net.hedtech.restfulapi.marshallers.xml.JSONObjectMarshaller(), 200)
         }
 
         log.trace 'Done initializing RestfulApiController...'
@@ -342,13 +341,17 @@ class RestfulApiController {
             case ~/.*xml.*/:
                 contentType = 'application/xml'
                 if (responseHolder.data != null) {
-                    def jsonObject
+                    /*def jsonObject
                     useJSON("restapi-error:json") {
-                        def s = (responseHolder.data as JSON) as String
-                        jsonObject = toJSONElement(s)
+                        //def s = (responseHolder.data as JSON) as String
+                        //jsonObject = toJSONElement(s)
+                        conent = responseHolder.data as JSON
                     }
                     useXML("restapi-error:xml") {
                         content = jsonObject as XML
+                    }*/
+                    useXML("restapi-error:xml") {
+                        content = responseHolder.data as XML
                     }
                 }
             break
@@ -396,8 +399,8 @@ class RestfulApiController {
             responseHolder.data = result.returnMap
             responseHolder.message = result.message
             this.response.setStatus( result.httpStatusCode )
-         }
-         catch (t) {
+        }
+        catch (t) {
             //We generated an exception trying to generate an error response.
             //Log the error, and attempt to fall back on a generic fail-whale response
             log.error( "Caught exception attemping to prepare an error response: ${t.message}", t )
@@ -405,12 +408,12 @@ class RestfulApiController {
 
             responseHolder.message = message( code: 'default.rest.unexpected.exception.messages' )
             this.response.setStatus( 500 )
-         }
-         return responseHolder
+        }
+        return responseHolder
     }
 
 
-     protected def generateResponseContent( RepresentationConfig representation, def data ) {
+    protected def generateResponseContent( RepresentationConfig representation, def data ) {
         def content
         switch(representation.mediaType) {
             case ~/.*json$/:
@@ -420,17 +423,8 @@ class RestfulApiController {
                 }
                 break
             case ~/.*xml$/:
-                def objectToRender = data
-                if (representation.jsonAsXml) {
-                    def jsonRepresentation = getJsonEquivalent( representation )
-                    useJSON(jsonRepresentation) {
-                        def s = (data as JSON) as String
-                        objectToRender = toJSONElement(s)
-                    }
-                }
-
                 useXML(representation) {
-                    content = objectToRender as XML
+                    content = data as XML
                 }
                 break
             default:
@@ -603,12 +597,7 @@ class RestfulApiController {
                 return extractJSON( representation.mediaType )
             break
             case ~/.*xml$/:
-                Map content = extractXML( representation.mediaType )
-                if (representation.jsonAsXml) {
-                    def jsonMediaType = getJSONMediaType( representation.mediaType )
-                    content = extractJSON( content, jsonMediaType )
-                }
-                return content
+                return extractXML( representation.mediaType )
             break
             default:
                 unsupportedRequestRepresentation()
@@ -833,15 +822,6 @@ class RestfulApiController {
     }
 
 
-    private RepresentationConfig getJsonEquivalent( RepresentationConfig representation ) {
-        def jsonType = getJSONMediaType( representation.mediaType )
-        def jsonRepresentation = getRepresentation( params.pluralizedResourceName, [new MediaType( jsonType )] )
-        if (!jsonRepresentation) {
-            unsupportedResponseRepresentation()
-        }
-        jsonRepresentation
-    }
-
     private unsupportedResponseRepresentation() {
         throw new UnsupportedResponseRepresentationException( params.pluralizedResourceName, request.getHeader(HttpHeaders.ACCEPT) )
     }
@@ -875,11 +855,6 @@ class RestfulApiController {
             unsupportedRequestRepresentation()
         }
         return xmlExtractor.extract( request.XML )
-    }
-
-
-    private String getJSONMediaType( String xmlType ) {
-        restConfig.getJsonEquivalentMediaType( xmlType )
     }
 
     private ResourceConfig getResourceConfig() {

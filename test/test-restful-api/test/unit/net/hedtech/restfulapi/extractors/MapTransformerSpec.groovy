@@ -241,7 +241,30 @@ class MapTransformerSpec extends Specification {
 
         then:
         [customers:['1','2']] == map
+    }
 
+
+    def "Test modify map"() {
+        setup:
+        def map  = [customers:['smith':['_link':'/customers/1'],'anderson':['_link':'/customers/2']]]
+        def rules = new MapTransformerRules()
+        rules.addModifyValueRule(['customers'],
+            { value ->
+                def newMap = [:]
+                value.entrySet().each {Map.Entry entry ->
+                    def v = entry.value['_link']
+                    newMap.put(entry.key, v.substring(v.lastIndexOf('/')+1))
+                }
+                return newMap
+            }
+        )
+        MapTransformer transformer = new MapTransformer(rules)
+
+        when:
+        map = transformer.transform(map)
+
+        then:
+        [customers:['smith':'1','anderson':'2']] == map
     }
 
     def "Test flatten map"() {

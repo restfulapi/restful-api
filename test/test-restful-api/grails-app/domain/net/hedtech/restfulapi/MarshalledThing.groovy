@@ -8,19 +8,20 @@ package net.hedtech.restfulapi
  **/
 class MarshalledThing implements Serializable {
 
-    Map contributors
-    MarshalledThingEmbeddedPart embeddedPart
-    MarshalledOwnerOfThing owner //many-to-one
-
     static hasMany = [
         parts: MarshalledPartOfThing, //one-to-many (Collection)
-        contributors:MarshalledThingContributor //one-to-many (Map)
+        contributors:MarshalledThingContributor, //one-to-many (Map)
+        simpleArray:String
     ]
     static hasOne = [subPart:MarshalledSubPartOfThing] //1-to-1
     static embedded = ['embeddedPart']
 
-
-
+    Map contributors = [:]
+    MarshalledThingEmbeddedPart embeddedPart
+    MarshalledOwnerOfThing owner //many-to-one
+    Map simpleMap = [:]
+    Collection simpleArray = []
+    Collection parts = []
 
     String     code
     String     description

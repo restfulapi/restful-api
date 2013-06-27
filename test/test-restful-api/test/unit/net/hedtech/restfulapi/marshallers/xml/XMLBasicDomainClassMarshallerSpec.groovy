@@ -1,20 +1,19 @@
 /*****************************************************************************
 Copyright 2013 Ellucian Company L.P. and its affiliates.
 ******************************************************************************/
-package net.hedtech.restfulapi.marshallers.json
+package net.hedtech.restfulapi.marshallers.xml
 
 import grails.test.mixin.*
 import grails.test.mixin.web.*
 import spock.lang.*
 import net.hedtech.restfulapi.*
-import grails.converters.JSON
+import grails.converters.XML
 import grails.test.mixin.support.*
 import org.codehaus.groovy.grails.support.MockApplicationContext
 import org.codehaus.groovy.grails.web.converters.configuration.ConvertersConfigurationInitializer
 import org.springframework.web.context.WebApplicationContext
 import org.springframework.beans.BeanWrapper
 import org.codehaus.groovy.grails.commons.GrailsDomainClassProperty
-import org.codehaus.groovy.grails.web.json.JSONObject
 import grails.test.mixin.domain.DomainClassUnitTestMixin
 
 import org.junit.Rule
@@ -24,7 +23,7 @@ import org.junit.rules.TestName
 @Mock([MarshalledThing,MarshalledPartOfThing,
        MarshalledSubPartOfThing,MarshalledThingContributor,
        MarshalledOwnerOfThing,MarshalledThingEmbeddedPart])
-class BasicDomainClassMarshallerSpec extends Specification {
+class XMLBasicDomainClassMarshallerSpec extends Specification {
 
     @Rule TestName testName = new TestName()
 
@@ -44,11 +43,12 @@ class BasicDomainClassMarshallerSpec extends Specification {
 
         when:
         def content = render( thing )
-        def json = JSON.parse content
+        def xml = XML.parse content
 
         then:
-        1    == json.id
-        'AA' == json.code
+        '1'  == xml.id.text()
+        'AA' == xml.code.text()
+        1    == xml.description.size()
     }
 
     def "Test without Id"() {
@@ -63,11 +63,11 @@ class BasicDomainClassMarshallerSpec extends Specification {
 
         when:
         def content = render( thing )
-        def json = JSON.parse content
+        def xml = XML.parse content
 
         then:
-        !json.containsKey('id')
-        'AA' == json.code
+        0    == xml.id.size()
+        'AA' == xml.code.text()
     }
 
     def "Test with version"() {
@@ -83,11 +83,11 @@ class BasicDomainClassMarshallerSpec extends Specification {
 
         when:
         def content = render( thing )
-        def json = JSON.parse content
+        def xml = XML.parse content
 
         then:
-        1    == json.version
-        'AA' == json.code
+        '1'  == xml.version.text()
+        'AA' == xml.code.text()
     }
 
     def "Test without version"() {
@@ -103,11 +103,11 @@ class BasicDomainClassMarshallerSpec extends Specification {
 
         when:
         def content = render( thing )
-        def json = JSON.parse content
+        def xml = XML.parse content
 
         then:
-        !json.containsKey('version')
-        'AA' == json.code
+        0    == xml.version.size()
+        'AA' == xml.code.text()
     }
 
     def "Test excluding fields"() {
@@ -121,12 +121,12 @@ class BasicDomainClassMarshallerSpec extends Specification {
 
         when:
         def content = render( thing )
-        def json = JSON.parse content
+        def xml = XML.parse content
 
         then:
-        !json.containsKey('description')
-        !json.containsKey('isLarge')
-        'AA' == json.code
+        0    == xml.description.size()
+        0    == xml.isLarge.size()
+        'AA' == xml.code.text()
     }
 
     def "Test default exclusions"() {
@@ -139,10 +139,10 @@ class BasicDomainClassMarshallerSpec extends Specification {
 
         when:
         def content = render( thing )
-        def json = JSON.parse content
+        def xml = XML.parse content
 
         then:
-        !json.containsKey('lastModifiedBy')
+        0    == xml.lastModifiedBy.size()
         null != thing.lastModifiedBy
 
     }
@@ -159,19 +159,19 @@ class BasicDomainClassMarshallerSpec extends Specification {
 
         when:
         def content = render( thing )
-        def json = JSON.parse content
+        def xml = XML.parse content
 
         then:
-        'AA'       == json.code
-        'aa thing' == json.description
-        !json.containsKey('contributors')
-        !json.containsKey('embeddedPart')
-        !json.containsKey('owner')
-        !json.containsKey('subPart')
-        !json.containsKey('isLarge')
-        !json.containsKey('lastModified')
-        !json.containsKey('lastModifiedBy')
-        !json.containsKey('dataOrigin')
+        'AA'       == xml.code.text()
+        'aa thing' == xml.description.text()
+        0 == xml.contributors.size()
+        0 == xml.embeddedPart.size()
+        0 == xml.owner.size()
+        0 == xml.subPart.size()
+        0 == xml.isLarge.size()
+        0 == xml.lastModified.size()
+        0 == xml.lastModifiedBy.size()
+        0 == xml.dataOrigin.size()
     }
 
     def "Test that included fields overrides excluded fields"() {
@@ -189,12 +189,12 @@ class BasicDomainClassMarshallerSpec extends Specification {
 
         when:
         def content = render( thing )
-        def json = JSON.parse content
+        def xml = XML.parse content
 
         then:
-        'AA'         == json.code
-        'aa thing'   == json.description
-        'John Smith' == json.lastModifiedBy
+        'AA'         == xml.code.text()
+        'aa thing'   == xml.description.text()
+        'John Smith' == xml.lastModifiedBy.text()
 
     }
 
@@ -204,10 +204,11 @@ class BasicDomainClassMarshallerSpec extends Specification {
             app:grailsApplication
         )
         marshaller.metaClass.processField << {
-            BeanWrapper beanWrapper, GrailsDomainClassProperty property, JSON json ->
+            BeanWrapper beanWrapper, GrailsDomainClassProperty property, XML xml ->
             if (property.getName() == 'description') {
-                json.getWriter().key('modDescription')
-                json.convertAnother(beanWrapper.getPropertyValue(property.getName()))
+                xml.startNode('modDescription')
+                xml.convertAnother(beanWrapper.getPropertyValue(property.getName()))
+                xml.end()
                 return false
             } else {
                 return true
@@ -218,12 +219,12 @@ class BasicDomainClassMarshallerSpec extends Specification {
 
         when:
         def content = render( thing )
-        def json = JSON.parse content
+        def xml = XML.parse content
 
         then:
-        !json.containsKey('description')
-        'aa thing' == json.modDescription
-        'AA'       == json.code
+        0          == xml.description.size()
+        'aa thing' == xml.modDescription.text()
+        'AA'       == xml.code.text()
     }
 
     def "Test alternative name of simple field"() {
@@ -244,15 +245,15 @@ class BasicDomainClassMarshallerSpec extends Specification {
 
         when:
         def content = render( thing )
-        def json = JSON.parse content
+        def xml = XML.parse content
 
         then:
-        !json.containsKey('description')
-        'aa thing' == json.modDescription
-        'AA'       == json.code
+        0          == xml.description.size()
+        'aa thing' == xml.modDescription.text()
+        'AA'       == xml.code.text()
     }
 
-    def "Test that null Collection association field is marshalled as null"() {
+    def "Test that null Collection association field is marshalled as an empty node"() {
         setup:
         def marshaller = new BasicDomainClassMarshaller(
             app:grailsApplication
@@ -263,15 +264,36 @@ class BasicDomainClassMarshallerSpec extends Specification {
 
         when:
         def content = render( thing )
-        def json = JSON.parse content
+        def xml = XML.parse content
 
         then:
-        null            == thing.parts
-        JSONObject.NULL == json.parts
-
+        null   == thing.parts
+        1      == xml.parts.size()
+        0      == xml.parts.children().size()
+        "true" == xml.parts.'@array'.text()
     }
 
-    def "Test that null Map association field is marshalled as null"() {
+    def "Test that empty Collection association field is marshalled as an empty node"() {
+        setup:
+        def marshaller = new BasicDomainClassMarshaller(
+            app:grailsApplication
+        )
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing" )
+        thing.parts = []
+
+        when:
+        def content = render( thing )
+        def xml = XML.parse content
+
+        then:
+        []     == thing.parts
+        1      == xml.parts.size()
+        0      == xml.parts.children().size()
+        "true" == xml.parts.'@array'.text()
+    }
+
+    def "Test that null Map association field is marshalled as an empty node"() {
         setup:
         def marshaller = new BasicDomainClassMarshaller(
             app:grailsApplication
@@ -281,15 +303,36 @@ class BasicDomainClassMarshallerSpec extends Specification {
 
         when:
         def content = render( thing )
-        def json = JSON.parse content
+        def xml = XML.parse content
 
         then:
-        null            == thing.contributors
-        JSONObject.NULL == json.contributors
-
+        null   == thing.contributors
+        1      == xml.contributors.size()
+        0      == xml.contributors.children().size()
+        "true" == xml.contributors.'@map'.text()
     }
 
-    def "Test that null one-to-one association field is marshalled as null"() {
+
+    def "Test that empty Map association field is marshalled as an empty node"() {
+        setup:
+        def marshaller = new BasicDomainClassMarshaller(
+            app:grailsApplication
+        )
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing", contributors:[:] )
+
+        when:
+        def content = render( thing )
+        def xml = XML.parse content
+
+        then:
+        [:]    == thing.contributors
+        1      == xml.contributors.size()
+        0      == xml.contributors.children().size()
+        "true" == xml.contributors.'@map'.text()
+    }
+
+    def "Test that null one-to-one association field is marshalled as an empty node"() {
         setup:
         def marshaller = new BasicDomainClassMarshaller(
             app:grailsApplication
@@ -299,15 +342,16 @@ class BasicDomainClassMarshallerSpec extends Specification {
 
         when:
         def content = render( thing )
-        def json = JSON.parse content
+        def xml = XML.parse content
 
         then:
-        null            == thing.subPart
-        JSONObject.NULL == json.subPart
+        null == thing.subPart
+        1    == xml.subPart.size()
+        0    == xml.subPart.children().size()
 
     }
 
-    def "Test that null many-to-one association field is marshalled as null"() {
+    def "Test that null many-to-one association field is marshalled as an empty node"() {
         setup:
         def marshaller = new BasicDomainClassMarshaller(
             app:grailsApplication
@@ -317,15 +361,15 @@ class BasicDomainClassMarshallerSpec extends Specification {
 
         when:
         def content = render( thing )
-        def json = JSON.parse content
+        def xml = XML.parse content
 
         then:
-        null            == thing.owner
-        JSONObject.NULL == json.owner
-
+        null == thing.owner
+        1    == xml.owner.size()
+        0    == xml.owner.children().size()
     }
 
-    def "Test that null embedded association field is marshalled as null"() {
+    def "Test that null embedded association field is marshalled as an empty node"() {
         setup:
         def marshaller = new BasicDomainClassMarshaller(
             app:grailsApplication
@@ -335,12 +379,144 @@ class BasicDomainClassMarshallerSpec extends Specification {
 
         when:
         def content = render( thing )
-        def json = JSON.parse content
+        def xml = XML.parse content
 
         then:
-        null            == thing.embeddedPart
-        JSONObject.NULL == json.embeddedPart
+        null == thing.embeddedPart
+        1    == xml.embeddedPart.size()
+        0    == xml.embeddedPart.children().size()
     }
+
+    def "Test that associated collection carries the array attribute"() {
+        setup:
+        def marshaller = new BasicDomainClassMarshaller(
+            app:grailsApplication
+        )
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing" )
+        def parts = []
+        def part = new MarshalledPartOfThing(code:'partA',desc:'part A')
+        part.setId(1)
+        parts.add part
+        thing.parts = parts
+
+        when:
+        def content = render( thing )
+        def xml = XML.parse content
+
+        then:
+        "true" == xml.parts.'@array'.text()
+    }
+
+    def "Test that associated map carries the map attribute"() {
+        setup:
+        def marshaller = new BasicDomainClassMarshaller(
+            app:grailsApplication
+        )
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing" )
+        MarshalledThingContributor contrib = new MarshalledThingContributor( firstName:'John', lastName:'Smith' )
+        contrib.id = 5
+        thing.contributors=['smith':contrib]
+
+
+        when:
+        def content = render( thing )
+        def xml = XML.parse content
+
+        then:
+        "true" == xml.contributors.'@map'.text()
+    }
+
+    def "Test that non-association collection carries the array attribute"() {
+        setup:
+        def marshaller = new BasicDomainClassMarshaller(
+            app:grailsApplication
+        )
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing" )
+
+        when:
+        def content = render( thing )
+        def xml = XML.parse content
+
+        then:
+        "true" == xml.simpleArray.'@array'.text()
+    }
+
+    def "Test that null non-association map marshalls as empty node"() {
+        setup:
+        def marshaller = new BasicDomainClassMarshaller(
+            app:grailsApplication
+        )
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing" )
+        thing.simpleMap = null
+
+        when:
+        def content = render( thing )
+        def xml = XML.parse content
+
+        then:
+        "true" == xml.simpleMap.'@map'.text()
+        0      == xml.simpleMap.children().size()
+    }
+
+    def "Test that empty non-association map marshalls as empty node"() {
+        setup:
+        def marshaller = new BasicDomainClassMarshaller(
+            app:grailsApplication
+        )
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing" )
+        thing.simpleMap = [:]
+
+        when:
+        def content = render( thing )
+        def xml = XML.parse content
+
+        then:
+        "true" == xml.simpleMap.'@map'.text()
+        0      == xml.simpleMap.children().size()
+    }
+
+
+    def "Test that null non-association collection marshalls as empty node"() {
+        setup:
+        def marshaller = new BasicDomainClassMarshaller(
+            app:grailsApplication
+        )
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing" )
+        thing.simpleArray = null
+
+        when:
+        def content = render( thing )
+        def xml = XML.parse content
+
+        then:
+        "true" == xml.simpleArray.'@array'.text()
+        0      == xml.simpleArray.children().size()
+    }
+
+    def "Test that empt non-association collection marshalls as empty node"() {
+        setup:
+        def marshaller = new BasicDomainClassMarshaller(
+            app:grailsApplication
+        )
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing" )
+        thing.simpleArray = []
+
+        when:
+        def content = render( thing )
+        def xml = XML.parse content
+
+        then:
+        "true" == xml.simpleArray.'@array'.text()
+        0      == xml.simpleArray.children().size()
+    }
+
 
     def "Test special processing of association field"() {
         setup:
@@ -349,19 +525,23 @@ class BasicDomainClassMarshallerSpec extends Specification {
         )
         boolean invoked = false
         marshaller.metaClass.processField << {
-            BeanWrapper beanWrapper, GrailsDomainClassProperty property, JSON json ->
+            BeanWrapper beanWrapper, GrailsDomainClassProperty property, XML xml ->
             invoked = true
             if (property.getName() == 'parts') {
-                def writer = json.getWriter()
-                writer.key('theParts')
-                writer.array()
+                xml.startNode('theParts')
                 beanWrapper.getPropertyValue(property.getName()).each {
-                    writer.object()
-                    writer.key('theId').value(it.getId())
-                    writer.key('theCode').value(it.code)
-                    writer.endObject()
+                    xml.startNode('part')
+
+                    xml.startNode('theId')
+                    xml.convertAnother(it.getId())
+                    xml.end()
+                    xml.startNode('theCode')
+                    xml.convertAnother(it.code)
+                    xml.end()
+
+                    xml.end()
                 }
-                writer.endArray()
+                xml.end()
                 return false
             } else {
                 return true
@@ -378,15 +558,15 @@ class BasicDomainClassMarshallerSpec extends Specification {
 
         when:
         def content = render( thing )
-        def json = JSON.parse content
+        def xml = XML.parse content
 
         then:
-        !json.containsKey('parts')
+        0 == xml.parts.size()
         true    == invoked
-        1       == json.theParts.size()
-        1       == json.theParts[0].theId
-        'partA' == json.theParts[0].theCode
-
+        1       == xml.theParts.size()
+        1       == xml.theParts.children().size()
+        1       == xml.theParts.part[0].theId.size()
+        'partA' == xml.theParts.part[0].theCode.text()
     }
 
     def "Test Collection based association field marshalled as short object"() {
@@ -407,13 +587,13 @@ class BasicDomainClassMarshallerSpec extends Specification {
 
         when:
         def content = render( thing )
-        def json = JSON.parse content
+        def xml = XML.parse content
 
         then:
-        '/marshalled-part-of-things/1' == json.parts[0]._link
-        '/marshalled-part-of-things/2' == json.parts[1]._link
-        !json.parts[0].containsKey('code')
-        !json.parts[0].containsKey('description')
+        '/marshalled-part-of-things/1' == xml.parts.shortObject[0]._link.text()
+        '/marshalled-part-of-things/2' == xml.parts.shortObject[1]._link.text()
+        0 == xml.parts.code.size()
+        0 == xml.parts.description.size()
     }
 
     def "Test Map based association field marshalled as short object"() {
@@ -430,18 +610,19 @@ class BasicDomainClassMarshallerSpec extends Specification {
         contrib.id = 6
         thing.contributors.put('anderson',contrib)
 
-
         when:
         def content = render( thing )
-        def json = JSON.parse content
+        def xml = XML.parse content
+        def smith = xml.contributors.children().find { it.@key.text() == 'smith' }
+        def anderson = xml.contributors.children().find { it.@key.text() == 'anderson' }
 
         then:
-        2    == json.contributors.size()
-        '/marshalled-thing-contributors/5' == json.contributors['smith']._link
-        '/marshalled-thing-contributors/6' == json.contributors['anderson']._link
-        !json.contributors['smith'].containsKey('lastName')
-        !json.contributors['smith'].containsKey('firstName')
-
+        2                                  == xml.contributors.children().size()
+        'smith'                            == xml.contributors.entry[0].@key.text()
+        '/marshalled-thing-contributors/5' == smith.shortObject._link.text()
+        '/marshalled-thing-contributors/6' == anderson.shortObject._link.text()
+        1                                  == xml.contributors.entry[0].children().size()
+        1                                  == xml.contributors.entry[1].children().size()
     }
 
     def "Test many-to-one association field marshalled as short object"() {
@@ -458,11 +639,11 @@ class BasicDomainClassMarshallerSpec extends Specification {
 
         when:
         def content = render( thing )
-        def json = JSON.parse content
+        def xml = XML.parse content
 
         then:
-        !json.owner.containsKey('firstName')
-        '/marshalled-owner-of-things/5' == json.owner._link
+        0 == xml.owner.firstName.size()
+        '/marshalled-owner-of-things/5' == xml.owner.shortObject._link.text()
     }
 
     def "Test one-to-one association field marshalled as short object"() {
@@ -479,11 +660,11 @@ class BasicDomainClassMarshallerSpec extends Specification {
 
         when:
         def content = render( thing )
-        def json = JSON.parse content
+        def xml = XML.parse content
 
         then:
-        !json.subPart.containsKey('code')
-        '/marshalled-sub-part-of-things/5' == json.subPart._link
+        0 == xml.subPart.code.size()
+        '/marshalled-sub-part-of-things/5' == xml.subPart.shortObject._link.text()
     }
 
     def "Test embedded association field marshalled as full object"() {
@@ -498,11 +679,11 @@ class BasicDomainClassMarshallerSpec extends Specification {
 
         when:
         def content = render( thing )
-        def json = JSON.parse content
+        def xml = XML.parse content
 
         then:
-        'ad34fa' == json.embeddedPart.serialNumber
-        'foo'    == json.embeddedPart.description
+        'ad34fa' == xml.embeddedPart.serialNumber.text()
+        'foo'    == xml.embeddedPart.description.text()
     }
 
     def "Test additional fields"() {
@@ -510,23 +691,24 @@ class BasicDomainClassMarshallerSpec extends Specification {
         def marshaller = new BasicDomainClassMarshaller(
             app:grailsApplication
         )
-        marshaller.metaClass.processAdditionalFields << {BeanWrapper wrapper, JSON json ->
-            json.property('additionalProp',wrapper.getPropertyValue('code') + ':' + wrapper.getPropertyValue('description'))
+        marshaller.metaClass.processAdditionalFields << {BeanWrapper wrapper, XML xml ->
+            xml.startNode('additionalProp')
+            xml.convertAnother(wrapper.getPropertyValue('code') + ':' + wrapper.getPropertyValue('description'))
+            xml.end()
         }
         register( marshaller )
         MarshalledThing thing = new MarshalledThing( code:'AA', description:'aa thing' )
 
         when:
         def content = render( thing )
-        def json = JSON.parse content
+        def xml = XML.parse content
 
         then:
-        'AA:aa thing' == json.additionalProp
-
+        'AA:aa thing' == xml.additionalProp.text()
     }
 
     private void register( String name, def marshaller ) {
-        JSON.createNamedConfig( "BasicDomainClassMarshaller:" + testName + ":$name" ) { json ->
+        XML.createNamedConfig( "BasicDomainClassMarshaller:" + testName + ":$name" ) { json ->
             json.registerObjectMarshaller( marshaller, 100 )
         }
     }
@@ -536,8 +718,8 @@ class BasicDomainClassMarshallerSpec extends Specification {
     }
 
     private String render( String name, def obj ) {
-        JSON.use( "BasicDomainClassMarshaller:" + testName + ":$name" ) {
-            return (obj as JSON) as String
+        XML.use( "BasicDomainClassMarshaller:" + testName + ":$name" ) {
+            return (obj as XML) as String
         }
     }
 
