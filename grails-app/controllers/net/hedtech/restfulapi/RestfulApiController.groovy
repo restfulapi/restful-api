@@ -625,6 +625,8 @@ class RestfulApiController {
             return 'OptimisticLockException'
         } else if (e instanceof ValidationException) {
             return 'ValidationException'
+        } else if (e instanceof UnsupportedResourceException) {
+            return 'UnsupportedResourceException'
         } else if (e instanceof UnsupportedRequestRepresentationException) {
             return 'UnsupportedRequestRepresentationException'
         } else if (e instanceof UnsupportedResponseRepresentationException) {
@@ -727,7 +729,7 @@ class RestfulApiController {
     protected void checkMethod( String method ) {
         def resource = getResourceConfig()
         if (!resource) {
-            throw new UnsupportedMethodException( supportedMethods:[] )
+            throw new UnsupportedResourceException( params.pluralizedResourceName )
         }
         if (!resource.allowsMethod( method ) ) {
             def allowed = resource.getMethods().intersect( Methods.getMethodGroup( method ) )
@@ -884,6 +886,15 @@ class RestfulApiController {
                 httpStatusCode: 409,
                 message: message( code: "default.optimistic.locking.failure",
                                           args: [ Inflector.singularize( pluralizededResourceName ) ] ) as String,
+            ]
+        },
+
+
+        'UnsupportedResourceException': { pluralizededResourceName, e ->
+            [
+                httpStatusCode: 404,
+                message: message( code: "default.rest.unknownresource.message",
+                                          args: [ e.getPluralizedResourceName() ] ) as String,
             ]
         },
 

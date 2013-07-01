@@ -118,6 +118,18 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         "An AA thing" == json[0].description
     }
 
+    def "Test list when resource is not recognized"() {
+
+        when:"list with application/json accept"
+        get("$localBase/api/unknown-things") {
+            headers['Accept']       = 'application/json'
+        }
+
+        then:
+        404 == response.status
+        "Unsupported resource 'unknown-things'" == responseHeader('X-hedtech-message')
+    }
+
     def "Test list when Content-Type is not recognized"() {
         setup:
         createThing('AA')
@@ -304,6 +316,18 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         1 == json.errors.size()
         "validation" == json.errors[0].type
         null != json.errors[0].errorMessage
+    }
+
+    def "Test show when resource is not recognized"() {
+
+        when:"show with application/json accept"
+        get("$localBase/api/unknown-things/123") {
+            headers['Accept']       = 'application/json'
+        }
+
+        then:
+        404 == response.status
+        "Unsupported resource 'unknown-things'" == responseHeader('X-hedtech-message')
     }
 
     def "Test show thing with json response"() {
@@ -567,6 +591,27 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         200 == response.status
         def json = JSON.parse response.text
         1 == json.version
+    }
+
+    def "Test create when resource is not recognized"() {
+
+        when:"create with application/json accept"
+        post("$localBase/api/unknown-things") {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/json'
+            body {
+                """
+                {
+                    "code": "NO",
+                    "description": "You cannot find me!"
+                }
+                """
+            }
+        }
+
+        then:
+        404 == response.status
+        "Unsupported resource 'unknown-things'" == responseHeader('X-hedtech-message')
     }
 
     def "Test save as json"() {
