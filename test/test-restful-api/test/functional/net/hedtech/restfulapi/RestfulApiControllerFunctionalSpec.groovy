@@ -648,6 +648,41 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         null != json.version
     }
 
+    def "Test create nested resource as json"() {
+        setup:
+        def parentId = createThing('AA')
+        def someDate = new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+
+        when:
+        post( "$localBase/api/things/$parentId/part-of-things" ) {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/json'
+            body {
+                """
+                {
+                    "code": "pp",
+                    "description": "Part of AA",
+                    "thing": { "_link": "/things/$parentId" }
+                }
+                """
+            }
+        }
+
+        then:
+        201 == response.status
+
+        'application/json' == response.contentType
+
+        // assert localization of the message
+        "part-of-thing resource created" == responseHeader('X-hedtech-message')
+        def json = JSON.parse response.text
+        null != json.id
+        "pp" == json.code
+        "Part of AA" == json.description
+        "[_link:/things/$parentId]" as String == json.thing as String
+        null != json.version
+    }
+
     def "Test saving json and getting version 0 response"() {
 
         when:
@@ -755,6 +790,26 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         1 == json.errors.size()
         "general" == json.errors[0].type
         null != json.errors[0].errorMessage
+    }
+
+    def "Test updating when the resource is not recognized"() {
+
+        when:"create with application/json accept"
+        put("$localBase/api/unknown-things/123") {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/json'
+            body {
+                """
+                {
+                    "description": "You cannot find me!"
+                }
+                """
+            }
+        }
+
+        then:
+        404 == response.status
+        "Unsupported resource 'unknown-things'" == responseHeader('X-hedtech-message')
     }
 
     def "Test updating a thing with json"() {

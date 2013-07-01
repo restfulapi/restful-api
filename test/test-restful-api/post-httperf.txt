@@ -1,0 +1,17 @@
+#
+# Input file used for issuing a POST using httperf.
+# Usage:
+# httperf --hog --server localhost --port 8080 --method POST --add-header "Accept: application/json\nContent-Type: application/json\n" --wsesslog=100,0,post-httperf.txt
+#
+# Input:
+/test-restful-api/api/part-of-things method=POST contents="{\"code\":\"pp\",\"description\":\"Performance test\",\"thing\":{\"_link\":\"/things/1\"}}"
+
+#
+# The following shows how to issue a GET. (It does not use this file and is shown here only for reference.)
+# Usage:
+# httperf --hog --server localhost --port 8080 --add-header "Accept: application/json\n" --uri /test-restful-api/api/things?max=35 --num-conns 100
+
+#
+# Following is an example of using curl to hit an endpoint (again, shown here only for reference).
+# Usage:
+# curl -i --noproxy localhost -H "Accept: application/json" http://localhost:8080/test-restful-api/api/things?max=10

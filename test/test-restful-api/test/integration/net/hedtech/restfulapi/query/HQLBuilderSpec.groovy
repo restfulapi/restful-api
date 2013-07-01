@@ -22,8 +22,9 @@ class HQLBuilderSpec extends IntegrationSpec {
     def dataSource
 
 
-    def setup() { }
-
+    def setup() {
+        deleteThings()
+    }
     def cleanup() {
         deleteThings()
     }
@@ -61,7 +62,7 @@ class HQLBuilderSpec extends IntegrationSpec {
     def "Test creating statements based on valid filters"( String field, String operator, def value, String filterType, String statement ) {
 
         setup:
-        def xxId = createThing('XX')
+        def xxId = createThing('xx')
         def yyId = createThing('yy')
 
         // URL: things?filter[0][field]=code&filter[1][value]=science&filter[0][operator]=eq&
@@ -82,9 +83,9 @@ class HQLBuilderSpec extends IntegrationSpec {
 
         where:
         field              | operator   | value           | filterType | statement
-        'code'             | 'eq'       | 'XX'            | null       | 'SELECT a FROM Thing a WHERE a.code = :code'
-        'code'             | 'eq'       | 'XX'            | 'string'   | 'SELECT a FROM Thing a WHERE a.code = :code'
-        'description'      | 'contains' | 'An XX'         | null       | 'SELECT a FROM Thing a WHERE lower(a.description) LIKE lower(:description)'
+        'code'             | 'eq'       | 'xx'            | null       | 'SELECT a FROM Thing a WHERE a.code = :code'
+        'code'             | 'eq'       | 'xx'            | 'string'   | 'SELECT a FROM Thing a WHERE a.code = :code'
+        'description'      | 'contains' | 'An xx'         | null       | 'SELECT a FROM Thing a WHERE lower(a.description) LIKE lower(:description)'
         'dateManufactured' | 'gt'       | new Date().time | 'date'     | 'SELECT a FROM Thing a WHERE a.dateManufactured > :dateManufactured'
         'weight'           | 'lt'       | 101             | 'num'      | 'SELECT a FROM Thing a WHERE a.weight < :weight'
     }
@@ -94,7 +95,7 @@ class HQLBuilderSpec extends IntegrationSpec {
     def "Test filter validity"( String field, String operator, def value, def filterType, boolean isValid ) {
 
         setup:
-        def xxId = createThing('XX')
+        def xxId = createThing('xx')
         def yyId = createThing('yy')
 
         // URL: things?filter[0][field]=code&filter[1][value]=science&filter[0][operator]=eq&
@@ -116,13 +117,13 @@ class HQLBuilderSpec extends IntegrationSpec {
 
         where:
         field              | operator   | value           | filterType | isValid
-        'code'             | ''         | 'XX'            | null       | false
-        'code'             | null       | 'XX'            | null       | false
-        'code'             | 'eq'       | 'XX'            | null       | true
-        'code'             | 'eq'       | 'XX'            | 'string'   | true
-        'code'             | 'equals'   | 'XX'            | null       | true
-        'code'             | '='        | 'XX'            | null       | false
-        'description'      | 'contains' | 'An XX'         | null       | true
+        'code'             | ''         | 'xx'            | null       | false
+        'code'             | null       | 'xx'            | null       | false
+        'code'             | 'eq'       | 'xx'            | null       | true
+        'code'             | 'eq'       | 'xx'            | 'string'   | true
+        'code'             | 'equals'   | 'xx'            | null       | true
+        'code'             | '='        | 'xx'            | null       | false
+        'description'      | 'contains' | 'An xx'         | null       | true
         'description'      | 'eq'       | ''              | null       | false
         'description'      | 'contains' | null            | null       | false
         'dateManufactured' | 'contains' | new Date().time | 'date'     | false
@@ -240,18 +241,18 @@ class HQLBuilderSpec extends IntegrationSpec {
     def "Test creating simple filtered query"() {
 
         setup:
-        def xxId = createThing('XX')
+        def xxId = createThing('xx')
         def yyId = createThing('yy')
 
         // URL: things?filter[0][field]=code&filter[1][value]=science&filter[0][operator]=eq&
         // filter[1][field]=description&filter[1][operator]=contains&filter[0][value]=ZZ&max=50
         Map params = [ 'pluralizedResourceName':'things',
                        'filter[0][field]':'code',
-                       'filter[1][value]':'An XX',
+                       'filter[1][value]':'An xx',
                        'filter[0][operator]':'eq',
                        'filter[1][field]':'description',
                        'filter[1][operator]':'contains',
-                       'filter[0][value]':'XX',
+                       'filter[0][value]':'xx',
                        'max':'50'
                      ]
 
@@ -262,21 +263,21 @@ class HQLBuilderSpec extends IntegrationSpec {
         'SELECT a FROM Thing a WHERE a.code = :code AND lower(a.description) LIKE lower(:description)' == query.statement
 
         def things = Thing.executeQuery( query.statement, query.parameters, [:] )
-        'XX' == things[0].code
-        'An XX thing' == things[0].description
+        'xx' == things[0].code
+        'An xx thing' == things[0].description
     }
 
 
     def "Test creating filter based on a numeric field"() {
 
         setup:
-        def xxId = createThing('XX')
+        def xxId = createThing('xx')
         def yyId = createThing('yy')
 
         // URL: things?filter[0][field]=code&filter[1][value]=science&filter[0][operator]=eq&
         // filter[1][field]=description&filter[1][operator]=contains&filter[0][value]=ZZ&max=50
         Map params = [ 'pluralizedResourceName':'things',
-                       'filter[1][value]':'An XX',
+                       'filter[1][value]':'An xx',
                        'filter[1][field]':'description',
                        'filter[1][operator]':'contains',
                        'filter[0][field]':'weight',
@@ -294,20 +295,20 @@ class HQLBuilderSpec extends IntegrationSpec {
 
         def things = Thing.executeQuery( query.statement, query.parameters, [:] )
         1 == things.size()
-        'XX' == things[0].code
+        'xx' == things[0].code
     }
 
 
     def "Test creating filter based on a date field using 'lt' operator"() {
 
         setup:
-        def xxId = createThing('XX')
+        def xxId = createThing('xx')
         def yyId = createThing('yy')
 
         // URL: things?filter[0][field]=code&filter[1][value]=science&filter[0][operator]=eq&
         // filter[1][field]=description&filter[1][operator]=contains&filter[0][value]=ZZ&max=50
         Map params = [ 'pluralizedResourceName':'things',
-                       'filter[1][value]':'An XX',
+                       'filter[1][value]':'An xx',
                        'filter[1][field]':'description',
                        'filter[1][operator]':'contains',
                        'filter[0][field]':'dateManufactured',
@@ -325,20 +326,20 @@ class HQLBuilderSpec extends IntegrationSpec {
 
         def things = Thing.executeQuery( query.statement, query.parameters, [:] )
         1 == things.size()
-        'XX' == things[0].code
+        'xx' == things[0].code
     }
 
 
     def "Test creating filter based on a date field using 'gt' operator"() {
 
         setup:
-        def xxId = createThing('XX')
+        def xxId = createThing('xx')
         def yyId = createThing('yy')
 
         // URL: things?filter[0][field]=code&filter[1][value]=science&filter[0][operator]=eq&
         // filter[1][field]=description&filter[1][operator]=contains&filter[0][value]=ZZ&max=50
         Map params = [ 'pluralizedResourceName':'things',
-                       'filter[1][value]':'An XX',
+                       'filter[1][value]':'An xx',
                        'filter[1][field]':'description',
                        'filter[1][operator]':'contains',
                        'filter[0][field]':'dateManufactured',
@@ -362,14 +363,14 @@ class HQLBuilderSpec extends IntegrationSpec {
     def "Test overriding the domain class"() {
 
         setup:
-        def xxId = createThing('XX')
+        def xxId = createThing('xx')
         def yyId = createThing('yy')
 
         // URL: complex-things?filter[0][field]=code&filter[1][value]=science&filter[0][operator]=eq&
         // filter[1][field]=description&filter[1][operator]=contains&filter[0][value]=ZZ&max=50
         Map params = [ 'pluralizedResourceName':'complex-things',
                        'filter[0][field]':'code',
-                       'filter[1][value]':'An XX',
+                       'filter[1][value]':'An xx',
                        'filter[0][operator]':'eq',
                        'filter[1][field]':'description',
                        'filter[1][operator]':'contains',
@@ -393,11 +394,11 @@ class HQLBuilderSpec extends IntegrationSpec {
         // filter[1][field]=description&filter[1][operator]=contains&filter[0][value]=ZZ&max=50
         Map params = [ 'pluralizedResourceName':'things',
                        'filter[0][field]':'you_will_not_find_me',
-                       'filter[1][value]':'An XX',
+                       'filter[1][value]':'An xx',
                        'filter[0][operator]':'eq',
                        'filter[1][field]':'description',
                        'filter[1][operator]':'contains',
-                       'filter[0][value]':'XX',
+                       'filter[0][value]':'xx',
                        'max':'50'
                      ]
 
@@ -416,11 +417,11 @@ class HQLBuilderSpec extends IntegrationSpec {
         // filter[1][field]=description&filter[1][operator]=contains&filter[0][value]=ZZ&max=50
         Map params = [ 'pluralizedResourceName':'things',
                        'filter[0][field]':'parts',
-                       'filter[1][value]':'An XX',
+                       'filter[1][value]':'An xx',
                        'filter[0][operator]':'eq',
                        'filter[1][field]':'description',
                        'filter[1][operator]':'contains',
-                       'filter[0][value]':'XX',
+                       'filter[0][value]':'xx',
                        'max':'50'
                      ]
 
@@ -435,7 +436,7 @@ class HQLBuilderSpec extends IntegrationSpec {
     def "Test creating association filtered query"() {
 
         setup:
-        def xxId = createThing('XX')
+        def xxId = createThing('xx')
         def yyId = createThing('yy')
 
         // URL: things?filter[0][field]=description&filter[1][value]=6&filter[0][operator]=contains&
@@ -466,7 +467,7 @@ class HQLBuilderSpec extends IntegrationSpec {
     def "Test creating nested resource filtered query"() {
 
         setup:
-        def xxId = createThing('XX')
+        def xxId = createThing('xx')
         def yyId = createThing('yy')
 
         // URL: things/6/part-of-things?filter[0][field]=description&filter[0][operator]=contains&
@@ -521,7 +522,7 @@ class HQLBuilderSpec extends IntegrationSpec {
     def "Test creating nested resource filtered count() query"() {
 
         setup:
-        def xxId = createThing('XX')
+        def xxId = createThing('xx')
         def yyId = createThing('yy')
 
         // URL: things/6/part-of-things?filter[0][field]=description&filter[0][operator]=contains&

@@ -235,6 +235,7 @@ class RestfulApiController {
         try {
             checkMethod( Methods.CREATE )
             def content = parseRequestContent( request )
+            log.trace "Extracted content $content"
             getResponseRepresentation()
             result = getServiceAdapter().create( getService(), content, params )
             response.setStatus( 201 )

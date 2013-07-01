@@ -310,7 +310,9 @@ restfulApiConfig = {
                     inherits = ['domainAffordance']
                 }
             }
-            jsonExtractor {}
+            jsonExtractor {
+                property 'thing' shortObject true flatObject true
+            }
         }
     }
 
