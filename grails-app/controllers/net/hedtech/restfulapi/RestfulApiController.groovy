@@ -73,6 +73,7 @@ class RestfulApiController {
           delete: { def service, def id, Map content, Map params -> service.delete(id, content, params) }
         ] as RestfulServiceAdapter
 
+    private ExtractorAdapter extractorAdapter = new DefaultExtractorAdapter()
 
     /**
      * Initializes the controller by registering the configured marshallers.
@@ -101,7 +102,7 @@ class RestfulApiController {
                                 json.registerObjectMarshaller(it.instance,it.priority)
                             }
                         }
-                        JSONExtractorConfigurationHolder.registerExtractor(resource.name, representation.mediaType, representation.extractor )
+                        ExtractorConfigurationHolder.registerExtractor(resource.name, representation.mediaType, representation.extractor )
                     break
                     case ~/.*xml$/:
                         XML.createNamedConfig("restfulapi:" + resource.name + ":" + representation.mediaType) { xml ->
@@ -110,7 +111,7 @@ class RestfulApiController {
                                 xml.registerObjectMarshaller(it.instance,it.priority)
                             }
                         }
-                        XMLExtractorConfigurationHolder.registerExtractor(resource.name, representation.mediaType, representation.extractor )
+                        ExtractorConfigurationHolder.registerExtractor(resource.name, representation.mediaType, representation.extractor )
                     break
                     default:
                         throw new RuntimeException("Cannot support media type ${representation.mediaType} in resource ${resource.name}.  All media types must end in xml or json.")
@@ -423,6 +424,7 @@ class RestfulApiController {
                 }
                 break
             case ~/.*xml$/:
+            log.trace "Going to useXML with representation $representation"
                 useXML(representation) {
                     content = data as XML
                 }
@@ -594,10 +596,10 @@ class RestfulApiController {
         def representation = getRequestRepresentation()
         switch(representation.mediaType) {
             case ~/.*json$/:
-                return extractJSON( representation.mediaType )
+                return extractContent( representation.mediaType )
             break
             case ~/.*xml$/:
-                return extractXML( representation.mediaType )
+                return extractContent( representation.mediaType )
             break
             default:
                 unsupportedRequestRepresentation()
@@ -688,7 +690,6 @@ class RestfulApiController {
      * implementation will return a built-in pass-through adapter.
      **/
     protected RestfulServiceAdapter getServiceAdapter() {
-
         def adapterName = 'restfulServiceAdapter' // name of the single adapter
         log.trace "Looking for an adapter named $adapterName"
         RestfulServiceAdapter adapter
@@ -698,9 +699,13 @@ class RestfulApiController {
             log.trace "Did not find an adapter - ${e.message}"
         }
 
-        adapter = adapter ?: defaultServiceAdapter
         log.trace "getServiceAdapter() will return adapter $adapter"
+        adapter = adapter ?: defaultServiceAdapter
         adapter
+    }
+
+    protected ExtractorAdapter getExtractorAdapter() {
+        extractorAdapter
     }
 
 
@@ -832,29 +837,23 @@ class RestfulApiController {
     }
 
 
-    private Map extractJSON( String mediaType ) {
-        def json = request.JSON
-        extractJSON( request.JSON, mediaType )
-    }
-
-
-    private Map extractJSON( JSONObject json, String mediaType ) {
+    private Map extractContent( String mediaType ) {
         ResourceConfig resourceConfig = getResourceConfig()
-        JSONExtractor extractor = JSONExtractorConfigurationHolder.getExtractor( resourceConfig.name, mediaType )
+        Extractor extractor = ExtractorConfigurationHolder.getExtractor( resourceConfig.name, mediaType )
         if (!extractor) {
             unsupportedRequestRepresentation()
         }
-        return extractor.extract( json )
+        getExtractorAdapter().extract(extractor, request)
     }
 
 
     private Map extractXML( String mediaType ) {
         ResourceConfig resourceConfig = getResourceConfig()
-        XMLExtractor xmlExtractor = XMLExtractorConfigurationHolder.getExtractor( resourceConfig.name, mediaType )
-        if (!xmlExtractor) {
+        Extractor extractor = ExtractorConfigurationHolder.getExtractor( resourceConfig.name, mediaType )
+        if (!extractor) {
             unsupportedRequestRepresentation()
         }
-        return xmlExtractor.extract( request.XML )
+        return extractor.extract( request.XML )
     }
 
     private ResourceConfig getResourceConfig() {

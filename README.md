@@ -1436,6 +1436,21 @@ The domain marshaller will be configured with the results of merging the configu
 ###Configuration merging
 The order in which configurations are merged is significant.  When two configurations, first and second are merged, boolean values, or single valued options that are set in the second config override the first.  Collection or map values are combined.
 
+##Extracting content
+Create, update and (optionally) delete operations will have a request body which ultimately needs to be parsed and acted upon by the service layer.  The plugin provides a number of ways to interact with this data.
+
+For any create, update, or delete operation, the controller will identify an _extractor_ instance.  An extractor is responsible for taking the incoming content and converting it to a map that will ultimately be passed on to the service.  An extractor must implement exactly one of 3 interfaces:
+
+    net.hedtech.restfulapi.extractors.JSONExtractor
+    net.hedtech.restfulapi.extractors.XMLExtractor
+    net.hedtech.restfulapi.extractors.RequestExtractor
+
+Note that an extractor should implement only one of these interfaces.  The interface implemented defines what the controller needs to pass to the extractor.
+
+For extractors that implement JSONExtractor, the controller will parse a org.codehaus.groovy.grails.web.json.JSONObject from the incoming request and pass it to the extractors extract method.  For XMLExtractor, it will pass a groovy.util.slurpersupport.GPathResult.
+
+In cases where you want to bypass grails parsers/data binding entirely and use a different framework, such as JAXB, google-gson, etc, an extractor implementing RequestExtractor can be used.  A RequestExtractor is passed the HttpServletRequest directly.  For example, such an extractor could place the request body into the map to be passed on to the service where a non-grails framework could be used to bind the body to business objects.
+
 ##Declarative extraction of JSON content
 If JSON content needs to be manipulated before being bound to domain objects, POGOs, etc, it is possible to do so declaratively.  Any incoming JSON content will be a single object containing other JSON objects or JSON arrays.  This ability is not intended to deal with type coercion or data binding, but to provide a simple way to rename keys, provide default values, or convert 'short object' representations back into plain IDs.  It functions as a counterpart to the declarative json marshalling support.
 

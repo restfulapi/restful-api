@@ -6,7 +6,7 @@ package net.hedtech.restfulapi.extractors
 
 import org.codehaus.groovy.grails.web.json.JSONObject
 
-interface JSONExtractor {
+interface JSONExtractor extends Extractor {
 
-    Map extract( JSONObject content );
+    Map extract( JSONObject content )
 }

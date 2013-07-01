@@ -4,21 +4,21 @@ Copyright 2013 Ellucian Company L.P. and its affiliates.
 
 package net.hedtech.restfulapi.extractors.configuration
 
-import net.hedtech.restfulapi.extractors.XMLExtractor
+import net.hedtech.restfulapi.extractors.Extractor
 
-class XMLExtractorConfigurationHolder {
+class ExtractorConfigurationHolder {
 
-    private static XMLExtractorConfigurationHolder INSTANCE = new XMLExtractorConfigurationHolder()
+    private static ExtractorConfigurationHolder INSTANCE = new ExtractorConfigurationHolder()
 
     //key of outer map is the pluralized resource name.  Key of inner map is the media type for a resource representation.
-    private final Map<String, Map<String,XMLExtractor>> extractors = new HashMap<String,Map<String,XMLExtractor>>()
+    private final Map<String, Map<String,Extractor>> extractors = new HashMap<String,Map<String,Extractor>>()
 
-    XMLExtractorConfigurationHolder() {
+    ExtractorConfigurationHolder() {
         //singleton
     }
 
     synchronized
-    static void registerExtractor( String pluralizedResourceName, String mediaType, XMLExtractor extractor ) {
+    static void registerExtractor( String pluralizedResourceName, String mediaType, Extractor extractor ) {
         Map map = getInstance().extractors.get(pluralizedResourceName)
         if (!map) {
             map = new HashMap<String,Object>()
@@ -27,11 +27,19 @@ class XMLExtractorConfigurationHolder {
         map.put(mediaType,extractor)
     }
 
-    static XMLExtractor getExtractor( String pluralizedResourceName, String mediaType ) {
+    static Extractor getExtractor( String pluralizedResourceName, String mediaType ) {
         getInstance().extractors.get( pluralizedResourceName )?.get(mediaType)
     }
 
-    static XMLExtractorConfigurationHolder getInstance() {
+    static ExtractorConfigurationHolder getInstance() {
         return INSTANCE
+    }
+
+    static void clear() {
+        getInstance().clearMap()
+    }
+
+    void clearMap() {
+        this.extractors.clear()
     }
 }

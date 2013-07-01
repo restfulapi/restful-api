@@ -14,6 +14,7 @@ import net.hedtech.restfulapi.config.*
 import net.hedtech.restfulapi.extractors.configuration.*
 import net.hedtech.restfulapi.extractors.json.*
 import net.hedtech.restfulapi.extractors.xml.*
+import net.hedtech.restfulapi.extractors.*
 
 import grails.converters.JSON
 
@@ -21,11 +22,11 @@ import grails.converters.JSON
 class RestfulApiControllerSpec extends Specification {
 
     def setup() {
-        JSONExtractorConfigurationHolder.clear()
+        ExtractorConfigurationHolder.clear()
     }
 
     def cleanup() {
-        JSONExtractorConfigurationHolder.clear()
+        ExtractorConfigurationHolder.clear()
     }
 
     @Unroll
@@ -509,4 +510,148 @@ class RestfulApiControllerSpec extends Specification {
         'update'         | 'PUT'      | '1'  | 200    | 0         | 0         | 1           | 0           | 0           | [name:'foo']
         'delete'         | 'DELETE'   | '1'  | 200    | 0         | 0         | 0           | 0           | 1           | null
     }
+
+    @Unroll
+    def "Test delegation to JSONExtractor"() {
+        setup:
+        def theExtractor = Mock(JSONExtractor)
+        //use default extractor for any methods with a request body
+         config.restfulApiConfig = {
+            anyResource {
+                representation {
+                    mediaTypes = ['application/json']
+                    extractor = theExtractor
+                }
+            }
+        }
+        controller.init()
+
+        def mock = Mock(ThingService)
+        controller.metaClass.getService = {-> mock}
+        def cacheHeadersService = new CacheHeadersService()
+        Closure withCacheHeadersClosure = { Closure c ->
+            c.delegate = controller
+            c.resolveStrategy = Closure.DELEGATE_ONLY
+            cacheHeadersService.withCacheHeaders( c.delegate, c )
+        }
+        controller.metaClass.withCacheHeaders = withCacheHeadersClosure
+
+        request.addHeader( 'Accept', 'application/json' )
+        request.addHeader( 'Content-Type', 'application/json' )
+        request.method = 'POST'
+        params.pluralizedResourceName = 'things'
+        if (id != null) params.id = id
+
+        when:
+        controller."$controllerMethod"()
+
+        then:
+        1 * theExtractor.extract(_) >> { ['foo':'bar']}
+        createCount * mock.create(_,_)
+        updateCount * mock.update(_,_,_)
+        deleteCount * mock.delete(_,_,_)
+
+        where:
+        id   | controllerMethod | createCount | updateCount | deleteCount
+        null | 'create'         | 1           | 0           | 0
+        null | 'update'         | 0           | 1           | 0
+        null | 'delete'         | 0           | 0           | 1
+    }
+
+    @Unroll
+    def "Test delegation to XMLExtractor"() {
+        setup:
+        def theExtractor = Mock(XMLExtractor)
+        //use default extractor for any methods with a request body
+         config.restfulApiConfig = {
+            anyResource {
+                representation {
+                    mediaTypes = ['application/xml']
+                    extractor = theExtractor
+                }
+            }
+        }
+        controller.init()
+
+        def mock = Mock(ThingService)
+        controller.metaClass.getService = {-> mock}
+        def cacheHeadersService = new CacheHeadersService()
+        Closure withCacheHeadersClosure = { Closure c ->
+            c.delegate = controller
+            c.resolveStrategy = Closure.DELEGATE_ONLY
+            cacheHeadersService.withCacheHeaders( c.delegate, c )
+        }
+        controller.metaClass.withCacheHeaders = withCacheHeadersClosure
+
+        request.addHeader( 'Accept', 'application/xml' )
+        request.addHeader( 'Content-Type', 'application/xml' )
+        request.method = 'POST'
+        request.content = '<?xml version="1.0" encoding="UTF-8"?><thing/>'
+        params.pluralizedResourceName = 'things'
+        if (id != null) params.id = id
+
+        when:
+        controller."$controllerMethod"()
+
+        then:
+        1 * theExtractor.extract(_) >> { ['foo':'bar']}
+        createCount * mock.create(_,_)
+        updateCount * mock.update(_,_,_)
+        deleteCount * mock.delete(_,_,_)
+
+        where:
+        id   | controllerMethod | createCount | updateCount | deleteCount
+        null | 'create'         | 1           | 0           | 0
+        null | 'update'         | 0           | 1           | 0
+        null | 'delete'         | 0           | 0           | 1
+    }
+
+    @Unroll
+    def "Test delegation to RequestExtractor"() {
+        setup:
+        def theExtractor = Mock(RequestExtractor)
+        //use default extractor for any methods with a request body
+         config.restfulApiConfig = {
+            anyResource {
+                representation {
+                    mediaTypes = ['application/json']
+                    extractor = theExtractor
+                }
+            }
+        }
+        controller.init()
+
+        def mock = Mock(ThingService)
+        controller.metaClass.getService = {-> mock}
+        def cacheHeadersService = new CacheHeadersService()
+        Closure withCacheHeadersClosure = { Closure c ->
+            c.delegate = controller
+            c.resolveStrategy = Closure.DELEGATE_ONLY
+            cacheHeadersService.withCacheHeaders( c.delegate, c )
+        }
+        controller.metaClass.withCacheHeaders = withCacheHeadersClosure
+
+        request.addHeader( 'Accept', 'application/json' )
+        request.addHeader( 'Content-Type', 'application/json' )
+        request.method = 'POST'
+        params.pluralizedResourceName = 'things'
+        if (id != null) params.id = id
+
+        when:
+        controller."$controllerMethod"()
+
+        then:
+        1 * theExtractor.extract(_) >> { ['foo':'bar']}
+        createCount * mock.create(_,_)
+        updateCount * mock.update(_,_,_)
+        deleteCount * mock.delete(_,_,_)
+
+        where:
+        id   | controllerMethod | createCount | updateCount | deleteCount
+        null | 'create'         | 1           | 0           | 0
+        null | 'update'         | 0           | 1           | 0
+        null | 'delete'         | 0           | 0           | 1
+    }
+
+
 }
