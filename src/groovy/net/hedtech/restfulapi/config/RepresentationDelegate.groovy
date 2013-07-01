@@ -30,6 +30,15 @@ class RepresentationDelegate {
         this
     }
 
+    RepresentationDelegate xmlExtractor(Closure c) {
+        XMLExtractorDelegate delegate = new XMLExtractorDelegate()
+        c.delegate = delegate
+        c.resolveStrategy = Closure.DELEGATE_FIRST
+        c.call()
+        extractor = XMLExtractorFactory.instantiate(delegate.config, restConfig)
+        this
+    }
+
     RepresentationDelegate marshallers(Closure c) {
         MarshallersDelegate delegate = new MarshallersDelegate(this)
         c.delegate = delegate

@@ -2,12 +2,12 @@
 Copyright 2013 Ellucian Company L.P. and its affiliates.
 ******************************************************************************/
 
-package net.hedtech.restfulapi.extractors.json
+package net.hedtech.restfulapi.extractors.xml
 
 import net.hedtech.restfulapi.extractors.*
-import org.codehaus.groovy.grails.web.json.JSONObject
+import groovy.util.slurpersupport.GPathResult
 
-class BasicJSONExtractor implements JSONExtractor {
+class BasicXMLExtractor extends MapExtractor {
 
     //yes, it needs to be volatile, or the double-checked locking pattern does not work in java
     protected volatile MapTransformer transformer
@@ -49,11 +49,12 @@ class BasicJSONExtractor implements JSONExtractor {
         }
     }
 
-    BasicJSONExtractor() {
+    BasicXMLExtractor() {
     }
 
-    Map extract( JSONObject content ) {
-        getTransformer().transform( content )
+    Map extract(GPathResult content) {
+        Map map = super.extract(content)
+        getTransformer().transform(map)
     }
 
     boolean ready() {

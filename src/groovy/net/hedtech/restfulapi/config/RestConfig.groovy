@@ -17,9 +17,13 @@ class RestConfig {
     def resources = [:]
     //map of group name to MarshallerGroupConfig instance
     def marshallerGroups = [:]
-    ConfigGroup jsonDomain = new ConfigGroup()
-    ConfigGroup groovyBean = new ConfigGroup()
-    ConfigGroup jsonExtractor = new ConfigGroup()
+    ConfigGroup jsonDomain     = new ConfigGroup()
+    ConfigGroup jsonGroovyBean = new ConfigGroup()
+    ConfigGroup jsonExtractor  = new ConfigGroup()
+
+    ConfigGroup xmlDomain      = new ConfigGroup()
+    ConfigGroup xmlGroovyBean  = new ConfigGroup()
+    ConfigGroup xmlExtractor   = new ConfigGroup()
 
     RestConfig( GrailsApplication grailsApplication ) {
         this.grailsApplication = grailsApplication
@@ -124,6 +128,30 @@ class RestConfig {
         this
     }
 
+    def xmlDomainMarshallerTemplates(Closure c) {
+        XMLDomainTemplates delegate = new XMLDomainTemplates(this)
+        c.delegate = delegate
+        c.resolveStrategy = Closure.DELEGATE_FIRST
+        c.call()
+        this
+    }
+
+    def xmlGroovyBeanMarshallerTemplates(Closure c) {
+        XMLGroovyBeanTemplates delegate = new XMLGroovyBeanTemplates(this)
+        c.delegate = delegate
+        c.resolveStrategy = Closure.DELEGATE_FIRST
+        c.call()
+        this
+    }
+
+    def xmlExtractorTemplates(Closure c) {
+        XMLExtractorTemplates delegate = new XMLExtractorTemplates(this)
+        c.delegate = delegate
+        c.resolveStrategy = Closure.DELEGATE_FIRST
+        c.call()
+        this
+    }
+
     class JSONDomainTemplates {
         RestConfig parent
         JSONDomainTemplates(RestConfig parent) {
@@ -142,6 +170,24 @@ class RestConfig {
         }
     }
 
+    class XMLDomainTemplates {
+        RestConfig parent
+        XMLDomainTemplates(RestConfig parent) {
+            this.parent = parent
+        }
+
+        def template(String name) {
+            def closure = { Closure c ->
+                XMLDomainMarshallerDelegate delegate = new XMLDomainMarshallerDelegate()
+                c.delegate = delegate
+                c.resolveStrategy = Closure.DELEGATE_FIRST
+                c.call()
+                parent.xmlDomain.configs[name] = delegate.config
+            }
+            [config:closure]
+        }
+    }
+
     class JSONGroovyBeanTemplates {
         RestConfig parent
         JSONGroovyBeanTemplates(RestConfig parent) {
@@ -154,7 +200,25 @@ class RestConfig {
                 c.delegate = delegate
                 c.resolveStrategy = Closure.DELEGATE_FIRST
                 c.call()
-                parent.groovyBean.configs[name] = delegate.config
+                parent.jsonGroovyBean.configs[name] = delegate.config
+            }
+            [config:closure]
+        }
+    }
+
+    class XMLGroovyBeanTemplates {
+        RestConfig parent
+        XMLGroovyBeanTemplates(RestConfig parent) {
+            this.parent = parent
+        }
+
+        def template(String name) {
+            def closure = { Closure c ->
+                XMLGroovyBeanMarshallerDelegate delegate = new XMLGroovyBeanMarshallerDelegate()
+                c.delegate = delegate
+                c.resolveStrategy = Closure.DELEGATE_FIRST
+                c.call()
+                parent.xmlGroovyBean.configs[name] = delegate.config
             }
             [config:closure]
         }
@@ -173,6 +237,24 @@ class RestConfig {
                 c.resolveStrategy = Closure.DELEGATE_FIRST
                 c.call()
                 parent.jsonExtractor.configs[name] = delegate.config
+            }
+            [config:closure]
+        }
+    }
+
+    class XMLExtractorTemplates {
+        RestConfig parent
+        XMLExtractorTemplates(RestConfig parent) {
+            this.parent = parent
+        }
+
+        def template(String name) {
+            def closure = { Closure c ->
+                XMLExtractorDelegate delegate = new XMLExtractorDelegate()
+                c.delegate = delegate
+                c.resolveStrategy = Closure.DELEGATE_FIRST
+                c.call()
+                parent.xmlExtractor.configs[name] = delegate.config
             }
             [config:closure]
         }

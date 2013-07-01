@@ -15,65 +15,47 @@ import net.hedtech.restfulapi.extractors.XMLExtractor
  **/
 class MapExtractor implements XMLExtractor {
 
-    Map extract( GPathResult xml ) {
-        return extractInternal( xml )
-
+    Map extract(GPathResult xml) {
+        return extractInternal(xml)
     }
 
-    private def extractInternal( GPathResult xml ) {
-        if ('true' == xml.'@array'.text()) {
-            //this element represents an array
+    protected def extractInternal(GPathResult xml) {
+        if (xml.@array.text() == 'true') {
+            //have an array.
+            //all children are elements of the array.
+            //they may contain complex content themselves
             def array = []
-            xml.children().each {
-                array.add extractInternal(it)
+            xml.children().each() {
+                array.add( extractInternal( it ) )
             }
             return array
-        } else if ('true' == xml.'@map'.text()) {
-            //this element represents a map
-            //expect sub-elements to be <entry key='name'>value</entry>
-            def map = [:]
-            xml.entry.each {
-                def key = it.@key.text()
-                def val
-                if (it.children().size() == 0) {
-                    //simple value
-                    val = it.text()
-                } else if (it.children().size() == 1) {
-                    val = extractInternal(it.children().getAt(0))
-                    //if an entry has a child, then it must be either an array
-                    //or an object.
-                    //if it is a simple value, then it will be in the text of the entry
-                    //directly, and therefore the node has zero children.
-                    //so if the val is an empty string or null, it mean an empty object
-                    if (val == null || val == '') {
-                        val = [:]
-                    }
-                }
-                map.put(key, val)
-            }
-            return map
-        } else if (0 == xml.children().size()) {
-            //Element with no children represents a final (text) value
+        } else if (xml.@map.text() == 'true') {
+            extractMap(xml)
+        } else if (xml.children().size() == 0) {
             return xml.text()
         } else {
-            //a node without an explicit map or array attribute that has children
-            //is by default an object, where each child represents a field
-            //so extract as a map
-            Map map = [:]
-            xml.children().each() {
-                map.put( it.name(), extractInternal( it ) )
+            extractMap(xml)
+        }
+    }
+
+    protected Map extractMap(GPathResult xml) {
+        //treat as map, children are name/value pairs
+        def map = [:]
+        //we have two representations for maps.
+        //The first is 'object-style', where the children node-names
+        //represent key names, and their content is values.  This is
+        //used for representations of objects.
+        //The other is a map where the keys may contain strings with spaces
+        //and the children are <entry> nodes.
+        if (xml.entry.size() > 0) {
+            xml.entry.each() { def entry ->
+                map.put(entry.@key.text(), extractInternal(entry))
             }
-            return map
+        } else {
+            xml.children().each() {
+                map.put(it.name(), extractInternal(it))
+            }
         }
+        return map
     }
-
-    private boolean isArray(GPathResult xml) {
-        if (xml.children().size() == 0) return false
-        Set names = new HashSet()
-        xml.children.each() {
-            names.add it.getName()
-        }
-        return names.size() == 1
-    }
-
 }

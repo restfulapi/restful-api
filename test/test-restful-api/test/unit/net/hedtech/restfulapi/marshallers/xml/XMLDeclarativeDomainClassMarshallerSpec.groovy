@@ -398,7 +398,7 @@ class XMLDeclarativeDomainClassMarshallerSpec extends Specification {
         then:
         1                            == xml.contributors.entry.size()
         'smith'                      == xml.contributors.entry[0].'@key'.text()
-        '/customized-contributors/5' == xml.contributors.entry[0].shortObject._link.text()
+        '/customized-contributors/5' == xml.contributors.entry[0]._link.text()
     }
 
     def "Test many-to-one association field resource name"() {
@@ -419,7 +419,7 @@ class XMLDeclarativeDomainClassMarshallerSpec extends Specification {
 
         then:
         0                      == xml.owner.firstName.size()
-        '/customized-owners/5' == xml.owner.shortObject._link.text()
+        '/customized-owners/5' == xml.owner._link.text()
     }
 
     def "Test one-to-one association field resource name"() {
@@ -441,7 +441,7 @@ class XMLDeclarativeDomainClassMarshallerSpec extends Specification {
 
         then:
         0                        == xml.subPart.code.size()
-        '/customized-subparts/5' == xml.subPart.shortObject._link.text()
+        '/customized-subparts/5' == xml.subPart._link.text()
     }
 
     def "Test short object closure"() {
@@ -451,13 +451,11 @@ class XMLDeclarativeDomainClassMarshallerSpec extends Specification {
             supportClass:MarshalledThing,
             shortObjectClosure:{ def map ->
                 def xml = map['xml']
-                xml.startNode('shortObject')
                 xml.startNode('resource')
                 xml.convertAnother(map['resourceName'])
                 xml.end()
                 xml.startNode('id')
                 xml.convertAnother(map['resourceId'])
-                xml.end()
                 xml.end()
             }
         )

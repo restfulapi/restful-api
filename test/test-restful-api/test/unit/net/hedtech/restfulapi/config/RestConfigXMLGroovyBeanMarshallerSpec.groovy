@@ -8,23 +8,23 @@ import grails.test.mixin.*
 import spock.lang.*
 
 import net.hedtech.restfulapi.extractors.configuration.*
-import net.hedtech.restfulapi.extractors.json.*
+import net.hedtech.restfulapi.extractors.xml.*
 import net.hedtech.restfulapi.*
 import grails.test.mixin.support.*
-import net.hedtech.restfulapi.marshallers.json.*
+import net.hedtech.restfulapi.marshallers.xml.*
 import net.hedtech.restfulapi.beans.*
 
 
 @TestMixin(GrailsUnitTestMixin)
-class RestConfigJSONGroovyBeanMarshallerSpec extends Specification {
+class RestConfigXMLGroovyBeanMarshallerSpec extends Specification {
 
-    def "Test json groovy bean marshaller in marshaller group"() {
+    def "Test xml groovy bean marshaller in marshaller group"() {
         setup:
         def src =
         {
             marshallerGroups {
                 group 'groovyBean' marshallers {
-                    jsonGroovyBeanMarshaller {
+                    xmlGroovyBeanMarshaller {
                         supports SimpleBean
                         field 'foo' name 'bar'
                         includesFields {
@@ -49,11 +49,11 @@ class RestConfigJSONGroovyBeanMarshallerSpec extends Specification {
         ['foobar']                                == marshaller.excludedFields
     }
 
-    def "Test json groovy bean marshaller template parsing"() {
+    def "Test xml groovy bean marshaller template parsing"() {
         setup:
         def src =
         {
-            jsonGroovyBeanMarshallerTemplates {
+            xmlGroovyBeanMarshallerTemplates {
                 template 'one' config {
                 }
 
@@ -79,10 +79,10 @@ class RestConfigJSONGroovyBeanMarshallerSpec extends Specification {
         when:
         def config = RestConfig.parse( grailsApplication, src )
         config.validate()
-        def mConfig = config.jsonGroovyBean.configs['two']
+        def mConfig = config.xmlGroovyBean.configs['two']
 
         then:
-         2                     == config.jsonGroovyBean.configs.size()
+         2                     == config.xmlGroovyBean.configs.size()
          ['one']               == mConfig.inherits
          5                     == mConfig.priority
          SimpleBean            == mConfig.supportClass
@@ -93,15 +93,15 @@ class RestConfigJSONGroovyBeanMarshallerSpec extends Specification {
          ['a':'b','c':'d']     == mConfig.additionalFieldsMap
     }
 
-    def "Test json groovy bean marshaller creation"() {
+    def "Test xml groovy bean marshaller creation"() {
         setup:
         def src =
         {
             resource 'things' config {
                 representation {
-                    mediaTypes = ['application/json']
+                    mediaTypes = ['application/xml']
                     marshallers {
-                        jsonGroovyBeanMarshaller {
+                        xmlGroovyBeanMarshaller {
                             supports SimpleBean
                             field 'owner' name 'myOwner'
                             includesFields {
@@ -122,7 +122,7 @@ class RestConfigJSONGroovyBeanMarshallerSpec extends Specification {
         when:
         def config = RestConfig.parse( grailsApplication, src )
         config.validate()
-        def marshaller = config.getRepresentation( 'things', 'application/json' ).marshallers[0].instance
+        def marshaller = config.getRepresentation( 'things', 'application/xml' ).marshallers[0].instance
 
         then:
         SimpleBean                               == marshaller.supportClass
@@ -133,11 +133,11 @@ class RestConfigJSONGroovyBeanMarshallerSpec extends Specification {
         ['foo':'bar']                            == marshaller.additionalFieldsMap
     }
 
-    def "Test json groovy bean marshaller creation from merged configuration"() {
+    def "Test xml groovy bean marshaller creation from merged configuration"() {
         setup:
         def src =
         {
-            jsonGroovyBeanMarshallerTemplates {
+            xmlGroovyBeanMarshallerTemplates {
                 template 'one' config {
                     includesFields {
                         field 'field1'
@@ -153,9 +153,9 @@ class RestConfigJSONGroovyBeanMarshallerSpec extends Specification {
 
             resource 'things' config {
                 representation {
-                    mediaTypes = ['application/json']
+                    mediaTypes = ['application/xml']
                     marshallers {
-                        jsonGroovyBeanMarshaller {
+                        xmlGroovyBeanMarshaller {
                             inherits = ['one','two']
                             supports Thing
                             includesFields {
@@ -164,7 +164,7 @@ class RestConfigJSONGroovyBeanMarshallerSpec extends Specification {
                             }
                         }
                     }
-                    extractor = 'net.hedtech.DynamicJsonExtractor'
+                    extractor = 'extractor'
                 }
             }
         }
@@ -172,7 +172,7 @@ class RestConfigJSONGroovyBeanMarshallerSpec extends Specification {
         when:
         def config = RestConfig.parse( grailsApplication, src )
         config.validate()
-        def marshaller = config.getRepresentation( 'things', 'application/json' ).marshallers[0].instance
+        def marshaller = config.getRepresentation( 'things', 'application/xml' ).marshallers[0].instance
 
         then:
         ['field1','field2','code','description'] == marshaller.includedFields

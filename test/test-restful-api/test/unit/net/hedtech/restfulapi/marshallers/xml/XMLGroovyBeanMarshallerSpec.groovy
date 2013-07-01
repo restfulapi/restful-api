@@ -276,6 +276,93 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
         1 == xml.publicField2.size()
     }
 
+    def "Test collection"() {
+        setup:
+        def marshaller = new TestMarshaller(
+            app:grailsApplication
+        )
+        marshaller.includesClosure = {Object value-> [ 'simpleArray' ] }
+        register( marshaller )
+        MarshalledThing bean = new MarshalledThing()
+        bean.simpleArray = ['abc','123']
+
+        when:
+        def content = render( bean )
+        def xml = XML.parse content
+        def values = []
+        xml.simpleArray.children().each {
+            values.add it.text()
+        }
+
+        then:
+        2             == xml.simpleArray.children().size()
+        ['abc','123'] == values
+    }
+
+    def "Test collection with complex objects"() {
+        setup:
+        def marshaller = new TestMarshaller(
+            app:grailsApplication
+        )
+        marshaller.includesClosure = {Object o -> ['simpleArray','lastName','firstName']}
+        register( marshaller )
+        MarshalledThing bean = new MarshalledThing()
+        bean.simpleArray = [new MarshalledThingContributor(lastName:'Smith',firstName:"John")]
+
+        when:
+        def content = render( bean )
+        def xml = XML.parse content
+
+        then:
+        1             == xml.simpleArray.children().size()
+        'Smith' == xml.simpleArray.children()[0].lastName.text()
+        'John' == xml.simpleArray.children()[0].firstName.text()
+    }
+
+    def "Test map"() {
+        setup:
+        def marshaller = new TestMarshaller(
+            app:grailsApplication
+        )
+        marshaller.includesClosure = {Object value-> [ 'simpleMap' ] }
+        register( marshaller )
+        MarshalledThing bean = new MarshalledThing()
+        bean.simpleMap = ['a':'1','b':'2']
+
+        when:
+        def content = render( bean )
+        def xml = XML.parse content
+        def map = [:]
+        xml.simpleMap.children().each() {
+            map.put(it.@key.text(), it.text())
+        }
+
+        then:
+        2                 == xml.simpleMap.children().size()
+        ['a':'1','b':'2'] == map
+    }
+
+    def "Test map with complex objects"() {
+        setup:
+        def marshaller = new TestMarshaller(
+            app:grailsApplication
+        )
+        marshaller.includesClosure = {Object o -> ['simpleMap','lastName','firstName']}
+        register( marshaller )
+        MarshalledThing bean = new MarshalledThing()
+        bean.simpleMap = ['a':new MarshalledThingContributor(lastName:'Smith',firstName:"John")]
+
+        when:
+        def content = render( bean )
+        def xml = XML.parse content
+        def value = xml.simpleMap.children()[0]
+
+        then:
+        1       == xml.simpleMap.children().size()
+        'Smith' == value.lastName.text()
+        'John'  == value.firstName.text()
+    }
+
     private void register( String name, def marshaller ) {
         XML.createNamedConfig( "GroovyBeanMarshallerSpec:" + testName + ":$name" ) { xml ->
             xml.registerObjectMarshaller( marshaller, 100 )

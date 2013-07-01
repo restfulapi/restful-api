@@ -36,10 +36,8 @@ class DeclarativeDomainClassMarshaller extends BasicDomainClassMarshaller {
         def resource = map['resourceName']
         def id = map['resourceId']
         def xml = map['xml']
-        xml.startNode('shortObject')
         xml.startNode("_link")
         xml.convertAnother("/$resource/$id")
-        xml.end()
         xml.end()
     }
 

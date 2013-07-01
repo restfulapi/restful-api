@@ -58,4 +58,34 @@ class MarshallersDelegate {
         parent.marshallers.add marshallerConfig
         this
     }
+
+    MarshallersDelegate xmlDomainMarshaller(Closure c) {
+        XMLDomainMarshallerDelegate delegate = new XMLDomainMarshallerDelegate()
+        c.delegate = delegate
+        c.resolveStrategy = Closure.DELEGATE_FIRST
+        c.call()
+
+        def marshaller = XMLDomainMarshallerFactory.instantiateMarshaller(delegate.config,parent.restConfig)
+
+        MarshallerConfig marshallerConfig = new MarshallerConfig()
+        marshallerConfig.instance = marshaller
+        marshallerConfig.priority = delegate.config.priority
+        parent.marshallers.add marshallerConfig
+        this
+    }
+
+    MarshallersDelegate xmlGroovyBeanMarshaller(Closure c) {
+        XMLGroovyBeanMarshallerDelegate delegate = new XMLGroovyBeanMarshallerDelegate()
+        c.delegate = delegate
+        c.resolveStrategy = Closure.DELEGATE_FIRST
+        c.call()
+
+        def marshaller = XMLGroovyBeanMarshallerFactory.instantiateMarshaller(delegate.config,parent.restConfig)
+
+        MarshallerConfig marshallerConfig = new MarshallerConfig()
+        marshallerConfig.instance = marshaller
+        marshallerConfig.priority = delegate.config.priority
+        parent.marshallers.add marshallerConfig
+        this
+    }
 }

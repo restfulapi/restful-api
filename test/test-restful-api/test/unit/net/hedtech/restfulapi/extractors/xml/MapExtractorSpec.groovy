@@ -47,6 +47,26 @@ b</newLine><carriageReturn>a"""+"""\r"""+"""b</carriageReturn><anArray array="tr
         expected == map
     }
 
+    def "Test property that contains an object"() {
+        setup:
+        def data = """<?xml version="1.0" encoding="UTF-8"?>
+        <thing>
+            <customer>
+                    <_link>/customers/1</_link>
+            </customer>
+        </thing>
+        """
+
+        def expected = [customer:[_link:'/customers/1']]
+
+        when:
+        def xml = XML.parse( data )
+        def map = new MapExtractor().extract( xml )
+
+        then:
+        expected == map
+    }
+
     def "Test nested arrays"() {
         setup:
         def data = """<?xml version="1.0" encoding="UTF-8"?>
@@ -192,28 +212,24 @@ b</newLine><carriageReturn>a"""+"""\r"""+"""b</carriageReturn><anArray array="tr
         expected == map
     }
 
-    def "Test map that contains objects"() {
+    def "Test map in entry format"() {
         setup:
         def data="""<?xml version="1.0" encoding="UTF-8"?>
         <thing>
             <customers map="true">
-                <entry key="smith">
-                    <person>
-                        <lastName>Smith</lastName>
-                        <firstName>John</firstName>
-                    </person>
+                <entry key="smith jones">
+                    <lastName>Smith</lastName>
+                    <firstName>John</firstName>
                 </entry>
                 <entry key="anderson">
-                    <person>
-                        <lastName>Anderson</lastName>
-                        <firstName>Joe</firstName>
-                    </person>
+                    <lastName>Anderson</lastName>
+                    <firstName>Joe</firstName>
                 </entry>
             </customers>
         </thing>"""
 
         def expected = [customers:[
-            'smith':['lastName':'Smith','firstName':'John'],
+            'smith jones':['lastName':'Smith','firstName':'John'],
             'anderson':['lastName':'Anderson','firstName':'Joe']
             ]
         ]
@@ -231,9 +247,7 @@ b</newLine><carriageReturn>a"""+"""\r"""+"""b</carriageReturn><anArray array="tr
         def data="""<?xml version="1.0" encoding="UTF-8"?>
         <thing>
             <customers map="true">
-                <entry key="smith">
-                    <person/>
-                </entry>
+                <entry key="smith" map="true"/>
             </customers>
         </thing>"""
 
@@ -274,12 +288,36 @@ b</newLine><carriageReturn>a"""+"""\r"""+"""b</carriageReturn><anArray array="tr
         expected == map
     }
 
+    def "Test map that contains objects"() {
+        setup:
+        def data="""<?xml version="1.0" encoding="UTF-8"?>
+        <thing>
+            <customers map="true">
+                <entry key="smith"><customerId>abc</customerId></entry>
+                <entry key="johnson"><customerId>123</customerId></entry>
+            </customers>
+        </thing>"""
+
+        def expected = [customers:[
+            'smith':['customerId':'abc'],
+            'johnson':['customerId':'123']
+            ]
+        ]
+
+        when:
+        def xml = XML.parse( data )
+        def map = new MapExtractor().extract(xml)
+
+        then:
+        expected == map
+    }
+
     def "Test map that contains arrays"() {
         setup:
         def data="""<?xml version="1.0" encoding="UTF-8"?>
         <thing>
             <customers map="true">
-                <entry key="smith"><anArray array="true"><string>abc</string><number>123</number></anArray></entry>
+                <entry key="smith" array="true"><string>abc</string><number>123</number></entry>
             </customers>
         </thing>"""
 
@@ -301,7 +339,7 @@ b</newLine><carriageReturn>a"""+"""\r"""+"""b</carriageReturn><anArray array="tr
         def data="""<?xml version="1.0" encoding="UTF-8"?>
         <thing>
             <customers map="true">
-                <entry key="smith"><value map="true"><entry key="foo">bar</entry></value></entry>
+                <entry key="smith" map="true"><entry key="foo">bar</entry></entry>
             </customers>
         </thing>"""
 
@@ -316,7 +354,6 @@ b</newLine><carriageReturn>a"""+"""\r"""+"""b</carriageReturn><anArray array="tr
 
         then:
         expected == map
-
     }
 
 }

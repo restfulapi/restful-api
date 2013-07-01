@@ -4,17 +4,17 @@ Copyright 2013 Ellucian Company L.P. and its affiliates.
 
 package net.hedtech.restfulapi.config
 
-import net.hedtech.restfulapi.marshallers.json.*
+import net.hedtech.restfulapi.marshallers.xml.*
 
 /**
  * A factory for creating DeclarativeGroovyBeanMarshaller instances
  * from configuration.
  */
-class JSONGroovyBeanMarshallerFactory {
+class XMLGroovyBeanMarshallerFactory {
 
-    static DeclarativeGroovyBeanMarshaller instantiateMarshaller(JSONGroovyBeanMarshallerConfig config, RestConfig restConfig) {
+    static DeclarativeGroovyBeanMarshaller instantiateMarshaller(XMLGroovyBeanMarshallerConfig config, RestConfig restConfig) {
         //Merge the include chain into a final config
-        config = restConfig.jsonGroovyBean.getMergedConfig( config )
+        config = restConfig.xmlGroovyBean.getMergedConfig( config )
 
         def marshaller = new DeclarativeGroovyBeanMarshaller(
             app:restConfig.grailsApplication

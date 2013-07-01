@@ -152,9 +152,20 @@ restfulApi.header.mediaType   = 'X-hedtech-Media-Type'
 restfulApiConfig = {
 
     jsonDomainMarshallerTemplates {
-        template 'domainAffordance' config {
+        template 'jsonDomainAffordance' config {
             additionalFields {map ->
                 map['json'].property("_href", "/${map['resourceName']}/${map['resourceId']}" )
+            }
+        }
+    }
+
+    xmlDomainMarshallerTemplates {
+        template 'xmlDomainAffordance' config {
+            additionalFields {map ->
+                def xml = map['xml']
+                xml.startNode('_href')
+                xml.convertAnother("/${map['resourceName']}/${map['resourceId']}")
+                xml.end()
             }
         }
     }
@@ -173,7 +184,7 @@ restfulApiConfig = {
             mediaTypes = ["application/json"]
             marshallers {
                 jsonDomainMarshaller {
-                    inherits = ['domainAffordance']
+                    inherits = ['jsonDomainAffordance']
                 }
             }
             jsonExtractor {}
@@ -181,8 +192,8 @@ restfulApiConfig = {
         representation {
             mediaTypes = ["application/xml"]
             marshallers {
-                marshaller {
-                    instance = new net.hedtech.restfulapi.marshallers.xml.AffordanceDomainClassMarshaller(app:grailsApplication)
+                xmlDomainMarshaller {
+                    inherits = ['xmlDomainAffordance']
                     priority = 200
                 }
             }
@@ -191,8 +202,7 @@ restfulApiConfig = {
         representation {
             mediaTypes =  ['application/vnd.hedtech.v0+json']
             marshallers {
-                marshaller {
-                    instance = new net.hedtech.restfulapi.marshallers.json.BasicDomainClassMarshaller(app:grailsApplication)
+                xmlDomainMarshaller {
                     priority = 100
                 }
                 marshaller {
@@ -205,8 +215,8 @@ restfulApiConfig = {
         representation {
             mediaTypes = ['application/vnd.hedtech.v0+xml']
             marshallers {
-                marshaller {
-                    instance = new net.hedtech.restfulapi.marshallers.xml.AffordanceDomainClassMarshaller(app:grailsApplication)
+                xmlDomainMarshaller {
+                    inherits = ['xmlDomainAffordance']
                     priority = 100
                 }
                 marshaller {
@@ -250,8 +260,7 @@ restfulApiConfig = {
         representation {
             mediaTypes = ['application/vnd.hedtech.v2+json']
             marshallers {
-                marshaller {
-                    instance = new net.hedtech.restfulapi.marshallers.json.BasicDomainClassMarshaller(app:grailsApplication)
+                jsonDomainMarshaller {
                     priority = 101
                 }
             }
@@ -262,8 +271,7 @@ restfulApiConfig = {
         representation {
             mediaTypes = ['application/vnd.hedtech.v1+xml']
             marshallers {
-                marshaller {
-                    instance = new net.hedtech.restfulapi.marshallers.xml.BasicDomainClassMarshaller(app:grailsApplication)
+                xmlDomainMarshaller {
                     priority = 100
                 }
             }
@@ -272,8 +280,7 @@ restfulApiConfig = {
         representation {
             mediaTypes = ['application/vnd.hedtech.additional.field.closure+json']
             marshallers {
-                marshaller {
-                    instance = new net.hedtech.restfulapi.marshallers.json.BasicDomainClassMarshaller(app:grailsApplication)
+                jsonDomainMarshaller {
                     priority = 100
                 }
                 jsonDomainMarshaller {
@@ -295,8 +302,7 @@ restfulApiConfig = {
         representation {
             mediaTypes = ["application/json"]
             marshallers {
-                marshaller {
-                    instance = new net.hedtech.restfulapi.marshallers.json.BasicDomainClassMarshaller(app:grailsApplication)
+                jsonDomainMarshaller {
                     priority = 100
                 }
             }
@@ -308,8 +314,7 @@ restfulApiConfig = {
         representation {
             mediaTypes = ["application/json"]
             marshallers {
-                marshaller {
-                    instance = new net.hedtech.restfulapi.marshallers.json.BasicDomainClassMarshaller(app:grailsApplication)
+                jsonDomainMarshaller {
                     priority = 100
                 }
             }
@@ -322,7 +327,7 @@ restfulApiConfig = {
             mediaTypes = ["application/json"]
             marshallers {
                 jsonDomainMarshaller {
-                    inherits = ['domainAffordance']
+                    inherits = ['jsonDomainAffordance']
                 }
             }
             jsonExtractor {
@@ -339,8 +344,7 @@ restfulApiConfig = {
         representation {
             mediaTypes = ["application/json"]
             marshallers {
-                marshaller {
-                    instance = new net.hedtech.restfulapi.marshallers.json.BasicDomainClassMarshaller(app:grailsApplication)
+                jsonDomainMarshaller {
                     priority = 100
                 }
             }
@@ -356,8 +360,7 @@ restfulApiConfig = {
         representation {
             mediaTypes = ["application/json"]
             marshallers {
-                marshaller {
-                    instance = new net.hedtech.restfulapi.marshallers.json.BasicDomainClassMarshaller(app:grailsApplication)
+                jsonDomainMarshaller {
                     priority = 100
                 }
             }
@@ -375,7 +378,7 @@ restfulApiConfig = {
             mediaTypes = ["application/json"]
             marshallers {
                 jsonDomainMarshaller {
-                    inherits = ['domainAffordance']
+                    inherits = ['jsonDomainAffordance']
                     additionalFieldsMap = [resourceName:'special-things']
                     field 'parts' resource 'thing-parts'
                 }
@@ -391,7 +394,7 @@ restfulApiConfig = {
             mediaTypes = ["application/json"]
             marshallers {
                 jsonDomainMarshaller {
-                    inherits = ['domainAffordance']
+                    inherits = ['jsonDomainAffordance']
                     additionalFieldsMap = [resourceName:'closure-things']
                 }
                 marshallerGroup 'json-date-closure'

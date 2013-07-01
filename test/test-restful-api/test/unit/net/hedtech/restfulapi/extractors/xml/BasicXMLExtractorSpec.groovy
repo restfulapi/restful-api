@@ -1,26 +1,26 @@
 /*****************************************************************************
 Copyright 2013 Ellucian Company L.P. and its affiliates.
 ******************************************************************************/
-package net.hedtech.restfulapi.extractors.json
+package net.hedtech.restfulapi.extractors.xml
 
 import grails.test.mixin.*
 import grails.test.mixin.web.*
 import spock.lang.*
 import grails.test.mixin.support.*
-import org.codehaus.groovy.grails.web.json.JSONObject
+import grails.converters.XML
 
 @TestMixin([GrailsUnitTestMixin])
-class BasicJSONExtractorSpec extends Specification {
+class BasicXMLExtractorSpec extends Specification {
 
     def "Test rename paths"() {
         setup:
-        BasicJSONExtractor.metaClass.getRenamePaths << {
+        BasicXMLExtractor.metaClass.getRenamePaths << {
             [['outer','inner']:'renamed',
              ['name']:'lastName']
         }
 
         when:
-        BasicJSONExtractor extractor = new BasicJSONExtractor()
+        BasicXMLExtractor extractor = new BasicXMLExtractor()
         def rules = extractor.transformer.rules.renameRules
 
         then:
@@ -30,13 +30,13 @@ class BasicJSONExtractorSpec extends Specification {
 
     def "Test default value paths"() {
         setup:
-        BasicJSONExtractor.metaClass.getDefaultValuePaths << {
+        BasicXMLExtractor.metaClass.getDefaultValuePaths << {
             [['outer','inner']:true,
              ['name']:'Smith']
         }
 
         when:
-        BasicJSONExtractor extractor = new BasicJSONExtractor()
+        BasicXMLExtractor extractor = new BasicXMLExtractor()
         def rules = extractor.transformer.rules.defaultValueRules
 
         then:
@@ -47,31 +47,31 @@ class BasicJSONExtractorSpec extends Specification {
 
     def "Test default short object paths"() {
         setup:
-        BasicJSONExtractor.metaClass.getShortObjectPaths << {
+        BasicXMLExtractor.metaClass.getShortObjectPaths << {
             [['outer','inner'],['customer']]
         }
 
         when:
-        BasicJSONExtractor extractor = new BasicJSONExtractor()
+        BasicXMLExtractor extractor = new BasicXMLExtractor()
         def rules = extractor.transformer.rules.modifyValueRules
 
         then:
-        [['outer','inner']:BasicJSONExtractor.DEFAULT_SHORT_OBJECT_CLOSURE,
-         ['customer']:BasicJSONExtractor.DEFAULT_SHORT_OBJECT_CLOSURE] == rules
+        [['outer','inner']:BasicXMLExtractor.DEFAULT_SHORT_OBJECT_CLOSURE,
+         ['customer']:BasicXMLExtractor.DEFAULT_SHORT_OBJECT_CLOSURE] == rules
     }
 
     def "Test overridden short object paths"() {
         setup:
-        BasicJSONExtractor.metaClass.getShortObjectPaths << {
+        BasicXMLExtractor.metaClass.getShortObjectPaths << {
             [['outer','inner'],['customer']]
         }
         Closure shortObject = { def value -> }
-        BasicJSONExtractor.metaClass.getShortObjectClosure << {
+        BasicXMLExtractor.metaClass.getShortObjectClosure << {
             shortObject
         }
 
         when:
-        BasicJSONExtractor extractor = new BasicJSONExtractor()
+        BasicXMLExtractor extractor = new BasicXMLExtractor()
         def rules = extractor.transformer.rules.modifyValueRules
 
         then:
@@ -81,12 +81,12 @@ class BasicJSONExtractorSpec extends Specification {
 
     def "Test flatten paths"() {
         setup:
-        BasicJSONExtractor.metaClass.getFlattenPaths << {
+        BasicXMLExtractor.metaClass.getFlattenPaths << {
             [['outer','inner'],['customer']]
         }
 
         when:
-        BasicJSONExtractor extractor = new BasicJSONExtractor()
+        BasicXMLExtractor extractor = new BasicXMLExtractor()
         def rules = extractor.transformer.rules.flattenPaths
 
         then:
@@ -95,60 +95,54 @@ class BasicJSONExtractorSpec extends Specification {
 
     def "Test default short object closure for singletons"() {
         setup:
-        BasicJSONExtractor.metaClass.getShortObjectPaths << {
+        BasicXMLExtractor.metaClass.getShortObjectPaths << {
             [['customer']]
         }
-        JSONObject json = new JSONObject([customer:[_link:'/customers/1234']])
-        BasicJSONExtractor extractor = new BasicJSONExtractor()
+        def content = '<?xml version="1.0" encoding="UTF-8"?><thing><customer><_link>/customers/1234</_link></customer></thing>'
+        def xml = XML.parse content
+        BasicXMLExtractor extractor = new BasicXMLExtractor()
 
         when:
-        def map = extractor.extract(json)
+        def map = extractor.extract(xml)
 
         then:
         [customer:[id:'1234']] == map
     }
 
+
     def "Test default short object closure for collections"() {
         setup:
-        BasicJSONExtractor.metaClass.getShortObjectPaths << {
+        BasicXMLExtractor.metaClass.getShortObjectPaths << {
             [['customers']]
         }
-        JSONObject json = new JSONObject([customers:[[_link:'/customers/1'],[_link:'/customers/2']]])
-        BasicJSONExtractor extractor = new BasicJSONExtractor()
+        def content = '<?xml version="1.0" encoding="UTF-8"?><thing><customers array="true"><shortObject><_link>/customers/1</_link></shortObject><shortObject><_link>/customers/2</_link></shortObject></customers></thing>'
+        def xml = XML.parse content
+        BasicXMLExtractor extractor = new BasicXMLExtractor()
 
         when:
-        def map = extractor.extract(json)
+        def map = extractor.extract(xml)
 
         then:
         [customers:['1','2']] == map
-        true                  == map['customers'].getClass().isArray()
     }
 
     def "Test default short object closure for maps"() {
         setup:
-        BasicJSONExtractor.metaClass.getShortObjectPaths << {
+        BasicXMLExtractor.metaClass.getShortObjectPaths << {
             [['customers']]
         }
-        JSONObject json = new JSONObject([customers:['smith':[_link:'/customers/1'],'johnson':[_link:'/customers/2']]])
-        BasicJSONExtractor extractor = new BasicJSONExtractor()
+        def content = """<?xml version="1.0" encoding="UTF-8"?>
+        <thing>
+            <customers map="true">
+                <entry key="smith"><_link>/customers/1</_link></entry>
+                <entry key="johnson"><_link>/customers/2</_link></entry>
+            </customers>
+        </thing>"""
+        def xml = XML.parse content
+        BasicXMLExtractor extractor = new BasicXMLExtractor()
 
         when:
-        def map = extractor.extract(json)
-
-        then:
-        [customers:['smith':['id':'1'],'johnson':['id':'2']]] == map
-    }
-
-    def "Test default short object closure for maps"() {
-        setup:
-        BasicJSONExtractor.metaClass.getShortObjectPaths << {
-            [['customers']]
-        }
-        JSONObject json = new JSONObject([customers:['smith':[_link:'/customers/1'],'johnson':[_link:'/customers/2']]])
-        BasicJSONExtractor extractor = new BasicJSONExtractor()
-
-        when:
-        def map = extractor.extract(json)
+        def map = extractor.extract(xml)
 
         then:
         [customers:['smith':['id':'1'],'johnson':['id':'2']]] == map

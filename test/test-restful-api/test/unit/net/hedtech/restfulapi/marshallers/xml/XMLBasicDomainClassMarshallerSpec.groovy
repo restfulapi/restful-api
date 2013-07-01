@@ -480,6 +480,27 @@ class XMLBasicDomainClassMarshallerSpec extends Specification {
         0      == xml.simpleMap.children().size()
     }
 
+    def "Test non-association map"() {
+        setup:
+        setup:
+        def marshaller = new BasicDomainClassMarshaller(
+            app:grailsApplication
+        )
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing" )
+        thing.simpleMap = ['key 1':'value 1']
+
+        when:
+        def content = render( thing )
+        def xml = XML.parse content
+
+        then:
+        "true"    == xml.simpleMap.'@map'.text()
+        1         == xml.simpleMap.children().size()
+        'key 1'   == xml.simpleMap.entry[0].@key.text()
+        'value 1' == xml.simpleMap.entry[0].text()
+    }
+
 
     def "Test that null non-association collection marshalls as empty node"() {
         setup:
@@ -499,7 +520,7 @@ class XMLBasicDomainClassMarshallerSpec extends Specification {
         0      == xml.simpleArray.children().size()
     }
 
-    def "Test that empt non-association collection marshalls as empty node"() {
+    def "Test that empty non-association collection marshalls as empty node"() {
         setup:
         def marshaller = new BasicDomainClassMarshaller(
             app:grailsApplication
@@ -515,6 +536,29 @@ class XMLBasicDomainClassMarshallerSpec extends Specification {
         then:
         "true" == xml.simpleArray.'@array'.text()
         0      == xml.simpleArray.children().size()
+    }
+
+    def "Test non-association collection"() {
+        setup:
+        def marshaller = new BasicDomainClassMarshaller(
+            app:grailsApplication
+        )
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing" )
+        thing.simpleArray = ['abc','123']
+
+        when:
+        def content = render( thing )
+        def xml = XML.parse content
+        def values = []
+        xml.simpleArray.children().each() {
+            values.add it.text()
+        }
+
+        then:
+        "true"        == xml.simpleArray.'@array'.text()
+        2             == xml.simpleArray.children().size()
+        ['abc','123'] == values
     }
 
 
@@ -619,8 +663,8 @@ class XMLBasicDomainClassMarshallerSpec extends Specification {
         then:
         2                                  == xml.contributors.children().size()
         'smith'                            == xml.contributors.entry[0].@key.text()
-        '/marshalled-thing-contributors/5' == smith.shortObject._link.text()
-        '/marshalled-thing-contributors/6' == anderson.shortObject._link.text()
+        '/marshalled-thing-contributors/5' == smith._link.text()
+        '/marshalled-thing-contributors/6' == anderson._link.text()
         1                                  == xml.contributors.entry[0].children().size()
         1                                  == xml.contributors.entry[1].children().size()
     }
@@ -643,7 +687,7 @@ class XMLBasicDomainClassMarshallerSpec extends Specification {
 
         then:
         0 == xml.owner.firstName.size()
-        '/marshalled-owner-of-things/5' == xml.owner.shortObject._link.text()
+        '/marshalled-owner-of-things/5' == xml.owner._link.text()
     }
 
     def "Test one-to-one association field marshalled as short object"() {
@@ -664,7 +708,7 @@ class XMLBasicDomainClassMarshallerSpec extends Specification {
 
         then:
         0 == xml.subPart.code.size()
-        '/marshalled-sub-part-of-things/5' == xml.subPart.shortObject._link.text()
+        '/marshalled-sub-part-of-things/5' == xml.subPart._link.text()
     }
 
     def "Test embedded association field marshalled as full object"() {

@@ -283,10 +283,8 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<XML>, NameAwareMars
         Object id = extractIdForReference( refObj, refDomainClass )
         def domainName = GrailsNameUtils.getPropertyName(refDomainClass.shortName)
         def resource = hyphenate(pluralize(domainName))
-        xml.startNode('shortObject')
         xml.startNode("_link")
         xml.convertAnother("/$resource/$id")
-        xml.end()
         xml.end()
     }
 
@@ -356,14 +354,16 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<XML>, NameAwareMars
     }
 
     protected void marshallAssociationCollection(GrailsDomainClassProperty property, Object referenceObject, XML xml) {
-       Collection o = (Collection) referenceObject
+        Collection o = (Collection) referenceObject
         GrailsDomainClass referencedDomainClass = property.getReferencedDomainClass()
         GrailsDomainClassProperty referencedIdProperty = referencedDomainClass.getIdentifier()
         @SuppressWarnings("unused")
         String refPropertyName = referencedDomainClass.getPropertyName()
 
         for (Object el: o) {
+            xml.startNode("shortObject")
             asShortObject(property, el, xml)
+            xml.end()
         }
     }
 
