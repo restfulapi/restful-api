@@ -10,13 +10,13 @@ import net.hedtech.restfulapi.Inflector
 
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
-import org.codehaus.groovy.grails.web.converters.marshaller.NameAwareMarshaller;
+import org.codehaus.groovy.grails.web.converters.marshaller.NameAwareMarshaller
 import org.codehaus.groovy.grails.commons.DomainClassArtefactHandler as DCAH
 import org.codehaus.groovy.grails.commons.GrailsApplication
 import org.codehaus.groovy.grails.commons.GrailsClassUtils
 import org.codehaus.groovy.grails.commons.GrailsDomainClass
 import org.codehaus.groovy.grails.commons.GrailsDomainClassProperty
-import org.codehaus.groovy.grails.support.proxy.EntityProxyHandler;
+import org.codehaus.groovy.grails.support.proxy.EntityProxyHandler
 import org.codehaus.groovy.grails.web.util.WebUtils
 import org.codehaus.groovy.grails.orm.hibernate.proxy.HibernateProxyHandler
 import org.codehaus.groovy.grails.support.proxy.ProxyHandler
@@ -128,8 +128,6 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<XML>, NameAwareMars
         }
         return GrailsNameUtils.getPropertyName(o.getClass());
     }
-
-
 
 // ------------------- Methods to override to customize behavior ---------------------
 
