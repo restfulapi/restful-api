@@ -75,6 +75,13 @@ class RestfulApiController {
 
     private ExtractorAdapter extractorAdapter = new DefaultExtractorAdapter()
 
+    // Custom headers (configured within Config.groovy)
+    String totalCountHeader
+    String pageMaxHeader
+    String pageOffsetHeader
+    String messageHeader
+    String mediaTypeHeader
+
     /**
      * Initializes the controller by registering the configured marshallers.
      **/
@@ -83,6 +90,12 @@ class RestfulApiController {
     //       'init()' is invoked explicitly from RestfulApiGrailsPlugin.
     // @PostConstruct
     void init() {
+
+        totalCountHeader = grailsApplication.config.restfulApi.header.totalCount
+        pageMaxHeader    = grailsApplication.config.restfulApi.header.pageMaxSize
+        pageOffsetHeader = grailsApplication.config.restfulApi.header.pageOffset
+        messageHeader    = grailsApplication.config.restfulApi.header.message
+        mediaTypeHeader  = grailsApplication.config.restfulApi.header.mediaType
 
         log.trace 'Initializing RestfulApiController...'
         if (!(grailsApplication.config.restfulApiConfig instanceof Closure)) {
@@ -172,9 +185,9 @@ class RestfulApiController {
                 generate {
                     ResponseHolder holder = new ResponseHolder()
                     holder.data = result
-                    holder.addHeader('X-hedtech-totalCount', count)
-                    holder.addHeader('X-hedtech-pageOffset', requestParams.offset ? requestParams?.offset : 0)
-                    holder.addHeader('X-hedtech-pageMaxSize', requestParams.max ? requestParams?.max : result.size())
+                    holder.addHeader(totalCountHeader, count)
+                    holder.addHeader(pageOffsetHeader, requestParams.offset ? requestParams?.offset : 0)
+                    holder.addHeader(pageMaxHeader, requestParams.max ? requestParams?.max : result.size())
                     renderSuccessResponse( holder, 'default.rest.list.message' )
                 }
             }
@@ -373,7 +386,7 @@ class RestfulApiController {
             }
         }
         if (responseHolder.message) {
-            response.addHeader( "X-hedtech-message", responseHolder.message )
+            response.addHeader( messageHeader, responseHolder.message )
         }
         render(text: content ? content : "", contentType: contentType )
     }
@@ -459,7 +472,7 @@ class RestfulApiController {
         def contentType = selectResponseContentType( representation )
 
         if (content != null) {
-            response.addHeader( 'X-hedtech-Media-Type', representation.mediaType )
+            response.addHeader( mediaTypeHeader, representation.mediaType )
         }
         responseHolder.headers.each { header ->
             header.value.each() { val ->
@@ -467,7 +480,7 @@ class RestfulApiController {
             }
         }
         if (responseHolder.message) {
-            response.addHeader( "X-hedtech-message", responseHolder.message )
+            response.addHeader( messageHeader, responseHolder.message )
         }
 
         render(text: content ? content : "", contentType: contentType )
@@ -479,8 +492,8 @@ class RestfulApiController {
         // Select the content type
         // Content type will always be application/json or application/xml
         // to make it easy for a response to be displayed in a browser or other tools
-        // The X-hedtech-Media-Type header will hold the custom media type (if any)
-        // describing the content in more detail.
+        // The custom media type header (e.g., X-hedtech-Media-Type) will hold the
+        // custom media type (if any) describing the content in more detail.
         //
         def mediaType = representation ? representation.mediaType : 'json'
         def contentType
@@ -881,7 +894,6 @@ class RestfulApiController {
                 ]
             ]
         },
-
         'OptimisticLockException': { pluralizededResourceName, e ->
             [
                 httpStatusCode: 409,
@@ -889,8 +901,6 @@ class RestfulApiController {
                                           args: [ Inflector.singularize( pluralizededResourceName ) ] ) as String,
             ]
         },
-
-
         'UnsupportedResourceException': { pluralizededResourceName, e ->
             [
                 httpStatusCode: 404,
@@ -898,8 +908,6 @@ class RestfulApiController {
                                           args: [ e.getPluralizedResourceName() ] ) as String,
             ]
         },
-
-
         'UnsupportedResponseRepresentationException': { pluralizededResourceName, e ->
             [
                 httpStatusCode: 406,
@@ -907,7 +915,6 @@ class RestfulApiController {
                                           args: [ e.getPluralizedResourceName(), e.getContentType() ] ) as String,
             ]
         },
-
         'UnsupportedRequestRepresentationException': { pluralizededResourceName, e ->
             [
                 httpStatusCode: 415,
@@ -915,7 +922,6 @@ class RestfulApiController {
                                           args: [ e.getPluralizedResourceName(), e.getContentType() ] ) as String,
             ]
         },
-
         'IdMismatchException': { pluralizededResourceName, e ->
             [
                 httpStatusCode: 400,
@@ -924,7 +930,6 @@ class RestfulApiController {
                                   args: [ e.getPluralizedResourceName() ] ) as String
             ]
         },
-
         'UnsupportedMethodException': { pluralizedResourceName, e ->
             def allowedHTTPMethods = []
             e.getSupportedMethods().each {
@@ -936,7 +941,6 @@ class RestfulApiController {
                 message: message( code: 'default.rest.method.not.allowed.message' ) as String
             ]
         },
-
         'ApplicationException': { pluralizededResourceName, e ->
             // wrap the 'message' invocation within a closure, so it can be passed into an ApplicationException to localize error messages
             def localizer = { mapToLocalize ->
@@ -944,9 +948,7 @@ class RestfulApiController {
             }
 
             def map = [:]
-
             def appMap = e.returnMap( localizer )
-
             map.httpStatusCode = e.getHttpStatusCode()
             if (appMap.headers) {
                 map.headers = appMap.headers
@@ -963,7 +965,6 @@ class RestfulApiController {
 
             return map
         },
-
         // Catch-all.  Unknown exception type.
         'AnyOtherException': { pluralizededResourceName, e ->
             [

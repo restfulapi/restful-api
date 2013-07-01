@@ -122,13 +122,28 @@ grails.date.formats = [ "yyyy-MM-dd'T'HH:mm:ssZ", "yyyy-MM-dd HH:mm:ss-SSSS", "d
 //
 //cache.headers.enabled = false // Uncomment to disable
 
+
 // ******************************************************************************
 //                              CORS Configuration
 // ******************************************************************************
+// Note: If changing custom header names, remember to reflect them here.
 //
-cors.url.pattern = '/api/*'
-cors.allow.origin.regex='.*'
-cors.expose.headers='content-type,X-hedtech-totalCount,X-hedtech-pageOffset,X-hedtech-pageMaxSize,X-hedtech-message,X-hedtech-Media-Type'
+cors.url.pattern        = '/api/*'
+cors.allow.origin.regex ='.*'
+cors.expose.headers     ='content-type,X-hedtech-totalCount,X-hedtech-pageOffset,X-hedtech-pageMaxSize,X-hedtech-message,X-hedtech-Media-Type'
+
+
+// ******************************************************************************
+//                Custom Response Header Name Configuration
+// ******************************************************************************
+// Note: Tests within this test app expect this 'X-hedtech...' naming to be used.
+//
+restfulApi.header.totalCount  = 'X-hedtech-totalCount'
+restfulApi.header.pageOffset  = 'X-hedtech-pageOffset'
+restfulApi.header.pageMaxSize = 'X-hedtech-pageMaxSize'
+restfulApi.header.message     = 'X-hedtech-message'
+restfulApi.header.mediaType   = 'X-hedtech-Media-Type'
+
 
 // ******************************************************************************
 //                       RESTful API Endpoint Configuration

@@ -171,12 +171,24 @@ Any response body will be one of the following:
 Any 'envelope' information is conveyed in headers.
 Currently, the following response headers are supported:
 
-* X-hedtech-totalCount.  Returned with list responses and contains the total count of objects.
-* X-hedtech-pageOffset.  Returned with list responses.
-* X-hedtech-pageMaxSize. Returned with list responses.
-* X-hedtech-Media-Type.  Returned with all (sucess) responses, and contains the exact type of the response.
-* X-hedtech-message.  May optionally be returned with any response.  Contains a localized message for the response.
-* X-Status-Reason.  Optionally returned with a 400 response to provide additional information on why the request could not be understood.
+| Header | Purpose |
+|:------:|:--------|
+| X-hedtech-totalCount | Returned with list responses to indicate the total count of resources. |
+| X-hedtech-pageOffset |  Returned with list responses to identify the current page. |
+| X-hedtech-pageMaxSize | Returned with list responses to indicate the max page size. |
+| X-hedtech-Media-Type | Returned with all (success) responses, and contains the exact type of the response. |
+| X-hedtech-message | May optionally be returned with any response.  Contains a localized message for the response. |
+| X-Status-Reason | Optionally returned with a 400 response to provide additional information on why the request could not be understood |
+
+NOTE: The names used for these custom response headers is configured within Config.groovy.
+
+```groovy
+restfulApi.header.totalCount  = 'X-abcde-totalCount'
+restfulApi.header.pageOffset  = 'X-abcde-pageOffset'
+restfulApi.header.pageMaxSize = 'X-abcde-pageMaxSize'
+restfulApi.header.message     = 'X-abcde-message'
+restfulApi.header.mediaType   = 'X-abcde-Media-Type'
+```
 
 ##Cache Headers
 The plugin supports client caching (unless disabled within Config.groovy).  When caching support is enabled, the plugin will include both 'ETag' and 'Last-Modified' HTTP Headers within responses to GET requests and will support conditional GET requests containing either an 'If-None-Match' or 'If-Modified-Since' header.  This support is provided by the [cache-headers](https://github.com/Grailsrocks/grails-cache-headers) plugin.
