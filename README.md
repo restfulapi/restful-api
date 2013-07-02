@@ -1627,11 +1627,20 @@ If you have customized what a short-object reference looks like, you can overrid
                     }
                     return result.toArray() //grails data binding requires a java array
                 } else {
-                    if (Map.class.isAssignableFrom(value.getClass())) {
+                    //two possibilities.  Either this map represents an object,
+                    //or it is a map of objects.  If the map has a id property, assume it's
+                    //a single object
+                    if (value.containsKey('id')) {
                         def v = value['id']
-                        return [id:v]
+                        return [id:v.substring(v.lastIndexOf('/')+1)]
                     } else {
-                        throw new Exception( "Cannot convert from short object for $value" )
+                        //assume map of short-objects
+                        def result = [:]
+                        value.entrySet().each { Map.Entry entry ->
+                            def v = entry.value['id']
+                            result.put(entry.key, [id:v.substring(v.lastIndexOf('/')+1)] )
+                        }
+                        return result
                     }
                 }
             }
@@ -1642,7 +1651,7 @@ Which would result in the map:
 
     ['orderID':12345, 'customers': [ '123', '456' ] ]
 
-Note that the closure must be able to handle both single short-object references, and collections of them.  In general, if you are overriding the short-object behavior, you would want to override it for all representations.  This is possible by using templates; see below for more details on how to do so.
+Note that the closure must be able to handle single short-object references, collections of them, or maps of them.  In general, if you are overriding the short-object behavior, you would want to override it for all representations.  This is possible by using templates; see below for more details on how to do so.
 
 ###Flattening the final map
 If you intend to use grails data binding to bind the output of a declarative extractor to grails domain objects or POGOs, then you may need to flatten parts of the map that represent sub-objects.  This is because the data binding is designed to work with parameters submitted from web forms, so when dealing with nested objects, it expects key names to describe the associations, rather than nested maps.  For example it expects

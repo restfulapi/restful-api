@@ -125,4 +125,19 @@ class BasicJSONExtractorSpec extends Specification {
         true                  == map['customers'].getClass().isArray()
 
     }
+
+    def "Test default short object closure for maps"() {
+        setup:
+        BasicJSONExtractor.metaClass.getShortObjectPaths << {
+            [['customers']]
+        }
+        JSONObject json = new JSONObject([customers:['smith':[_link:'/customers/1'],'johnson':[_link:'/customers/2']]])
+        BasicJSONExtractor extractor = new BasicJSONExtractor()
+
+        when:
+        def map = extractor.extract(json)
+
+        then:
+        [customers:['smith':['id':'1'],'johnson':['id':'2']]] == map
+    }
 }

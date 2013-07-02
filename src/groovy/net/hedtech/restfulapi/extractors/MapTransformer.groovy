@@ -47,7 +47,7 @@ class MapTransformer {
     }
 
     /**
-     * Transforms the a map by apply closures to the path.
+     * Transforms a map by applying closures to the path.
      **/
     protected transform(Map currentObject, def objectPath, def remainingPath) {
         if (remainingPath.size() == 0) {

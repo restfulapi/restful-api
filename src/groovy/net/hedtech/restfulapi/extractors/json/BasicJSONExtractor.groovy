@@ -14,6 +14,8 @@ class BasicJSONExtractor implements JSONExtractor {
     protected boolean initialized = false
 
     private static DEFAULT_SHORT_OBJECT_CLOSURE = { value ->
+println "processing value=$value"
+println ""
         if (value == null) return value
         if (Collection.class.isAssignableFrom(value.getClass())) {
             def result = []
@@ -28,8 +30,21 @@ class BasicJSONExtractor implements JSONExtractor {
             return result.toArray()
         } else {
             if (Map.class.isAssignableFrom(value.getClass())) {
-                def v = value['_link']
-                return [id:v.substring(v.lastIndexOf('/')+1)]
+                //two possibilities.  Either this map represents an object,
+                //or it is a map of objects.  If the map has a _link property, assume it's
+                //a single object
+                if (value.containsKey('_link')) {
+                    def v = value['_link']
+                    return [id:v.substring(v.lastIndexOf('/')+1)]
+                } else {
+                    //assume map of short-objects
+                    def result = [:]
+                    value.entrySet().each { Map.Entry entry ->
+                        def v = entry.value['_link']
+                        result.put(entry.key, [id:v.substring(v.lastIndexOf('/')+1)] )
+                    }
+                    return result
+                }
             } else {
                 throw new Exception( "Cannot convert from short object for $value" )
             }
