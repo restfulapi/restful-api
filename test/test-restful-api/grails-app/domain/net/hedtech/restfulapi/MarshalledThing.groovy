@@ -44,7 +44,7 @@ class MarshalledThing implements Serializable {
         parts              bindable: false
         subPart            bindable: false, unique: true
         code               ( nullable: false, maxSize: 2, unique: true  )
-        description        ( nullable: false, maxSize: 30 )
+        description        ( nullable: true, maxSize: 30 )
         lastModified       ( nullable: true )
         lastModifiedBy     ( nullable: true,  maxSize: 30 )
         dataOrigin         ( nullable: true,  maxSize: 30 )

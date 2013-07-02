@@ -356,4 +356,55 @@ b</newLine><carriageReturn>a"""+"""\r"""+"""b</carriageReturn><anArray array="tr
         expected == map
     }
 
+    def "Test null property"() {
+        setup:
+        def data="""<?xml version="1.0" encoding="UTF-8"?>
+        <thing>
+            <customer null="true"/>
+        </thing>"""
+
+        def expected = [customer:null]
+
+        when:
+        def xml = XML.parse( data )
+        def map = new MapExtractor().extract(xml)
+
+        then:
+        expected == map
+    }
+
+    def "Test null map"() {
+        setup:
+        def data="""<?xml version="1.0" encoding="UTF-8"?>
+        <thing>
+            <customers map="true" null="true"/>
+        </thing>"""
+
+        def expected = [customers:null]
+
+        when:
+        def xml = XML.parse( data )
+        def map = new MapExtractor().extract(xml)
+
+        then:
+        expected == map
+    }
+
+    def "Test null collection"() {
+        setup:
+        def data="""<?xml version="1.0" encoding="UTF-8"?>
+        <thing>
+            <customers array="true" null="true"/>
+        </thing>"""
+
+        def expected = [customers:null]
+
+        when:
+        def xml = XML.parse( data )
+        def map = new MapExtractor().extract(xml)
+
+        then:
+        expected == map
+    }
+
 }

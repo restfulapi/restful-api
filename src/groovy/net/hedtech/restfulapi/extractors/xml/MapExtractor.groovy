@@ -20,7 +20,9 @@ class MapExtractor implements XMLExtractor {
     }
 
     protected def extractInternal(GPathResult xml) {
-        if (xml.@array.text() == 'true') {
+        if (xml.@null.text() == 'true') {
+            return null
+        } else if (xml.@array.text() == 'true') {
             //have an array.
             //all children are elements of the array.
             //they may contain complex content themselves

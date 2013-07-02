@@ -52,6 +52,7 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<XML>, NameAwareMars
 
     protected static final String MAP_ATTRIBUTE = "map"
     protected static final String ARRAY_ATTRIBUTE = "array"
+    protected static final String NULL_ATTRIBUTE = "null"
 
 // ------------------------------- Constructors -------------------------------
 
@@ -249,6 +250,18 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<XML>, NameAwareMars
             propertyName = property.getName()
         }
         xml.startNode(propertyName)
+
+        Object val = beanWrapper.getPropertyValue(property.getName())
+        if (val == null) {
+            xml.attribute(NULL_ATTRIBUTE,'true')
+        } else {
+            if (val instanceof Collection) {
+                xml.attribute(ARRAY_ATTRIBUTE,'true')
+            }
+            if (val instanceof Map) {
+                xml.attribute(MAP_ATTRIBUTE,'true')
+            }
+        }
     }
 
     protected Object extractValue(Object domainObject, GrailsDomainClassProperty property) {
@@ -292,18 +305,9 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<XML>, NameAwareMars
     protected void marshallSimpleField(BeanWrapper beanWrapper, GrailsDomainClassProperty property, XML xml) {
         log.trace "$this marshalObject() handling field '${property.getName()}' for ${beanWrapper.getWrappedInstance().getClass().getName()} as a simple field"
         //simple property
-        def node = startNode(beanWrapper, property, xml)
+        startNode(beanWrapper, property, xml)
         // Write non-relation property
         Object val = beanWrapper.getPropertyValue(property.getName())
-        Class clazz = beanWrapper.getPropertyDescriptor(property.getName()).getPropertyType()
-        if (clazz != null) {
-            if (Collection.class.isAssignableFrom(clazz)) {
-                node.attribute(ARRAY_ATTRIBUTE,"true")
-            }
-            if (Map.class.isAssignableFrom(clazz)) {
-                node.attribute(MAP_ATTRIBUTE,"true")
-            }
-        }
         xml.convertAnother(val)
         xml.end()
     }
@@ -331,15 +335,6 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<XML>, NameAwareMars
             xml.end()
         } else {
             def node = startNode(beanWrapper, property, xml)
-            Class propertyClazz = beanWrapper.getPropertyDescriptor(property.getName()).getPropertyType()
-            if (propertyClazz != null) {
-                if (Collection.class.isAssignableFrom(propertyClazz)) {
-                    node.attribute(ARRAY_ATTRIBUTE,"true")
-                }
-                if (Map.class.isAssignableFrom(propertyClazz)) {
-                    node.attribute(MAP_ATTRIBUTE,"true")
-                }
-            }
             if (referenceObject != null) {
                 if (referenceObject instanceof Collection) {
                     log.trace( "$this marshalObject() handling field '${property.getName()}' for $clazz as a Collection")

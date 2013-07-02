@@ -276,27 +276,100 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
         1 == xml.publicField2.size()
     }
 
-    def "Test collection"() {
+    def "Test collection property has array attribute"() {
         setup:
         def marshaller = new TestMarshaller(
             app:grailsApplication
         )
-        marshaller.includesClosure = {Object value-> [ 'simpleArray' ] }
+        marshaller.includesClosure = {Object value-> [ 'listProperty' ] }
         register( marshaller )
-        MarshalledThing bean = new MarshalledThing()
-        bean.simpleArray = ['abc','123']
+        SimpleBean bean = new SimpleBean()
+        bean.listProperty = ['abc','123']
 
         when:
         def content = render( bean )
         def xml = XML.parse content
         def values = []
-        xml.simpleArray.children().each {
+        xml.listProperty.children().each {
             values.add it.text()
         }
 
         then:
-        2             == xml.simpleArray.children().size()
+        'true'        == xml.listProperty.@array.text()
+        2             == xml.listProperty.children().size()
         ['abc','123'] == values
+    }
+
+    def "Test collection field has array attribute"() {
+        setup:
+        def marshaller = new TestMarshaller(
+            app:grailsApplication
+        )
+        marshaller.includesClosure = {Object value-> [ 'listField' ] }
+        register( marshaller )
+        SimpleBean bean = new SimpleBean()
+        bean.listField = ['abc','123']
+
+        when:
+        def content = render( bean )
+        def xml = XML.parse content
+        def values = []
+        xml.listField.children().each {
+            values.add it.text()
+        }
+
+        then:
+        'true'        == xml.listField.@array.text()
+        2             == xml.listField.children().size()
+        ['abc','123'] == values
+    }
+
+    def "Test map property has map attribute"() {
+        setup:
+        def marshaller = new TestMarshaller(
+            app:grailsApplication
+        )
+        marshaller.includesClosure = {Object value-> [ 'mapProperty' ] }
+        register( marshaller )
+        SimpleBean bean = new SimpleBean()
+        bean.mapProperty = ['abc':'123']
+
+        when:
+        def content = render( bean )
+        def xml = XML.parse content
+        def values = [:]
+        xml.mapProperty.children().each {
+            values.put(it.@key.text(), it.text())
+        }
+
+        then:
+        'true'        == xml.mapProperty.@map.text()
+        1             == xml.mapProperty.children().size()
+        ['abc':'123'] == values
+    }
+
+    def "Test map field has map attribute"() {
+        setup:
+        def marshaller = new TestMarshaller(
+            app:grailsApplication
+        )
+        marshaller.includesClosure = {Object value-> [ 'mapField' ] }
+        register( marshaller )
+        SimpleBean bean = new SimpleBean()
+        bean.mapField = ['abc':'123']
+
+        when:
+        def content = render( bean )
+        def xml = XML.parse content
+        def values = [:]
+        xml.mapField.children().each {
+            values.put(it.@key.text(), it.text())
+        }
+
+        then:
+        'true'        == xml.mapField.@map.text()
+        1             == xml.mapField.children().size()
+        ['abc':'123'] == values
     }
 
     def "Test collection with complex objects"() {
@@ -314,9 +387,10 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
         def xml = XML.parse content
 
         then:
-        1             == xml.simpleArray.children().size()
+        'true'  == xml.simpleArray.@array.text()
+        1       == xml.simpleArray.children().size()
         'Smith' == xml.simpleArray.children()[0].lastName.text()
-        'John' == xml.simpleArray.children()[0].firstName.text()
+        'John'  == xml.simpleArray.children()[0].firstName.text()
     }
 
     def "Test map"() {
@@ -338,6 +412,7 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
         }
 
         then:
+        'true'            == xml.simpleMap.@map.text()
         2                 == xml.simpleMap.children().size()
         ['a':'1','b':'2'] == map
     }
@@ -358,9 +433,83 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
         def value = xml.simpleMap.children()[0]
 
         then:
+        'true'  == xml.simpleMap.@map.text()
         1       == xml.simpleMap.children().size()
         'Smith' == value.lastName.text()
         'John'  == value.firstName.text()
+    }
+
+
+    def "Test null collection property has null attribute"() {
+        setup:
+        def marshaller = new TestMarshaller(
+            app:grailsApplication
+        )
+        marshaller.includesClosure = {Object o -> ['listProperty']}
+        register( marshaller )
+        SimpleBean bean = new SimpleBean()
+
+        when:
+        def content = render( bean )
+        def xml = XML.parse content
+
+        then:
+        'true'  == xml.listProperty.@null.text()
+        0       == xml.listProperty.children().size()
+    }
+
+    def "Test null collection field has null attribute"() {
+        setup:
+        def marshaller = new TestMarshaller(
+            app:grailsApplication
+        )
+        marshaller.includesClosure = {Object o -> ['listField']}
+        register( marshaller )
+        SimpleBean bean = new SimpleBean()
+
+        when:
+        def content = render( bean )
+        def xml = XML.parse content
+
+        then:
+        'true'  == xml.listField.@null.text()
+        0       == xml.listField.children().size()
+    }
+
+    def "Test null map property has null attribute"() {
+        setup:
+        def marshaller = new TestMarshaller(
+            app:grailsApplication
+        )
+        marshaller.includesClosure = {Object o -> ['mapProperty']}
+        register( marshaller )
+        SimpleBean bean = new SimpleBean()
+
+        when:
+        def content = render( bean )
+        def xml = XML.parse content
+
+        then:
+        'true'  == xml.mapProperty.@null.text()
+        0       == xml.mapProperty.children().size()
+    }
+
+    def "Test null map field has null attribute"() {
+        setup:
+        def marshaller = new TestMarshaller(
+            app:grailsApplication
+        )
+        marshaller.includesClosure = {Object o -> ['mapField']}
+        register( marshaller )
+        SimpleBean bean = new SimpleBean()
+
+        when:
+        def content = render( bean )
+        def xml = XML.parse content
+
+        then:
+        'true'  == xml.mapField.@null.text()
+        0       == xml.mapField.children().size()
     }
 
     private void register( String name, def marshaller ) {

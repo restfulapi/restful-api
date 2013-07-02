@@ -46,6 +46,10 @@ class AbstractBeanMarshaller implements ObjectMarshaller<XML>, NameAwareMarshall
     GrailsApplication app
     ProxyHandler proxyHandler
 
+    protected static final String MAP_ATTRIBUTE = "map"
+    protected static final String ARRAY_ATTRIBUTE = "array"
+    protected static final String NULL_ATTRIBUTE = "null"
+
     AbstractBeanMarshaller() {
         this.proxyHandler = new HibernateProxyHandler()
     }
@@ -96,7 +100,7 @@ class AbstractBeanMarshaller implements ObjectMarshaller<XML>, NameAwareMarshall
             }
             fieldsToMarshall.each() { Field field ->
                 if (processField(value, field, xml)) {
-                    startNode(beanWrapper, field, xml)
+                    startNode(beanWrapper, field, value, xml)
                     Object val = field.get(value)
                     xml.convertAnother(val)
                     xml.end()
@@ -242,13 +246,46 @@ class AbstractBeanMarshaller implements ObjectMarshaller<XML>, NameAwareMarshall
 // ------------------- Methods to support marshalling ---------------------
 
     protected def startNode(BeanWrapper beanWrapper,
-                            def propertyOrField,
+                            PropertyDescriptor property,
                             XML xml) {
-        def name = getSubstitutionName(beanWrapper,propertyOrField)
+        def name = getSubstitutionName(beanWrapper,property)
         if (name == null) {
-            name = propertyOrField.getName()
+            name = property.getName()
         }
         xml.startNode(name)
+        Object val = beanWrapper.getPropertyValue(property.getName())
+        if (val == null) {
+            xml.attribute(NULL_ATTRIBUTE,'true')
+        } else {
+            if (val instanceof Collection) {
+                xml.attribute(ARRAY_ATTRIBUTE,'true')
+            }
+            if (val instanceof Map) {
+                xml.attribute(MAP_ATTRIBUTE,'true')
+            }
+        }
+    }
+
+    protected def startNode(BeanWrapper beanWrapper,
+                            Field field,
+                            Object object,
+                            XML xml) {
+        def name = getSubstitutionName(beanWrapper,field)
+        if (name == null) {
+            name = field.getName()
+        }
+        xml.startNode(name)
+        Object val = field.get(object)
+        if (val == null) {
+            xml.attribute(NULL_ATTRIBUTE,'true')
+        } else {
+            if (val instanceof Collection) {
+                xml.attribute(ARRAY_ATTRIBUTE,'true')
+            }
+            if (val instanceof Map) {
+                xml.attribute(MAP_ATTRIBUTE,'true')
+            }
+        }
     }
 
    protected String getDerivedResourceName(Object o) {

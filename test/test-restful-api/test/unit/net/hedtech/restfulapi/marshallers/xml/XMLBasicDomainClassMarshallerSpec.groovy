@@ -253,7 +253,7 @@ class XMLBasicDomainClassMarshallerSpec extends Specification {
         'AA'       == xml.code.text()
     }
 
-    def "Test that null Collection association field is marshalled as an empty node"() {
+    def "Test that null Collection association field is marshalled with null attribute"() {
         setup:
         def marshaller = new BasicDomainClassMarshaller(
             app:grailsApplication
@@ -270,7 +270,7 @@ class XMLBasicDomainClassMarshallerSpec extends Specification {
         null   == thing.parts
         1      == xml.parts.size()
         0      == xml.parts.children().size()
-        "true" == xml.parts.'@array'.text()
+        "true" == xml.parts.'@null'.text()
     }
 
     def "Test that empty Collection association field is marshalled as an empty node"() {
@@ -293,7 +293,7 @@ class XMLBasicDomainClassMarshallerSpec extends Specification {
         "true" == xml.parts.'@array'.text()
     }
 
-    def "Test that null Map association field is marshalled as an empty node"() {
+    def "Test that null Map association field is marshalled with null attribute"() {
         setup:
         def marshaller = new BasicDomainClassMarshaller(
             app:grailsApplication
@@ -309,7 +309,7 @@ class XMLBasicDomainClassMarshallerSpec extends Specification {
         null   == thing.contributors
         1      == xml.contributors.size()
         0      == xml.contributors.children().size()
-        "true" == xml.contributors.'@map'.text()
+        "true" == xml.contributors.'@null'.text()
     }
 
 
@@ -332,7 +332,7 @@ class XMLBasicDomainClassMarshallerSpec extends Specification {
         "true" == xml.contributors.'@map'.text()
     }
 
-    def "Test that null one-to-one association field is marshalled as an empty node"() {
+    def "Test that null one-to-one association field is marshalled as an empty node with null attribute"() {
         setup:
         def marshaller = new BasicDomainClassMarshaller(
             app:grailsApplication
@@ -345,13 +345,14 @@ class XMLBasicDomainClassMarshallerSpec extends Specification {
         def xml = XML.parse content
 
         then:
-        null == thing.subPart
-        1    == xml.subPart.size()
-        0    == xml.subPart.children().size()
+        null   == thing.subPart
+        1      == xml.subPart.size()
+        0      == xml.subPart.children().size()
+        'true' == xml.subPart.@null.text()
 
     }
 
-    def "Test that null many-to-one association field is marshalled as an empty node"() {
+    def "Test that null many-to-one association field is marshalled as an empty node with null attribute"() {
         setup:
         def marshaller = new BasicDomainClassMarshaller(
             app:grailsApplication
@@ -364,12 +365,14 @@ class XMLBasicDomainClassMarshallerSpec extends Specification {
         def xml = XML.parse content
 
         then:
-        null == thing.owner
-        1    == xml.owner.size()
-        0    == xml.owner.children().size()
+        null   == thing.owner
+        1      == xml.owner.size()
+        0      == xml.owner.children().size()
+        'true' == xml.owner.@null.text()
+
     }
 
-    def "Test that null embedded association field is marshalled as an empty node"() {
+    def "Test that null embedded association field is marshalled as an empty node with null attribute"() {
         setup:
         def marshaller = new BasicDomainClassMarshaller(
             app:grailsApplication
@@ -382,9 +385,10 @@ class XMLBasicDomainClassMarshallerSpec extends Specification {
         def xml = XML.parse content
 
         then:
-        null == thing.embeddedPart
-        1    == xml.embeddedPart.size()
-        0    == xml.embeddedPart.children().size()
+        null   == thing.embeddedPart
+        1      == xml.embeddedPart.size()
+        0      == xml.embeddedPart.children().size()
+        'true' == xml.embeddedPart.@null.text()
     }
 
     def "Test that associated collection carries the array attribute"() {
@@ -444,7 +448,7 @@ class XMLBasicDomainClassMarshallerSpec extends Specification {
         "true" == xml.simpleArray.'@array'.text()
     }
 
-    def "Test that null non-association map marshalls as empty node"() {
+    def "Test that null non-association map marshalls with null attribute"() {
         setup:
         def marshaller = new BasicDomainClassMarshaller(
             app:grailsApplication
@@ -458,7 +462,7 @@ class XMLBasicDomainClassMarshallerSpec extends Specification {
         def xml = XML.parse content
 
         then:
-        "true" == xml.simpleMap.'@map'.text()
+        "true" == xml.simpleMap.'@null'.text()
         0      == xml.simpleMap.children().size()
     }
 
@@ -502,7 +506,7 @@ class XMLBasicDomainClassMarshallerSpec extends Specification {
     }
 
 
-    def "Test that null non-association collection marshalls as empty node"() {
+    def "Test that null non-association collection marshalls with null attribute"() {
         setup:
         def marshaller = new BasicDomainClassMarshaller(
             app:grailsApplication
@@ -516,7 +520,7 @@ class XMLBasicDomainClassMarshallerSpec extends Specification {
         def xml = XML.parse content
 
         then:
-        "true" == xml.simpleArray.'@array'.text()
+        "true" == xml.simpleArray.'@null'.text()
         0      == xml.simpleArray.children().size()
     }
 
@@ -559,6 +563,30 @@ class XMLBasicDomainClassMarshallerSpec extends Specification {
         "true"        == xml.simpleArray.'@array'.text()
         2             == xml.simpleArray.children().size()
         ['abc','123'] == values
+    }
+
+    def "Test null simple property"() {
+        setup:
+        def marshaller = new BasicDomainClassMarshaller(
+            app:grailsApplication,
+
+        )
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:null )
+        thing.simpleArray = ['abc','123']
+
+        when:
+        def content = render( thing )
+        def xml = XML.parse content
+        def values = []
+        xml.simpleArray.children().each() {
+            values.add it.text()
+        }
+
+        then:
+        "true"        == xml.description.'@null'.text()
+        0             == xml.description.children().size()
+        ""            == xml.description.text()
     }
 
 

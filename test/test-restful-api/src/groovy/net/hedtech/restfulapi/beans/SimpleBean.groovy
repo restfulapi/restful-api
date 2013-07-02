@@ -15,4 +15,10 @@ class SimpleBean {
     public transient String transientField
     public static String staticField
 
+    List listProperty
+    public List listField
+
+    Map mapProperty
+    public Map mapField
+
 }
