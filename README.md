@@ -1771,6 +1771,364 @@ The extractor will be configured with the results of merging the configuration b
 ###Configuration merging
 The order in which configurations are merged is significant.  When two configurations, first and second are merged, boolean values, or single valued options that are set in the second config override the first.  Collection or map values are combined.
 
+##Declarative Marshalling of Domain classes to XML
+The plugin supports declarative marshalling of domain classes to XML with the net.hedtech.restfulapi.marshallers.xml.BasicDomainClassMarshaller and net.hedtech.restfulapi.marshallers.xml.DeclarativeDomainClassMarshaller.
+
+The BasicDomainClassMarshaller exposes methods which can be overridden to define what fields to include, etc.  It functions similarly to the json marshalling, but produces xml output instead.  The DeclarativeDomainClassMarshaller supports the configuration DSL.
+
+Both marshallers generate xml in a format similar to JSON semantics.  For lack of a better term, we will refere to it in this document as json-xml.  The format follows these rules
+
+* An element with one or more children represents a map.  The name of each child element is a key in a map, and the value of the element is the value.
+* The value of an element with no children is the textual value of the element.
+* The value of an element with the attribute null set to "true" is null.
+* The value of an element with the attribute array set to "true" is an array.  The values of the array are the values of each child element.
+* The value of an element with the attribute map set to "true" is a map.  The children of such an element must each have a 'key' attribute set to the value of the key.  For each child, an entry is placed in the map using the value of the 'key' attribute as the key, and the value of the element as the value.
+
+For example, suppose we have a Person class:
+
+    class Person {
+        String firstName
+        String lastName
+    }
+
+An instance of Person
+
+    new Person(firstName:'John', lastName:'Smith')
+
+would have an xml representation under the above rules:
+
+    <person>
+        <firstName>John</firstName>
+        <lastName>Smith</lastName>
+    </person>
+
+Notice the similarity to JSON:
+
+    {"firstName":"John", "lastName":"Smith"}
+
+In the case of the xml format, the \<person\> element is a wrapper designating the beginning of an object/map (and the name is actuall not important).  The child elements represent name/value pairs in the map.
+
+A more complex example:
+
+    class Person {
+        String firstName
+        String lastName
+        Collection addresses = []
+        Map employeeNotes = [:] //map of employee full name to an array of string
+    }
+
+An instance of Person having two addresses, and multiple notes for two employees would have a structure like this:
+
+    <person>
+        <firstName>John</firstName>
+        <lastName>Smith</lastName>
+        <addresses array="true">
+            <address>
+                <line1>1 First Street</line1>
+                <city>somewhere</city>
+                <state>PA</state>
+            </address>
+            <address>
+                <line1>2 Second Street</line1>
+                <city>nowhere</city>
+                <state>PA</state>
+            </address>
+        </addresses>
+        <employeeNotes map="true">
+            <entry key="Hank Adams">
+                <notes array="true">
+                    <string>This is a note</string>
+                    <string>This is another note</string>
+                </notes>
+            </entry>
+            <entry key="Jane Smith">
+                <notes array="true">
+                    <string>note1</string>
+                    <string>note2</string>
+                </notes>
+            <entry>
+        </employeeNotes>
+    </person>
+
+###Configuring declarative XML marshalling
+Anywhere you can define a marshaller, you can define a declarative xml marshaller with
+
+    xmlDomainMarshaller {
+    }
+
+With options specified in the closure.  The xml domain marshaller supports the same options as the JSON version.  In the interest of brevity, those options will not be repeated here.  You can configure templates for xml domain marshallers in a
+
+    xmlDomainMarshallerTemplates {
+    }
+
+block, just as you can for JSON domain marshallers.  The only differences are in the maps passed to short object and additional fields closures - see the sections on additional fields and customzing short object behavior for xml for more details.
+
+###Customizing short-object behavior for XML marshalling
+You can override how a declarative xml marshaller renders short-objects by specifying a closure that generates the content.  The marshaller will automatically pass the closure a Map containing the following keys:
+
+        grailsApplication
+        property
+        refObject
+        xml
+        resourceId
+        resourceName
+
+where:
+
+* grailsApplication is a reference to the grailsApplication context
+* property is a GrailsDomainClassProperty instance for the field being marshalled
+* refObject is the associated object to generate a short-object representation for
+* xml is the XML converter that should be used to generate content
+* resourceId is the id of the refObject
+* resourceName is the resource name that the refObject is exposed as by the API.  If a field declaration for the field being rendered contains a 'resource' option, that value is passed in resourceName.  Otherwise, the pluralized, hyphenated domain name will be passed.
+
+If the configuration specifies a resource name for the field being marshalled as a short object, that will be passed as a resource name, otherwise, resource will be the pluralized and hyphenated version of the associated class (per convention).
+
+For example, if you wanted the short-object representation to contain a "link" field, as well as separate fields for id and resource name, you could override the default behavior this way:
+
+    resource 'things' config {
+        representation {
+            mediaTypes = ["application/xml"]
+            marshallers {
+                xmlDomainMarshaller {
+                    supports net.hedtech.restfulapi.Thing
+                    includesFields {
+                        field 'code'
+                        field 'description'
+                        shortObject { Map map ->
+                            def xml = map['xml']
+                            def resource = map['resourceName']
+                            def id = map['resourceId']
+                            xml.startNode("shortObject")
+                            xml.startNode("link")
+                            xml.convertAnother("/$resource/$id")
+                            xml.end()
+                            xml.startNode("resource")
+                            xml.converAnother(resource)
+                            xml.end()
+                            xml.startNode("id")
+                            xml.convertAnother(id)
+                            xml.end()
+                            xml.end()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+Note that to produce a representation that can be extracted declaratively (more on this later), care must be taken to produce xml content that conforms to the declarative xml format.  In the case above, the short object closure produces a short-object value that looks like
+
+    <shortObject>
+        <link>/customers/123</link>
+        <resource>customers</resource>
+        <id>123</id>
+    </shortObject>
+
+Which in terms of the format is an object/map with 3 key/value pairs.  Notice it is structurally similar to JSON:
+
+    {"link":"/customers/123", "resource":"customers", "id":"123"}
+
+###Adding additional fields for XML marshalling
+The declarative domain marshaller allows any number of closures to be added to marshall additional content.  For example, let's say we want to add affordances to all of the xml representations.  Define a marshaller template containing the closure for the affordance, then add it to the marshallers:
+
+    xmlDomainMarshallerTemplates {
+        template 'xml-affordance' config {
+            additionalFields {Map map ->
+                xml.startNode("_href")
+                xml.convertAnother("/${map['resourceName']}/${map['resourceId']}" )
+                xml.end()
+            }
+        }
+    }
+
+    resource 'things' config {
+        representation {
+            mediaTypes = ["application/xml"]
+            marshallers {
+                xmlDomainMarshaller {
+                    inherits=['xml-affordance']
+                    supports net.hedtech.restfulapi.Thing
+                }
+            }
+        }
+    }
+
+    resource 'customers' config {
+        representation {
+            mediaTypes = ["application/xml"]
+            marshallers {
+                jsonDomainMarshaller {
+                    inherits=['xml-affordance']
+                    supports net.hedtech.restfulapi.Customer
+                }
+            }
+        }
+    }
+
+Like with overriding short-object behavior, the closure receives a map.  The map contains the following keys:
+
+    grailsApplication
+    beanWrapper
+    xml
+    resourceName
+    resourceId
+
+where
+
+* grailsApplication is a reference to the grailsApplication context
+* beanWrapper is a BeanWrapper instance wrapping the object being marshalled
+* xml is the XML converter that should be used to generate content
+* resourceName is the resource name obtained as the pluralized, hyphenated version of the domain class
+* resourceId is the id of the domain object
+
+All the options for additional fields that apply to json marshalling also apply to xml marshalling.  The only difference is the closure will be passed an instance of the XML converter, instead of JSON, and care must be taken that additional fields must be added in such a way as to conform to the declarative xml format if the representation is intended to be extracted declaratively.
+
+##Declarative Marshalling of Groovy Beans to XML
+The plugin contains net.hedtech.restfulapi.marshallers.xmlGroovyBeanMarshaller and net.hedtech.restfulapi.marshallers.xml.DeclarativeGroovyBeanMarshaller, which are counterparts to their json versions.  They support the same options as their json counterparts.
+
+Anywhere you can add a marshaller (in a marshaller group or representation), you can configure and add an xml declarative groovy bean marshaller with
+
+    xmlGroovyBeanMarshaller {}
+
+The closure specifies how to configure the marshaller.  The options available are the same as for the json marshaller, except for the values passed when defining additional fields.
+
+As with json marshallers, you can define templates with re-usable configuration:
+
+    xmlGroovyBeanMarshallerTemplates {}
+
+###Adding additional fields for XML marshalling
+You can add additional fields not directly present in a groovy bean to its marshalled representation.
+
+The declarative xml groovy bean marshaller allows any number of closures to be added to marshall additional content.  For example, let's say we want to add affordances to all of our xml representations.  We will define a marshaller template containing the closure for the affordance, then add it to the marshallers:
+
+    jsonGroovyBeanMarshallerTemplates {
+        template 'xml-bean-affordance' config {
+            additionalFields {Map map ->
+                def xml = map['xml']
+                xml.startNode("_href")
+                xml.convertAnother("/${map['resourceName']}/${map['resourceId']}")
+                xml.end()
+            }
+        }
+    }
+
+    resource 'things' config {
+        representation {
+            mediaTypes = ["application/xml"]
+            marshallers {
+                jsonGroovyBeanMarshaller {
+                    inherits=['xml-bean-affordance']
+                    supports net.hedtech.restfulapi.Thing
+                }
+            }
+        }
+    }
+
+the closure receives a map.  The map contains the following keys:
+
+    grailsApplication
+    beanWrapper
+    xml
+    resourceName
+    resourceId (optional)
+
+where
+
+* grailsApplication is a reference to the grailsApplication context
+* beanWrapper is a BeanWrapper instance wrapping the object being marshalled
+* xml is the XML converter that should be used to generate content
+* resourceName is the resource name obtained as the pluralized, hyphenated version of the domain class
+* resourceId is the id (if available) of the groovy bean
+
+Note that if resourceName is specified in the additionalFieldsMap (see below), then that value is passed instead of the derived name.
+
+Note that resourceId may not be present in the map. The marshaller attempts to provide a value for resourceId as follows:
+
+* if the bean's metaClass has an id property, it's value is used
+* if the bean's metaClass responds to a 'getId' method taking zero-arguments, the value the method returns is used
+* if the bean has an 'id' property, the value of the property is used
+* if the bean has a public, non-transient, non-static id field, the value of the id field is used
+
+If none of the above conditions apply, then resourceId will not be passed in the map.
+
+##Declarative extraction of XML content
+Just as with json, you can declaratively configure how to extract content from xml.  Anywhere you can define an extractor, you can declaratively define one with
+
+    xmlExtactor {}
+
+The xmlExtractor is configured the same as its json counterpart.  Just as with json, you can define templates that contain reusable configuration:
+
+    xmlExtractorTemplates {
+        template 'xml-extraction' config {
+            //some config
+        }
+    }
+
+However, declarative XML extraction will not work for arbitrary xml.  It only works against the json-xml format produced by the declarative marshallers.
+
+Declarative XML extraction works in two phases.  First, the json-xml format content is parsed and extracted into maps and collections.  That is, it is essentially converted into a format that structurally matches the equivalent json representation.  Then, the rules for modifying that representation are applied to rename fields, convert short-object values, provide default values, etc as if json content had been recieved.
+
+For example, consider the following content
+
+    <order>
+        <orderID>123</orderID>
+        <customer>
+            <name>Smith</name>
+            <id>456</id>
+            <phone-number>555-555-5555</phone-number>
+        </customer>
+    </order>
+
+    Suppose that the customer name property needs to be extracted as lastName:
+
+    resource 'purchase-orders' config {
+        representation {
+            mediaTypes = ["application/xml"]
+            jsonExtractor {
+                property 'customer.name' name 'lastName'
+            }
+        }
+    }
+
+The declarative extractor first parses the xml and converts it into a Map structurally similar to json:
+
+    [orderID:"123",
+     customer:[
+        name:'Smith',
+        id:'456'
+        phone-number:'555-555-5555'
+     ]
+    ]
+
+Then the extraction rules are applied to the map, in the same way they would be for json content, resulting in a final map:
+
+    [orderID:"123",
+     customer:[
+        lastName:'Smith',
+        id:'456'
+        phone-number:'555-555-5555'
+     ]
+    ]
+
+###Cautions when using xml extraction
+While the json-xml format that the declarative extraction understands is structurally similar to json, there are some important differences.  The most obvious is that all primitive values are represented as text, whereas json content can distinguish between numbers, text, etc.  This means that maps declaratively extracted from the same content in json and xml formats are subtly different.  For example consider the same resource represented in json and json-xml format:
+
+    {id:123}
+
+    <object>
+        <id>123<id>
+    </object>
+
+If the declarative extractors are used, the json content produces the map
+
+    [id:123]
+
+while the xml content produces the map
+
+    [id:'123'].
+
+That is, the value of id in the first map is a number, while in the second map, it is a string - type information for primitives is lost in the json-xml format.  It is therefore the responsibility of the service layer that binds the extracted map to objects to convert/coerce values appropriately.
 
 ##Logging
 Errors encountered while servicing a request are logged at error level to the log target 'RestfulApiController_messageLog'.  This is so errors occuring from the requests (which will typically be errors caused by invalid input, etc) can be separated from errors in the controller.
