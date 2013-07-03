@@ -82,6 +82,11 @@ class RestfulApiController {
     String messageHeader
     String mediaTypeHeader
 
+    // Paging query parameter names (configured within Config.groovy)
+    String pageMax
+    String pageOffset
+
+
     /**
      * Initializes the controller by registering the configured marshallers.
      **/
@@ -96,6 +101,9 @@ class RestfulApiController {
         pageOffsetHeader = grailsApplication.config.restfulApi.header.pageOffset
         messageHeader    = grailsApplication.config.restfulApi.header.message
         mediaTypeHeader  = grailsApplication.config.restfulApi.header.mediaType
+
+        pageMax    = grailsApplication.config.restfulApi.page.max
+        pageOffset = grailsApplication.config.restfulApi.page.offset
 
         log.trace 'Initializing RestfulApiController...'
         if (!(grailsApplication.config.restfulApiConfig instanceof Closure)) {
@@ -156,6 +164,8 @@ class RestfulApiController {
 
             def requestParams = params  // accessible from within withCacheHeaders
             def logger = log            // ditto
+
+            updatePagingQueryParams( requestParams ) // We'll ensure params uses expected Grails naming...
 
             def service = getService()
             def delegateToService = getServiceAdapter()
@@ -748,6 +758,13 @@ class RestfulApiController {
         if (!resource.allowsMethod( method ) ) {
             def allowed = resource.getMethods().intersect( Methods.getMethodGroup( method ) )
             throw new UnsupportedMethodException( supportedMethods:allowed )
+        }
+    }
+
+    private void updatePagingQueryParams(requestParams) {
+        if (pageMax != 'max' || pageOffset != 'offset') {
+            if (requestParams."$pageMax")    requestParams.max = requestParams."$pageMax"
+            if (requestParams."$pageOffset") requestParams.offset = requestParams."$pageOffset"
         }
     }
 

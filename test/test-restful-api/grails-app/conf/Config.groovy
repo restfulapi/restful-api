@@ -134,7 +134,7 @@ cors.expose.headers     ='content-type,X-hedtech-totalCount,X-hedtech-pageOffset
 
 
 // ******************************************************************************
-//                Custom Response Header Name Configuration
+//             RESTful API Custom Response Header Name Configuration
 // ******************************************************************************
 // Note: Tests within this test app expect this 'X-hedtech...' naming to be used.
 //
@@ -143,6 +143,15 @@ restfulApi.header.pageOffset  = 'X-hedtech-pageOffset'
 restfulApi.header.pageMaxSize = 'X-hedtech-pageMaxSize'
 restfulApi.header.message     = 'X-hedtech-message'
 restfulApi.header.mediaType   = 'X-hedtech-Media-Type'
+
+
+// ******************************************************************************
+//             RESTful API 'Paging' Query Parameter Name Configuration
+// ******************************************************************************
+// Note: Tests within this test app expect this 'X-hedtech...' naming to be used.
+//
+restfulApi.page.max    = 'max'
+restfulApi.page.offset = 'offset'
 
 
 // ******************************************************************************
