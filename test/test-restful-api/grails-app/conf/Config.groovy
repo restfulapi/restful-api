@@ -207,6 +207,7 @@ restfulApiConfig = {
     resource 'things' config {
         representation {
             mediaTypes = ["application/json"]
+            marshallerFramework = 'json'
             marshallers {
                 jsonDomainMarshaller {
                     inherits = ['jsonDomainAffordance']
@@ -225,7 +226,7 @@ restfulApiConfig = {
             extractor = new net.hedtech.restfulapi.extractors.xml.MapExtractor()
         }
         representation {
-            mediaTypes =  ['application/vnd.hedtech.v0+json']
+            mediaTypes = ['application/vnd.hedtech.v0+json']
             marshallers {
                 xmlDomainMarshaller {
                     priority = 100
@@ -320,6 +321,11 @@ restfulApiConfig = {
                 }
             }
             jsonExtractor {}
+        }
+        representation {
+            mediaTypes = ['application/vnd.hedtech.custom-framework+xml']
+            marshallerFramework = 'customThingMarshallingService'
+            xmlExtractor {}
         }
     }
 

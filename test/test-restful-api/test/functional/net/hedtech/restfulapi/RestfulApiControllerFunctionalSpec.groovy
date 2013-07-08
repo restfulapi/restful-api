@@ -1518,6 +1518,7 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         def aaID = createThing('AA')
         createThing('BB')
         def url = id ? "$localBase/api/thingamabobs/$aaID" : "$localBase/api/thingamabobs"
+        def expectedType = method == 'delete' ? 'text/plain' : 'application/json'
 
 
         when:
@@ -1532,8 +1533,8 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         }
 
         then:
-        status == response.status
-        'application/json' == response.contentType
+        status       == response.status
+        expectedType == response.contentType
         // assert localization of the message
         null != responseHeader('X-hedtech-message')
         responseHeader('X-hedtech-message').contains( 'thingamabob' )
@@ -1635,7 +1636,40 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         json[0].containsKey('xlarge')
     }
 
+    def "Test marshalling a list with a custom marshaller service (non-grails framework)"() {
+        setup:
+        createThing('AA')
+        createThing('BB')
 
+        when:
+        get("$localBase/api/things") {
+            headers['Content-Type'] = 'application/vnd.hedtech.custom-framework+xml'
+            headers['Accept']       = 'application/vnd.hedtech.custom-framework+xml'
+        }
+        def xml = XML.parse response.text
+
+        then:
+        'list' == xml.name()
+        2 == xml.children().size()
+        'AA' == xml.code[0].text()
+        'BB' == xml.code[1].text()
+    }
+
+    def "Test marshalling an object with a custom marshaller service (non-grails framework)"() {
+        setup:
+        def id = createThing('AA')
+
+        when:
+        get("$localBase/api/things/$id") {
+            headers['Content-Type'] = 'application/vnd.hedtech.custom-framework+xml'
+            headers['Accept']       = 'application/vnd.hedtech.custom-framework+xml'
+        }
+        def xml = XML.parse response.text
+
+        then:
+        'thing' == xml.name()
+        'AA' == xml.code.text()
+    }
 
     private void createThings() {
         createThing('AA')

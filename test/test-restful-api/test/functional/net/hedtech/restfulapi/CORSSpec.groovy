@@ -35,6 +35,7 @@ class CORSSpec extends RestSpecification {
         def aaID = createThing('AA')
         createThing('BB')
         def url = id ? "$localBase/api/things/$aaID" : "$localBase/api/things"
+        def expectedType = method == 'delete' ? 'text/plain' : 'application/json'
 
 
         when:
@@ -53,8 +54,8 @@ class CORSSpec extends RestSpecification {
         }
 
         then:
-        status == response.status
-        'application/json' == response.contentType
+        status       == response.status
+        expectedType == response.contentType
         // assert localization of the message
         null != responseHeader('X-hedtech-message')
 

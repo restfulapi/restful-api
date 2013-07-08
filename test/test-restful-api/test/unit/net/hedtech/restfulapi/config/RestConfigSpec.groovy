@@ -644,4 +644,58 @@ class RestConfigSpec extends Specification {
         null == config.getResource( 'things' )
         null == config.getRepresentation('things', ['application/json'])
     }
+
+    def "Test overriding marshaller framework for representation"() {
+        setup:
+        def src =
+        {
+            anyResource {
+                representation {
+                    mediaTypes = ['application/json']
+                    marshallerFramework = 'custom'
+                }
+            }
+            resource 'things' config {
+                representation {
+                    mediaTypes = ['application/json']
+                    marshallerFramework = 'custom'
+                }
+            }
+        }
+
+        when:
+        def config = RestConfig.parse( grailsApplication, src )
+        config.validate()
+
+        then:
+        'custom' == config.getRepresentation("dummy",'application/json').marshallerFramework
+        'custom' == config.getRepresentation("things",'application/json').marshallerFramework
+    }
+
+    def "Test overriding content type for representation"() {
+        setup:
+        def src =
+        {
+            anyResource {
+                representation {
+                    mediaTypes = ['application/json']
+                    contentType = 'application/custom'
+                }
+            }
+            resource 'things' config {
+                representation {
+                    mediaTypes = ['application/json']
+                    contentType = 'application/custom'
+                }
+            }
+        }
+
+        when:
+        def config = RestConfig.parse( grailsApplication, src )
+        config.validate()
+
+        then:
+        'application/custom' == config.getRepresentation("dummy",'application/json').contentType
+        'application/custom' == config.getRepresentation("things",'application/json').contentType
+    }
 }

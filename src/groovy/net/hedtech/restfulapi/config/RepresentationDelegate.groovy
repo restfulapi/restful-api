@@ -7,6 +7,8 @@ package net.hedtech.restfulapi.config
 class RepresentationDelegate {
 
     def mediaTypes = []
+    String marshallerFramework
+    String contentType
     def marshallers = []
     def extractor
 

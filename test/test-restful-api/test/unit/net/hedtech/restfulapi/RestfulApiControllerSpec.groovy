@@ -9,14 +9,17 @@ import com.grailsrocks.cacheheaders.CacheHeadersService
 import grails.test.mixin.*
 
 import spock.lang.*
-
+import org.codehaus.groovy.grails.web.converters.marshaller.ObjectMarshaller
+import org.codehaus.groovy.grails.web.converters.exceptions.ConverterException
 import net.hedtech.restfulapi.config.*
 import net.hedtech.restfulapi.extractors.configuration.*
 import net.hedtech.restfulapi.extractors.json.*
 import net.hedtech.restfulapi.extractors.xml.*
 import net.hedtech.restfulapi.extractors.*
+import net.hedtech.restfulapi.marshallers.*
 
 import grails.converters.JSON
+import grails.converters.XML
 
 @TestFor(RestfulApiController)
 class RestfulApiControllerSpec extends Specification {
@@ -474,13 +477,7 @@ class RestfulApiControllerSpec extends Specification {
         //mock the appropriate service method, expect exactly 1 invocation
         def mock = Mock(ThingService)
         controller.metaClass.getService = {-> mock}
-        def cacheHeadersService = new CacheHeadersService()
-        Closure withCacheHeadersClosure = { Closure c ->
-            c.delegate = controller
-            c.resolveStrategy = Closure.DELEGATE_ONLY
-            cacheHeadersService.withCacheHeaders( c.delegate, c )
-        }
-        controller.metaClass.withCacheHeaders = withCacheHeadersClosure
+        mockCacheHeaders()
 
         request.addHeader( 'Accept', 'application/json' )
         request.addHeader( 'Content-Type', 'application/json' )
@@ -528,13 +525,7 @@ class RestfulApiControllerSpec extends Specification {
 
         def mock = Mock(ThingService)
         controller.metaClass.getService = {-> mock}
-        def cacheHeadersService = new CacheHeadersService()
-        Closure withCacheHeadersClosure = { Closure c ->
-            c.delegate = controller
-            c.resolveStrategy = Closure.DELEGATE_ONLY
-            cacheHeadersService.withCacheHeaders( c.delegate, c )
-        }
-        controller.metaClass.withCacheHeaders = withCacheHeadersClosure
+        mockCacheHeaders()
 
         request.addHeader( 'Accept', 'application/json' )
         request.addHeader( 'Content-Type', 'application/json' )
@@ -575,13 +566,7 @@ class RestfulApiControllerSpec extends Specification {
 
         def mock = Mock(ThingService)
         controller.metaClass.getService = {-> mock}
-        def cacheHeadersService = new CacheHeadersService()
-        Closure withCacheHeadersClosure = { Closure c ->
-            c.delegate = controller
-            c.resolveStrategy = Closure.DELEGATE_ONLY
-            cacheHeadersService.withCacheHeaders( c.delegate, c )
-        }
-        controller.metaClass.withCacheHeaders = withCacheHeadersClosure
+        mockCacheHeaders()
 
         request.addHeader( 'Accept', 'application/xml' )
         request.addHeader( 'Content-Type', 'application/xml' )
@@ -623,13 +608,7 @@ class RestfulApiControllerSpec extends Specification {
 
         def mock = Mock(ThingService)
         controller.metaClass.getService = {-> mock}
-        def cacheHeadersService = new CacheHeadersService()
-        Closure withCacheHeadersClosure = { Closure c ->
-            c.delegate = controller
-            c.resolveStrategy = Closure.DELEGATE_ONLY
-            cacheHeadersService.withCacheHeaders( c.delegate, c )
-        }
-        controller.metaClass.withCacheHeaders = withCacheHeadersClosure
+        mockCacheHeaders()
 
         request.addHeader( 'Accept', 'application/json' )
         request.addHeader( 'Content-Type', 'application/json' )
@@ -649,9 +628,467 @@ class RestfulApiControllerSpec extends Specification {
         where:
         id   | controllerMethod | createCount | updateCount | deleteCount
         null | 'create'         | 1           | 0           | 0
-        null | 'update'         | 0           | 1           | 0
-        null | 'delete'         | 0           | 0           | 1
+        1    | 'update'         | 0           | 1           | 0
+        1    | 'delete'         | 0           | 0           | 1
     }
 
+    @Unroll
+    def "Test custom marshaller"() {
+        setup:
+        def marshallerService = Mock(MarshallingService)
+        config.restfulApiConfig = {
+            anyResource {
+                representation {
+                    mediaTypes = ['application/json']
+                    marshallerFramework = 'custom'
+                    jsonExtractor {}
+                }
+            }
+        }
+        controller.init()
 
+        def mock = Mock(ThingService)
+        mock.list(_) >> {[]}
+        mock.count(_) >> {0}
+        mock.show(_) >> {'string'}
+        mock.create(_,_) >> {'string'}
+        mock.update(_,_,_) >> {'string'}
+        mock.delete(_,_,_) >> {}
+        controller.metaClass.getService = {-> mock}
+        controller.metaClass.getMarshallingService = {String name -> marshallerService}
+        mockCacheHeaders()
+
+        params.pluralizedResourceName = 'things'
+        params.id = 1
+        request.addHeader('Accept', 'application/json')
+        request.addHeader('Content-Type', 'application/json')
+        if (id != null) params.id = id
+        int expectedCount = controllerMethod == 'delete' ? 0 : 1
+
+        when:
+        controller."$controllerMethod"()
+
+        then:
+        expectedCount * marshallerService.marshalObject(_,_ as RepresentationConfig) >> {object, config -> return value}
+        value == response.getText()
+
+        where:
+        id   | controllerMethod | value
+        null | 'list'           | 'custom1, custom2'
+        1    | 'show'           | 'custom1'
+        null | 'create'         | 'custom1'
+        1    | 'update'         | 'custom1'
+        1    | 'delete'         | ""
+    }
+
+    @Unroll
+    def "Test using json marshaller framework returns application/json Content-Type header"() {
+        setup:
+        config.restfulApiConfig = {
+            resource 'things' config {
+                representation {
+                    mediaTypes = ['application/custom+json']
+                    marshallers {
+                        jsonDomainMarshaller {}
+                    }
+                    jsonExtractor {}
+                }
+            }
+        }
+        controller.init()
+
+        def mock = Mock(ThingService)
+        mock.list(_) >> {[]}
+        mock.count(_) >> {0}
+        mock.show(_) >> {new Thing(code:'aa', description:'thing')}
+        mock.create(_,_) >> {new Thing(code:'aa', description:'thing')}
+        mock.update(_,_,_) >> {new Thing(code:'aa', description:'thing')}
+        mockCacheHeaders()
+        controller.metaClass.getService = {-> mock}
+
+        params.pluralizedResourceName = 'things'
+        params.id = 1
+        request.addHeader('Accept', 'application/custom+json')
+        request.addHeader('Content-Type', 'application/custom+json')
+        if (id != null) params.id = id
+        int expectedCount = controllerMethod == 'delete' ? 0 : 1
+
+        when:
+        controller."$controllerMethod"()
+
+        then:
+        'application/json;charset=utf-8' == response.contentType
+
+        where:
+        id   | controllerMethod
+        null | 'list'
+        1    | 'show'
+        null | 'create'
+        1    | 'update'
+    }
+
+    @Unroll
+    def "Test using xml media type returns application/xml Content-Type header"() {
+        setup:
+        config.restfulApiConfig = {
+            resource 'things' config {
+                representation {
+                    mediaTypes = ['application/custom+xml']
+                    marshallers {
+                        xmlDomainMarshaller {}
+                    }
+                    jsonExtractor {}
+                }
+            }
+        }
+        controller.init()
+
+        def mock = Mock(ThingService)
+        mock.list(_) >> {[]}
+        mock.count(_) >> {0}
+        mock.show(_) >> {new Thing(code:'aa', description:'thing')}
+        mock.create(_,_) >> {new Thing(code:'aa', description:'thing')}
+        mock.update(_,_,_) >> {new Thing(code:'aa', description:'thing')}
+        mockCacheHeaders()
+        controller.metaClass.getService = {-> mock}
+
+        params.pluralizedResourceName = 'things'
+        params.id = 1
+        request.addHeader('Accept', 'application/custom+xml')
+        request.addHeader('Content-Type', 'application/custom+xml')
+        if (id != null) params.id = id
+        int expectedCount = controllerMethod == 'delete' ? 0 : 1
+
+        when:
+        controller."$controllerMethod"()
+
+        then:
+        'application/xml;charset=utf-8' == response.contentType
+
+        where:
+        id   | controllerMethod
+        null | 'list'
+        1    | 'show'
+        null | 'create'
+        1    | 'update'
+    }
+
+    @Unroll
+    def "Test using json media type with custom marshaller returns application/json Content-Type header"() {
+        setup:
+        config.restfulApiConfig = {
+            resource 'things' config {
+                representation {
+                    mediaTypes = ['application/custom+json']
+                    marshallerFramework = 'custom'
+                    jsonExtractor {}
+                }
+            }
+        }
+        controller.init()
+
+        def mock = Mock(ThingService)
+        mock.list(_) >> {[]}
+        mock.count(_) >> {0}
+        mock.show(_) >> {new Thing(code:'aa', description:'thing')}
+        mock.create(_,_) >> {new Thing(code:'aa', description:'thing')}
+        mock.update(_,_,_) >> {new Thing(code:'aa', description:'thing')}
+        def marshallerService = Mock(MarshallingService)
+        marshallerService.marshalObject(_,_) >> {return 'string'}
+        mockCacheHeaders()
+        controller.metaClass.getMarshallingService = {String name -> marshallerService}
+        controller.metaClass.getService = {-> mock}
+
+        params.pluralizedResourceName = 'things'
+        params.id = 1
+        request.addHeader('Accept', 'application/custom+json')
+        request.addHeader('Content-Type', 'application/custom+json')
+        if (id != null) params.id = id
+
+        when:
+        controller."$controllerMethod"()
+
+        then:
+        'application/json;charset=utf-8' == response.contentType
+
+        where:
+        id   | controllerMethod
+        null | 'list'
+        1    | 'show'
+        null | 'create'
+        1    | 'update'
+    }
+
+    @Unroll
+    def "Test using xml media type with custom marshaller returns application/xml Content-Type header"() {
+        setup:
+        config.restfulApiConfig = {
+            resource 'things' config {
+                representation {
+                    mediaTypes = ['application/custom+xml']
+                    marshallerFramework = 'custom'
+                    jsonExtractor {}
+                }
+            }
+        }
+        controller.init()
+
+        def mock = Mock(ThingService)
+        mock.list(_) >> {[]}
+        mock.count(_) >> {0}
+        mock.show(_) >> {new Thing(code:'aa', description:'thing')}
+        mock.create(_,_) >> {new Thing(code:'aa', description:'thing')}
+        mock.update(_,_,_) >> {new Thing(code:'aa', description:'thing')}
+        def marshallerService = Mock(MarshallingService)
+        marshallerService.marshalObject(_,_) >> {return 'string'}
+        mockCacheHeaders()
+        controller.metaClass.getMarshallingService = {String name -> marshallerService}
+        controller.metaClass.getService = {-> mock}
+
+        params.pluralizedResourceName = 'things'
+        params.id = 1
+        request.addHeader('Accept', 'application/custom+xml')
+        request.addHeader('Content-Type', 'application/custom+xml')
+        if (id != null) params.id = id
+
+        when:
+        controller."$controllerMethod"()
+
+        then:
+        'application/xml;charset=utf-8' == response.contentType
+
+        where:
+        id   | controllerMethod
+        null | 'list'
+        1    | 'show'
+        null | 'create'
+        1    | 'update'
+    }
+
+    @Unroll
+    def "Test specifying content type for json media overrides convention"() {
+        setup:
+        config.restfulApiConfig = {
+            resource 'things' config {
+                representation {
+                    mediaTypes = ['application/json']
+                    contentType = "application/custom"
+                    marshallers {
+                        marshaller {
+                            instance = new DummyJSONMarshaller()
+                        }
+                    }
+                    jsonExtractor {}
+                }
+            }
+        }
+        controller.init()
+
+        def mock = Mock(ThingService)
+        mock.list(_) >> {[]}
+        mock.count(_) >> {0}
+        mock.show(_) >> {['dummy':'foo']}
+        mock.create(_,_) >> {['dummy':'foo']}
+        mock.update(_,_,_) >> {['dummy':'foo']}
+        controller.metaClass.getService = {-> mock}
+        mockCacheHeaders()
+
+        params.pluralizedResourceName = 'things'
+        params.id = 1
+        request.addHeader('Accept', 'application/json')
+        request.addHeader('Content-Type', 'application/json')
+        if (id != null) params.id = id
+
+        when:
+        controller."$controllerMethod"()
+
+        then:
+        'application/custom;charset=utf-8' == response.contentType
+
+        where:
+        id   | controllerMethod
+        null | 'list'
+        1    | 'show'
+        null | 'create'
+        1    | 'update'
+    }
+
+    @Unroll
+    def "Test specifying content type for xml media overrides convention"() {
+        setup:
+        config.restfulApiConfig = {
+            resource 'things' config {
+                representation {
+                    mediaTypes = ['application/xml']
+                    contentType = "application/custom"
+                    marshallers {
+                        marshaller {
+                            instance = new DummyXMLMarshaller()
+                        }
+                    }
+                    jsonExtractor {}
+                }
+            }
+        }
+        controller.init()
+
+        def mock = Mock(ThingService)
+        mock.list(_) >> {[]}
+        mock.count(_) >> {0}
+        mock.show(_) >> {['dummy':'foo']}
+        mock.create(_,_) >> {['dummy':'foo']}
+        mock.update(_,_,_) >> {['dummy':'foo']}
+        controller.metaClass.getService = {-> mock}
+        mockCacheHeaders()
+
+        params.pluralizedResourceName = 'things'
+        params.id = 1
+        request.addHeader('Accept', 'application/xml')
+        request.addHeader('Content-Type', 'application/xml')
+        if (id != null) params.id = id
+
+        when:
+        controller."$controllerMethod"()
+
+        then:
+        'application/custom;charset=utf-8' == response.contentType
+
+        where:
+        id   | controllerMethod
+        null | 'list'
+        1    | 'show'
+        null | 'create'
+        1    | 'update'
+    }
+
+   @Unroll
+    def "Test specifying content type for json media overrides convention for custom marshaller"() {
+        setup:
+        config.restfulApiConfig = {
+            resource 'things' config {
+                representation {
+                    mediaTypes = ['application/json']
+                    contentType = "application/custom"
+                    marshallerFramework = 'custom'
+                    jsonExtractor {}
+                }
+            }
+        }
+        controller.init()
+
+        def mock = Mock(ThingService)
+        mock.list(_) >> {[]}
+        mock.count(_) >> {0}
+        mock.show(_) >> {['dummy':'foo']}
+        mock.create(_,_) >> {['dummy':'foo']}
+        mock.update(_,_,_) >> {['dummy':'foo']}
+        controller.metaClass.getService = {-> mock}
+        def marshallerService = Mock(MarshallingService)
+        marshallerService.marshalObject(_,_ as RepresentationConfig) >> {object, config -> return 'dummy'}
+        controller.metaClass.getMarshallingService = {String name -> marshallerService}
+        mockCacheHeaders()
+
+        params.pluralizedResourceName = 'things'
+        params.id = 1
+        request.addHeader('Accept', 'application/json')
+        request.addHeader('Content-Type', 'application/json')
+        if (id != null) params.id = id
+
+        when:
+        controller."$controllerMethod"()
+
+        then:
+        'application/custom;charset=utf-8' == response.contentType
+
+        where:
+        id   | controllerMethod
+        null | 'list'
+        1    | 'show'
+        null | 'create'
+        1    | 'update'
+    }
+
+   @Unroll
+    def "Test specifying content type for xml media overrides convention for custom marshaller"() {
+        setup:
+        config.restfulApiConfig = {
+            resource 'things' config {
+                representation {
+                    mediaTypes = ['application/xml']
+                    contentType = "application/custom"
+                    marshallerFramework = 'custom'
+                    jsonExtractor {}
+                }
+            }
+        }
+        controller.init()
+
+        def mock = Mock(ThingService)
+        mock.list(_) >> {[]}
+        mock.count(_) >> {0}
+        mock.show(_) >> {['dummy':'foo']}
+        mock.create(_,_) >> {['dummy':'foo']}
+        mock.update(_,_,_) >> {['dummy':'foo']}
+        controller.metaClass.getService = {-> mock}
+        def marshallerService = Mock(MarshallingService)
+        marshallerService.marshalObject(_,_ as RepresentationConfig) >> {object, config -> return 'dummy'}
+        controller.metaClass.getMarshallingService = {String name -> marshallerService}
+        mockCacheHeaders()
+
+        params.pluralizedResourceName = 'things'
+        params.id = 1
+        request.addHeader('Accept', 'application/xml')
+        request.addHeader('Content-Type', 'application/xml')
+        if (id != null) params.id = id
+
+        when:
+        controller."$controllerMethod"()
+
+        then:
+        'application/custom;charset=utf-8' == response.contentType
+
+        where:
+        id   | controllerMethod
+        null | 'list'
+        1    | 'show'
+        null | 'create'
+        1    | 'update'
+    }
+
+    private void mockCacheHeaders() {
+        def cacheHeadersService = new CacheHeadersService()
+        Closure withCacheHeadersClosure = { Closure c ->
+            c.delegate = controller
+            c.resolveStrategy = Closure.DELEGATE_ONLY
+            cacheHeadersService.withCacheHeaders( c.delegate, c )
+        }
+        controller.metaClass.withCacheHeaders = withCacheHeadersClosure
+    }
+
+    static class DummyJSONMarshaller implements ObjectMarshaller<JSON> {
+        @Override
+        public boolean supports(Object object) {
+            true
+        }
+
+         @Override
+        public void marshalObject(Object value, JSON json) throws ConverterException {
+            def writer = json.getWriter()
+            writer.object()
+            json.property('name','dummy')
+        }
+    }
+
+    static class DummyXMLMarshaller implements ObjectMarshaller<XML> {
+        @Override
+        public boolean supports(Object object) {
+            true
+        }
+
+         @Override
+        public void marshalObject(Object value, XML xml) throws ConverterException {
+            xml.startNode('dummy')
+            xml.end()
+        }
+    }
 }

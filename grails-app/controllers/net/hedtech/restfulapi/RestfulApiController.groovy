@@ -14,6 +14,8 @@ import static java.util.UUID.randomUUID
 
 import javax.annotation.PostConstruct
 
+import net.hedtech.restfulapi.marshallers.MarshallingService
+
 import net.hedtech.restfulapi.config.*
 
 import net.hedtech.restfulapi.extractors.*
@@ -373,15 +375,6 @@ class RestfulApiController {
             case ~/.*xml.*/:
                 contentType = 'application/xml'
                 if (responseHolder.data != null) {
-                    /*def jsonObject
-                    useJSON("restapi-error:json") {
-                        //def s = (responseHolder.data as JSON) as String
-                        //jsonObject = toJSONElement(s)
-                        conent = responseHolder.data as JSON
-                    }
-                    useXML("restapi-error:xml") {
-                        content = jsonObject as XML
-                    }*/
                     useXML("restapi-error:xml") {
                         content = responseHolder.data as XML
                     }
@@ -444,27 +437,72 @@ class RestfulApiController {
         return responseHolder
     }
 
+    protected String selectContentTypeForResponse( RepresentationConfig representation ) {
+        def result = representation.contentType
+        if (null == result) {
+            switch(representation.mediaType) {
+                case ~/.*json$/:
+                    result = 'application/json'
+                    break
+                case ~/.*xml$/:
+                    result = 'application/xml'
+                    break
+                default:
+                    result = 'application/text'
+                    break
+            }
+        }
+        return result
+    }
 
-    protected def generateResponseContent( RepresentationConfig representation, def data ) {
-        def content
-        switch(representation.mediaType) {
+
+    protected String generateResponseContent( RepresentationConfig representation, def data ) {
+        def result
+        def framework = representation.marshallerFramework
+
+        //if the marshalling framework is not specified,
+        //derive it by convention from the mediaType
+        if (null == framework) {
+            switch(representation.mediaType) {
             case ~/.*json$/:
-                log.trace "Going to useJSON with representation $representation"
-                useJSON(representation) {
-                    content = data as JSON
-                }
+                framework = 'json'
                 break
             case ~/.*xml$/:
-            log.trace "Going to useXML with representation $representation"
+                framework = 'xml'
+                break
+            default:
+                framework = null
+                break
+            }
+        }
+
+        if (null == framework) {
+            //if we can't determine a framework by this point,
+            //we have no idea how to marshall a response.
+            unsupportedResponseRepresentation()
+        }
+
+
+        switch(framework) {
+            case ~/json/:
+                log.trace "Going to useJSON with representation $representation"
+                useJSON(representation) {
+                    result = data as JSON
+                }
+                break
+            case ~/xml/:
+                log.trace "Going to useXML with representation $representation"
                 useXML(representation) {
-                    content = data as XML
+                    result = data as XML
                 }
                 break
             default:
-                unsupportedResponseRepresentation()
+                log.trace "Going to use custom marshaller service $framework with representation $representation"
+                def service = getMarshallingService(framework)
+                result = service.marshalObject(data,representation)
                 break
         }
-        return content
+        return result
      }
 
 
@@ -480,13 +518,13 @@ class RestfulApiController {
         //def acceptedTypes = mediaTypeParser.parse( request.getHeader(HttpHeaders.ACCEPT) )
         def representation
         def content
+        def contentType
 
         if (responseHolder.data != null) {
             representation = getResponseRepresentation()
             content = generateResponseContent( representation, responseHolder.data )
+            contentType = selectContentTypeForResponse( representation )
         }
-
-        def contentType = selectResponseContentType( representation )
 
         if (content != null) {
             response.addHeader( mediaTypeHeader, representation.mediaType )
@@ -500,10 +538,14 @@ class RestfulApiController {
             response.addHeader( messageHeader, responseHolder.message )
         }
 
-        render(text: content ? content : "", contentType: contentType )
+        if (content != null) {
+            render(text: content, contentType: contentType )
+        } else {
+            render(text:"", contentType:'text/plain')
+        }
     }
 
-
+/*
     private String selectResponseContentType( RepresentationConfig representation ) {
 
         // Select the content type
@@ -526,7 +568,7 @@ class RestfulApiController {
             break
         }
         return contentType
-    }
+    }*/
 
 
     protected boolean hasProperty( Object obj, String name ) {
@@ -706,9 +748,19 @@ class RestfulApiController {
             svc = applicationContext.getBean(getServiceName())
         } catch (e) {
             log.error "Caught exception ${e.message}", e
-            //throw e
         }
         log.trace "getService() will return service $svc"
+        svc
+    }
+
+    protected MarshallingService getMarshallingService(String name) {
+        def svc
+        try {
+            svc = applicationContext.getBean(name)
+        } catch (e) {
+            log.error "Caught exception ${e.message}", e
+        }
+        log.trace "getMarshallingService() will return service $svc"
         svc
     }
 
@@ -858,8 +910,9 @@ class RestfulApiController {
 
 
     private RepresentationConfig getRequestRepresentation( String resource = params.pluralizedResourceName ) {
-        def type = mediaTypeParser.parse( request.getHeader(HttpHeaders.CONTENT_TYPE) )[0]
-        def representation = getRepresentation( resource, [type] )
+        def types = mediaTypeParser.parse( request.getHeader(HttpHeaders.CONTENT_TYPE) )
+        def type = types.size() > 0 ? [types[0]] : []
+        def representation = getRepresentation( resource, type )
         if (representation == null) {
             unsupportedRequestRepresentation()
         }
