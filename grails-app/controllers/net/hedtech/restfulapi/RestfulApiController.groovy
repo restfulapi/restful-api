@@ -116,8 +116,13 @@ class RestfulApiController {
 
         restConfig.resources.values().each() { resource ->
             resource.representations.values().each() { representation ->
-                switch(representation.mediaType) {
-                    case ~/.*json$/:
+                def framework = representation.resolveMarshallerFramework()
+                if (null == framework) {
+                    throw new UnspecifiedMarshallerFrameworkException( pluralizedResourceName: resource.name, mediaType:representation.mediaType )
+                }
+                //if using json or xml framework, register marshallers with under a named config
+                switch(framework) {
+                    case ~/json/:
                         JSON.createNamedConfig("restfulapi:" + resource.name + ":" + representation.mediaType) { json ->
                             log.trace "Creating named config: 'restfulapi:${resource.name}:${representation.mediaType}'"
                             representation.marshallers.each() {
@@ -125,20 +130,20 @@ class RestfulApiController {
                                 json.registerObjectMarshaller(it.instance,it.priority)
                             }
                         }
-                        ExtractorConfigurationHolder.registerExtractor(resource.name, representation.mediaType, representation.extractor )
                     break
-                    case ~/.*xml$/:
+                    case ~/xml/:
                         XML.createNamedConfig("restfulapi:" + resource.name + ":" + representation.mediaType) { xml ->
                             representation.marshallers.each() {
                                 log.trace "    ...registering xml marshaller ${it.instance}"
                                 xml.registerObjectMarshaller(it.instance,it.priority)
                             }
                         }
-                        ExtractorConfigurationHolder.registerExtractor(resource.name, representation.mediaType, representation.extractor )
                     break
                     default:
-                        throw new RuntimeException("Cannot support media type ${representation.mediaType} in resource ${resource.name}.  All media types must end in xml or json.")
+                        break
                 }
+                //register the extractor (if any)
+                ExtractorConfigurationHolder.registerExtractor(resource.name, representation.mediaType, representation.extractor )
             }
         }
 
@@ -458,30 +463,15 @@ class RestfulApiController {
 
     protected String generateResponseContent( RepresentationConfig representation, def data ) {
         def result
-        def framework = representation.marshallerFramework
-
-        //if the marshalling framework is not specified,
-        //derive it by convention from the mediaType
-        if (null == framework) {
-            switch(representation.mediaType) {
-            case ~/.*json$/:
-                framework = 'json'
-                break
-            case ~/.*xml$/:
-                framework = 'xml'
-                break
-            default:
-                framework = null
-                break
-            }
-        }
+        def framework = representation.resolveMarshallerFramework()
 
         if (null == framework) {
             //if we can't determine a framework by this point,
             //we have no idea how to marshall a response.
+            //note that this should never happen, as the init() method
+            //checks that each representation has a resolved framework
             unsupportedResponseRepresentation()
         }
-
 
         switch(framework) {
             case ~/json/:
@@ -544,31 +534,6 @@ class RestfulApiController {
             render(text:"", contentType:'text/plain')
         }
     }
-
-/*
-    private String selectResponseContentType( RepresentationConfig representation ) {
-
-        // Select the content type
-        // Content type will always be application/json or application/xml
-        // to make it easy for a response to be displayed in a browser or other tools
-        // The custom media type header (e.g., X-hedtech-Media-Type) will hold the
-        // custom media type (if any) describing the content in more detail.
-        //
-        def mediaType = representation ? representation.mediaType : 'json'
-        def contentType
-        switch(mediaType) {
-            case ~/.*json$/:
-                contentType = "application/json"
-            break
-            case ~/.*xml$/:
-                contentType = "application/xml"
-            break
-            default:
-                contentType = "application/json"
-            break
-        }
-        return contentType
-    }*/
 
 
     protected boolean hasProperty( Object obj, String name ) {
@@ -799,14 +764,6 @@ class RestfulApiController {
      **/
     protected RepresentationConfig getRepresentation(pluralizedResourceName, allowedTypes) {
         return restConfig.getRepresentation( pluralizedResourceName, allowedTypes.name )
-    }
-
-
-    protected String selectResponseFormat( String format = null) {
-        if (!format) {
-            format = response.format
-        }
-        format == 'json' ? 'default' : format
     }
 
     protected void checkMethod( String method ) {

@@ -73,6 +73,29 @@ class RestfulApiControllerSpec extends Specification {
         'update'         | 'PUT'      | '1'  | 'update'      | 'foo'
     }
 
+    def "Test unsupported marshaller framework throws exception on initialization"() {
+        setup:
+        //use default extractor for any methods with a request body
+         config.restfulApiConfig = {
+            resource 'things' config {
+                representation {
+                    mediaTypes = ['application/custom'] //custom media type w/o marshaller framework specified
+                    extractor = new DefaultJSONExtractor()
+                }
+            }
+        }
+
+        when:
+        controller.init()
+
+        then:
+        UnspecifiedMarshallerFrameworkException e = thrown()
+        'application/custom' == e.mediaType
+        'things'             == e.pluralizedResourceName
+        println e.getMessage()
+        println ""
+    }
+
     def "Test delete with unsupported Accept header works, as there is no content returned"() {
         setup:
         //use default extractor for any methods with a request body
@@ -1002,9 +1025,9 @@ class RestfulApiControllerSpec extends Specification {
 
         where:
         id   | controllerMethod
-        null | 'list'
-        1    | 'show'
-        null | 'create'
+        //null | 'list'
+        //1    | 'show'
+        //null | 'create'
         1    | 'update'
     }
 
