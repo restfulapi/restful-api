@@ -117,10 +117,6 @@ class RestfulApiController {
         restConfig.resources.values().each() { resource ->
             resource.representations.values().each() { representation ->
                 def framework = representation.resolveMarshallerFramework()
-                if (null == framework) {
-                    throw new UnspecifiedMarshallerFrameworkException( pluralizedResourceName: resource.name, mediaType:representation.mediaType )
-                }
-                //if using json or xml framework, register marshallers with under a named config
                 switch(framework) {
                     case ~/json/:
                         JSON.createNamedConfig("restfulapi:" + resource.name + ":" + representation.mediaType) { json ->
@@ -143,7 +139,9 @@ class RestfulApiController {
                         break
                 }
                 //register the extractor (if any)
-                ExtractorConfigurationHolder.registerExtractor(resource.name, representation.mediaType, representation.extractor )
+                if (null != representation.extractor) {
+                    ExtractorConfigurationHolder.registerExtractor(resource.name, representation.mediaType, representation.extractor )
+                }
             }
         }
 
@@ -468,8 +466,8 @@ class RestfulApiController {
         if (null == framework) {
             //if we can't determine a framework by this point,
             //we have no idea how to marshall a response.
-            //note that this should never happen, as the init() method
-            //checks that each representation has a resolved framework
+            //note that this should never happen, as we should
+            //have checked for this before ever delegating to a service
             unsupportedResponseRepresentation()
         }
 
@@ -631,18 +629,14 @@ class RestfulApiController {
      **/
     protected Map parseRequestContent( request, String resource = params.pluralizedResourceName ) {
 
+        ResourceConfig resourceConfig = getResourceConfig( resource )
         def representation = getRequestRepresentation( resource )
-        switch (representation.mediaType) {
-            case ~/.*json$/:
-                return extractContent( representation.mediaType )
-            break
-            case ~/.*xml$/:
-                return extractContent( representation.mediaType )
-            break
-            default:
-                unsupportedRequestRepresentation()
-            break
+
+        Extractor extractor = ExtractorConfigurationHolder.getExtractor( resourceConfig.name, representation.mediaType )
+        if (!extractor) {
+            unsupportedRequestRepresentation()
         }
+        getExtractorAdapter().extract(extractor, request)
     }
 
 
@@ -839,25 +833,14 @@ class RestfulApiController {
     }
 
 
-    private JSONElement toJSONElement( String s ) {
-        if (s == null || s.trim().size() == 0) {
-            return null
-        }
-        //is there a better way to detect this?
-        if (s.startsWith('[')) {
-            return new JSONArray(s)
-        } else {
-            return new JSONObject(s)
-        }
-    }
-
-
     private RepresentationConfig getResponseRepresentation() {
         def representation = request.getAttribute( RESPONSE_REPRESENTATION )
         if (representation == null) {
             def acceptedTypes = mediaTypeParser.parse( request.getHeader(HttpHeaders.ACCEPT) )
             representation = getRepresentation( params.pluralizedResourceName, acceptedTypes )
-            if (representation == null) {
+            if (representation == null || representation.resolveMarshallerFramework() == null) {
+                //if no representation, or the representation does not have a marshaller framework,
+                //then this is a representation that cannot be marshalled to.
                 unsupportedResponseRepresentation()
             }
             request.setAttribute( RESPONSE_REPRESENTATION, representation )
@@ -887,17 +870,8 @@ class RestfulApiController {
     }
 
 
-    private Map extractContent( String mediaType ) {
-        ResourceConfig resourceConfig = getResourceConfig()
-        Extractor extractor = ExtractorConfigurationHolder.getExtractor( resourceConfig.name, mediaType )
-        if (!extractor) {
-            unsupportedRequestRepresentation()
-        }
-        getExtractorAdapter().extract(extractor, request)
-    }
-
-    private ResourceConfig getResourceConfig() {
-        restConfig.getResource( params.pluralizedResourceName )
+    private ResourceConfig getResourceConfig( String resource = params.pluralizedResourceName ) {
+        restConfig.getResource( resource )
     }
 
     private def exceptionHandlers = [

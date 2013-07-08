@@ -73,27 +73,46 @@ class RestfulApiControllerSpec extends Specification {
         'update'         | 'PUT'      | '1'  | 'update'      | 'foo'
     }
 
-    def "Test unsupported marshaller framework throws exception on initialization"() {
+    @Unroll
+    def "Test media type without marshaller framework returns 406"(String controllerMethod, String httpMethod, String id, String serviceMethod, def serviceReturn ) {
         setup:
         //use default extractor for any methods with a request body
          config.restfulApiConfig = {
             resource 'things' config {
                 representation {
-                    mediaTypes = ['application/custom'] //custom media type w/o marshaller framework specified
+                    mediaTypes = ['application/json']
+                    marshallerFramework = 'none' //no marshalling support for this representation
                     extractor = new DefaultJSONExtractor()
                 }
             }
         }
-
-        when:
         controller.init()
 
+        //mock the appropriate service method, expect 0 invocations
+        def mock = Mock(ThingService)
+        controller.metaClass.getService = {-> mock}
+
+        request.addHeader( 'Accept', 'application/json' )
+        //incoming format always json, so no errors
+        request.addHeader( 'Content-Type', 'application/json' )
+        request.method = httpMethod
+        params.pluralizedResourceName = 'things'
+        if (id != null) params.id = id
+
+        when:
+        controller."$controllerMethod"()
+
         then:
-        UnspecifiedMarshallerFrameworkException e = thrown()
-        'application/custom' == e.mediaType
-        'things'             == e.pluralizedResourceName
-        println e.getMessage()
-        println ""
+        406 == response.status
+          0 == response.getContentLength()
+          0 * _._
+
+        where:
+        controllerMethod | httpMethod | id   | serviceMethod | serviceReturn
+        'list'           | 'GET'      | null | 'list'        | ['foo']
+        'show'           | 'GET'      | '1'  | 'show'        | 'foo'
+        'create'         | 'POST'     | null | 'create'      | 'foo'
+        'update'         | 'PUT'      | '1'  | 'update'      | 'foo'
     }
 
     def "Test delete with unsupported Accept header works, as there is no content returned"() {
@@ -984,7 +1003,7 @@ class RestfulApiControllerSpec extends Specification {
         1    | 'update'
     }
 
-   @Unroll
+    @Unroll
     def "Test specifying content type for json media overrides convention for custom marshaller"() {
         setup:
         config.restfulApiConfig = {
@@ -1031,7 +1050,7 @@ class RestfulApiControllerSpec extends Specification {
         1    | 'update'
     }
 
-   @Unroll
+    @Unroll
     def "Test specifying content type for xml media overrides convention for custom marshaller"() {
         setup:
         config.restfulApiConfig = {
@@ -1076,6 +1095,157 @@ class RestfulApiControllerSpec extends Specification {
         1    | 'show'
         null | 'create'
         1    | 'update'
+    }
+
+    @Unroll
+    def "Test non json/xml media types can be used for extraction"() {
+        setup:
+        def theExtractor = Mock(RequestExtractor)
+        //use default extractor for any methods with a request body
+         config.restfulApiConfig = {
+            anyResource {
+                representation {
+                    mediaTypes = ['application/custom']
+                    marshallerFramework = 'json'
+                    marshallers {
+                        jsonGroovyBeanMarshaller {}
+                    }
+                    extractor = theExtractor
+                }
+            }
+        }
+        controller.init()
+
+        def mock = Mock(ThingService)
+        controller.metaClass.getService = {-> mock}
+        mockCacheHeaders()
+
+        request.addHeader( 'Accept', 'application/custom' )
+        request.addHeader( 'Content-Type', 'application/custom' )
+        request.method = httpMethod
+        params.pluralizedResourceName = 'things'
+        if (id != null) params.id = id
+
+        when:
+        controller."$controllerMethod"()
+
+        then:
+        status == response.status
+        1 * theExtractor.extract(_) >> { ['foo':'bar']}
+        createCount * mock.create(_,_)
+        updateCount * mock.update(_,_,_)
+        deleteCount * mock.delete(_,_,_)
+
+        where:
+        id   | controllerMethod | httpMethod |createCount | updateCount | deleteCount | status
+        null | 'create'         | 'POST'     | 1          | 0           | 0           | 201
+        1    | 'update'         | 'POST'     | 0          | 1           | 0           | 200
+        1    | 'delete'         | 'DELETE'   | 0          | 0           | 1           | 200
+    }
+
+    @Unroll
+    def "Test non json/xml media types can be used for marshalling"() {
+        setup:
+        def theExtractor = Mock(RequestExtractor)
+        theExtractor.extract(_) >> { ['foo':'bar']}
+        //use default extractor for any methods with a request body
+         config.restfulApiConfig = {
+            anyResource {
+                representation {
+                    mediaTypes = ['application/custom']
+                    marshallerFramework = 'custom'
+                    extractor = theExtractor
+                }
+            }
+        }
+        controller.init()
+
+        def mock = Mock(ThingService)
+        mock.list(_) >> {[]}
+        mock.count(_) >> {0}
+        mock.show(_) >> {[:]}
+        mock.create(_,_) >> {[:]}
+        mock.update(_,_,_) >> {[:]}
+        mock.delete(_,_,_) >> {}
+        controller.metaClass.getService = {-> mock}
+
+        def marshallerService = Mock(MarshallingService)
+        controller.metaClass.getMarshallingService = {String name -> marshallerService}
+
+        mockCacheHeaders()
+
+        request.addHeader( 'Accept', 'application/custom' )
+        request.addHeader( 'Content-Type', 'application/custom' )
+        request.method = ['list','show'].contains(controllerMethod) ? 'GET' : 'POST'
+        params.pluralizedResourceName = 'things'
+        if (id != null) params.id = id
+
+        when:
+        controller."$controllerMethod"()
+
+        then:
+        status == response.status
+        1 * marshallerService.marshalObject(_,_ as RepresentationConfig) >> {object, config -> return "foo"}
+
+        where:
+        id   | controllerMethod | status
+        null | 'list'           | 200
+        1    | 'show'           | 200
+        null | 'create'         | 201
+        1    | 'update'         | 200
+    }
+
+    @Unroll
+    def "Test non default content type is application/text"() {
+        setup:
+        def theExtractor = Mock(RequestExtractor)
+        theExtractor.extract(_) >> { ['foo':'bar']}
+        //use default extractor for any methods with a request body
+         config.restfulApiConfig = {
+            anyResource {
+                representation {
+                    mediaTypes = ['application/custom']
+                    marshallerFramework = 'custom'
+                    extractor = theExtractor
+                }
+            }
+        }
+        controller.init()
+
+        def mock = Mock(ThingService)
+        mock.list(_) >> {[]}
+        mock.count(_) >> {0}
+        mock.show(_) >> {[:]}
+        mock.create(_,_) >> {[:]}
+        mock.update(_,_,_) >> {[:]}
+        mock.delete(_,_,_) >> {}
+        controller.metaClass.getService = {-> mock}
+
+        def marshallerService = Mock(MarshallingService)
+        controller.metaClass.getMarshallingService = {String name -> marshallerService}
+
+        mockCacheHeaders()
+
+        request.addHeader( 'Accept', 'application/custom' )
+        request.addHeader( 'Content-Type', 'application/custom' )
+        request.method = ['list','show'].contains(controllerMethod) ? 'GET' : 'POST'
+        params.pluralizedResourceName = 'things'
+        if (id != null) params.id = id
+
+        when:
+        controller."$controllerMethod"()
+
+        then:
+        status == response.status
+        1 * marshallerService.marshalObject(_,_ as RepresentationConfig) >> {object, config -> return "foo"}
+        'application/text;charset=utf-8' == response.getHeaderValue('Content-Type')
+
+        where:
+        id   | controllerMethod | status
+        null | 'list'           | 200
+        1    | 'show'           | 200
+        null | 'create'         | 201
+        1    | 'update'         | 200
     }
 
     private void mockCacheHeaders() {

@@ -19,6 +19,10 @@ class RepresentationConfig {
      * it based on the mediatype.
      **/
     public String resolveMarshallerFramework() {
+        if ('none' == marshallerFramework) {
+            return null
+        }
+
         if (null != marshallerFramework) {
             return marshallerFramework
         }
