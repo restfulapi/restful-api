@@ -81,9 +81,9 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         "List of thing resources" == responseHeader('X-hedtech-message')
 
         //check pagination headers
-        "2" == responseHeader('X-hedtech-totalCount')
-        0 != responseHeader('X-hedtech-pageOffset')
-        1 != responseHeader('X-hedtech-pageMaxSize')
+        "1" == responseHeader('X-hedtech-totalCount')
+        "0" == responseHeader('X-hedtech-pageOffset')
+        "1" == responseHeader('X-hedtech-pageMaxSize')
     }
 
     def "Test list filtering using POST with json response"() {
@@ -120,9 +120,9 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         "List of thing resources" == responseHeader('X-hedtech-message')
 
         //check pagination headers
-        "2" == responseHeader('X-hedtech-totalCount')
-        0 != responseHeader('X-hedtech-pageOffset')
-        1 != responseHeader('X-hedtech-pageMaxSize')
+        "1" == responseHeader('X-hedtech-totalCount')
+        "0" == responseHeader('X-hedtech-pageOffset')
+        "1" == responseHeader('X-hedtech-pageMaxSize')
     }
 
     def "Test list with xml response"() {
@@ -1670,6 +1670,83 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         'thing' == xml.name()
         'AA' == xml.code.text()
     }
+
+
+    def "Test that a URL part may be used for tenant identification"() {
+        // Note: The plugin does not deal with tenants - this simply shows the
+        //       plugin does not preclude use of URL parts for identifying tenants.
+        setup:
+        def id = createThing('AA')
+
+        when:
+        get("$localBase/test/api/things/$id") {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/vnd.hedtech.additional.field.closure+json'
+        }
+        def json = JSON.parse response.text
+
+        then:
+        200                       == response.status
+        'application/json'        == response.contentType
+        "AA"                      == json.code
+        "An AA thing"             == json.description
+        null                      != json.numParts
+        null                      != json.sha1
+        "test"                    == json.tenant
+    }
+
+    def "Test that a query parameter may be used for tenant identification"() {
+        // Note: The plugin does not deal with tenants - this simply shows the
+        //       plugin does not preclude use of URL parts for identifying tenants.
+        setup:
+        def id = createThing('AA')
+
+        when:
+        get("$localBase/api/things/$id?tenant=dev") {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/vnd.hedtech.additional.field.closure+json'
+        }
+        def json = JSON.parse response.text
+
+        then:
+        200                       == response.status
+        'application/json'        == response.contentType
+        "AA"                      == json.code
+        "An AA thing"             == json.description
+        null                      != json.numParts
+        null                      != json.sha1
+        "dev"                     == json.tenant
+    }
+
+    @Ignore // This test requires configuration on the test machine.
+            // Specifically, edit the 'hosts' file to add 'test.local'
+            // as an additional host mapped to 127.0.0.1 before re-enabling this test.
+    def "Test tenant identification as a subdomain"() {
+        // Note: The plugin does not deal with tenants - this simply shows the
+        //       plugin does not preclude use of subdomains for identifying tenants.
+        setup:
+        def id = createThing('AA')
+
+        when:
+        get("http://test.local:8080/test-restful-api/api/things/$id") {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/vnd.hedtech.additional.field.closure+json'
+        }
+        def json = JSON.parse response.text
+
+        then:
+        200                       == response.status
+        'application/json'        == response.contentType
+        "AA"                      == json.code
+        "An AA thing"             == json.description
+        null                      != json.numParts
+        null                      != json.sha1
+        "test"                    == json.tenant
+    }
+
+
+// ------------------------------- Helper Methods ------------------------------
+
 
     private void createThings() {
         createThing('AA')

@@ -195,11 +195,6 @@ restfulApiConfig = {
         // TODO: Add support for 'application/x-www-form-urlencoded'
         representation {
             mediaTypes = ["application/json"]
-            marshallers {
-                jsonDomainMarshaller {
-                    priority = 100
-                }
-            }
             jsonExtractor {}
         }
     }
@@ -316,6 +311,7 @@ restfulApiConfig = {
                         def json = map['json']
                         def beanWrapper = map['beanWrapper']
                         json.property("sha1", beanWrapper.getWrappedInstance().getSupplementalRestProperties()['sha1'])
+                        json.property("tenant", beanWrapper.getWrappedInstance().getSupplementalRestProperties()['tenant'])
                         json.property("numParts", beanWrapper.getWrappedInstance().parts.size())
                     }
                 }

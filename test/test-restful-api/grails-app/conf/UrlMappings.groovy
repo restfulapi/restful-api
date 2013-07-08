@@ -35,10 +35,6 @@ class UrlMappings {
         "/api/$parentPluralizedResourceName/$parentId/$pluralizedResourceName/$id"(controller:'restfulApi') {
             action = [GET: "show", PUT: "update", DELETE: "delete"]
             parseRequest = false
-            constraints {
-                // to constrain the id to numeric, uncomment the following:
-                // id matches: /\d+/
-            }
         }
 
         "/api/$parentPluralizedResourceName/$parentId/$pluralizedResourceName"(controller:'restfulApi') {
@@ -46,13 +42,23 @@ class UrlMappings {
             parseRequest = false
         }
 
-        // We'll also expose URLs using a different prefix
+        // We'll also expose URLs using a different prefix to support querying with POST.
         //
         "/qapi/$pluralizedResourceName"(controller:'restfulApi') {
             action = [GET: "list", POST: "list"]
             parseRequest = false
         }
 
+        // We'll also add a couple tenant-based URIs...
+        //
+        "/$tenant/api/$pluralizedResourceName/$id"(controller:'restfulApi') {
+            action = [GET: "show", PUT: "update", DELETE: "delete"]
+            parseRequest = false
+        }
+        "/$tenant/api/$pluralizedResourceName"(controller:'restfulApi') {
+            action = [GET: "list", POST: "create"]
+            parseRequest = false
+        }
 
         "/"(view:"/index")
         "500"(view:'/error')

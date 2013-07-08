@@ -55,7 +55,15 @@ class ThingService {
 
     def count( Map params ) {
         log.trace "ThingService.count invoked"
-        Thing.count()
+        if (params.pluralizedResourceName != 'things') {
+            params.domainClass = Filter.getGrailsDomainClass( grailsApplication, 'things' )
+        }
+        def query = HQLBuilder.createHQL( grailsApplication, params, true /*count*/ )
+        def argMap = params.clone()
+        if (argMap.max) argMap.remove('max')
+        if (argMap.offset) argMap.remove('offset')
+        def countResult = Thing.executeQuery( query.statement, query.parameters, argMap )
+        countResult[0]
     }
 
 
@@ -174,7 +182,9 @@ class ThingService {
         MessageDigest digest = MessageDigest.getInstance("SHA1")
         digest.update("code:${thing.getCode()}".getBytes("UTF-8"))
         digest.update("description${thing.getDescription()}".getBytes("UTF-8"))
-        def properties = [sha1:new BigInteger(1,digest.digest()).toString(16).padLeft(40,'0')]
-        thing.metaClass.getSupplementalRestProperties << {-> properties }
+        String tenant = TenantContext.get() ?: 'not-specified'
+        def properties = [ tenant: tenant ?: 'not-specified',
+                           sha1:new BigInteger( 1, digest.digest() ).toString(16).padLeft(40,'0') ]
+        thing.metaClass.getSupplementalRestProperties << { -> properties }
     }
 }
