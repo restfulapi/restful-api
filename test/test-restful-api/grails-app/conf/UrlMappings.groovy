@@ -46,6 +46,13 @@ class UrlMappings {
             parseRequest = false
         }
 
+        // We'll also expose URLs using a different prefix
+        //
+        "/qapi/$pluralizedResourceName"(controller:'restfulApi') {
+            action = [GET: "list", POST: "list"]
+            parseRequest = false
+        }
+
 
         "/"(view:"/index")
         "500"(view:'/error')

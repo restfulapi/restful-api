@@ -76,7 +76,16 @@ The plugin relies heavily on convention-over-configuration.  A request to a reso
 You can override this convention by specifying a different service name in the configuration.
 
 ###Url Mapping
-To use the restful plugin, you need to configure your UrlMappings.groovy to route the requests to the controller.
+To use the restful plugin, you need to configure your UrlMappings.groovy to route the requests to the controller.  The URLs are expected to following normal REST conventions.
+
+| HTTP Method | Purpose |
+|:---------:|:----------|
+| GET | Read a resource or list of resources |
+| POST | Create a new resource (when the key is not known a-priori) \* See note. |
+| PUT | Update an existing resource or create one if the key is pre-defined |
+| DELETE | Remove a resource |
+
+\* _Note: In addition, a URL mapping using a different prefix (e.g., 'qapi') can be used to allow the use of a POST for querying a resource. This is helpful when query criteria cannot easily be represented as query parameters or when query criteria includes personally identifiable information (PII) that should not be allowed to be written into server access logs._
 
 **Important:** parseRequest must be set to false; otherwise, grails will attempt to parse the request body and add values from it to the params object.  The restful plugin is designed to pass any content from the body to the service layer via an extracted map, not the params object.
 
@@ -122,7 +131,12 @@ To use the restful plugin, you need to configure your UrlMappings.groovy to rout
             parseRequest = false
         }
 
-
+        // We can also expose 'query-with-POST' URLs by using a different prefix:
+        //
+        "/qapi/$pluralizedResourceName"(controller:'restfulApi') {
+            action = [GET: "list", POST: "list"]
+            parseRequest = false
+        }
 
         "/"(view:"/index")
         "500"(view:'/error')
@@ -180,15 +194,7 @@ Currently, the following response headers are supported:
 | X-hedtech-message | May optionally be returned with any response.  Contains a localized message for the response. |
 | X-Status-Reason | Optionally returned with a 400 response to provide additional information on why the request could not be understood |
 
-NOTE: The names used for these custom response headers is configured within Config.groovy.
-
-```groovy
-restfulApi.header.totalCount  = 'X-abcde-totalCount'
-restfulApi.header.pageOffset  = 'X-abcde-pageOffset'
-restfulApi.header.pageMaxSize = 'X-abcde-pageMaxSize'
-restfulApi.header.message     = 'X-abcde-message'
-restfulApi.header.mediaType   = 'X-abcde-Media-Type'
-```
+_NOTE: The names used for these custom response headers must be configured within Config.groovy, as discussed in the '[configuration](#configuration)' section below._
 
 ##Cache Headers
 The plugin supports client caching (unless disabled within Config.groovy).  When caching support is enabled, the plugin will include both 'ETag' and 'Last-Modified' HTTP Headers within responses to GET requests and will support conditional GET requests containing either an 'If-None-Match' or 'If-Modified-Since' header.  This support is provided by the [cache-headers](https://github.com/Grailsrocks/grails-cache-headers) plugin.
@@ -336,10 +342,24 @@ The overall processing of a request proceeds as follows:
 * The controller renders the response along with appropriate associated headers and status code.
 * If at any point, an exception is thrown, it is rendered according to the rules in Exception handling (see above).
 
-##Configuration
-The controller uses the grails converter mechanism to marshall responses, and extractor classes to convert resource representations in requests to Map instances that are passed to the services.
+##<a id="configuration"></a>Configuration
+The restful-api plugin configuration allows configuration of custom HTTP header names, 'paging' query parameter names, and resource representation marshallers and extractors.
 
-Configuration is performed by assigning a closure to the restfulApiConfig property in the grails configuration.
+Following is an example configuration of HTTP custom header names and paging query parameter names:
+
+```groovy
+restfulApi.header.totalCount  = 'X-example-totalCount'
+restfulApi.header.pageOffset  = 'X-example-pageOffset'
+restfulApi.header.pageMaxSize = 'X-example-pageMaxSize'
+restfulApi.header.message     = 'X-example-message'
+restfulApi.header.mediaType   = 'X-example-Media-Type'
+```
+```groovy
+restfulApi.page.max    = 'pageSize'
+restfulApi.page.offset = 'page'
+```
+
+Most of the restful-api configuration pertains to configuring the support for resource representation.  This configuration is performed by assigning a closure to the restfulApiConfig property in the grails configuration.
 
 For example, in Config.groovy:
 
@@ -362,7 +382,9 @@ This declares that a resources 'things' is to be exposed via the plugin.  Resour
 
 Note that each resource representation gets its own isolated set of marshallers, allowing for complete control of how any objects are marshalled for that representation.  In particular, this allows for versioned representations.
 
-grailsApplication can be used within the restfulApiConfig closure; and references the grailsApplication instance as expected.
+The restful-api plugin leverages the grails converter mechanism to marshall responses, and extractor classes to convert resource representations in requests to Map instances that are passed to the services.
+
+As shown, 'grailsApplication' can be used within the restfulApiConfig closure (and references the grailsApplication instance as expected).
 
 Consider another example in which we are supporting versioned json representations of two resources:
 

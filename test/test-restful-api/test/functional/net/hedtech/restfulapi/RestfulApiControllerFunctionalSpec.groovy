@@ -58,13 +58,80 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         null == json[0].sha1
     }
 
+    def "Test list filtering with json response"() {
+        setup:
+        createThing('AA')
+        createThing('BB')
+
+        when:"list with application/json accept"
+        get("$localBase/api/things?filter[0][field]=code&filter[0][operator]=eq&filter[0][value]=AA&max=1") {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/json'
+        }
+
+        then:
+        200 == response.status
+        'application/json' == response.contentType
+        def json = JSON.parse response.text
+        1 == json.size()
+        "AA" == json[0].code
+        "An AA thing" == json[0].description
+
+        // assert localization of the message
+        "List of thing resources" == responseHeader('X-hedtech-message')
+
+        //check pagination headers
+        "2" == responseHeader('X-hedtech-totalCount')
+        0 != responseHeader('X-hedtech-pageOffset')
+        1 != responseHeader('X-hedtech-pageMaxSize')
+    }
+
+    def "Test list filtering using POST with json response"() {
+        setup:
+        createThing('AA')
+        createThing('BB')
+
+        when:"list with application/json accept"
+        post("$localBase/qapi/things") {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/json'
+                body {
+                // akin to ?filter[0][field]=code&filter[0][operator]=eq&filter[0][value]=BB&max=1
+                """
+                {
+                    "filter[0][field]": "code",
+                    "filter[0][operator]": "eq",
+                    "filter[0][value]": "BB",
+                    "max":"1"
+                }
+                """
+            }
+        }
+
+        then:
+        200 == response.status
+        'application/json' == response.contentType
+        def json = JSON.parse response.text
+        1 == json.size()
+        "BB" == json[0].code
+        "An BB thing" == json[0].description
+
+        // assert localization of the message
+        "List of thing resources" == responseHeader('X-hedtech-message')
+
+        //check pagination headers
+        "2" == responseHeader('X-hedtech-totalCount')
+        0 != responseHeader('X-hedtech-pageOffset')
+        1 != responseHeader('X-hedtech-pageMaxSize')
+    }
+
     def "Test list with xml response"() {
         setup:
         createThing('AA')
         createThing('BB')
 
         when:"list with accept application/xml"
-        get( "$localBase/api/things" ) {
+        get( "$localBase/api/things?sort=code" ) {
             headers['Content-Type']  = 'application/json'
             headers['Accept']        = 'application/xml'
         }
@@ -95,7 +162,7 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         createThing('BB')
 
         when:
-        get( "$localBase/api/things" ) {
+        get( "$localBase/api/things?sort=code" ) {
             headers['Content-Type']  = 'application/json'
             headers['Accept']        = 'application/vnd.hedtech.v0+json'
         }
@@ -154,7 +221,7 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         createThing('BB')
 
         when:
-        get( "$localBase/api/things" ) {
+        get( "$localBase/api/things?sort=code" ) {
             headers['Content-Type']  = 'application/json'
             headers['Accept']        = 'application/vnd.hedtech.v0+xml'
         }

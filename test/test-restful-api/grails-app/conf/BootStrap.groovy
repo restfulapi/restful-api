@@ -17,11 +17,13 @@ class BootStrap {
         //
         Inflector.addSingularize( "mice\$", "\$1mouse" )
 
-        // Add some simple seed data
+        // Add some seed data if a 'seedThings' system property is set
         //
-        ('A'..'Z').each { c1 ->
-            ('A'..'Z').each { c2 ->
-                createThing( "${c1}${c2}" )
+        if (System.getProperty('seedThings')) {
+            ('A'..'Z').each { c1 ->
+                ('A'..'Z').each { c2 ->
+                    createThing( "${c1}${c2}" )
+                }
             }
         }
     }

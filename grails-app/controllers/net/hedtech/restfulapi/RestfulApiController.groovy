@@ -165,7 +165,14 @@ class RestfulApiController {
             def requestParams = params  // accessible from within withCacheHeaders
             def logger = log            // ditto
 
-            updatePagingQueryParams( requestParams ) // We'll ensure params uses expected Grails naming...
+            if (request.method == "POST") {
+                def queryCriteria = parseRequestContent( request, 'query-filters' )
+                updatePagingQueryParams( queryCriteria ) // We'll ensure params uses expected Grails naming...
+                requestParams << queryCriteria
+            }
+            else {
+                updatePagingQueryParams( requestParams ) // We'll ensure params uses expected Grails naming...
+            }
 
             def service = getService()
             def delegateToService = getServiceAdapter()
@@ -615,10 +622,10 @@ class RestfulApiController {
      * Returns a map representing the properties of content.
      * @param request the request containing the content
      **/
-    protected Map parseRequestContent(request) {
+    protected Map parseRequestContent( request, String resource = params.pluralizedResourceName ) {
 
-        def representation = getRequestRepresentation()
-        switch(representation.mediaType) {
+        def representation = getRequestRepresentation( resource )
+        switch (representation.mediaType) {
             case ~/.*json$/:
                 return extractContent( representation.mediaType )
             break
@@ -636,7 +643,7 @@ class RestfulApiController {
      * Maps an exception to an error type known to the controller.
      * @param e the exception to map
      **/
-    protected String getErrorType(e) {
+    protected String getErrorType( e ) {
 
         if (e.metaClass.respondsTo( e, "getHttpStatusCode") &&
             e.hasProperty( "returnMap" ) &&
@@ -850,9 +857,9 @@ class RestfulApiController {
     }
 
 
-    private RepresentationConfig getRequestRepresentation() {
+    private RepresentationConfig getRequestRepresentation( String resource = params.pluralizedResourceName ) {
         def type = mediaTypeParser.parse( request.getHeader(HttpHeaders.CONTENT_TYPE) )[0]
-        def representation = getRepresentation( params.pluralizedResourceName, [type] )
+        def representation = getRepresentation( resource, [type] )
         if (representation == null) {
             unsupportedRequestRepresentation()
         }
@@ -877,16 +884,6 @@ class RestfulApiController {
             unsupportedRequestRepresentation()
         }
         getExtractorAdapter().extract(extractor, request)
-    }
-
-
-    private Map extractXML( String mediaType ) {
-        ResourceConfig resourceConfig = getResourceConfig()
-        Extractor extractor = ExtractorConfigurationHolder.getExtractor( resourceConfig.name, mediaType )
-        if (!extractor) {
-            unsupportedRequestRepresentation()
-        }
-        return extractor.extract( request.XML )
     }
 
     private ResourceConfig getResourceConfig() {

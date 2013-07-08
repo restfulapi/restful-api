@@ -6,6 +6,9 @@ package net.hedtech.restfulapi
 
 import grails.validation.ValidationException
 
+import net.hedtech.restfulapi.query.Filter
+import net.hedtech.restfulapi.query.HQLBuilder
+
 import org.codehaus.groovy.grails.web.util.WebUtils
 
 import org.hibernate.StaleObjectStateException
@@ -18,19 +21,28 @@ import java.security.*
 
 class ThingService {
 
+    def grailsApplication
+
+
     def list( Map params ) {
 
         log.trace "ThingService.list invoked with params $params"
-        def result
 
         // TODO: Do validation testing in create or update -- this is temporary
         if (params.forceValidationError == 'y') {
             // This will throw a validation exception...
-            new Thing(code:'FAIL', description: 'Code exceeds 2 chars').save(failOnError:true)
+            new Thing( code:'FAIL', description: 'Code exceeds 2 chars' ).save( failOnError:true )
         }
-        def max = Math.min( params.max ? params.max.toInteger() : 100,  100)
-        def offset = params.offset ?: 0
-        result = Thing.list( offset: offset, max: max, sort: 'code' )
+        params.max    = Math.min( params.max ? params.max.toInteger() : 100,  100 )
+        params.offset = params.offset ?: 0
+        params.sort   = params.sort ?: 'code'
+
+        if (params.pluralizedResourceName != 'things') {
+            params.domainClass = Filter.getGrailsDomainClass( grailsApplication, 'things' )
+        }
+        log.trace "ThingService.list will query using adjusted params: $params"
+        def query  = HQLBuilder.createHQL( grailsApplication, params )
+        def result = Thing.executeQuery( query.statement, query.parameters, params )
 
         result.each {
             supplementThing( it )
