@@ -698,4 +698,48 @@ class RestConfigSpec extends Specification {
         'application/custom' == config.getRepresentation("dummy",'application/json').contentType
         'application/custom' == config.getRepresentation("things",'application/json').contentType
     }
+
+    def "Test grailsApplication is available in resource marshallers"() {
+        setup:
+        def src =
+        {
+            resource 'things' config {
+                representation {
+                    mediaTypes = ['application/json']
+                    marshallers {
+                        marshaller {
+                            instance = new net.hedtech.restfulapi.marshallers.json.ThingClassMarshaller(grailsApplication)
+                        }
+                    }
+                }
+            }
+        }
+
+        when:
+        def config = RestConfig.parse( grailsApplication, src )
+
+        then:
+        config.validate()
+    }
+
+    def "Test grailsApplication is available in marshaller groups"() {
+        setup:
+        def src =
+        {
+            marshallerGroups {
+                group 'test' marshallers {
+                    marshaller {
+                        instance = new net.hedtech.restfulapi.marshallers.json.ThingClassMarshaller(grailsApplication)
+                        priority = 101
+                    }
+                }
+            }
+        }
+
+        when:
+        def config = RestConfig.parse( grailsApplication, src )
+
+        then:
+        config.validate()
+    }
 }

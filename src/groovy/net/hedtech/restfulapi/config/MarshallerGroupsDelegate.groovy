@@ -28,6 +28,10 @@ class MarshallerGroupsDelegate {
     class GroupDelegate {
         def marshallers = []
 
+        GrailsApplication getGrailsApplication() {
+            restConfig.grailsApplication
+        }
+
         GroupDelegate marshaller( Closure c ) {
             MarshallerConfig config = new MarshallerConfig()
             c.delegate = config
