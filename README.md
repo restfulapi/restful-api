@@ -11,7 +11,7 @@ Early Access.  The plugin may be used gain familiarity and provide testing feedb
 The restful-api plugin is an implementation designed to conform to the our [API Strategy](http://m037138.ellucian.com:8082/job/Ellucian%20API%20Strategy%20Documentation/HTML_Report) document.  It is not intended to implement all optional features of the strategy.  It is not intended to provide support for multiple ways to accomplish the same requirements; in general, it implements the recommended approaches specified in the strategy.
 
 ##Installation
-The recommended approach is to install the plugin as a git submodule.  Another option is to use a Maven repository.
+The recommended approach is to install the plugin as a git submodule.
 
 ###Git submodule
 The plugin repo is located at ssh://git@devgit1/framework/plugins/restful-api.git.  Releases will be tagged as release-x.y.  For those familiar with Banner XE development please follow the rules for Banner XE on installing plugins as submodules.
@@ -31,21 +31,6 @@ Add the in-place plugin definition to BuildConfig.groovy:
         grails.plugin.location.'restful-api' = "plugins/restful-api.git"
 
 
-###Maven
-If you cannot use the recommended approach, you can also use the plugin via grail's dependency management.
-
-To do so, define a new repository in your project's BuildConfig.groovy repositories section:
-
-            mavenRepo name: "core-architecture",
-                  root: "http://m039200.ellucian.com:8081/artifactory/core-architecture"
-
-In the plugins section of BuildConfig.groovy add:
-
-        compile "core-architecture:grails-restful-api:0.1"
-
-
-Note that if you are using the artifactory repository, that this is a *internal only* site.  Source distributed to clients that depends on downloads from the internal artifactory repository will not work.  If you are not using the recommended git submodule approach, ensure that you package the plugin with your application or otherwise make it avaiable.
-
 ###Configure plugin dependencies
 Irrespective of the method used to install the RESTful plugin, the following changes must be made to include the plugin dependencies.  The plugin depends on both the inflector plugin, and spock plugins.  (The spock dependency is for the RestSpecification testing class, that you may use to [test your API](#api-testing).
 
@@ -55,8 +40,9 @@ In the dependencies section of BuildConfig.groovy add:
 
 In the plugins section of BuildConfig.groovy add:
 
-
         compile ":inflector:0.2"
+        compile ":cache-headers:1.1.5"
+        compile ":functional-spock:0.6"
 
         test(":spock:0.7") {
           exclude "spock-grails-support"
@@ -147,10 +133,10 @@ Note that in order to conform to the strategy and for support for limiting metho
 ###Use of custom media types
 The plugin relies on custom media types to specify resource representations.  For requests, the media type in the Content-Type header is used to identify the resource representation in the request body, in order to extract parameters from it to be passed to the resource's service.
 
-Media types used must end with either 'json' or 'xml' (e.g. 'application/json' or 'application/vnd.hedtech.v0+xml').  Any media type ending with 'json' is assumed to be a format that can be parsed as JSON; any type ending with 'xml' is a format that is assumed to be parsed as XML.
+For media types representing json or xml content, it is strongly recommended that they end with either 'json' or 'xml' (e.g. 'application/json' or 'application/vnd.hedtech.v0+xml').  Media types ending with 'json' or 'xml' will automatically have a Content-Type on responses of 'application/json' or 'application/xml'
 
 ###Media type of responses
-For anything except a 500 response, the plugin will always return a Content-Type header of either 'application/xml' or 'application/json'.  This is intended as a convenience to viewing responses in browsers or other tools without having to configure them for all custom media types used by an API.  You can think of it as the Content-Type of the response identifies the format of the response body, but not the specific type of the representation contained within.
+As a convenience to viewing responses in browsers or other tools without having to configure them for all custom media types used by an API, the controller defaults to setting the Content-Type header of responses to 'application/json', 'application/xml', or 'text/plain'.  You can think of it as the Content-Type of the response identifies the format of the response body, but not the specific type of the representation contained within.  The controller will choose the content type based on the media type of the response representation: 'application/json' for media types ending in 'json', 'application/xml' for types ending in 'xml', and 'text/plain' for anything else.  You can explicity set what the content type header in a response containing a specific representation with the contentType option (see Configuring Resources).
 
 Successful responses generated by the plugin will always include a 'X-hedtech-Media-Type' header specifying the (versioned) media-type of the representation, e.g., 'application/vnd.hedtech.v0+json' or 'application/vnd.hedtech.minimal-thing.v0+xml'.  Consumers of the API can use the X-hedtech-Media-Type header to determine how to perform data binding on the resource representation returned.
 
@@ -331,7 +317,7 @@ This definition of ApplicationException allows any application to customize erro
 
 Also note that the contract on what to recognize as an application exception was chosen to be compatible with the existing Banner Core ApplicationException.
 
-##Data binding and response marshalling
+##Configuring resources
 The overall processing of a request proceeds as follows:
 
 * The plugin is responsible for content negotiation, parsing the Accept and Content-Type headers
@@ -427,7 +413,7 @@ Consider another example in which we are supporting versioned json representatio
 
 This configuration exposes 2 resources, 'colleges' and 'students'.  The 'colleges' resource support two versioned representations, while the 'students' resource only has one.  Note that the custom media types are re-used across the resources.
 
-####Whitelisting vs dynamic exposure of resources
+###Whitelisting vs dynamic exposure of resources
 The plugin allows you to explicitly whitelist resources to be exposed - an appropriate error response code will be thrown for resources not listed.  You can also dynamically expose resources, in which case any resource name that maps by convention to a service can be serviced.
 
 To dynamically expose services, you specify an anyResource block:
@@ -480,7 +466,7 @@ If you define an anyResource block, and then expose one or more resources explic
 
 In this configuration, 'things' does not have a json representation.  The configuration in an anyResource block only applies to a resource that is not explicitly listed.
 
-####Default representations
+###Default representations
 You can also assign multiple media types to the same representation.  The most common use for this is to have a media type such as 'application/json' represent a particular version as a default.  For example:
 
     restfulApiConfig = {
@@ -510,7 +496,31 @@ You can also assign multiple media types to the same representation.  The most c
 
 Both 'application/vnd.hedtech.v1+json' and 'application/json' identify the same representation.  As new versions are added, the 'application/json' can be moved to them, so that a client that always wants the latest/default representation can obtain it with 'application/json'.
 
-####Marshaller groups
+###Overriding Content-Type on responses
+Sucessful responses will have a Content-Type header of 'appliction/json', 'application/xml', or 'text/plain', depending on whether the media type for the representation used ends in 'json', 'xml', or neither.  You can explicitly control the Content-Type header by specifying contentType on the representation:
+
+    restfulApiConfig = {
+        resource 'colleges' config {
+            representation {
+                mediaTypes = ["application/vnd.hedtech.v0"]
+                contentType = 'application/json'
+                marshallers {
+                    marshaller {
+                        instance = new net.hedtech.restfulapi.marshallers.json.v0.CollegeMarshaller(grailsApplication)
+                        priority = 100
+                    }
+                }
+                extractor = new net.hedtech.restfulapi.extractors.json.v0.CollegeExtractor()
+            }
+        }
+    }
+
+In this case, we are using a custom media type that does not end in json or xml, but is producing json content.  Specifying contentType will ensure that the Content-Type header is set to 'application/json' when returning this representation in a response.
+
+Note that this feature is intended for use mainly with formats other than xml or json (e.g., text/calendar).  For json or xml representations, it is strongly recommended that you use a media type ending with 'json' or 'xml' so the controller can automatically select the appropriate Content-Type header.
+
+
+###Marshaller groups
 It is likely that you will have marshallers that you will want to re-use across multiple resources/representations; for example, a common marshaller for objects like dates, addresses, etc.  You can configure a collection of marshallers as a marshaller group:
 
     restfulApiConfig = {
@@ -563,7 +573,7 @@ This configuration defines a reusable group of marshallers named 'defaultJSON' c
         }
     }
 
-####Ordering
+###Ordering
 Configuration elements are applied in the order in which they are encountered.  This means that ordering in the configuration is signficant.  For example:
 
     restfulApiConfig = {
@@ -587,7 +597,7 @@ Configuration elements are applied in the order in which they are encountered.  
 
 Will result in an exception, as the first reference to the 'student' marshaller group occurs before the group is defined.
 
-####Overriding the service used for a resource.
+###Overriding the service used for a resource.
 By default, the name of the service to use is derived from the name of the resource.  You can override the name of the service bean to use for the resource with the 'serviceName' property when configuring a resource.  For example:
 
     restfulApiConfig = {
@@ -612,7 +622,7 @@ By default, the name of the service to use is derived from the name of the resou
 
 Will cause the list, show, create, update, and delete methods for the resource 'students' to be delegated to the bean registered under the name 'studentFacadeService' instead of 'studentService'.
 
-####Limiting methods for a resource
+###Limiting methods for a resource
 By default, any configured resource supports 'list', 'show', 'create', 'update', and 'delete' methods.  You can customize which methods are exposed by specifying a subset of the 5 methods as an array assigned to the methods property of a resource.
 
 For example, to expose students as a read-only resource that just supports list and show:
@@ -640,8 +650,15 @@ If a request for an unsupported method is received, the plugin will respond with
 
 Note that if you are using the grails-cors plugin to support CORS functionality, the OPTIONS method will return results that are inconsistent with the methods actually supported.  That is, an OPTIONS request to an api url will always return that all methods are supported, even if the configuration restricts the methods for a given resource.  This may be addressed in a contribution to a future release of the CORS plugin.
 
-##Marshalling
-To fully take advantage of marshalling, you should understand how the grails converters for JSON and xml work.  The plugin takes advantage of named converter configurations.  Each resource/representation in the configuration results in a new named converter configuration for JSON or XML.  When marshalling an object, the restful-api controller will use that named configuration to marshall the object.  It does this by asking each marshaller in the named configuration (marshallers with higher priority first) if the marshaller supports the object.  This means that the marshallers registered for a resource/representation are used only for that representation, and is what allows the plugin to support different representations for the same resource.
+##Marshalling and extracting objects
+In order to service a request, the controller needs to be able to process a resource representation contained in the body of request, and marshal an object (or list of objects) returned by a service into the appropriate resource representation.
+
+The plugin achieves this by leveraging marshalling frameworks, and extractors.  By default, it uses the grails JSON and XML converters, but this can be overridden to use other frameworks (JAXB, XMLBeans, google-gson, etc).
+
+The plugin will automatically use the grails json converters for any media type ending in 'json', and the grails xml converters for any media type ending in 'xml'.  To explicitly set the marshalling framework for a representation, see [Configuring the marshalling framework](#configure-marshalling-framework).
+
+###Using grails converters
+To fully take advantage of marshalling, you should understand how the grails converters for JSON and xml work.  The plugin takes advantage of named converter configurations.  Each resource/representation in the configuration using grails converters for marshalling results in a new named converter configuration for JSON or XML.  When marshalling an object, the restful-api controller will use that named configuration to marshall the object.  It does this by asking each marshaller in the named configuration (marshallers with higher priority first) if the marshaller supports the object.  This means that the marshallers registered for a resource/representation are used only for that representation, and is what allows the plugin to support different representations for the same resource.
 
 However, you should be aware that these named configurations will fallback to the default converter configurations if they cannot locate a marshaller within the named config.  For example, let's say in your application's bootstrap you add
 
@@ -1483,7 +1500,7 @@ Note that an extractor should implement only one of these interfaces.  The inter
 
 For extractors that implement JSONExtractor, the controller will parse a org.codehaus.groovy.grails.web.json.JSONObject from the incoming request and pass it to the extractors extract method.  For XMLExtractor, it will pass a groovy.util.slurpersupport.GPathResult.
 
-In cases where you want to bypass grails parsers/data binding entirely and use a different framework, such as JAXB, google-gson, etc, an extractor implementing RequestExtractor can be used.  A RequestExtractor is passed the HttpServletRequest directly.  For example, such an extractor could place the request body into the map to be passed on to the service where a non-grails framework could be used to bind the body to business objects.
+In cases where you want to bypass grails converters entirely and use a different framework, such as JAXB, google-gson, etc, an extractor implementing RequestExtractor can be used.  A RequestExtractor is passed the HttpServletRequest directly.  For example, such an extractor could place the request body into the map to be passed on to the service where a non-grails framework could be used to bind the body to business objects.
 
 ##Declarative extraction of JSON content
 If JSON content needs to be manipulated before being bound to domain objects, POGOs, etc, it is possible to do so declaratively.  Any incoming JSON content will be a single object containing other JSON objects or JSON arrays.  This ability is not intended to deal with type coercion or data binding, but to provide a simple way to rename keys, provide default values, or convert 'short object' representations back into plain IDs.  It functions as a counterpart to the declarative json marshalling support.
@@ -2152,6 +2169,112 @@ while the xml content produces the map
 
 That is, the value of id in the first map is a number, while in the second map, it is a string - type information for primitives is lost in the json-xml format.  It is therefore the responsibility of the service layer that binds the extracted map to objects to convert/coerce values appropriately.
 
+##<a id="configure-marshalling-framework"></a>Configuring the marshalling framework.
+The framework to use for marshalling can be specified on a per-representation basis with the marshallerFramework attribute.  For example:
+
+    restfulApiConfig = {
+        resource 'students' config {
+            representation {
+                mediaTypes = ['application/json']
+                marshallerFramework = 'json'
+            }
+        }
+    }
+
+The value of the marshallerFramework must be one of the following:
+
+    * 'none'
+    * 'json'
+    * 'xml'
+    * the name of a bean
+
+A value of 'none' indicates that this representation cannot be marshalled to.  It is used if a representation should only be supported in the body of a request, but never made available in a response.
+
+A value of 'json' indicates that the grails json converter framework should be used to marshal any response.
+
+A value of 'xml' indicates that the grails xml converter framework should be used to marshal any response.
+
+Any value other than 'none', 'json', or 'xml' is treated as the name of a bean available in the grails application context that implements the net.hedtech.restfulapi.marshallers.MarshallingService interface.  This instance will be passed the object to marshall, and should return a String representing the marshalled object to place in the response body.
+
+If a value for the marshallerFramework is not explicitly set, the controller will infer the framework from the mediaType of the representation.  A media type ending in 'json' is assumed to use the 'json' framework; a type ending in 'xml' is assumed to use 'xml'.
+
+For example, suppose you want to marshal a resource 'students' represented by a Student class with groovy's MarkupBuilder, instead of the grails converter.  You can create a service to marshall it:
+
+    class StudentMarshallingService implements MarshallingService {
+
+        @Override
+        String marshalObject(Object o, RepresentationConfig config) {
+            def writer = new StringWriter()
+            def xml = new MarkupBuilder(writer)
+
+            if (o instanceof Collection) {
+                Collection list = (Collection) o
+                xml.studentList() {
+                    list.each {
+                        student() {
+                            lastName(it.lastName)
+                            firstName(it.firstName)
+                        }
+                    }
+                }
+            } else {
+                xml.student() {
+                    lastName(it.lastName)
+                    firstName(it.firstName)
+                }
+            }
+            return writer.toString()
+        }
+    }
+
+Note that the marshalling service has to handle both the object, and collections of the object.
+
+And then configure the representation to use the service:
+
+    restfulApiConfig = {
+        resource 'students' config {
+            representation {
+                mediaTypes = ['application/xml']
+                marshallerFramework = 'studentMarshallingService'
+            }
+        }
+    }
+
+This is a simple example.  In general, a marshalling service implementation would be written to handle multiple classes by delegating to another framework (JAXB, etc) to accomplish marshalling.
+
+##Restricting representations to responses or requests only.
+You may have situations in which a resource representation is only intended to be used in a response or request, but not both.  For example, you may have a complex representation that fully renders nested objects that is appropriate to return in list and show operations, but that you don't want to have to consume for create or update operations.  You can (indirectly) control this, by controlling whether the representation has an extractor or marshalling framework defined.
+
+To prevent a representation from being used in a create, update, or delete operation, do not specify an extractor instance (or set it to null):
+
+    restfulApiConfig = {
+        resource 'students' config {
+            representation {
+                mediaTypes = ['application/json']
+                marshallers {
+                    jsonDomainMarshaller {}
+                }
+                extractor = null
+            }
+        }
+    }
+
+When the controller encounters a representation in a request body that has no extractor, it will respond correctly with a 415 status code.
+
+To prevent a representation from being returned as the response to any request, specify 'none' for the marshallerFramework:
+
+    restfulApiConfig = {
+        resource 'students' config {
+            representation {
+                mediaTypes = ['application/json']
+                marshallerFramework = 'none'
+                jsonExtractor {}
+            }
+        }
+    }
+
+Any request requiring the representation will receive a 406 status code.
+
 ##Logging
 Errors encountered while servicing a request are logged at error level to the log target 'RestfulApiController_messageLog'.  This is so errors occuring from the requests (which will typically be errors caused by invalid input, etc) can be separated from errors in the controller.
 
@@ -2217,6 +2340,9 @@ In order for a client to fully access the api, you will need to configure the co
     cors.expose.headers='content-type,X-hedtech-totalCount,X-hedtech-pageOffset,X-hedtech-pageMaxSize,X-hedtech-message,X-hedtech-Media-Type'
 
 Note that at present, the cors plugin can produce responses to OPTIONS requests that are inconsistent with the restful plugin.  The cors plugin returns that all HTTP methods are supported by any url that matches cors.url.pattern; in reality, only some of the urls matched by the pattern will map to actual resources; and for those resources, the methods supported may be restricted.  In those cases, an OPTIONS request to a a given url may return that all methods are supported, while actually using one of those methods returns a 405.  We may make a future contribution to the cors plugin to eliminate this inconsistency.
+
+###JSON-P
+The plugin does not support JSON-P.
 
 
 
