@@ -709,6 +709,10 @@ class RestfulApiController {
             log.error "Caught exception ${e.message}", e
         }
         log.trace "getService() will return service $svc"
+        if (null == svc) {
+            log.warn "No service found for resource ${params.pluralizedResourceName}"
+            throw new UnsupportedResourceException(params.pluralizedResourceName)
+        }
         svc
     }
 

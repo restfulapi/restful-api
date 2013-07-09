@@ -1248,6 +1248,47 @@ class RestfulApiControllerSpec extends Specification {
         1    | 'update'         | 200
     }
 
+    @Unroll
+    def "Test missing service returns 404"() {
+        setup:
+        //use default extractor for any methods with a request body
+         config.restfulApiConfig = {
+            resource 'things' config {
+                representation {
+                    mediaTypes = ['application/json']
+                    extractor = new DefaultJSONExtractor()
+                }
+            }
+        }
+        controller.init()
+
+        //mock the appropriate service method, expect 0 invocations
+        def mock = Mock(ThingService)
+        controller.metaClass.getServiceName = {-> ""}
+
+        request.addHeader( 'Accept', 'application/json' )
+        request.addHeader( 'Content-Type', 'application/json' )
+        request.method = httpMethod
+        params.pluralizedResourceName = 'things'
+        if (id != null) params.id = id
+
+        when:
+        controller."$controllerMethod"()
+
+        then:
+        404 == response.status
+          0 == response.getContentLength()
+          0 * _._
+
+        where:
+        controllerMethod | httpMethod | id   | serviceMethod
+        'list'           | 'GET'      | null | 'list'
+        'show'           | 'GET'      | '1'  | 'show'
+        'create'         | 'POST'     | null | 'create'
+        'update'         | 'PUT'      | '1'  | 'update'
+        'delete'         | 'DELETE'   | '1'  | 'delete'
+    }
+
     private void mockCacheHeaders() {
         def cacheHeadersService = new CacheHeadersService()
         Closure withCacheHeadersClosure = { Closure c ->
