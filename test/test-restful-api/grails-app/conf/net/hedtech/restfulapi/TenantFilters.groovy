@@ -33,8 +33,12 @@ class TenantFilters {
                 else {
                     // See if a tenant is identified using a subdomain
                     String serverName = request.getServerName()
-                    String tenant = serverName.substring( 0, serverName.indexOf(".") ).toLowerCase()
-                    TenantContext.set( tenant )
+                    String tenant
+                    int index = serverName.indexOf(".")
+                    if (index > 0) {
+                        tenant = serverName.substring( 0, serverName.indexOf(".") ).toLowerCase()
+                        TenantContext.set( tenant )
+                    }
                 }
                 dlog.debug "TenantFilter 'before' filter set a TenantContext of ${TenantContext.get()}."
             }
