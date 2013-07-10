@@ -374,7 +374,8 @@ class RestfulApiController {
         String contentType = null
         def content
         MediaType[] acceptedTypes = mediaTypeParser.parse(request.getHeader(HttpHeaders.ACCEPT))
-        switch(acceptedTypes[0].name) {
+        def type = acceptedTypes.size() > 0 ? acceptedTypes[0].name : ""
+        switch(type) {
             case ~/.*xml.*/:
                 contentType = 'application/xml'
                 if (responseHolder.data != null) {
