@@ -55,3 +55,21 @@ grails.project.dependency.resolution = {
         build   ":tomcat:$grailsVersion"
     }
 }
+
+//functional-spock as a compile dependencies drags
+//spock dependencies into the war, which aren't needed
+//and can cause deployment issues as it pulls
+//in a version of spock-grails-support that isn't compatible
+//with the groovy version used in grails >= 2.2
+grails.war.resources = { stagingDir, args ->
+    List unwanted = [ "spock" ]
+
+    new File(stagingDir, "WEB-INF/lib").eachFile { File file ->
+        String name = file.name.toLowerCase()
+        if (file.name.endsWith(".jar")) {
+            if (unwanted.find { name.startsWith it }) {
+                delete(file: file)
+            }
+        }
+    }
+}

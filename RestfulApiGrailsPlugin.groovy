@@ -12,8 +12,8 @@ import net.hedtech.restfulapi.marshallers.json.*
 
 class RestfulApiGrailsPlugin {
 
-    def version = "0.1"
-    def grailsVersion = "2.1 > *"
+    def version = "0.5.0"
+    def grailsVersion = "2.2.1 > *"
     def dependsOn = [:]
     def pluginExcludes = [
         "grails-app/views/error.gsp"
