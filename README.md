@@ -5,7 +5,7 @@
 #RESTful API plugin documentation
 
 ##Status
-Early Access.  The plugin may be used gain familiarity and provide testing feedback, but should not be used with any shipping software yet.  The plugin has not been through export compliance.
+Production quality, although subsequent changes may not be backward compatible.  Remember to include this software in export compliance reviews when shipping a solution that uses this plugin.
 
 ##Overview
 The restful-api plugin is an implementation designed to conform to the our [API Strategy](http://m037138.ellucian.com:8082/job/Ellucian%20API%20Strategy%20Documentation/HTML_Report) document.  It is not intended to implement all optional features of the strategy.  It is not intended to provide support for multiple ways to accomplish the same requirements; in general, it implements the recommended approaches specified in the strategy.
