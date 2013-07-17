@@ -92,6 +92,21 @@ class JSONGroovyBeanMarshallerConfigSpec extends Specification {
         ['one','two'] == config.includedFields
     }
 
+    def "Test requires included fields"() {
+        setup:
+        def src = {
+            includesFields {
+                requiresIncludedFields true
+            }
+        }
+
+        when:
+        def config = invoke( src )
+
+        then:
+        true == config.requireIncludedFields
+    }
+
     def "Test excluded fields"() {
         setup:
         def src = {
@@ -154,7 +169,8 @@ class JSONGroovyBeanMarshallerConfigSpec extends Specification {
             includedFields:['foo','bar'],
             excludedFields:['e1','e2'],
             additionalFieldClosures:[{app,bean,json ->}],
-            additionalFieldsMap:['one':'one','two':'two']
+            additionalFieldsMap:['one':'one','two':'two'],
+            requireIncludedFields:true
         )
         JSONGroovyBeanMarshallerConfig two = new JSONGroovyBeanMarshallerConfig(
             supportClass:Thing,
@@ -162,7 +178,8 @@ class JSONGroovyBeanMarshallerConfigSpec extends Specification {
             includedFields:['baz'],
             excludedFields:['e3'],
             additionalFieldClosures:[{app,bean,json ->}],
-            additionalFieldsMap:['two':'2','three':'3']
+            additionalFieldsMap:['two':'2','three':'3'],
+            requireIncludedFields:false
         )
 
         when:
@@ -177,6 +194,7 @@ class JSONGroovyBeanMarshallerConfigSpec extends Specification {
         ['e1','e2','e3']                         == config.excludedFields
         2                                        == config.additionalFieldClosures.size()
         ['one':'one',"two":'2','three':'3']      == config.additionalFieldsMap
+        false                                    == config.requireIncludedFields
     }
 
     def "Test merging configurations does not alter either object"() {
@@ -189,7 +207,8 @@ class JSONGroovyBeanMarshallerConfigSpec extends Specification {
             includedFields:['foo','bar'],
             excludedFields:['e1','e2'],
             additionalFieldClosures:[{app,bean,json ->}],
-            additionalFieldsMap:['one':'1']
+            additionalFieldsMap:['one':'1'],
+            requireIncludedFields:true
         )
         JSONGroovyBeanMarshallerConfig two = new JSONGroovyBeanMarshallerConfig(
             supportClass:PartOfThing,
@@ -197,7 +216,8 @@ class JSONGroovyBeanMarshallerConfigSpec extends Specification {
             includedFields:['baz'],
             excludedFields:['e3'],
             additionalFieldClosures:[{app,bean,json ->}],
-            additionalFieldsMap:['two':'2']
+            additionalFieldsMap:['two':'2'],
+            requireIncludedFields:false
         )
 
         when:
@@ -210,6 +230,7 @@ class JSONGroovyBeanMarshallerConfigSpec extends Specification {
         ['e1','e2']                 == one.excludedFields
         1                           == one.additionalFieldClosures.size()
         ['one':'1']                 == one.additionalFieldsMap
+        true                        == one.requireIncludedFields
 
         true                        == two.isSupportClassSet
         ['foo':'foo2','baz':'baz1'] == two.fieldNames
@@ -217,6 +238,7 @@ class JSONGroovyBeanMarshallerConfigSpec extends Specification {
         ['e3']                      == two.excludedFields
         1                           == two.additionalFieldClosures.size()
         ['two':'2']                 == two.additionalFieldsMap
+        false                       == two.requireIncludedFields
     }
 
     def "Test merging with support class set only on the left"() {
@@ -237,7 +259,24 @@ class JSONGroovyBeanMarshallerConfigSpec extends Specification {
         true       == config.isSupportClassSet
     }
 
-    def "Test resolution of domain marshaller configuration inherits"() {
+    def "Test merging marshaller with require included fields set only on the left"() {
+        setup:
+        def c1 = { Map m -> }
+        JSONGroovyBeanMarshallerConfig one = new JSONGroovyBeanMarshallerConfig(
+            requireIncludedFields:true
+        )
+        JSONGroovyBeanMarshallerConfig two = new JSONGroovyBeanMarshallerConfig(
+        )
+
+        when:
+        def config = one.merge(two)
+
+        then:
+        true == config.requireIncludedFields
+    }
+
+
+    def "Test resolution of marshaller configuration inherits"() {
         setup:
         JSONGroovyBeanMarshallerConfig part1 = new JSONGroovyBeanMarshallerConfig(
         )

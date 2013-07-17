@@ -61,6 +61,7 @@ class RestConfigJSONGroovyBeanMarshallerSpec extends Specification {
                     inherits = ['one']
                     priority = 5
                     supports SimpleBean
+                    requiresIncludedFields true
                     field 'foo' name 'bar'
                     field 'f1'
                     field 'f2'
@@ -82,15 +83,16 @@ class RestConfigJSONGroovyBeanMarshallerSpec extends Specification {
         def mConfig = config.jsonGroovyBean.configs['two']
 
         then:
-         2                     == config.jsonGroovyBean.configs.size()
-         ['one']               == mConfig.inherits
-         5                     == mConfig.priority
-         SimpleBean            == mConfig.supportClass
-         ['foo':'foobar']      == mConfig.fieldNames
-         ['foo']               == mConfig.includedFields
-         ['bar']               == mConfig.excludedFields
-         1                     == mConfig.additionalFieldClosures.size()
-         ['a':'b','c':'d']     == mConfig.additionalFieldsMap
+         2                 == config.jsonGroovyBean.configs.size()
+         ['one']           == mConfig.inherits
+         5                 == mConfig.priority
+         SimpleBean        == mConfig.supportClass
+         true              == mConfig.requireIncludedFields
+         ['foo':'foobar']  == mConfig.fieldNames
+         ['foo']           == mConfig.includedFields
+         ['bar']           == mConfig.excludedFields
+         1                 == mConfig.additionalFieldClosures.size()
+         ['a':'b','c':'d'] == mConfig.additionalFieldsMap
     }
 
     def "Test json groovy bean marshaller creation"() {
@@ -104,6 +106,7 @@ class RestConfigJSONGroovyBeanMarshallerSpec extends Specification {
                         jsonGroovyBeanMarshaller {
                             supports SimpleBean
                             field 'owner' name 'myOwner'
+                            requiresIncludedFields true
                             includesFields {
                                 field 'code' name 'productCode'
                                 field 'parts'
@@ -127,6 +130,7 @@ class RestConfigJSONGroovyBeanMarshallerSpec extends Specification {
         then:
         SimpleBean                               == marshaller.supportClass
         ['owner':'myOwner','code':'productCode'] == marshaller.fieldNames
+        true                                     == marshaller.requireIncludedFields
         ['code','parts']                         == marshaller.includedFields
         ['description']                          == marshaller.excludedFields
         1                                        == marshaller.additionalFieldClosures.size()

@@ -110,6 +110,24 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
         0 == xml.publicField2.size()
     }
 
+    def "Test require included fields"() {
+        setup:
+        def marshaller = new TestMarshaller(
+            app:grailsApplication
+        )
+        marshaller.includesClosure = {Object value-> [ 'property', 'publicField', 'missingField1', 'missingField2'] }
+        marshaller.requireIncludedFieldsClosure = {Object o -> true}
+        register( marshaller )
+        SimpleBean bean = new SimpleBean(property:'foo', publicField:'bar')
+
+        when:
+        render( bean )
+
+        then:
+        Exception e = thrown()
+        ['missingField1', 'missingField2'] == e.getCause().missingNames
+    }
+
     def "Test that included fields overrides excluded fields"() {
         setup:
         def marshaller = new TestMarshaller(
@@ -537,6 +555,7 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
         def availableFieldsClosure
         def excludesClosure
         def includesClosure
+        def requireIncludedFieldsClosure
         def processPropertyClosure
         def processFieldClosure
         def substitutionNames = [:]
@@ -575,6 +594,15 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
                 return includesClosure.call(value)
             } else {
                 return super.getExcludedFields(value)
+            }
+        }
+
+        @Override
+        protected boolean requireIncludedFields(Object value) {
+            if (requireIncludedFieldsClosure != null) {
+                return requireIncludedFieldsClosure.call(value)
+            } else {
+                return super.requireIncludedFields(value)
             }
         }
 

@@ -16,6 +16,7 @@ import org.springframework.beans.BeanWrapper
 import org.codehaus.groovy.grails.commons.GrailsDomainClassProperty
 import org.codehaus.groovy.grails.web.json.JSONObject
 import grails.test.mixin.domain.DomainClassUnitTestMixin
+import org.apache.commons.lang.UnhandledException
 
 import net.hedtech.restfulapi.beans.*
 
@@ -83,6 +84,24 @@ class DeclarativeGroovyBeanMarshallerSpec extends Specification {
         2     == json.keySet().size()
         'foo' == json.property
         'bar' == json.publicField
+    }
+
+    def "Test require included fields"() {
+        setup:
+        def marshaller = new DeclarativeGroovyBeanMarshaller(
+            app:grailsApplication,
+            includedFields:[ 'property', 'publicField', 'missingField1', 'missingField2'],
+            requireIncludedFields:true
+        )
+        register( marshaller )
+        SimpleBean bean = new SimpleBean(property:'foo', publicField:'bar')
+
+        when:
+        render( bean )
+
+        then:
+        UnhandledException e = thrown()
+        ['missingField1', 'missingField2'] == e.getCause().missingNames
     }
 
     def "Test that included fields overrides excluded fields"() {

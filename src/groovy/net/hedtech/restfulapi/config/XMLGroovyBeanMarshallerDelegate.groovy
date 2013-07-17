@@ -39,6 +39,11 @@ class XMLGroovyBeanMarshallerDelegate {
         this
     }
 
+    XMLGroovyBeanMarshallerDelegate requiresIncludedFields(boolean b) {
+        config.requireIncludedFields = b
+        this
+    }
+
     XMLGroovyBeanMarshallerDelegate excludesFields(Closure c) {
         c.delegate = new ExcludeConfig()
         c.resolveStrategy = Closure.DELEGATE_ONLY

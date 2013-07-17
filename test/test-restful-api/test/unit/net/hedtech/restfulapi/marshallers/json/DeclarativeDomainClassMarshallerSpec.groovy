@@ -16,6 +16,7 @@ import org.springframework.beans.BeanWrapper
 import org.codehaus.groovy.grails.commons.GrailsDomainClassProperty
 import org.codehaus.groovy.grails.web.json.JSONObject
 import grails.test.mixin.domain.DomainClassUnitTestMixin
+import org.apache.commons.lang.UnhandledException
 
 import org.junit.Rule
 import org.junit.rules.TestName
@@ -519,6 +520,24 @@ class DeclarativeDomainClassMarshallerSpec extends Specification {
 
         then:
         'custom-parts' == passedMap['resourceName']
+    }
+
+    def "Test require included fields"() {
+        setup:
+        def marshaller = new DeclarativeDomainClassMarshaller(
+            app:grailsApplication,
+            requireIncludedFields:true,
+            includedFields:['code','aFieldThatDoesNotExist', 'anotherFieldThatDoesNotExist']
+        )
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:'aa thing' )
+
+        when:
+        render( thing )
+
+        then:
+        UnhandledException e = thrown()
+        ['aFieldThatDoesNotExist', 'anotherFieldThatDoesNotExist'] == e.getCause().missingNames
     }
 
 

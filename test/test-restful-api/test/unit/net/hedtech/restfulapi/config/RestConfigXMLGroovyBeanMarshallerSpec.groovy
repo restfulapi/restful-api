@@ -61,6 +61,7 @@ class RestConfigXMLGroovyBeanMarshallerSpec extends Specification {
                     inherits = ['one']
                     priority = 5
                     supports SimpleBean
+                    requiresIncludedFields true
                     field 'foo' name 'bar'
                     field 'f1'
                     field 'f2'
@@ -82,15 +83,16 @@ class RestConfigXMLGroovyBeanMarshallerSpec extends Specification {
         def mConfig = config.xmlGroovyBean.configs['two']
 
         then:
-         2                     == config.xmlGroovyBean.configs.size()
-         ['one']               == mConfig.inherits
-         5                     == mConfig.priority
-         SimpleBean            == mConfig.supportClass
-         ['foo':'foobar']      == mConfig.fieldNames
-         ['foo']               == mConfig.includedFields
-         ['bar']               == mConfig.excludedFields
-         1                     == mConfig.additionalFieldClosures.size()
-         ['a':'b','c':'d']     == mConfig.additionalFieldsMap
+         2                 == config.xmlGroovyBean.configs.size()
+         ['one']           == mConfig.inherits
+         5                 == mConfig.priority
+         SimpleBean        == mConfig.supportClass
+         true              == mConfig.requireIncludedFields
+         ['foo':'foobar']  == mConfig.fieldNames
+         ['foo']           == mConfig.includedFields
+         ['bar']           == mConfig.excludedFields
+         1                 == mConfig.additionalFieldClosures.size()
+         ['a':'b','c':'d'] == mConfig.additionalFieldsMap
     }
 
     def "Test xml groovy bean marshaller creation"() {
@@ -103,6 +105,7 @@ class RestConfigXMLGroovyBeanMarshallerSpec extends Specification {
                     marshallers {
                         xmlGroovyBeanMarshaller {
                             supports SimpleBean
+                            requiresIncludedFields true
                             field 'owner' name 'myOwner'
                             includesFields {
                                 field 'code' name 'productCode'
@@ -126,6 +129,7 @@ class RestConfigXMLGroovyBeanMarshallerSpec extends Specification {
 
         then:
         SimpleBean                               == marshaller.supportClass
+        true                                     == marshaller.requireIncludedFields
         ['owner':'myOwner','code':'productCode'] == marshaller.fieldNames
         ['code','parts']                         == marshaller.includedFields
         ['description']                          == marshaller.excludedFields

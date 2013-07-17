@@ -7,6 +7,7 @@ import grails.converters.XML
 import grails.util.GrailsNameUtils
 
 import net.hedtech.restfulapi.Inflector
+import net.hedtech.restfulapi.marshallers.MissingFieldsException
 
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
@@ -28,7 +29,6 @@ import org.codehaus.groovy.grails.web.converters.marshaller.ObjectMarshaller
 
 import org.springframework.beans.BeanWrapper
 import org.springframework.beans.BeanWrapperImpl
-
 
 
 /**
@@ -97,6 +97,14 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<XML>, NameAwareMars
             //use inclusion list
             propertiesToMarshall = persistentProperties.findAll {
                 includedFields.contains( it.getName() )
+            }
+        if (requireIncludedFields( value )) {
+                if (!(propertiesToMarshall*.name).equals(includedFields)) {
+                    def missing = []
+                    missing.addAll includedFields
+                    missing.removeAll(propertiesToMarshall*.name)
+                    throw new MissingFieldsException( missing )
+                }
             }
         } else {
             //use exclusion list
@@ -169,6 +177,15 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<XML>, NameAwareMars
         []
     }
 
+    /**
+     * Override whether or not to treat an includes
+     * list in a strict fashion or not.  If true then
+     * an included field that is not present
+     * results in a ConverterException.
+     **/
+    protected boolean requireIncludedFields(Object o) {
+        return false
+    }
 
     /**
      * Returns a list of additional fields in the

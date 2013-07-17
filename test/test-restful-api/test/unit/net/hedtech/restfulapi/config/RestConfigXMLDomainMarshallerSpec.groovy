@@ -61,6 +61,7 @@ class RestConfigXMLDomainMarshallerSpec extends Specification {
                     inherits = ['one']
                     priority = 5
                     supports Thing
+                    requiresIncludedFields true
                     field 'foo' name 'bar'
                     field 'f1' resource 'r1'
                     field 'f2' resource 'r2'
@@ -90,6 +91,7 @@ class RestConfigXMLDomainMarshallerSpec extends Specification {
          ['one']               == mConfig.inherits
          5                     == mConfig.priority
          Thing                 == mConfig.supportClass
+         true                  == mConfig.requireIncludedFields
          ['foo':'foobar']      == mConfig.fieldNames
          ['foo']               == mConfig.includedFields
          ['bar']               == mConfig.excludedFields
@@ -111,6 +113,7 @@ class RestConfigXMLDomainMarshallerSpec extends Specification {
                     marshallers {
                         xmlDomainMarshaller {
                             supports Thing
+                            requiresIncludedFields true
                             field 'owner' resource 't-owners'
                             includesFields {
                                 field 'code' name 'productCode'
@@ -138,6 +141,7 @@ class RestConfigXMLDomainMarshallerSpec extends Specification {
 
         then:
         Thing                                  == marshaller.supportClass
+        true                                   == marshaller.requireIncludedFields
         ['code':'productCode']                 == marshaller.fieldNames
         ['code','parts']                       == marshaller.includedFields
         ['description']                        == marshaller.excludedFields

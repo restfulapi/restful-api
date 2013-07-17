@@ -15,6 +15,7 @@ import org.springframework.web.context.WebApplicationContext
 import org.springframework.beans.BeanWrapper
 import org.codehaus.groovy.grails.commons.GrailsDomainClassProperty
 import grails.test.mixin.domain.DomainClassUnitTestMixin
+import org.apache.commons.lang.UnhandledException
 
 import org.junit.Rule
 import org.junit.rules.TestName
@@ -173,6 +174,25 @@ class XMLBasicDomainClassMarshallerSpec extends Specification {
         0 == xml.lastModifiedBy.size()
         0 == xml.dataOrigin.size()
     }
+
+    def "Test require included fields"() {
+        setup:
+        def marshaller = new BasicDomainClassMarshaller(
+            app:grailsApplication
+        )
+        marshaller.metaClass.getIncludedFields << {Object value-> [ 'code','aFieldThatDoesNotExist', 'anotherFieldThatDoesNotExist'] }
+        marshaller.metaClass.requireIncludedFields << { true }
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:'aa thing' )
+
+        when:
+        render( thing )
+
+        then:
+        Exception e = thrown()
+        ['aFieldThatDoesNotExist', 'anotherFieldThatDoesNotExist'] == e.getCause().missingNames
+    }
+
 
     def "Test that included fields overrides excluded fields"() {
         setup:

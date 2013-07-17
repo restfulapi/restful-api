@@ -16,6 +16,8 @@ import org.springframework.beans.BeanWrapper
 import org.codehaus.groovy.grails.commons.GrailsDomainClassProperty
 import org.codehaus.groovy.grails.web.json.JSONObject
 import grails.test.mixin.domain.DomainClassUnitTestMixin
+import org.codehaus.groovy.grails.web.converters.exceptions.ConverterException
+import org.apache.commons.lang.UnhandledException
 
 import org.junit.Rule
 import org.junit.rules.TestName
@@ -522,7 +524,24 @@ class BasicDomainClassMarshallerSpec extends Specification {
 
         then:
         'AA:aa thing' == json.additionalProp
+    }
 
+    def "Test require included fields"() {
+        setup:
+        def marshaller = new BasicDomainClassMarshaller(
+            app:grailsApplication
+        )
+        marshaller.metaClass.getIncludedFields << {Object value-> [ 'code','aFieldThatDoesNotExist', 'anotherFieldThatDoesNotExist'] }
+        marshaller.metaClass.requireIncludedFields << { true }
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:'aa thing' )
+
+        when:
+        render( thing )
+
+        then:
+        UnhandledException e = thrown()
+        ['aFieldThatDoesNotExist', 'anotherFieldThatDoesNotExist'] == e.getCause().missingNames
     }
 
     private void register( String name, def marshaller ) {

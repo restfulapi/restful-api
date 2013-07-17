@@ -39,6 +39,11 @@ class JSONGroovyBeanMarshallerDelegate {
         this
     }
 
+    JSONGroovyBeanMarshallerDelegate requiresIncludedFields(boolean b) {
+        config.requireIncludedFields = b
+        this
+    }
+
     JSONGroovyBeanMarshallerDelegate excludesFields(Closure c) {
         c.delegate = new ExcludeConfig()
         c.resolveStrategy = Closure.DELEGATE_ONLY

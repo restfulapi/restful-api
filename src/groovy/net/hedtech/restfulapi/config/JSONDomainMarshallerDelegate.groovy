@@ -49,6 +49,11 @@ class JSONDomainMarshallerDelegate {
         this
     }
 
+    JSONDomainMarshallerDelegate requiresIncludedFields(boolean b) {
+        config.requireIncludedFields = b
+        this
+    }
+
     JSONDomainMarshallerDelegate excludesFields(Closure c) {
         c.delegate = new ExcludeConfig()
         c.resolveStrategy = Closure.DELEGATE_ONLY

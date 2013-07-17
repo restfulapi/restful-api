@@ -171,6 +171,25 @@ class XMLDeclarativeDomainClassMarshallerSpec extends Specification {
         0          == xml.dataOrigin.size()
     }
 
+    def "Test require included fields"() {
+        setup:
+        def marshaller = new DeclarativeDomainClassMarshaller(
+            app:grailsApplication,
+            requireIncludedFields:true,
+            includedFields:['code','aFieldThatDoesNotExist', 'anotherFieldThatDoesNotExist']
+        )
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:'aa thing' )
+
+        when:
+        render( thing )
+
+        then:
+        Exception e = thrown()
+        ['aFieldThatDoesNotExist', 'anotherFieldThatDoesNotExist'] == e.getCause().missingNames
+    }
+
+
     def "Test that included fields overrides excluded fields"() {
         setup:
         def marshaller = new DeclarativeDomainClassMarshaller(

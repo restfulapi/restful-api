@@ -780,6 +780,30 @@ This will marshall only the 'code' and 'description' fields into the representat
 
 If you specify both an includedFields and excludedFields block, the excludedFields block will be ignored.
 
+By default, if an included field does not exist in the object being marshalled, it will be ignored.  If you want an included field that is not present in the object being marshalled to result in an exception, then you can specify
+
+    requiresIncludedFields true
+
+For example
+
+    resource 'things' config {
+        representation {
+            mediaTypes = ["application/json"]
+            marshallers {
+                jsonDomainMarshaller {
+                    supports net.hedtech.restfulapi.Thing
+                    requiresIncludedFields true
+                    includesFields {
+                        field 'code' name 'productCode'
+                        field 'description'
+                    }
+                }
+            }
+        }
+    }
+
+Now if the Thing class does not have a persistent field 'description', the marshaller will throw an exception.
+
 ###Representing associations
 By default, the declarative marshaller renders the objects in any assocation as 'short objects'.  The default rendering of a 'short object' is a JSON object containing a single '_link' property having a value of '/resource/id' where resource is the pluralized resource name of the associated object (as derived by convention), and id is the id of the object.  So, for example, if the Thing class had a field called customer  holding a reference to an instance of class Customer with id 15, the customer field would render as :
 
@@ -1101,6 +1125,7 @@ The configuration block for the marshaller can contain the following in any orde
 
     inherits = <array of json marshaller template names>
     supports <class>
+    requiresIncludedFields <true|false>
     <field-block>*
     includesFields {
         <field-block>*
@@ -1321,6 +1346,30 @@ This will marshall only the 'code' and 'description' fields into the representat
     }
 
 If you specify both an includedFields and excludedFields block, the excludedFields block will be ignored.
+
+By default, if an included field does not exist in the object being marshalled, it will be ignored.  If you want an included field that is not present in the object being marshalled to result in an exception, then you can specify
+
+    requiresIncludedFields true
+
+For example
+
+    resource 'things' config {
+        representation {
+            mediaTypes = ["application/json"]
+            marshallers {
+                jsonGroovyBeanMarshaller {
+                    supports net.hedtech.restfulapi.Thing
+                    requiresIncludedFields true
+                    includesFields {
+                        field 'code' name 'productCode'
+                        field 'description'
+                    }
+                }
+            }
+        }
+    }
+
+Now if the Thing class does not have a field or property 'description', the marshaller will throw an exception.
 
 ###Adding additional fields
 You can add additional fields not directly present in a groovy bean to its marshalled representation.

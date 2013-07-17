@@ -21,6 +21,7 @@ class JSONGroovyBeanMarshallerConfig implements MergeableConfig {
     //list of field names to explicity include
     //overrides excludedFields
     def includedFields = []
+    Boolean requireIncludedFields
     //list of additional fields to ignore
     def excludedFields = []
     //closures which will be invoked to add additional fields
@@ -67,6 +68,7 @@ class JSONGroovyBeanMarshallerConfig implements MergeableConfig {
         config.excludedFields.addAll other.excludedFields
         config.additionalFieldClosures.addAll other.additionalFieldClosures
         config.additionalFieldsMap.putAll other.additionalFieldsMap
+        if (other.requireIncludedFields != null) config.requireIncludedFields = other.requireIncludedFields
 
         config
 

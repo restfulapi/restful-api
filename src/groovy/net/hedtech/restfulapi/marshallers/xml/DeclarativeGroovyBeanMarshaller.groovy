@@ -28,6 +28,7 @@ class DeclarativeGroovyBeanMarshaller extends GroovyBeanMarshaller {
     def fieldNames = [:]
     def excludedFields = []
     def includedFields = []
+    boolean requireIncludedFields = false
     def additionalFieldClosures = []
     def additionalFieldsMap = [:]
 
@@ -49,6 +50,11 @@ class DeclarativeGroovyBeanMarshaller extends GroovyBeanMarshaller {
     @Override
     protected List<String> getIncludedFields(Object value) {
         return includedFields
+    }
+
+    @Override
+    protected boolean requireIncludedFields(Object o) {
+        return this.requireIncludedFields
     }
 
     @Override

@@ -21,6 +21,7 @@ class JSONDomainMarshallerConfig implements MergeableConfig {
     //list of field names to explicity include
     //overrides excludedFields
     def includedFields = []
+    Boolean requireIncludedFields
     //list of additional fields to ignore
     def excludedFields = []
     //closures which will be invoked to add additional fields
@@ -82,6 +83,7 @@ class JSONDomainMarshallerConfig implements MergeableConfig {
         }
         if (other.includeId != null)      config.includeId      = other.includeId
         if (other.includeVersion != null) config.includeVersion = other.includeVersion
+        if (other.requireIncludedFields != null) config.requireIncludedFields = other.requireIncludedFields
 
         config.fieldNames.putAll  other.fieldNames
         config.includedFields.addAll other.includedFields

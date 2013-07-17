@@ -91,6 +91,19 @@ class JSONDomainMarshallerConfigSpec extends Specification {
         ['one','two'] == config.includedFields
     }
 
+    def "Test requires included fields"() {
+        setup:
+        def src = {
+            requiresIncludedFields true
+        }
+
+        when:
+        def config = invoke( src )
+
+        then:
+        true == config.requireIncludedFields
+    }
+
     def "Test excluded fields"() {
         setup:
         def src = {
@@ -223,7 +236,8 @@ class JSONDomainMarshallerConfigSpec extends Specification {
             fieldResourceNames:['f1':'r1','f2':'r2'],
             shortObjectClosure:c1,
             includeId:true,
-            includeVersion:true
+            includeVersion:true,
+            requireIncludedFields:true
         )
         JSONDomainMarshallerConfig two = new JSONDomainMarshallerConfig(
             supportClass:PartOfThing,
@@ -235,7 +249,8 @@ class JSONDomainMarshallerConfigSpec extends Specification {
             fieldResourceNames:['f2':'name3','f3':'r3'],
             shortObjectClosure:c2,
             includeId:false,
-            includeVersion:false
+            includeVersion:false,
+            requireIncludedFields:false
         )
 
         when:
@@ -254,6 +269,7 @@ class JSONDomainMarshallerConfigSpec extends Specification {
         c2                                       == config.shortObjectClosure
         false                                    == config.includeId
         false                                    == config.includeVersion
+        false                                    == config.requireIncludedFields
     }
 
     def "Test merging domain marshaller configurations does not alter either object"() {
@@ -270,7 +286,8 @@ class JSONDomainMarshallerConfigSpec extends Specification {
             fieldResourceNames:['f1':'r1','f2':'r2'],
             shortObjectClosure:c1,
             includeId:true,
-            includeVersion:true
+            includeVersion:true,
+            requireIncludedFields:true
         )
         JSONDomainMarshallerConfig two = new JSONDomainMarshallerConfig(
             supportClass:PartOfThing,
@@ -282,7 +299,8 @@ class JSONDomainMarshallerConfigSpec extends Specification {
             fieldResourceNames:['f2':'name3','f3':'r3'],
             shortObjectClosure:c2,
             includeId:false,
-            includeVersion:false
+            includeVersion:false,
+            requireIncludedFields:false
         )
 
         when:
@@ -299,6 +317,7 @@ class JSONDomainMarshallerConfigSpec extends Specification {
         c1                          == one.shortObjectClosure
         true                        == one.includeId
         true                        == one.includeVersion
+        true                        == one.requireIncludedFields
 
         true                        == two.isSupportClassSet
         ['foo':'foo2','baz':'baz1'] == two.fieldNames
@@ -310,6 +329,7 @@ class JSONDomainMarshallerConfigSpec extends Specification {
         c2                          == two.shortObjectClosure
         false                       == two.includeId
         false                       == two.includeVersion
+        false                        == two.requireIncludedFields
     }
 
     def "Test merging domain marshaller with support class set only on the left"() {
@@ -343,6 +363,22 @@ class JSONDomainMarshallerConfigSpec extends Specification {
         then:
         c1   == config.shortObjectClosure
         true == config.isShortObjectClosureSet
+    }
+
+    def "Test merging domain marshaller with require included fields set only on the left"() {
+        setup:
+        def c1 = { Map m -> }
+        JSONDomainMarshallerConfig one = new JSONDomainMarshallerConfig(
+            requireIncludedFields:true
+        )
+        JSONDomainMarshallerConfig two = new JSONDomainMarshallerConfig(
+        )
+
+        when:
+        def config = one.merge(two)
+
+        then:
+        true == config.requireIncludedFields
     }
 
     def "Test resolution of domain marshaller configuration inherits"() {

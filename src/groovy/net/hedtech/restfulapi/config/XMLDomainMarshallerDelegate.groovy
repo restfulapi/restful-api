@@ -49,6 +49,11 @@ class XMLDomainMarshallerDelegate {
         this
     }
 
+    XMLDomainMarshallerDelegate requiresIncludedFields(boolean b) {
+        config.requireIncludedFields = b
+        this
+    }
+
     XMLDomainMarshallerDelegate excludesFields(Closure c) {
         c.delegate = new ExcludeConfig()
         c.resolveStrategy = Closure.DELEGATE_ONLY

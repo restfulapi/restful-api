@@ -24,6 +24,7 @@ class DeclarativeDomainClassMarshaller extends BasicDomainClassMarshaller {
     Class supportClass
     def fieldNames = [:]
     def includedFields = []
+    boolean requireIncludedFields = false
     def excludedFields = []
     def includeId = true
     def includeVersion = true
@@ -84,6 +85,16 @@ class DeclarativeDomainClassMarshaller extends BasicDomainClassMarshaller {
         return includedFields
     }
 
+    /**
+     * Override whether or not to treat an includes
+     * list in a strict fashion or not.  If true then
+     * an included field that is not present
+     * results in a ConverterException.
+     **/
+    @Override
+    protected boolean requireIncludedFields(Object o) {
+        return this.requireIncludedFields
+    }
 
     /**
      * Returns a list of additional fields in the

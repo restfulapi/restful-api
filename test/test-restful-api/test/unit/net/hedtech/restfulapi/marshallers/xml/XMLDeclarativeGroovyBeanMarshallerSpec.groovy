@@ -84,6 +84,25 @@ class XMLDeclarativeGroovyBeanMarshallerSpec extends Specification {
         'bar' == xml.publicField.text()
     }
 
+    def "Test require included fields"() {
+        setup:
+        def marshaller = new DeclarativeGroovyBeanMarshaller(
+            app:grailsApplication,
+            includedFields:[ 'property', 'publicField', 'missingField1', 'missingField2'],
+            requireIncludedFields:true
+        )
+        register( marshaller )
+        SimpleBean bean = new SimpleBean(property:'foo', publicField:'bar')
+
+        when:
+        render( bean )
+
+        then:
+        Exception e = thrown()
+        ['missingField1', 'missingField2'] == e.getCause().missingNames
+    }
+
+
     def "Test that included fields overrides excluded fields"() {
         setup:
         def marshaller = new DeclarativeGroovyBeanMarshaller(

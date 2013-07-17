@@ -12,6 +12,8 @@ import org.apache.commons.logging.LogFactory
 
 import net.hedtech.restfulapi.Inflector
 
+import net.hedtech.restfulapi.marshallers.MissingFieldsException
+
 import java.beans.PropertyDescriptor
 import java.lang.reflect.Field
 import java.lang.reflect.Method
@@ -75,6 +77,17 @@ class AbstractBeanMarshaller implements ObjectMarshaller<JSON> {
                 }
                 fieldsToMarshall = availableFields.findAll { Field field ->
                     includedFields.contains(field.getName())
+                }
+                if (requireIncludedFields( value )) {
+                    def toBeMarshalled = []
+                    toBeMarshalled.addAll propertiesToMarshall*.name
+                    toBeMarshalled.addAll fieldsToMarshall*.name
+                    if (!toBeMarshalled.equals(includedFields)) {
+                        def missing = []
+                        missing.addAll includedFields
+                        missing.removeAll(toBeMarshalled)
+                        throw new MissingFieldsException( missing )
+                    }
                 }
             } else {
                 //use exclusion list
@@ -169,6 +182,17 @@ class AbstractBeanMarshaller implements ObjectMarshaller<JSON> {
      */
     protected List<String> getIncludedFields(Object value) {
         []
+    }
+
+
+    /**
+     * Override whether or not to treat an includes
+     * list in a strict fashion or not.  If true then
+     * an included field that is not present
+     * results in a ConverterException.
+     **/
+    protected boolean requireIncludedFields(Object o) {
+        return false
     }
 
 
