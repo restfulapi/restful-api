@@ -2143,7 +2143,7 @@ If none of the above conditions apply, then resourceId will not be passed in the
 ##Declarative extraction of XML content
 Just as with json, you can declaratively configure how to extract content from xml.  Anywhere you can define an extractor, you can declaratively define one with
 
-    xmlExtactor {}
+    xmlExtractor {}
 
 The xmlExtractor is configured the same as its json counterpart.  Just as with json, you can define templates that contain reusable configuration:
 
