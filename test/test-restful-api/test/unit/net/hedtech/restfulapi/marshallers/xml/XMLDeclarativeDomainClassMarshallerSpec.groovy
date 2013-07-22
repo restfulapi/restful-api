@@ -15,6 +15,7 @@ import org.springframework.web.context.WebApplicationContext
 import org.springframework.beans.BeanWrapper
 import org.codehaus.groovy.grails.commons.GrailsDomainClassProperty
 import grails.test.mixin.domain.DomainClassUnitTestMixin
+import org.springframework.beans.BeanWrapperImpl
 
 import org.junit.Rule
 import org.junit.rules.TestName
@@ -544,6 +545,50 @@ class XMLDeclarativeDomainClassMarshallerSpec extends Specification {
         'custom-parts' == passedMap['resourceName']
     }
 
+    @Unroll
+    def "Test default deep marshalling"(def fieldName) {
+        setup:
+        def marshaller = new DeclarativeDomainClassMarshaller(
+            app:grailsApplication,
+            deepMarshallAssociations:true
+        )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:'aa thing' )
+        def bean = new BeanWrapperImpl(thing)
+        def domainClass = grailsApplication.getDomainClass(thing.getClass().getName())
+        def property = domainClass.getPersistentProperty(fieldName)
+
+        when:
+        def deep = marshaller.deepMarshallAssociation(bean,property)
+
+        then:
+        true == deep
+
+        where:
+        fieldName << ['parts','subPart','owner','contributors']
+    }
+
+    @Unroll
+    def "Test field-level deep marshalling"(def fieldName) {
+        setup:
+        def marshaller = new DeclarativeDomainClassMarshaller(
+            app:grailsApplication,
+            deepMarshallAssociations:false,
+            deepMarshalledFields:[("$fieldName".toString()):true]
+        )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:'aa thing' )
+        def bean = new BeanWrapperImpl(thing)
+        def domainClass = grailsApplication.getDomainClass(thing.getClass().getName())
+        def property = domainClass.getPersistentProperty(fieldName)
+
+        when:
+        def deep = marshaller.deepMarshallAssociation(bean,property)
+
+        then:
+        true == deep
+
+        where:
+        fieldName << ['parts','subPart','owner','contributors']
+    }
 
     private void register( String name, def marshaller ) {
         XML.createNamedConfig( "DeclarativeDomainClassMarshaller:" + testName + ":$name" ) { xml ->

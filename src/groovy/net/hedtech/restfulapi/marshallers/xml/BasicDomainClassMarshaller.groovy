@@ -255,6 +255,18 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<XML>, NameAwareMars
         return true
     }
 
+    /**
+     * Specify whether to deep marshal a field representing
+     * an association, or render it as a short-object.
+     * @param beanWrapper the wrapped object containing the field
+     * @param property the property to be marshalled
+     * @return true if the value of the field should be deep rendered,
+     *         false if a short-object representation should be used.
+     **/
+    protected boolean deepMarshallAssociation(BeanWrapper beanWrapper, GrailsDomainClassProperty property) {
+        return false
+    }
+
 // ------------------- End methods to override to customize behavior ---------------------
 
 // ------------------- Methods to support marshalling ---------------------
@@ -330,6 +342,36 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<XML>, NameAwareMars
     }
 
     protected void marshallAssociationField(BeanWrapper beanWrapper, GrailsDomainClassProperty property, XML xml) {
+        if (deepMarshallAssociation(beanWrapper,property)) {
+            deepMarshallAssociationField(beanWrapper, property, xml)
+        } else {
+            shallowMarshallAssociationField(beanWrapper, property, xml)
+        }
+    }
+
+    protected void deepMarshallAssociationField(BeanWrapper beanWrapper, GrailsDomainClassProperty property, XML xml) {
+        log.trace "$this deepMarshallAssociationField handling field '${property.getName()}' for ${beanWrapper.getWrappedInstance().getClass().getName()} as a deep-marshalled association"
+        startNode(beanWrapper, property, xml)
+        Object referenceObject = beanWrapper.getPropertyValue(property.getName())
+        if (referenceObject != null) {
+            referenceObject = proxyHandler.unwrapIfProxy(referenceObject);
+            if (referenceObject instanceof SortedMap) {
+                referenceObject = new TreeMap((SortedMap) referenceObject);
+            } else if (referenceObject instanceof SortedSet) {
+                referenceObject = new TreeSet((SortedSet) referenceObject);
+            } else if (referenceObject instanceof Set) {
+                referenceObject = new HashSet((Set) referenceObject);
+            } else if (referenceObject instanceof Map) {
+                referenceObject = new HashMap((Map) referenceObject);
+            } else if (referenceObject instanceof Collection) {
+                referenceObject = new ArrayList((Collection) referenceObject);
+            }
+            xml.convertAnother(referenceObject);
+        }
+        xml.end()
+    }
+
+    protected void shallowMarshallAssociationField(BeanWrapper beanWrapper, GrailsDomainClassProperty property, XML xml) {
 
         Class<?> clazz = beanWrapper.getWrappedInstance().getClass()
         log.trace( "$this marshalObject() handling field '${property.getName()}' for $clazz as an association")

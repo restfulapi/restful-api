@@ -253,6 +253,18 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<JSON> {
         return true
     }
 
+    /**
+     * Specify whether to deep marshal a field representing
+     * an association, or render it as a short-object.
+     * @param beanWrapper the wrapped object containing the field
+     * @param property the property to be marshalled
+     * @return true if the value of the field should be deep rendered,
+     *         false if a short-object representation should be used.
+     **/
+    protected boolean deepMarshallAssociation(BeanWrapper beanWrapper, GrailsDomainClassProperty property) {
+        return false
+    }
+
 
 // ------------------- End methods to override to customize behavior ---------------------
 
@@ -318,8 +330,39 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<JSON> {
     }
 
     protected void marshallAssociationField(BeanWrapper beanWrapper, GrailsDomainClassProperty property, JSON json) {
+        if (deepMarshallAssociation(beanWrapper,property)) {
+            deepMarshallAssociationField(beanWrapper, property, json)
+        } else {
+            shallowMarshallAssociationField(beanWrapper, property, json)
+        }
+    }
+
+    protected void deepMarshallAssociationField(BeanWrapper beanWrapper, GrailsDomainClassProperty property, JSON json) {
+        log.trace "$this deepMarshallAssociationField handling field '${property.getName()}' for ${beanWrapper.getWrappedInstance().getClass().getName()} as a deep-marshalled association"
+        writeFieldName(beanWrapper, property, json)
+        Object referenceObject = beanWrapper.getPropertyValue(property.getName())
+        if (referenceObject == null) {
+            json.getWriter().value(null)
+        } else {
+            referenceObject = proxyHandler.unwrapIfProxy(referenceObject);
+            if (referenceObject instanceof SortedMap) {
+                referenceObject = new TreeMap((SortedMap) referenceObject);
+            } else if (referenceObject instanceof SortedSet) {
+                referenceObject = new TreeSet((SortedSet) referenceObject);
+            } else if (referenceObject instanceof Set) {
+                referenceObject = new HashSet((Set) referenceObject);
+            } else if (referenceObject instanceof Map) {
+                referenceObject = new HashMap((Map) referenceObject);
+            } else if (referenceObject instanceof Collection) {
+                referenceObject = new ArrayList((Collection) referenceObject);
+            }
+            json.convertAnother(referenceObject);
+        }
+    }
+
+    protected void shallowMarshallAssociationField(BeanWrapper beanWrapper, GrailsDomainClassProperty property, JSON json) {
         Class<?> clazz = beanWrapper.getWrappedInstance().getClass()
-        log.trace( "$this marshalObject() handling field '${property.getName()}' for $clazz as an association")
+        log.trace( "$this shallowMarshallowAssociationField() handling field '${property.getName()}' for $clazz as an shallow association")
 
         JSONWriter writer = json.getWriter()
         Object referenceObject = beanWrapper.getPropertyValue(property.getName())

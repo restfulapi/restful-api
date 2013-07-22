@@ -25,9 +25,10 @@ class RestConfigXMLDomainMarshallerSpec extends Specification {
                 group 'domain' marshallers {
                     xmlDomainMarshaller {
                         supports Thing
-                        field 'foo' name 'bar' resource 'custom-foos'
+                        deepMarshallsAssociations true
+                        field 'foo' name 'bar' resource 'custom-foos' deep false
                         includesFields {
-                            field 'bar' name 'customBar' resource 'custom-bars'
+                            field 'bar' name 'customBar' resource 'custom-bars' deep true
                         }
                         excludesFields {
                             field 'foobar'
@@ -42,11 +43,14 @@ class RestConfigXMLDomainMarshallerSpec extends Specification {
         def marshaller = config.marshallerGroups['domain'].marshallers[0].instance
 
         then:
-        Thing == marshaller.supportClass
-        ['foo':'bar','bar':'customBar'] == marshaller.fieldNames
+        Thing                                     == marshaller.supportClass
+        ['foo':'bar','bar':'customBar']           == marshaller.fieldNames
         ['foo':'custom-foos','bar':'custom-bars'] == marshaller.fieldResourceNames
-        ['bar'] == marshaller.includedFields
-        ['foobar'] == marshaller.excludedFields
+        ['bar']                                   == marshaller.includedFields
+        ['foobar']                                == marshaller.excludedFields
+        true                                      == marshaller.deepMarshallAssociations
+        [foo:false,bar:true]                      == marshaller.deepMarshalledFields
+
     }
 
     def "Test xml domain marshaller template parsing"() {
@@ -61,12 +65,15 @@ class RestConfigXMLDomainMarshallerSpec extends Specification {
                     inherits = ['one']
                     priority = 5
                     supports Thing
+                    deepMarshallsAssociations true
                     requiresIncludedFields true
                     field 'foo' name 'bar'
                     field 'f1' resource 'r1'
                     field 'f2' resource 'r2'
+                    field 'f3' deep true
                     includesFields {
                         field 'foo' name 'foobar'
+                        field 'f4' deep false
                     }
                     excludesFields {
                         field 'bar'
@@ -87,20 +94,23 @@ class RestConfigXMLDomainMarshallerSpec extends Specification {
         def shortObject = mConfig.shortObjectClosure.call([:])
 
         then:
-         2                     == config.xmlDomain.configs.size()
-         ['one']               == mConfig.inherits
-         5                     == mConfig.priority
-         Thing                 == mConfig.supportClass
-         true                  == mConfig.requireIncludedFields
-         ['foo':'foobar']      == mConfig.fieldNames
-         ['foo']               == mConfig.includedFields
-         ['bar']               == mConfig.excludedFields
-         1                     == mConfig.additionalFieldClosures.size()
-         ['a':'b','c':'d']     == mConfig.additionalFieldsMap
-         ['f1':'r1','f2':'r2'] == mConfig.fieldResourceNames
-         'foo'                 == shortObject
-         false                 == mConfig.includeId
-         false                 == mConfig.includeVersion
+        2                      == config.xmlDomain.configs.size()
+        ['one']                == mConfig.inherits
+        5                      == mConfig.priority
+        Thing                  == mConfig.supportClass
+        true                   == mConfig.requireIncludedFields
+        ['foo':'foobar']       == mConfig.fieldNames
+        ['foo','f4']           == mConfig.includedFields
+        ['bar']                == mConfig.excludedFields
+        1                      == mConfig.additionalFieldClosures.size()
+        ['a':'b','c':'d']      == mConfig.additionalFieldsMap
+        ['f1':'r1','f2':'r2']  == mConfig.fieldResourceNames
+        'foo'                  == shortObject
+        false                  == mConfig.includeId
+        false                  == mConfig.includeVersion
+        true                   == mConfig.deepMarshallAssociations
+        ['f3':true,'f4':false] == mConfig.deepMarshalledFields
+
     }
 
     def "Test xml domain marshaller creation"() {
@@ -114,10 +124,11 @@ class RestConfigXMLDomainMarshallerSpec extends Specification {
                         xmlDomainMarshaller {
                             supports Thing
                             requiresIncludedFields true
-                            field 'owner' resource 't-owners'
+                            deepMarshallsAssociations true
+                            field 'owner' resource 't-owners' deep false
                             includesFields {
                                 field 'code' name 'productCode'
-                                field 'parts' resource 't-parts'
+                                field 'parts' resource 't-parts' deep true
                             }
                             excludesFields {
                                 field 'description'
@@ -151,6 +162,9 @@ class RestConfigXMLDomainMarshallerSpec extends Specification {
         ['foo':'bar']                          == marshaller.additionalFieldsMap
         ['owner':'t-owners','parts':'t-parts'] == marshaller.fieldResourceNames
         'foo'                                  == shortObject
+        true                                   == marshaller.deepMarshallAssociations
+        ['owner':false, 'parts':true]          == marshaller.deepMarshalledFields
+
     }
 
     def "Test xml domain marshaller creation from merged configuration"() {

@@ -270,7 +270,6 @@ class BasicDomainClassMarshallerSpec extends Specification {
         then:
         null            == thing.parts
         JSONObject.NULL == json.parts
-
     }
 
     def "Test that null Map association field is marshalled as null"() {
@@ -288,7 +287,6 @@ class BasicDomainClassMarshallerSpec extends Specification {
         then:
         null            == thing.contributors
         JSONObject.NULL == json.contributors
-
     }
 
     def "Test that null one-to-one association field is marshalled as null"() {
@@ -306,7 +304,6 @@ class BasicDomainClassMarshallerSpec extends Specification {
         then:
         null            == thing.subPart
         JSONObject.NULL == json.subPart
-
     }
 
     def "Test that null many-to-one association field is marshalled as null"() {
@@ -324,7 +321,6 @@ class BasicDomainClassMarshallerSpec extends Specification {
         then:
         null            == thing.owner
         JSONObject.NULL == json.owner
-
     }
 
     def "Test that null embedded association field is marshalled as null"() {
@@ -343,6 +339,80 @@ class BasicDomainClassMarshallerSpec extends Specification {
         null            == thing.embeddedPart
         JSONObject.NULL == json.embeddedPart
     }
+
+   def "Test that null Collection association field is deep marshalled as null"() {
+        setup:
+        def marshaller = new BasicDomainClassMarshaller(
+            app:grailsApplication
+        )
+        marshaller.metaClass.deepMarshallAssociation << {BeanWrapper wrapper, GrailsDomainClassProperty property -> true}
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing" )
+        thing.parts = null
+
+        when:
+        def content = render( thing )
+        def json = JSON.parse content
+
+        then:
+        null            == thing.parts
+        JSONObject.NULL == json.parts
+    }
+
+    def "Test that null Map association field is deep marshalled as null"() {
+        setup:
+        def marshaller = new BasicDomainClassMarshaller(
+            app:grailsApplication
+        )
+        marshaller.metaClass.deepMarshallAssociation << {BeanWrapper wrapper, GrailsDomainClassProperty property -> true}
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing", contributors:null )
+
+        when:
+        def content = render( thing )
+        def json = JSON.parse content
+
+        then:
+        null            == thing.contributors
+        JSONObject.NULL == json.contributors
+    }
+
+    def "Test that null one-to-one association field is deep marshalled as null"() {
+        setup:
+        def marshaller = new BasicDomainClassMarshaller(
+            app:grailsApplication
+        )
+        marshaller.metaClass.deepMarshallAssociation << {BeanWrapper wrapper, GrailsDomainClassProperty property -> true}
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing", subPart:null )
+
+        when:
+        def content = render( thing )
+        def json = JSON.parse content
+
+        then:
+        null            == thing.subPart
+        JSONObject.NULL == json.subPart
+    }
+
+    def "Test that null many-to-one association field is deep marshalled as null"() {
+        setup:
+        def marshaller = new BasicDomainClassMarshaller(
+            app:grailsApplication
+        )
+        marshaller.metaClass.deepMarshallAssociation << {BeanWrapper wrapper, GrailsDomainClassProperty property -> true}
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing", owner:null )
+
+        when:
+        def content = render( thing )
+        def json = JSON.parse content
+
+        then:
+        null            == thing.owner
+        JSONObject.NULL == json.owner
+    }
+
 
     def "Test special processing of association field"() {
         setup:
@@ -372,7 +442,7 @@ class BasicDomainClassMarshallerSpec extends Specification {
         register( marshaller )
         MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing" )
         def parts = []
-        def part = new MarshalledPartOfThing(code:'partA',desc:'part A')
+        def part = new MarshalledPartOfThing(code:'partA',description:'part A')
         part.setId(1)
         parts.add part
         thing.parts = parts
@@ -399,10 +469,10 @@ class BasicDomainClassMarshallerSpec extends Specification {
         register( marshaller )
         MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing" )
         def parts = []
-        def part = new MarshalledPartOfThing(code:'partA',desc:'part A')
+        def part = new MarshalledPartOfThing(code:'partA',description:'part A')
         part.setId(1)
         parts.add part
-        part = new MarshalledPartOfThing(code:'partB',desc:'part B')
+        part = new MarshalledPartOfThing(code:'partB',description:'part B')
         part.setId(2)
         parts.add part
         thing.parts = parts
@@ -416,6 +486,36 @@ class BasicDomainClassMarshallerSpec extends Specification {
         '/marshalled-part-of-things/2' == json.parts[1]._link
         !json.parts[0].containsKey('code')
         !json.parts[0].containsKey('description')
+    }
+
+    def "Test Collection based association field deep marshalled"() {
+        setup:
+        def marshaller = new BasicDomainClassMarshaller(
+            app:grailsApplication
+        )
+        marshaller.metaClass.deepMarshallAssociation << {BeanWrapper wrapper, GrailsDomainClassProperty property -> true}
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing" )
+        def parts = []
+        def part = new MarshalledPartOfThing(code:'partA',description:'part A')
+        part.setId(1)
+        parts.add part
+        part = new MarshalledPartOfThing(code:'partB',description:'part B')
+        part.setId(2)
+        parts.add part
+        thing.parts = parts
+
+        when:
+        def content = render( thing )
+        def json = JSON.parse content
+
+        then:
+        1        == json.parts[0].id
+        'partA'  == json.parts[0].code
+        'part A' == json.parts[0].description
+        2        == json.parts[1].id
+        'partB'  == json.parts[1].code
+        'part B' == json.parts[1].description
     }
 
     def "Test Map based association field marshalled as short object"() {
@@ -443,7 +543,36 @@ class BasicDomainClassMarshallerSpec extends Specification {
         '/marshalled-thing-contributors/6' == json.contributors['anderson']._link
         !json.contributors['smith'].containsKey('lastName')
         !json.contributors['smith'].containsKey('firstName')
+    }
 
+    def "Test Map based association field deep marshalled"() {
+        setup:
+        def marshaller = new BasicDomainClassMarshaller(
+            app:grailsApplication
+        )
+        marshaller.metaClass.deepMarshallAssociation << {BeanWrapper wrapper, GrailsDomainClassProperty property -> true}
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing" )
+        MarshalledThingContributor contrib = new MarshalledThingContributor( firstName:'John', lastName:'Smith' )
+        contrib.id = 5
+        thing.contributors.put('smith',contrib)
+        contrib = new MarshalledThingContributor( firstName:'John', lastName:'Anderson' )
+        contrib.id = 6
+        thing.contributors.put('anderson',contrib)
+
+
+        when:
+        def content = render( thing )
+        def json = JSON.parse content
+
+        then:
+        2          == json.contributors.size()
+        5          == json.contributors['smith'].id
+        'John'     == json.contributors['smith'].firstName
+        'Smith'    == json.contributors['smith'].lastName
+        6          == json.contributors['anderson'].id
+        'John'     == json.contributors['anderson'].firstName
+        'Anderson' == json.contributors['anderson'].lastName
     }
 
     def "Test many-to-one association field marshalled as short object"() {
@@ -467,6 +596,29 @@ class BasicDomainClassMarshallerSpec extends Specification {
         '/marshalled-owner-of-things/5' == json.owner._link
     }
 
+    def "Test many-to-one association field deep marshalled"() {
+        setup:
+        def marshaller = new BasicDomainClassMarshaller(
+            app:grailsApplication
+        )
+        marshaller.metaClass.deepMarshallAssociation << {BeanWrapper wrapper, GrailsDomainClassProperty property -> true}
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing" )
+        MarshalledOwnerOfThing owner = new MarshalledOwnerOfThing( firstName:'John', lastName:'Smith' )
+        owner.id = 5
+        thing.owner = owner
+
+
+        when:
+        def content = render( thing )
+        def json = JSON.parse content
+
+        then:
+        5       == json.owner.id
+        'John'  == json.owner.firstName
+        'Smith' == json.owner.lastName
+    }
+
     def "Test one-to-one association field marshalled as short object"() {
         setup:
         def marshaller = new BasicDomainClassMarshaller(
@@ -486,6 +638,28 @@ class BasicDomainClassMarshallerSpec extends Specification {
         then:
         !json.subPart.containsKey('code')
         '/marshalled-sub-part-of-things/5' == json.subPart._link
+    }
+
+    def "Test one-to-one association field deep marshalled"() {
+        setup:
+        def marshaller = new BasicDomainClassMarshaller(
+            app:grailsApplication
+        )
+        marshaller.metaClass.deepMarshallAssociation << {BeanWrapper wrapper, GrailsDomainClassProperty property -> true}
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing" )
+        MarshalledSubPartOfThing part = new MarshalledSubPartOfThing( code:'zz' )
+        part.id = 5
+        thing.subPart = part
+
+
+        when:
+        def content = render( thing )
+        def json = JSON.parse content
+
+        then:
+        5 == json.subPart.id
+        'zz' == json.subPart.code
     }
 
     def "Test embedded association field marshalled as full object"() {

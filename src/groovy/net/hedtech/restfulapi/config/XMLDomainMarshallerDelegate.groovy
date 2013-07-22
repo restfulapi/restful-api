@@ -35,6 +35,10 @@ class XMLDomainMarshallerDelegate {
         this
     }
 
+    XMLDomainMarshallerDelegate deepMarshallsAssociations(boolean b) {
+        config.deepMarshallAssociations = b
+        this
+    }
 
     def field(String fieldName) {
         //if a previous field definition has supplied
@@ -84,6 +88,7 @@ class XMLDomainMarshallerDelegate {
     private FieldOptions handleField(String name) {
         config.fieldNames.remove(name)
         config.fieldResourceNames.remove(name)
+        config.deepMarshalledFields.remove(name)
         return new FieldOptions(name)
     }
 
@@ -103,6 +108,10 @@ class XMLDomainMarshallerDelegate {
             return this
         }
 
+        FieldOptions deep(boolean b) {
+            config.deepMarshalledFields[fieldName] = b
+            return this
+        }
     }
 
     class IncludeConfig {

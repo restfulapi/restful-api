@@ -35,6 +35,11 @@ class JSONDomainMarshallerDelegate {
         this
     }
 
+    JSONDomainMarshallerDelegate deepMarshallsAssociations(boolean b) {
+        config.deepMarshallAssociations = b
+        this
+    }
+
 
     def field(String fieldName) {
         //if a previous field definition has supplied
@@ -84,6 +89,7 @@ class JSONDomainMarshallerDelegate {
     private FieldOptions handleField(String name) {
         config.fieldNames.remove(name)
         config.fieldResourceNames.remove(name)
+        config.deepMarshalledFields.remove(name)
         return new FieldOptions(name)
     }
 
@@ -100,6 +106,11 @@ class JSONDomainMarshallerDelegate {
 
         FieldOptions resource(String name) {
             config.fieldResourceNames[fieldName] = name
+            return this
+        }
+
+        FieldOptions deep(boolean b) {
+            config.deepMarshalledFields[fieldName] = b
             return this
         }
 

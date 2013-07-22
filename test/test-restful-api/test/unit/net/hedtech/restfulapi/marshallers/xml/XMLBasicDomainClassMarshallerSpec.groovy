@@ -293,6 +293,27 @@ class XMLBasicDomainClassMarshallerSpec extends Specification {
         "true" == xml.parts.'@null'.text()
     }
 
+    def "Test that null Collection association field is deep marshalled with null attribute"() {
+        setup:
+        def marshaller = new BasicDomainClassMarshaller(
+            app:grailsApplication
+        )
+        marshaller.metaClass.deepMarshallAssociation << {BeanWrapper wrapper, GrailsDomainClassProperty property -> true}
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing" )
+        thing.parts = null
+
+        when:
+        def content = render( thing )
+        def xml = XML.parse content
+
+        then:
+        null   == thing.parts
+        1      == xml.parts.size()
+        0      == xml.parts.children().size()
+        "true" == xml.parts.'@null'.text()
+    }
+
     def "Test that empty Collection association field is marshalled as an empty node"() {
         setup:
         def marshaller = new BasicDomainClassMarshaller(
@@ -332,6 +353,25 @@ class XMLBasicDomainClassMarshallerSpec extends Specification {
         "true" == xml.contributors.'@null'.text()
     }
 
+    def "Test that null Map association field is deep marshalled with null attribute"() {
+        setup:
+        def marshaller = new BasicDomainClassMarshaller(
+            app:grailsApplication
+        )
+        marshaller.metaClass.deepMarshallAssociation << {BeanWrapper wrapper, GrailsDomainClassProperty property -> true}
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing", contributors:null )
+
+        when:
+        def content = render( thing )
+        def xml = XML.parse content
+
+        then:
+        null   == thing.contributors
+        1      == xml.contributors.size()
+        0      == xml.contributors.children().size()
+        "true" == xml.contributors.'@null'.text()
+    }
 
     def "Test that empty Map association field is marshalled as an empty node"() {
         setup:
@@ -369,7 +409,26 @@ class XMLBasicDomainClassMarshallerSpec extends Specification {
         1      == xml.subPart.size()
         0      == xml.subPart.children().size()
         'true' == xml.subPart.@null.text()
+    }
 
+    def "Test that null one-to-one association field is deep marshalled as an empty node with null attribute"() {
+        setup:
+        def marshaller = new BasicDomainClassMarshaller(
+            app:grailsApplication
+        )
+        marshaller.metaClass.deepMarshallAssociation << {BeanWrapper wrapper, GrailsDomainClassProperty property -> true}
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing", subPart:null )
+
+        when:
+        def content = render( thing )
+        def xml = XML.parse content
+
+        then:
+        null   == thing.subPart
+        1      == xml.subPart.size()
+        0      == xml.subPart.children().size()
+        'true' == xml.subPart.@null.text()
     }
 
     def "Test that null many-to-one association field is marshalled as an empty node with null attribute"() {
@@ -389,7 +448,26 @@ class XMLBasicDomainClassMarshallerSpec extends Specification {
         1      == xml.owner.size()
         0      == xml.owner.children().size()
         'true' == xml.owner.@null.text()
+    }
 
+    def "Test that null many-to-one association field is deep marshalled as an empty node with null attribute"() {
+        setup:
+        def marshaller = new BasicDomainClassMarshaller(
+            app:grailsApplication
+        )
+        marshaller.metaClass.deepMarshallAssociation << {BeanWrapper wrapper, GrailsDomainClassProperty property -> true}
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing", owner:null )
+
+        when:
+        def content = render( thing )
+        def xml = XML.parse content
+
+        then:
+        null   == thing.owner
+        1      == xml.owner.size()
+        0      == xml.owner.children().size()
+        'true' == xml.owner.@null.text()
     }
 
     def "Test that null embedded association field is marshalled as an empty node with null attribute"() {
@@ -419,7 +497,7 @@ class XMLBasicDomainClassMarshallerSpec extends Specification {
         register( marshaller )
         MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing" )
         def parts = []
-        def part = new MarshalledPartOfThing(code:'partA',desc:'part A')
+        def part = new MarshalledPartOfThing(code:'partA',description:'part A')
         part.setId(1)
         parts.add part
         thing.parts = parts
@@ -642,7 +720,7 @@ class XMLBasicDomainClassMarshallerSpec extends Specification {
         register( marshaller )
         MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing" )
         def parts = []
-        def part = new MarshalledPartOfThing(code:'partA',desc:'part A')
+        def part = new MarshalledPartOfThing(code:'partA',description:'part A')
         part.setId(1)
         parts.add part
         thing.parts = parts
@@ -669,10 +747,10 @@ class XMLBasicDomainClassMarshallerSpec extends Specification {
         register( marshaller )
         MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing" )
         def parts = []
-        def part = new MarshalledPartOfThing(code:'partA',desc:'part A')
+        def part = new MarshalledPartOfThing(code:'partA',description:'part A')
         part.setId(1)
         parts.add part
-        part = new MarshalledPartOfThing(code:'partB',desc:'part B')
+        part = new MarshalledPartOfThing(code:'partB',description:'part B')
         part.setId(2)
         parts.add part
         thing.parts = parts
@@ -686,6 +764,37 @@ class XMLBasicDomainClassMarshallerSpec extends Specification {
         '/marshalled-part-of-things/2' == xml.parts.shortObject[1]._link.text()
         0 == xml.parts.code.size()
         0 == xml.parts.description.size()
+    }
+
+    def "Test Collection based association field deep marshalled"() {
+        setup:
+        def marshaller = new BasicDomainClassMarshaller(
+            app:grailsApplication
+        )
+        marshaller.metaClass.deepMarshallAssociation << {BeanWrapper wrapper, GrailsDomainClassProperty property -> true}
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing" )
+        def parts = []
+        def part = new MarshalledPartOfThing(code:'partA',description:'part A')
+        part.setId(1)
+        parts.add part
+        part = new MarshalledPartOfThing(code:'partB',description:'part B')
+        part.setId(2)
+        parts.add part
+        thing.parts = parts
+
+        when:
+        def content = render( thing )
+        def xml = XML.parse content
+
+        then:
+        '1'      == xml.parts.marshalledPartOfThing[0].id.text()
+        'partA'  == xml.parts.marshalledPartOfThing[0].code.text()
+        'part A' == xml.parts.marshalledPartOfThing[0].description.text()
+
+        '2'      == xml.parts.marshalledPartOfThing[1].id.text()
+        'partB'  == xml.parts.marshalledPartOfThing[1].code.text()
+        'part B' == xml.parts.marshalledPartOfThing[1].description.text()
     }
 
     def "Test Map based association field marshalled as short object"() {
@@ -717,6 +826,37 @@ class XMLBasicDomainClassMarshallerSpec extends Specification {
         1                                  == xml.contributors.entry[1].children().size()
     }
 
+    def "Test Map based association field deep marshalled"() {
+        setup:
+        def marshaller = new BasicDomainClassMarshaller(
+            app:grailsApplication
+        )
+        marshaller.metaClass.deepMarshallAssociation << {BeanWrapper wrapper, GrailsDomainClassProperty property -> true}
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing" )
+        MarshalledThingContributor contrib = new MarshalledThingContributor( firstName:'John', lastName:'Smith' )
+        contrib.id = 5
+        thing.contributors.put('smith',contrib)
+        contrib = new MarshalledThingContributor( firstName:'John', lastName:'Anderson' )
+        contrib.id = 6
+        thing.contributors.put('anderson',contrib)
+
+        when:
+        def content = render( thing )
+        def xml = XML.parse content
+        def smith = xml.contributors.children().find { it.@key.text() == 'smith' }
+        def anderson = xml.contributors.children().find { it.@key.text() == 'anderson' }
+
+        then:
+        2          == xml.contributors.children().size()
+        '5'        == smith.id.text()
+        'John'     == smith.firstName.text()
+        'Smith'    == smith.lastName.text()
+        '6'        == anderson.id.text()
+        'John'     == anderson.firstName.text()
+        'Anderson' == anderson.lastName.text()
+    }
+
     def "Test many-to-one association field marshalled as short object"() {
         setup:
         def marshaller = new BasicDomainClassMarshaller(
@@ -738,6 +878,29 @@ class XMLBasicDomainClassMarshallerSpec extends Specification {
         '/marshalled-owner-of-things/5' == xml.owner._link.text()
     }
 
+    def "Test many-to-one association field deep marshalled"() {
+        setup:
+        def marshaller = new BasicDomainClassMarshaller(
+            app:grailsApplication
+        )
+        marshaller.metaClass.deepMarshallAssociation << {BeanWrapper wrapper, GrailsDomainClassProperty property -> true}
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing" )
+        MarshalledOwnerOfThing owner = new MarshalledOwnerOfThing( firstName:'John', lastName:'Smith' )
+        owner.id = 5
+        thing.owner = owner
+
+
+        when:
+        def content = render( thing )
+        def xml = XML.parse content
+
+        then:
+        '5'     == xml.owner.id.text()
+        'John'  == xml.owner.firstName.text()
+        'Smith' == xml.owner.lastName.text()
+    }
+
     def "Test one-to-one association field marshalled as short object"() {
         setup:
         def marshaller = new BasicDomainClassMarshaller(
@@ -757,6 +920,28 @@ class XMLBasicDomainClassMarshallerSpec extends Specification {
         then:
         0 == xml.subPart.code.size()
         '/marshalled-sub-part-of-things/5' == xml.subPart._link.text()
+    }
+
+    def "Test one-to-one association field deep marshalled"() {
+        setup:
+        def marshaller = new BasicDomainClassMarshaller(
+            app:grailsApplication
+        )
+        marshaller.metaClass.deepMarshallAssociation << {BeanWrapper wrapper, GrailsDomainClassProperty property -> true}
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing" )
+        MarshalledSubPartOfThing part = new MarshalledSubPartOfThing( code:'zz' )
+        part.id = 5
+        thing.subPart = part
+
+
+        when:
+        def content = render( thing )
+        def xml = XML.parse content
+
+        then:
+        '5' == xml.subPart.id.text()
+        'zz' == xml.subPart.code.text()
     }
 
     def "Test embedded association field marshalled as full object"() {

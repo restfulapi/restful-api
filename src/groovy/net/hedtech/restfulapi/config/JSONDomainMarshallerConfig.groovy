@@ -38,6 +38,8 @@ class JSONDomainMarshallerConfig implements MergeableConfig {
     //Contains a closure that will override the default
     //rendering behavior for short objects.
     def shortObjectClosure = null
+    Boolean deepMarshallAssociations
+    def deepMarshalledFields = [:]
     boolean isShortObjectClosureSet = false
     Boolean includeId
     Boolean includeVersion
@@ -84,6 +86,7 @@ class JSONDomainMarshallerConfig implements MergeableConfig {
         if (other.includeId != null)      config.includeId      = other.includeId
         if (other.includeVersion != null) config.includeVersion = other.includeVersion
         if (other.requireIncludedFields != null) config.requireIncludedFields = other.requireIncludedFields
+        if (other.deepMarshallAssociations != null) config.deepMarshallAssociations = other.deepMarshallAssociations
 
         config.fieldNames.putAll  other.fieldNames
         config.includedFields.addAll other.includedFields
@@ -91,6 +94,7 @@ class JSONDomainMarshallerConfig implements MergeableConfig {
         config.additionalFieldClosures.addAll other.additionalFieldClosures
         config.additionalFieldsMap.putAll other.additionalFieldsMap
         config.fieldResourceNames.putAll other.fieldResourceNames
+        config.deepMarshalledFields.putAll other.deepMarshalledFields
         if (other.isShortObjectClosureSet) {
             config.shortObjectClosure = other.shortObjectClosure
         }

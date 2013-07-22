@@ -949,6 +949,45 @@ You can define the short object closure once, and re-use it for all declarative 
 
 Now we have defined the short-object behavior in one location, and have multiple resource representations re-using it.  We will cover marshaller templates in more detail in a later section.
 
+###Deep marshalling associations
+The declarative marshallers can be instructed to deep marshall associations; that is, instead of marshalling an association as a short-object reference, the associated object or collection is passed along to another marshaller that supports its class.  Deep marshalling can be set as the default on a declarative marshaller with the deepMarshallsAssociations setting:
+
+    resource 'things' config {
+        representation {
+            mediaTypes = ["application/json"]
+            marshallers {
+                jsonDomainMarshaller {
+                    deepMarshallsAssociations true
+                }
+            }
+        }
+    }
+
+With that setting, any fields representing an association will be deep marshalled by passing the value of the field into the marshalling framework.
+
+The deepMarshallsAssociations can also be used in declarative marshaller templates.
+
+Deep marshalling for association fields can also be specified at the field level, overriding the value of deepMarshallsAssociations.  For example:
+
+    resource 'things' config {
+        representation {
+            mediaTypes = ["application/json"]
+            marshallers {
+                jsonDomainMarshaller {
+                    deepMarshallsAssociations true
+                    includesFields {
+                        field 'parts' deep false
+                        field 'subPart'
+                    }
+                }
+            }
+        }
+    }
+
+Assuming both parts and subPart represent associated objects, the parts field will be marshalled as a short-object representation, while the subPart field will be deep marshalled (because the default behavior for the marshaller is deep-marshalling, per the deepMarshallsAssociations setting).
+
+The 'deep' setting can be used anywhere a field can be defined; however, it has no effect on fields that do not represent associations on a domain object.
+
 ###Adding additional fields
 In general, it is necessary to add non-persistent fields to the representation.  The most common requirement is to add affordances, such as an _href attribute referring to the resource, or supplemental data not present as persistent fields.
 
@@ -1444,6 +1483,7 @@ The configuration block for the marshaller can contain the following in any orde
 
     inherits = <array of json groovy bean marshaller template names>
     supports <class>
+    deepMarshallsAssociations <true|false>
     <field-block>*
     includesFields {
         <field-block>*
@@ -1455,7 +1495,7 @@ The configuration block for the marshaller can contain the following in any orde
 
 Where \<field-block\>* is any number of field-blocks, and a field-block is
 
-    field 'name' [name 'output-name']
+    field 'name' [name 'output-name'] [resource 'resource-name'] [deep <true|false>]
 
 Where values in brackets are optional.
 
@@ -1494,6 +1534,21 @@ is the same as
             field 'bar'
             field 'baz'
         }
+
+Note that any time a field is defined, any previous settings for the same field name are reset.  For example:
+
+    field 'foo' name 'bar' deep true
+    includesFields {
+        field 'foo'
+    }
+
+Is equivalent to
+
+    includesFields {
+        field 'foo'
+    }
+
+The last definition of a field in any context is what is used.
 
 ###Groovy bean marshaller templates
 JSON groovy bean marshaller templates are configuration blocks that do not directly create a marshaller.  The 'config' block accepts any configuration that the jsonGroovyBeanMarshaller block does (including the inherits option).  When a jsonGroovyBeanMarshaller directive contains an 'inherits' element, the templates referenced will be merged with the configuration for the marshaller in a depth-first manner.  Elements that represent collections or maps are merged together (later templates overriding previous ones, if there is a conflict), with the configuration in the jsonGroovyBeanMarshaller block itself overriding any previous values.
@@ -1694,7 +1749,7 @@ If you have customized what a short-object reference looks like, you can overrid
       "customers": [ { "resource-name": "customers", "id":123 }, { "resource-name":'customers', "id":123 } ]
     }
 
-    To convert that back into id:value maps, you could override the short-object behavior like so:
+To convert that back into id:value maps, you could override the short-object behavior like so:
 
     resource 'purchase-orders' config {
         representation {

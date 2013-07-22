@@ -31,6 +31,12 @@ class DeclarativeDomainClassMarshaller extends BasicDomainClassMarshaller {
     def additionalFieldClosures = []
     def additionalFieldsMap = [:]
     def fieldResourceNames = [:]
+    //if a field is a key in the map, then represents
+    //a field-level override
+    def deepMarshalledFields = [:]
+    //default behavior on whether to shallow or deep
+    //marshall association fields
+    def deepMarshallAssociations = false
     def shortObjectClosure = DEFAULT_SHORT_OBJECT
 
     private static DEFAULT_SHORT_OBJECT = { Map map ->
@@ -170,6 +176,23 @@ class DeclarativeDomainClassMarshaller extends BasicDomainClassMarshaller {
     @Override
     protected boolean includeVersionFor(Object o) {
         return includeVersion
+    }
+
+    /**
+     * Specify whether to deep marshal a field representing
+     * an association, or render it as a short-object.
+     * @param beanWrapper the wrapped object containing the field
+     * @param property the property to be marshalled
+     * @return true if the value of the field should be deep rendered,
+     *         false if a short-object representation should be used.
+     **/
+    @Override
+    protected boolean deepMarshallAssociation(BeanWrapper beanWrapper, GrailsDomainClassProperty property) {
+        if (deepMarshalledFields.containsKey(property.getName())) {
+            return deepMarshalledFields[property.getName()]
+        } else {
+            return deepMarshallAssociations
+        }
     }
 
     /**
