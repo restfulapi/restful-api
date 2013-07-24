@@ -25,6 +25,7 @@ class RequestCustomizer {
 
     def body
     def requestFactory
+    Class responseType
 
     MultiValueMap<String, Object> mvm = new LinkedMultiValueMap<String, Object>()
 
@@ -59,6 +60,11 @@ class RequestCustomizer {
 
     RequestCustomizer requestFactory(Object factory) {
         this.requestFactory = factory
+        return this
+    }
+
+    RequestCustomizer responseType(Class clazz) {
+        this.responseType = clazz
         return this
     }
 

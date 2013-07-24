@@ -323,6 +323,21 @@ restfulApiConfig = {
             marshallerFramework = 'customThingMarshallingService'
             xmlExtractor {}
         }
+        representation {
+            mediaTypes = ['application/vnd.hedtech.custom-framework+xml+zip']
+            contentType = 'application/zip'
+            marshallerFramework = 'compressedCustomThingMarshallingService'
+        }
+        representation {
+            mediaTypes = ['application/vnd.hedtech.custom-framework+xml+stream']
+            contentType = 'application/zip'
+            marshallerFramework = 'streamCustomThingMarshallingService'
+        }
+        representation {
+            mediaTypes = ['application/vnd.hedtech.custom-framework+xml+streamsize']
+            contentType = 'application/zip'
+            marshallerFramework = 'streamSizeCustomThingMarshallingService'
+        }
     }
 
     resource 'thing-wrappers' config {

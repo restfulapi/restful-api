@@ -86,11 +86,13 @@ abstract class RestSpecification extends Specification {
             restTemplate.setRequestFactory( requestCustomizer.getRequestFactory() )
         }
 
+        Class responseType = requestCustomizer.responseType != null ? requestCustomizer.responseType : String
+
         try {
             def entity = requestCustomizer.createEntity()
             RestSpecUtils.dumpRequestInfo(url,method,entity)
             response = restTemplate.exchange(
-                url, method, entity, String
+                url, method, entity, responseType
             )
 
             response = new RestResponse( responseEntity:response )

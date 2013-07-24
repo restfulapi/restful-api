@@ -13,6 +13,8 @@ import grails.plugins.rest.client.*
 import grails.converters.JSON
 import grails.converters.XML
 
+import java.util.zip.*
+
 import net.hedtech.restfulapi.extractors.configuration.*
 
 class RestfulApiControllerFunctionalSpec extends RestSpecification {
@@ -1654,6 +1656,85 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         'AA' == xml.code[0].text()
         'BB' == xml.code[1].text()
     }
+
+    def "Test marshalling a list with a custom marshaller service that returns byte[]"() {
+        setup:
+        createThing('AA')
+        createThing('BB')
+
+        when:
+        get("$localBase/api/things") {
+            responseType byte[]
+            headers['Content-Type'] = 'application/vnd.hedtech.custom-framework+xml+zip'
+            headers['Accept']       = 'application/vnd.hedtech.custom-framework+xml+zip'
+        }
+        def zipStream = new ZipInputStream(new ByteArrayInputStream(response.responseEntity.getBody()))
+        def entry = zipStream.getNextEntry()
+        byte[] buffer = new byte[1000]
+        int length = zipStream.read(buffer, 0, 1000)
+        String s = new String(buffer, 0, length, 'UTF-8')
+        def xml = XML.parse(s)
+
+        then:
+        null   != responseHeader('Content-Length')
+        'list' == xml.name()
+        2      == xml.children().size()
+        'AA'   == xml.code[0].text()
+        'BB'   == xml.code[1].text()
+    }
+
+    def "Test marshalling a list with a custom marshaller service that returns InputStream"() {
+        setup:
+        createThing('AA')
+        createThing('BB')
+
+        when:
+        get("$localBase/api/things") {
+            responseType byte[]
+            headers['Content-Type'] = 'application/vnd.hedtech.custom-framework+xml+stream'
+            headers['Accept']       = 'application/vnd.hedtech.custom-framework+xml+stream'
+        }
+        def zipStream = new ZipInputStream(new ByteArrayInputStream(response.responseEntity.getBody()))
+        def entry = zipStream.getNextEntry()
+        byte[] buffer = new byte[1000]
+        int length = zipStream.read(buffer, 0, 1000)
+        String s = new String(buffer, 0, length, 'UTF-8')
+        def xml = XML.parse(s)
+
+        then:
+        null   == responseHeader('Content-Length')
+        'list' == xml.name()
+        2      == xml.children().size()
+        'AA'   == xml.code[0].text()
+        'BB'   == xml.code[1].text()
+    }
+
+    def "Test marshalling a list with a custom marshaller service that returns InputStream"() {
+        setup:
+        createThing('AA')
+        createThing('BB')
+
+        when:
+        get("$localBase/api/things") {
+            responseType byte[]
+            headers['Content-Type'] = 'application/vnd.hedtech.custom-framework+xml+streamsize'
+            headers['Accept']       = 'application/vnd.hedtech.custom-framework+xml+streamsize'
+        }
+        def zipStream = new ZipInputStream(new ByteArrayInputStream(response.responseEntity.getBody()))
+        def entry = zipStream.getNextEntry()
+        byte[] buffer = new byte[1000]
+        int length = zipStream.read(buffer, 0, 1000)
+        String s = new String(buffer, 0, length, 'UTF-8')
+        def xml = XML.parse(s)
+
+        then:
+        null   != responseHeader('Content-Length')
+        'list' == xml.name()
+        2      == xml.children().size()
+        'AA'   == xml.code[0].text()
+        'BB'   == xml.code[1].text()
+    }
+
 
     def "Test marshalling an object with a custom marshaller service (non-grails framework)"() {
         setup:

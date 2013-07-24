@@ -675,7 +675,7 @@ class RestfulApiControllerSpec extends Specification {
     }
 
     @Unroll
-    def "Test custom marshaller"() {
+    def "Test custom marshaller that returns string"() {
         setup:
         def marshallerService = Mock(MarshallingService)
         config.restfulApiConfig = {
@@ -722,6 +722,164 @@ class RestfulApiControllerSpec extends Specification {
         1    | 'update'         | 'custom1'
         1    | 'delete'         | ""
     }
+
+    @Unroll
+    def "Test custom marshaller that returns byte[]"() {
+        setup:
+        def marshallerService = Mock(MarshallingService)
+        config.restfulApiConfig = {
+            anyResource {
+                representation {
+                    mediaTypes = ['application/json']
+                    marshallerFramework = 'custom'
+                    jsonExtractor {}
+                }
+            }
+        }
+        controller.init()
+
+        def mock = Mock(ThingService)
+        mock.list(_) >> {[]}
+        mock.count(_) >> {0}
+        mock.show(_) >> {'string'}
+        mock.create(_,_) >> {'string'}
+        mock.update(_,_,_) >> {'string'}
+        mock.delete(_,_,_) >> {}
+        controller.metaClass.getService = {-> mock}
+        controller.metaClass.getMarshallingService = {String name -> marshallerService}
+        mockCacheHeaders()
+
+        params.pluralizedResourceName = 'things'
+        params.id = 1
+        request.addHeader('Accept', 'application/json')
+        request.addHeader('Content-Type', 'application/json')
+        if (id != null) params.id = id
+        int expectedCount = controllerMethod == 'delete' ? 0 : 1
+        boolean expectLength  = controllerMethod != 'delete'
+        byte[] bytes = value.getBytes('UTF-8')
+
+        when:
+        controller."$controllerMethod"()
+
+        then:
+        expectedCount * marshallerService.marshalObject(_,_ as RepresentationConfig) >> {object, config -> return bytes}
+        bytes        == response.getContentAsByteArray()
+        bytes.length == response.getContentLength()
+        expectLength == response.containsHeader('Content-Length')
+
+        where:
+        id   | controllerMethod | value
+        null | 'list'           | 'custom1, custom2'
+        1    | 'show'           | 'custom1'
+        null | 'create'         | 'custom1'
+        1    | 'update'         | 'custom1'
+        1    | 'delete'         | ""
+    }
+
+    @Unroll
+    def "Test custom marshaller that returns InputStream"() {
+        setup:
+        def marshallerService = Mock(MarshallingService)
+        config.restfulApiConfig = {
+            anyResource {
+                representation {
+                    mediaTypes = ['application/json']
+                    marshallerFramework = 'custom'
+                    jsonExtractor {}
+                }
+            }
+        }
+        controller.init()
+
+        def mock = Mock(ThingService)
+        mock.list(_) >> {[]}
+        mock.count(_) >> {0}
+        mock.show(_) >> {'string'}
+        mock.create(_,_) >> {'string'}
+        mock.update(_,_,_) >> {'string'}
+        mock.delete(_,_,_) >> {}
+        controller.metaClass.getService = {-> mock}
+        controller.metaClass.getMarshallingService = {String name -> marshallerService}
+        mockCacheHeaders()
+
+        params.pluralizedResourceName = 'things'
+        params.id = 1
+        request.addHeader('Accept', 'application/json')
+        request.addHeader('Content-Type', 'application/json')
+        if (id != null) params.id = id
+        int expectedCount = controllerMethod == 'delete' ? 0 : 1
+        byte[] bytes = value.getBytes('UTF-8')
+
+        when:
+        controller."$controllerMethod"()
+
+        then:
+        expectedCount * marshallerService.marshalObject(_,_ as RepresentationConfig) >> {object, config -> return new ByteArrayInputStream(bytes)}
+        bytes == response.getContentAsByteArray()
+        false == response.containsHeader('Content-Length')
+
+        where:
+        id   | controllerMethod | value
+        null | 'list'           | 'custom1, custom2'
+        1    | 'show'           | 'custom1'
+        null | 'create'         | 'custom1'
+        1    | 'update'         | 'custom1'
+        1    | 'delete'         | ""
+    }
+
+    @Unroll
+    def "Test custom marshaller that returns StreamWrapper"() {
+        setup:
+        def marshallerService = Mock(MarshallingService)
+        config.restfulApiConfig = {
+            anyResource {
+                representation {
+                    mediaTypes = ['application/json']
+                    marshallerFramework = 'custom'
+                    jsonExtractor {}
+                }
+            }
+        }
+        controller.init()
+
+        def mock = Mock(ThingService)
+        mock.list(_) >> {[]}
+        mock.count(_) >> {0}
+        mock.show(_) >> {'string'}
+        mock.create(_,_) >> {'string'}
+        mock.update(_,_,_) >> {'string'}
+        mock.delete(_,_,_) >> {}
+        controller.metaClass.getService = {-> mock}
+        controller.metaClass.getMarshallingService = {String name -> marshallerService}
+        mockCacheHeaders()
+
+        params.pluralizedResourceName = 'things'
+        params.id = 1
+        request.addHeader('Accept', 'application/json')
+        request.addHeader('Content-Type', 'application/json')
+        if (id != null) params.id = id
+        int expectedCount = controllerMethod == 'delete' ? 0 : 1
+        boolean expectLength  = controllerMethod != 'delete'
+        byte[] bytes = value.getBytes('UTF-8')
+
+        when:
+        controller."$controllerMethod"()
+
+        then:
+        expectedCount * marshallerService.marshalObject(_,_ as RepresentationConfig) >> {object, config -> return new StreamWrapper(stream: new ByteArrayInputStream(bytes), totalSize:bytes.length)}
+        bytes        == response.getContentAsByteArray()
+        expectLength == response.containsHeader('Content-Length')
+
+        where:
+        id   | controllerMethod | value
+        null | 'list'           | 'custom1, custom2'
+        1    | 'show'           | 'custom1'
+        null | 'create'         | 'custom1'
+        1    | 'update'         | 'custom1'
+        1    | 'delete'         | ""
+    }
+
+
 
     @Unroll
     def "Test using json marshaller framework returns application/json Content-Type header"() {

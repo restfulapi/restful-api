@@ -7,9 +7,7 @@ package net.hedtech.restfulapi.marshallers
 import net.hedtech.restfulapi.config.RepresentationConfig
 
 /**
- * Interface for a service implementation that marshalls objects to
- * to string representation.
- * The resulting string will be used directly as the response body.
+ * Interface for mocking custom marshalling services.
  **/
 interface MarshallingService {
 
@@ -19,5 +17,5 @@ interface MarshallingService {
      * @param config the RepresentationConfig representing the
      *        representation the object is to be marshalled to.
      **/
-    String marshalObject(Object o,RepresentationConfig config)
+    Object marshalObject(Object o,RepresentationConfig config)
 }

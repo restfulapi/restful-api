@@ -14,7 +14,7 @@ import static java.util.UUID.randomUUID
 
 import javax.annotation.PostConstruct
 
-import net.hedtech.restfulapi.marshallers.MarshallingService
+import net.hedtech.restfulapi.marshallers.StreamWrapper
 
 import net.hedtech.restfulapi.config.*
 
@@ -460,7 +460,7 @@ class RestfulApiController {
     }
 
 
-    protected String generateResponseContent( RepresentationConfig representation, def data ) {
+    protected def generateResponseContent( RepresentationConfig representation, def data ) {
         def result
         def framework = representation.resolveMarshallerFramework()
 
@@ -476,13 +476,13 @@ class RestfulApiController {
             case ~/json/:
                 log.trace "Going to useJSON with representation $representation"
                 useJSON(representation) {
-                    result = data as JSON
+                    result = (data as JSON) as String
                 }
                 break
             case ~/xml/:
                 log.trace "Going to useXML with representation $representation"
                 useXML(representation) {
-                    result = data as XML
+                    result = (data as XML) as String
                 }
                 break
             default:
@@ -528,7 +528,29 @@ class RestfulApiController {
         }
 
         if (content != null) {
-            render(text: content, contentType: contentType )
+            if (content instanceof byte[]) {
+                response.setContentType(contentType)
+                response.setContentLength(content.length)
+                def out = response.getOutputStream()
+                out.write(content)
+                out.flush()
+                out.close()
+            } else if (content instanceof InputStream) {
+                response.setContentType(contentType)
+                def out = response.getOutputStream()
+                out << content
+                out.flush()
+                out.close()
+            } else if (content instanceof StreamWrapper) {
+                response.setContentType(contentType)
+                response.setContentLength(content.totalSize)
+                def out = response.getOutputStream()
+                out << content.stream
+                out.flush()
+                out.close()
+            } else {
+                render(text: content, contentType: contentType )
+            }
         } else {
             render(text:"", contentType:'text/plain')
         }
@@ -717,7 +739,7 @@ class RestfulApiController {
         svc
     }
 
-    protected MarshallingService getMarshallingService(String name) {
+    protected def getMarshallingService(String name) {
         def svc
         try {
             svc = applicationContext.getBean(name)

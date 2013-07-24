@@ -2298,13 +2298,29 @@ A value of 'json' indicates that the grails json converter framework should be u
 
 A value of 'xml' indicates that the grails xml converter framework should be used to marshal any response.
 
-Any value other than 'none', 'json', or 'xml' is treated as the name of a bean available in the grails application context that implements the net.hedtech.restfulapi.marshallers.MarshallingService interface.  This instance will be passed the object to marshall, and should return a String representing the marshalled object to place in the response body.
+Any value other than 'none', 'json', or 'xml' is treated as the name of a bean available in the grails application context that provides custom marshalling for the object.  It must implements a marshalObject method taking as arguments an Object and an instance of net.hedtech.restfulapi.config.RepresentationConfig.
 
 If a value for the marshallerFramework is not explicitly set, the controller will infer the framework from the mediaType of the representation.  A media type ending in 'json' is assumed to use the 'json' framework; a type ending in 'xml' is assumed to use 'xml'.
 
+###Marshalling Services
+Any service implementing implementing the method
+
+    Object marshalObject(Object o,RepresentationConfig config)
+
+may be set as the value of the marshallerFramework for a representation.
+
+The method may return any one of
+
+* a String
+* a byte array (byte[])
+* an InputStream
+* an instance of net.hedtech.restfulapi.marshallers.StreamWrapper
+
+The value returned will be written to the response's output stream.  For implementations that return byte[] or StreamWrapper, the controller is also able to set the Content-Length header.
+
 For example, suppose you want to marshal a resource 'students' represented by a Student class with groovy's MarkupBuilder, instead of the grails converter.  You can create a service to marshall it:
 
-    class StudentMarshallingService implements MarshallingService {
+    class StudentMarshallingService {
 
         @Override
         String marshalObject(Object o, RepresentationConfig config) {
@@ -2345,6 +2361,8 @@ And then configure the representation to use the service:
     }
 
 This is a simple example.  In general, a marshalling service implementation would be written to handle multiple classes by delegating to another framework (JAXB, etc) to accomplish marshalling.
+
+Implementations that return bbyte[] or an InputStream can be used to support marshalling for resources that have binary representations, such as PDF.
 
 ##Restricting representations to responses or requests only.
 You may have situations in which a resource representation is only intended to be used in a response or request, but not both.  For example, you may have a complex representation that fully renders nested objects that is appropriate to return in list and show operations, but that you don't want to have to consume for create or update operations.  You can (indirectly) control this, by controlling whether the representation has an extractor or marshalling framework defined.
