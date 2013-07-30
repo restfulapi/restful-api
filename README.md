@@ -14,11 +14,11 @@ The restful-api plugin is an implementation designed to conform to the our [API 
 The recommended approach is to install the plugin as a git submodule.
 
 ###1. Add Git submodule
-The plugin repo is located at ssh://git@devgit1/framework/plugins/restful-api.git.  Releases will be tagged as release-x.y.  For those familiar with Banner XE development please follow the rules for Banner XE on installing plugins as submodules.
+The plugin repo is located at ssh://git@devgit1/framework/plugins/restful-api.git and releases are tagged (e.g., '0.5.0'). We recommend using this plugin as an in-place plugin using Git submodules.
 
-In general, add the submodule to your Grails application:
+To add the plugin as a Git submodule under a 'plugins' directory:
 
-        projects/restful_test_app (master)$ git submodule add ssh://git@devgit1/framework/plugins/restful-api.git plugins/restful-api.git
+        test_app (master)$ git submodule add ssh://git@devgit1/framework/plugins/restful-api.git plugins/restful-api.git
         Cloning into 'plugins/restful-api.git'...
         remote: Counting objects: 1585, done.
         remote: Compressing objects: 100% (925/925), done.
@@ -33,7 +33,7 @@ Then add the in-place plugin definition to BuildConfig.groovy:
 Note that adding the plugin this way will the latest commit on the master branch at the time you ran the submodule command.  If you want to use an official release instead, go to the plugin directory and checkout a specific version, e.g.:
 
     cd plugins/restful-api.git
-    git co 0.5.0
+    git checkout 0.5.0
 
 Don't forget to go back to your project root and commit the change this will make to your git submodules file.
 
@@ -543,7 +543,7 @@ Consider another example in which we are supporting versioned json representatio
 
 This configuration exposes 2 resources, 'colleges' and 'students'.  The 'colleges' resource support two versioned representations, while the 'students' resource only has one.  Note that the custom media types are re-used across the resources.
 
-###<a id="whitelisting">Whitelisting vs dynamic exposure of resources
+###<a id="whitelisting"></a>Whitelisting vs dynamic exposure of resources
 The plugin allows you to explicitly whitelist resources to be exposed - an appropriate error response code will be thrown for resources not listed.  You can also dynamically expose resources, in which case any resource name that maps by convention to a service can be serviced.
 
 To dynamically expose services, you specify an anyResource block:
@@ -796,7 +796,7 @@ However, you should be aware that these named configurations will fallback to th
 
 This registers a JSON marshaller for java.util.Date.  If you have an object with a date field, and define a representation for it, when the grails converter tries to marshall the date field, it will fallback to the above object marshaller.  You can take advantage of this behavior to establish default marshalling behavior for common objects like dates.
 
-##<a id="declarative-marshalling">Declarative Marshalling of Domain classes to JSON
+##<a id="declarative-marshalling"></a>Declarative Marshalling of Domain classes to JSON
 The plugin contains a BasicDomainClassMarshaller and a DeclarativeDomainClassMarshaller, designed to simplify marshalling of grails domain objects to a json representation.
 The BasicDomainClassMarshaller will marshall persistent fields (except for some excluded ones, such as 'password'), and contains a number of protected methods which can be overridden in subclasses to customize marshalling behavior.  For example, additional fields can be added to the representation to support affordances.
 
