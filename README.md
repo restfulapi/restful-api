@@ -10,10 +10,10 @@ Production quality, although subsequent changes may not be backward compatible. 
 ##Overview
 The restful-api plugin is an implementation designed to conform to the our [API Strategy](http://m037138.ellucian.com:8082/job/Ellucian%20API%20Strategy%20Documentation/HTML_Report) document.  It is not intended to implement all optional features of the strategy.  It is not intended to provide support for multiple ways to accomplish the same requirements; in general, it implements the recommended approaches specified in the strategy.
 
-##Installation
+##Installation and quickstart
 The recommended approach is to install the plugin as a git submodule.
 
-###Git submodule
+###1. Add Git submodule
 The plugin repo is located at ssh://git@devgit1/framework/plugins/restful-api.git.  Releases will be tagged as release-x.y.  For those familiar with Banner XE development please follow the rules for Banner XE on installing plugins as submodules.
 
 In general, add the submodule to your Grails application:
@@ -26,13 +26,20 @@ In general, add the submodule to your Grails application:
         Receiving objects: 100% (1585/1585), 294.45 KiB | 215 KiB/s, done.
         Resolving deltas: 100% (545/545), done.
 
-Add the in-place plugin definition to BuildConfig.groovy:
+Then add the in-place plugin definition to BuildConfig.groovy:
 
         grails.plugin.location.'restful-api' = "plugins/restful-api.git"
 
+Note that adding the plugin this way will the latest commit on the master branch at the time you ran the submodule command.  If you want to use an official release instead, go to the plugin directory and checkout a specific version, e.g.:
 
-###Configure plugin dependencies
-Irrespective of the method used to install the RESTful plugin, the following changes must be made to include the plugin dependencies.  The plugin depends on both the inflector plugin, and spock plugins.  (The spock dependency is for the RestSpecification testing class, that you may use to [test your API](#api-testing).
+    cd plugins/restful-api.git
+    git co 0.5.0
+
+Don't forget to go back to your project root and commit the change this will make to your git submodules file.
+
+
+###2. Configure plugin dependencies
+Irrespective of the method used to install the RESTful plugin, the following changes must be made to include the plugin dependencies.  The plugin depends on inflector, cache-headers, and spock plugins.  (The spock dependency is for the RestSpecification testing class, that you may use to [test your API](#api-testing).
 
 In the dependencies section of BuildConfig.groovy add:
 
@@ -48,7 +55,130 @@ In the plugins section of BuildConfig.groovy add:
           exclude "spock-grails-support"
         }
 
-###Testing the Plugin
+###3. Configure the UrlMappings to use the controller
+Edit the UrlMappings.groovy to look similar to the following defaults.  Your application map already have url mappings defined; if so, add the mappings for /api and /qapi as appropriate.
+
+    static mappings = {
+
+        // Mappings supported by resource-specific controllers
+        // should be added before the default mapping used for
+        // resources handled by the default RestfulApiController.
+
+        // name otherthingRestfulApi: "api/other-things/$id"
+
+        // Default controller to handle RESTful API requests.
+        // Place URL mappings to specific controllers BEFORE this mapping.
+        //
+        "/api/$pluralizedResourceName/$id"(controller:'restfulApi') {
+            action = [GET: "show", PUT: "update",
+                      DELETE: "delete"]
+            parseRequest = false
+            constraints {
+                // to constrain the id to numeric, uncomment the following:
+                // id matches: /\d+/
+            }
+        }
+        "/api/$pluralizedResourceName"(controller:'restfulApi') {
+            action = [GET: "list", POST: "create"]
+            parseRequest = false
+        }
+
+        // Support for nested resources. You may add additional URL mappings to handle
+        // additional nested resource requirements.
+        //
+        "/api/$parentPluralizedResourceName/$parentId/$pluralizedResourceName/$id"(controller:'restfulApi') {
+            action = [GET: "show", PUT: "update", DELETE: "delete"]
+            parseRequest = false
+            constraints {
+                // to constrain the id to numeric, uncomment the following:
+                // id matches: /\d+/
+            }
+        }
+
+        "/api/$parentPluralizedResourceName/$parentId/$pluralizedResourceName"(controller:'restfulApi') {
+            action = [GET: "list", POST: "create"]
+            parseRequest = false
+        }
+
+        // We can also expose 'query-with-POST' URLs by using a different prefix:
+        //
+        "/qapi/$pluralizedResourceName"(controller:'restfulApi') {
+            action = [GET: "list", POST: "list"]
+            parseRequest = false
+        }
+
+        "/"(view:"/index")
+        "500"(view:'/error')
+    }
+
+###4. Configure default settings for the controller
+    Add the following to the Config.groovy:
+
+    // ******************************************************************************
+    //                              CORS Configuration
+    // ******************************************************************************
+    // Note: If changing custom header names, remember to reflect them here.
+    //
+    cors.url.pattern        = '/api/*'
+    cors.allow.origin.regex ='.*'
+    cors.expose.headers     ='content-type,X-hedtech-totalCount,X-hedtech-pageOffset,X-hedtech-pageMaxSize,X-hedtech-message,X-hedtech-Media-Type'
+
+
+    // ******************************************************************************
+    //             RESTful API Custom Response Header Name Configuration
+    // ******************************************************************************
+    //
+    restfulApi.header.totalCount  = 'X-hedtech-totalCount'
+    restfulApi.header.pageOffset  = 'X-hedtech-pageOffset'
+    restfulApi.header.pageMaxSize = 'X-hedtech-pageMaxSize'
+    restfulApi.header.message     = 'X-hedtech-message'
+    restfulApi.header.mediaType   = 'X-hedtech-Media-Type'
+
+
+    // ******************************************************************************
+    //             RESTful API 'Paging' Query Parameter Name Configuration
+    // ******************************************************************************
+    //
+    restfulApi.page.max    = 'max'
+    restfulApi.page.offset = 'offset'
+    // ******************************************************************************
+    //                       RESTful API Endpoint Configuration
+    // ******************************************************************************
+    //
+    restfulApiConfig = {
+      //handle any pluralized resource name by mapping it to the singularized service name,
+      //e.g. persons is handled by personService.
+      //Dynamic marshallers/extractors are used.
+      //If you want to whitelist only, remove the anyResource block and replace with
+      //definitions for specific resources.
+      anyResource {
+        representation {
+            mediaTypes = ["application/json"]
+            marshallers {
+                jsonDomainMarshaller {
+                    priority = 101
+                }
+                jsonGroovyBeanMarshaller {
+                    priority = 100
+                }
+            }
+            jsonExtractor {}
+        }
+      }
+    }
+
+###5. Configure logging
+Add
+
+    fatal  'RestfulApiController_messageLog'
+
+to the log4j configuration (in Config.groovy).  By default, errors that originate with the services the restful-api controller calls are logged to the RestfulApiController_messageLog.  You can control whether such errors (which may be normal errors resulting from invalid input, etc) show up in the logs by adjusting the settings for RestfulApiController_messageLog.
+
+At this point, the plugin is configured to dynamically attempt to handle any request sent to /api or /qapi, assuming that your services match the [contract](#service-layer-contract) or you have an appropriate [adapter](#service-layer-adapter) configured.
+
+The rest of this document goes into details of how to configure the plugin to support features such as [whitelisting](#configuration) resources, configuring [declarative marshalling](#declarative-marshalling) to support versioned APIs, and how to use the RestSpecification to provide functional testing for your APIs.
+
+##Testing the Plugin
 The plugin contains a test application that uses Spock to test the plugin. To run all tests from the plugin's root directory run:
 ```bash
 grails clean && (cd test/test-restful-api && grails clean && grails test-app)
@@ -191,7 +321,7 @@ A subsequent conditional GET request containing an 'If-None-Match' header (whose
 
 Note that at this time, conditional PUT requests are not supported.  Although a conditional PUT request is not supported, optimistic lock violations will be reported (so the end result is that a client will receive a 409 'conflict' versus a 412 'precondition failure' when using a conditional PUT request).
 
-##Service layer contract
+##<a id="service-layer-contract"></a>Service layer contract
 The plugin delegates to the following methods on a service:
 
 * list
@@ -242,7 +372,7 @@ The controller will first check that if the extracted map contains an 'id' prope
 
 The delete method returns void.
 
-##Adapting an Existing Service
+##<a id="service-layer-adapter"></a>Adapting an Existing Service
 To support services that have a contract different than the service contract described above, a 'RestfulServiceAdapter' may be registered in the Spring application context. If an adapter is registered, it will be used by the RestfulApiController for all interaction with servcies. (Currently, only a single adapter may be registered, so it must be implemented to support all services that are used to support a RESTful API.)
 
 ##<a id="filter-list"></a>Filtering
@@ -413,7 +543,7 @@ Consider another example in which we are supporting versioned json representatio
 
 This configuration exposes 2 resources, 'colleges' and 'students'.  The 'colleges' resource support two versioned representations, while the 'students' resource only has one.  Note that the custom media types are re-used across the resources.
 
-###Whitelisting vs dynamic exposure of resources
+###<a id="whitelisting">Whitelisting vs dynamic exposure of resources
 The plugin allows you to explicitly whitelist resources to be exposed - an appropriate error response code will be thrown for resources not listed.  You can also dynamically expose resources, in which case any resource name that maps by convention to a service can be serviced.
 
 To dynamically expose services, you specify an anyResource block:
@@ -666,7 +796,7 @@ However, you should be aware that these named configurations will fallback to th
 
 This registers a JSON marshaller for java.util.Date.  If you have an object with a date field, and define a representation for it, when the grails converter tries to marshall the date field, it will fallback to the above object marshaller.  You can take advantage of this behavior to establish default marshalling behavior for common objects like dates.
 
-##Declarative Marshalling of Domain classes to JSON
+##<a id="declarative-marshalling">Declarative Marshalling of Domain classes to JSON
 The plugin contains a BasicDomainClassMarshaller and a DeclarativeDomainClassMarshaller, designed to simplify marshalling of grails domain objects to a json representation.
 The BasicDomainClassMarshaller will marshall persistent fields (except for some excluded ones, such as 'password'), and contains a number of protected methods which can be overridden in subclasses to customize marshalling behavior.  For example, additional fields can be added to the representation to support affordances.
 
