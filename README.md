@@ -178,6 +178,27 @@ At this point, the plugin is configured to dynamically attempt to handle any req
 
 The rest of this document goes into details of how to configure the plugin to support features such as [whitelisting](#configuration) resources, configuring [declarative marshalling](#declarative-marshalling) to support versioned APIs, and how to use the RestSpecification to provide functional testing for your APIs.
 
+###6. Remove spock jars from war
+Using the functional-spock plugin pulls spock dependencies into the war, which aren't needed and can cause issues.  One way to work around it is to add a grails.war.resources closure to the BuildConfig.groovy to remove the spock jars:
+
+    //functional-spock as a compile dependencies drags
+    //spock dependencies into the war, which aren't needed
+    //and can cause deployment issues as it pulls
+    //in a version of spock-grails-support that isn't compatible
+    //with the groovy version used in grails >= 2.2
+    grails.war.resources = { stagingDir, args ->
+        List unwanted = [ "spock" ]
+
+        new File(stagingDir, "WEB-INF/lib").eachFile { File file ->
+            String name = file.name.toLowerCase()
+            if (file.name.endsWith(".jar")) {
+                if (unwanted.find { name.startsWith it }) {
+                    delete(file: file)
+                }
+            }
+        }
+    }
+
 ##Testing the Plugin
 The plugin contains a test application that uses Spock to test the plugin. To run all tests from the plugin's root directory run:
 ```bash
