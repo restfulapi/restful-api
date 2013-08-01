@@ -44,8 +44,6 @@ So now we need a simple custom marshalling service for ical4j Calendars.  The ic
 
     package net.hedtech.restfulapi
 
-    import net.hedtech.restfulapi.marshallers.MarshallingService
-    import groovy.xml.MarkupBuilder
     import net.hedtech.restfulapi.config.RepresentationConfig
 
     /**
@@ -53,9 +51,8 @@ So now we need a simple custom marshalling service for ical4j Calendars.  The ic
      * In this case, we are using ical4j, so we only need to invoke
      * toString on the passed objects.
      */
-    class ICalendarMarshallingService implements MarshallingService {
+    class ICalendarMarshallingService {
 
-        @Override
         String marshalObject(Object o, RepresentationConfig config) {
             if (!(o instanceof net.fortuna.ical4j.model.Calendar)) {
                 throw new Exception("Cannot marshal instances of" + o.getClass().getName())
