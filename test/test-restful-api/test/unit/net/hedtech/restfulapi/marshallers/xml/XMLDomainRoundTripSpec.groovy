@@ -1,21 +1,29 @@
+/* ***************************************************************************
+Copyright 2013 Ellucian Company L.P. and its affiliates.
+******************************************************************************/
 package net.hedtech.restfulapi.marshallers.xml
 
-import grails.test.mixin.*
-import grails.test.mixin.web.*
-import spock.lang.*
-import net.hedtech.restfulapi.*
 import grails.converters.XML
+import grails.test.mixin.*
+import grails.test.mixin.domain.DomainClassUnitTestMixin
 import grails.test.mixin.support.*
+import grails.test.mixin.web.*
+
+import net.hedtech.restfulapi.*
+import net.hedtech.restfulapi.extractors.xml.*
+
+import org.codehaus.groovy.grails.commons.GrailsDomainClassProperty
 import org.codehaus.groovy.grails.support.MockApplicationContext
 import org.codehaus.groovy.grails.web.converters.configuration.ConvertersConfigurationInitializer
-import org.springframework.web.context.WebApplicationContext
-import org.springframework.beans.BeanWrapper
-import org.codehaus.groovy.grails.commons.GrailsDomainClassProperty
-import grails.test.mixin.domain.DomainClassUnitTestMixin
-import net.hedtech.restfulapi.extractors.xml.*
 
 import org.junit.Rule
 import org.junit.rules.TestName
+
+import org.springframework.beans.BeanWrapper
+import org.springframework.web.context.WebApplicationContext
+
+import spock.lang.*
+
 
 /**
  * Sanity check that the MapExtractor can parse content generated

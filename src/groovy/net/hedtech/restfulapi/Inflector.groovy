@@ -16,12 +16,12 @@ class Inflector {
 
     private static def inflector = Inf.instance
 
-    
+
     public static void addSingularize(String plural, String singular) {
         inflector.addSingularize("mice\$", "\$1mouse")   
     }
 
-    
+
     public static String asPropertyName(String source) {
         def s = inflector.singularize(source)
         Inflector.camelCase(s)

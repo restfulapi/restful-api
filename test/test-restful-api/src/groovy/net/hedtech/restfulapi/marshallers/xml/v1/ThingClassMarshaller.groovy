@@ -1,15 +1,15 @@
 /* ****************************************************************************
 Copyright 2013 Ellucian Company L.P. and its affiliates.
 ******************************************************************************/
-
 package net.hedtech.restfulapi.marshallers.xml.v1
 
 import grails.converters.XML
-import org.codehaus.groovy.grails.web.converters.marshaller.ObjectMarshaller
-import org.codehaus.groovy.grails.web.converters.marshaller.NameAwareMarshaller
-import org.codehaus.groovy.grails.web.converters.exceptions.ConverterException
 
 import net.hedtech.restfulapi.Thing
+
+import org.codehaus.groovy.grails.web.converters.exceptions.ConverterException
+import org.codehaus.groovy.grails.web.converters.marshaller.ObjectMarshaller
+import org.codehaus.groovy.grails.web.converters.marshaller.NameAwareMarshaller
 
 class ThingClassMarshaller implements ObjectMarshaller<XML>, NameAwareMarshaller {
 

@@ -6,6 +6,8 @@ package net.hedtech.restfulapi
 
 import grails.validation.ValidationException
 
+import java.security.*
+
 import net.hedtech.restfulapi.query.Filter
 import net.hedtech.restfulapi.query.HQLBuilder
 
@@ -14,10 +16,8 @@ import org.codehaus.groovy.grails.web.util.WebUtils
 import org.hibernate.StaleObjectStateException
 
 import org.springframework.dao.OptimisticLockingFailureException
-
 import org.springframework.orm.hibernate3.HibernateOptimisticLockingFailureException as OptimisticLockException
 
-import java.security.*
 
 class ThingService {
 
@@ -28,7 +28,6 @@ class ThingService {
 
         log.trace "ThingService.list invoked with params $params"
 
-        // TODO: Do validation testing in create or update -- this is temporary
         if (params.forceValidationError == 'y') {
             // This will throw a validation exception...
             new Thing( code:'FAIL', description: 'Code exceeds 2 chars' ).save( failOnError:true )

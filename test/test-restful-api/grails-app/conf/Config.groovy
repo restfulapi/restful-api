@@ -63,7 +63,6 @@ environments {
     }
     production {
         grails.logging.jul.usebridge = false
-        // TODO: grails.serverURL = "http://www.changeme.com"
     }
 }
 
@@ -192,7 +191,6 @@ restfulApiConfig = {
     // against the actual resource being queried, but using a different URL prefix (e.g., qapi)
     // so the request is routed to the 'list' method (versus the normal 'create' method).
     resource 'query-filters' config {
-        // TODO: Add support for 'application/x-www-form-urlencoded'
         representation {
             mediaTypes = ["application/json"]
             jsonExtractor {}
@@ -381,6 +379,7 @@ restfulApiConfig = {
     //test overriding conventions for finding the service for a resource
     //we will map thingamabobs to thingService.  There is no thingamabob domain
     //object or service.
+    //
     resource 'thingamabobs' config {
         serviceName = 'thingService'
         representation {
@@ -396,6 +395,7 @@ restfulApiConfig = {
 
     //test overriding supported methods on a resource
     //allow show and update only
+    //
     resource 'limitedthings' config {
         serviceName = 'thingService'
         methods = ['show','create','update']
@@ -414,6 +414,7 @@ restfulApiConfig = {
     //pluralized domain class name, that we can override
     //as needed for affordances.
     //Also test that we can override the resource name for asShortObject
+    //
     resource 'special-things' config {
         serviceName = 'thingService'
         representation {
@@ -430,6 +431,7 @@ restfulApiConfig = {
     }
 
     //Testing using marshalling groups that use a closure to marshall a date object
+    //
     resource 'closure-things' config {
         serviceName = 'thingService'
         representation {

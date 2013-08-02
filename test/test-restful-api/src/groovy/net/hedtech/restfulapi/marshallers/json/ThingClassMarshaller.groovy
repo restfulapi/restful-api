@@ -1,13 +1,12 @@
 /* ****************************************************************************
 Copyright 2013 Ellucian Company L.P. and its affiliates.
 ******************************************************************************/
-
 package net.hedtech.restfulapi.marshallers.json
+
+import grails.converters.JSON
 
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
-
-import grails.converters.JSON
 
 import org.codehaus.groovy.grails.commons.GrailsDomainClassProperty
 
@@ -15,7 +14,7 @@ import org.springframework.beans.BeanWrapper
 
 
 /**
- * A JSON marshaller that supports HAL (http://stateless.co/hal_specification.html).
+ * A JSON marshaller for the Thing domain class.
  **/
 class ThingClassMarshaller extends BasicDomainClassMarshaller {
 

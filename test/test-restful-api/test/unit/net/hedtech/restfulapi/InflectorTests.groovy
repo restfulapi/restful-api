@@ -1,10 +1,10 @@
 /* ****************************************************************************
 Copyright 2013 Ellucian Company L.P. and its affiliates.
 ******************************************************************************/ 
-
 package net.hedtech.restfulapi
 
 import grails.test.mixin.*
+
 import org.junit.*
 
 

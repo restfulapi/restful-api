@@ -26,7 +26,6 @@ grails.project.dependency.resolution = {
 
         mavenLocal()
         mavenCentral()
-        //mavenRepo name: "core-architecture",root: "http://m039200.ellucian.com:8081/artifactory/core-architecture"
     }
 
     dependencies {
@@ -61,6 +60,7 @@ grails.project.dependency.resolution = {
 //and can cause deployment issues as it pulls
 //in a version of spock-grails-support that isn't compatible
 //with the groovy version used in grails >= 2.2
+//
 grails.war.resources = { stagingDir, args ->
     List unwanted = [ "spock" ]
 
@@ -72,4 +72,5 @@ grails.war.resources = { stagingDir, args ->
             }
         }
     }
+
 }

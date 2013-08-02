@@ -4,11 +4,11 @@ Copyright 2013 Ellucian Company L.P. and its affiliates.
 
 import grails.converters.JSON
 
-import org.codehaus.groovy.grails.web.converters.configuration.ConvertersConfigurationHolder as CCH
-import org.codehaus.groovy.grails.web.converters.configuration.DefaultConverterConfiguration as DCC
-
 import net.hedtech.restfulapi.*
 import net.hedtech.restfulapi.marshallers.json.*
+
+import org.codehaus.groovy.grails.web.converters.configuration.ConvertersConfigurationHolder as CCH
+import org.codehaus.groovy.grails.web.converters.configuration.DefaultConverterConfiguration as DCC
 
 class RestfulApiGrailsPlugin {
 
@@ -23,13 +23,13 @@ class RestfulApiGrailsPlugin {
     def author = "Ellucian"
     def authorEmail = ""
     def description = '''\
-        |The resful-api plugin facilitates exposing a RESTful API that is
-        |compliant with our API Strategy document.
-        |Both JSON and XML representations are supported using a
-        |singleton controller and both custom and default marshallers.
+        |The resful-api plugin facilitates exposing a non-trivial,
+        |versioned RESTful API. The plugin provides a DSL that may
+        |be used to declaratively specify how resources should be 
+        |marshalled. Please see the README.md for details.
         |'''.stripMargin()
 
-    def documentation = "README.md" // use with pandoc, Marked, or other generator
+    def documentation = "README.md" // FYI: We use color-marked to generate HTML
 
     def organization = [ name: "Ellucian", url: "http://www.ellucian.com/" ]
 
@@ -64,3 +64,4 @@ class RestfulApiGrailsPlugin {
 
     def onShutdown = { event -> }
 }
+

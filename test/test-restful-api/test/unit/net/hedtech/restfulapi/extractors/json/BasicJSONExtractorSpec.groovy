@@ -1,13 +1,16 @@
-/*****************************************************************************
+/* ***************************************************************************
 Copyright 2013 Ellucian Company L.P. and its affiliates.
 ******************************************************************************/
 package net.hedtech.restfulapi.extractors.json
 
 import grails.test.mixin.*
 import grails.test.mixin.web.*
-import spock.lang.*
 import grails.test.mixin.support.*
+
 import org.codehaus.groovy.grails.web.json.JSONObject
+
+import spock.lang.*
+
 
 @TestMixin([GrailsUnitTestMixin])
 class BasicJSONExtractorSpec extends Specification {

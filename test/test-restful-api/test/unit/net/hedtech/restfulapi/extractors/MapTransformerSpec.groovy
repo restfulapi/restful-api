@@ -1,14 +1,16 @@
-/*****************************************************************************
+/* ***************************************************************************
 Copyright 2013 Ellucian Company L.P. and its affiliates.
 ******************************************************************************/
 
 package net.hedtech.restfulapi.extractors
 
 import grails.test.mixin.*
-import spock.lang.*
 
 import net.hedtech.restfulapi.extractors.configuration.*
 import net.hedtech.restfulapi.extractors.json.*
+
+import spock.lang.*
+
 
 class MapTransformerSpec extends Specification {
 

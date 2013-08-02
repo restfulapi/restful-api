@@ -3,18 +3,23 @@ Copyright 2013 Ellucian Company L.P. and its affiliates.
 ******************************************************************************/
 package net.hedtech.restfulapi
 
-import net.hedtech.restfulapi.marshallers.MarshallingService
 import groovy.xml.MarkupBuilder
-import net.hedtech.restfulapi.config.RepresentationConfig
+
 import java.util.zip.ZipOutputStream
 import java.util.zip.ZipEntry
 
+import net.hedtech.restfulapi.config.RepresentationConfig
+import net.hedtech.restfulapi.marshallers.MarshallingService
+
 /**
- * A demonstration class for a custom marshalling service,
- * using a framework other than the grails converters to marshall
+ * A demonstration class for a custom marshalling service.
+ * Uses a framework other than the grails converters to marshall
  * objects.
  */
 class CompressedCustomThingMarshallingService {
+
+    static transactional = false
+
 
     byte[] marshalObject(Object o, RepresentationConfig config) {
         def writer = new StringWriter()
@@ -27,7 +32,8 @@ class CompressedCustomThingMarshallingService {
                     code(it.code)
                 }
             }
-        } else {
+        }
+        else {
             xml.thing() {
                 code(o.code)
             }

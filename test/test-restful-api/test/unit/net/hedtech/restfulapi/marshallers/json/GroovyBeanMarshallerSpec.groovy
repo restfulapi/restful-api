@@ -1,28 +1,36 @@
-/*****************************************************************************
+/* ***************************************************************************
 Copyright 2013 Ellucian Company L.P. and its affiliates.
 ******************************************************************************/
 package net.hedtech.restfulapi.marshallers.json
 
-import grails.test.mixin.*
-import grails.test.mixin.web.*
-import spock.lang.*
-import net.hedtech.restfulapi.*
 import grails.converters.JSON
-import grails.test.mixin.support.*
-import org.codehaus.groovy.grails.support.MockApplicationContext
-import org.codehaus.groovy.grails.web.converters.configuration.ConvertersConfigurationInitializer
-import org.springframework.web.context.WebApplicationContext
-import org.springframework.beans.BeanWrapper
-import org.codehaus.groovy.grails.commons.GrailsDomainClassProperty
-import org.codehaus.groovy.grails.web.json.JSONObject
+import grails.test.mixin.*
 import grails.test.mixin.domain.DomainClassUnitTestMixin
+import grails.test.mixin.support.*
+import grails.test.mixin.web.*
+
 import java.beans.PropertyDescriptor
 import java.lang.reflect.Field
+
+import net.hedtech.restfulapi.*
+
 import net.hedtech.restfulapi.beans.*
+
 import org.apache.commons.lang.UnhandledException
+
+import org.codehaus.groovy.grails.commons.GrailsDomainClassProperty
+import org.codehaus.groovy.grails.support.MockApplicationContext
+import org.codehaus.groovy.grails.web.converters.configuration.ConvertersConfigurationInitializer
+import org.codehaus.groovy.grails.web.json.JSONObject
+
+import org.springframework.beans.BeanWrapper
+import org.springframework.web.context.WebApplicationContext
 
 import org.junit.Rule
 import org.junit.rules.TestName
+
+import spock.lang.*
+
 
 @TestMixin([GrailsUnitTestMixin, ControllerUnitTestMixin])
 class GroovyBeanMarshallerSpec extends Specification {

@@ -1,7 +1,6 @@
-/*****************************************************************************
+/* ****************************************************************************
 Copyright 2013 Ellucian Company L.P. and its affiliates.
 ******************************************************************************/
-
 package net.hedtech.restfulapi.config
 
 import org.codehaus.groovy.grails.commons.GrailsApplication
@@ -15,6 +14,7 @@ class RestConfig {
     //a default resource block matching any resource
     //not explicitly named
     def resources = [:]
+
     //map of group name to MarshallerGroupConfig instance
     def marshallerGroups = [:]
     ConfigGroup jsonDomain     = new ConfigGroup()

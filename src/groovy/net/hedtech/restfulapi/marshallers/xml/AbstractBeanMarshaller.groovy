@@ -1,25 +1,23 @@
 /* ****************************************************************************
 Copyright 2013 Ellucian Company L.P. and its affiliates.
 ******************************************************************************/
-
 package net.hedtech.restfulapi.marshallers.xml
 
 import grails.converters.XML
+import grails.util.GrailsNameUtils
+
 import groovy.lang.GroovyObject
-
-import org.apache.commons.logging.Log
-import org.apache.commons.logging.LogFactory
-
-import net.hedtech.restfulapi.Inflector
-
-import net.hedtech.restfulapi.marshallers.MissingFieldsException
 
 import java.beans.PropertyDescriptor
 import java.lang.reflect.Field
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier
 
-import grails.util.GrailsNameUtils
+import net.hedtech.restfulapi.Inflector
+import net.hedtech.restfulapi.marshallers.MissingFieldsException
+
+import org.apache.commons.logging.Log
+import org.apache.commons.logging.LogFactory
 
 import org.codehaus.groovy.grails.commons.GrailsApplication
 import org.codehaus.groovy.grails.web.converters.marshaller.NameAwareMarshaller
@@ -28,8 +26,8 @@ import org.codehaus.groovy.grails.web.converters.exceptions.ConverterException
 import org.codehaus.groovy.grails.web.converters.marshaller.ObjectMarshaller
 import org.codehaus.groovy.grails.orm.hibernate.proxy.HibernateProxyHandler
 import org.codehaus.groovy.grails.support.proxy.ProxyHandler
-import org.springframework.beans.BeanUtils
 
+import org.springframework.beans.BeanUtils
 import org.springframework.beans.BeanWrapper
 import org.springframework.beans.BeanWrapperImpl
 

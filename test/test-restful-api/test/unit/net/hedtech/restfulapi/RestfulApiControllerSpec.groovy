@@ -1,25 +1,26 @@
 /* ****************************************************************************
 Copyright 2013 Ellucian Company L.P. and its affiliates.
 ******************************************************************************/
-
 package net.hedtech.restfulapi
 
 import com.grailsrocks.cacheheaders.CacheHeadersService
 
+import grails.converters.JSON
+import grails.converters.XML
 import grails.test.mixin.*
 
-import spock.lang.*
-import org.codehaus.groovy.grails.web.converters.marshaller.ObjectMarshaller
-import org.codehaus.groovy.grails.web.converters.exceptions.ConverterException
 import net.hedtech.restfulapi.config.*
+import net.hedtech.restfulapi.extractors.*
 import net.hedtech.restfulapi.extractors.configuration.*
 import net.hedtech.restfulapi.extractors.json.*
 import net.hedtech.restfulapi.extractors.xml.*
-import net.hedtech.restfulapi.extractors.*
 import net.hedtech.restfulapi.marshallers.*
 
-import grails.converters.JSON
-import grails.converters.XML
+import org.codehaus.groovy.grails.web.converters.exceptions.ConverterException
+import org.codehaus.groovy.grails.web.converters.marshaller.ObjectMarshaller
+
+import spock.lang.*
+
 
 @TestFor(RestfulApiController)
 class RestfulApiControllerSpec extends Specification {

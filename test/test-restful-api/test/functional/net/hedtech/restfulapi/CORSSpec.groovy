@@ -4,10 +4,7 @@ Copyright 2013 Ellucian Company L.P. and its affiliates.
 
 package net.hedtech.restfulapi
 
-import net.hedtech.restfulapi.spock.*
-
 import grails.test.mixin.*
-import spock.lang.*
 import grails.plugins.rest.client.*
 
 import grails.converters.JSON
@@ -16,6 +13,10 @@ import grails.converters.XML
 import org.springframework.http.client.CommonsClientHttpRequestFactory
 
 import net.hedtech.restfulapi.extractors.configuration.*
+import net.hedtech.restfulapi.spock.*
+
+import spock.lang.*
+
 
 class CORSSpec extends RestSpecification {
 

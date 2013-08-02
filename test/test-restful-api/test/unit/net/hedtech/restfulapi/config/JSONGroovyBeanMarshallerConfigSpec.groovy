@@ -5,14 +5,16 @@ Copyright 2013 Ellucian Company L.P. and its affiliates.
 package net.hedtech.restfulapi.config
 
 import grails.test.mixin.*
-import spock.lang.*
+import grails.test.mixin.support.*
 
-import net.hedtech.restfulapi.extractors.configuration.*
-import net.hedtech.restfulapi.extractors.json.*
 import net.hedtech.restfulapi.*
 import net.hedtech.restfulapi.beans.*
-import grails.test.mixin.support.*
+import net.hedtech.restfulapi.extractors.configuration.*
+import net.hedtech.restfulapi.extractors.json.*
 import net.hedtech.restfulapi.marshallers.json.*
+
+import spock.lang.*
+
 
 @TestMixin(GrailsUnitTestMixin)
 class JSONGroovyBeanMarshallerConfigSpec extends Specification {

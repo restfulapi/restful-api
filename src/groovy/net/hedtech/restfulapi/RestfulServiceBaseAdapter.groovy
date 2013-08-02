@@ -6,8 +6,8 @@ package net.hedtech.restfulapi
 
 
 /**
- * An service adapter implementation supporting services that extend 'ServiceBase'
- * (from the 'banner-core' plugin). BannerXE services usually extend ServiceBase.
+ * An service adapter implementation supporting Ellucian's Banner XE services.
+ * These services extend 'ServiceBase' (from the internal 'banner-core' plugin).
  * This adapter is provided as a convenience to support Banner XE, however
  * NO DEPENDENCIES have been introduced within this plugin to either Banner XE
  * or the 'banner-core' plugin.

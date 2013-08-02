@@ -1,7 +1,6 @@
 /* ****************************************************************************
 Copyright 2013 Ellucian Company L.P. and its affiliates.
 ******************************************************************************/
-
 package net.hedtech.restfulapi.marshallers.xml
 
 import org.apache.commons.logging.Log
@@ -15,7 +14,7 @@ import org.springframework.beans.BeanWrapper
 
 
 /**
- * A JSON marshaller that supports HAL (http://stateless.co/hal_specification.html).
+ * A JSON marshaller for the Thing domain class.
  **/
 class ThingClassMarshaller extends BasicDomainClassMarshaller {
 

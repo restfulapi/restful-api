@@ -1,12 +1,13 @@
 /* ****************************************************************************
 Copyright 2013 Ellucian Company L.P. and its affiliates.
 ******************************************************************************/
-
 package net.hedtech.restfulapi.extractors.xml.v1
 
 import groovy.util.slurpersupport.GPathResult
 
 import net.hedtech.restfulapi.extractors.XMLExtractor
+
+
 class ThingExtractor implements XMLExtractor {
 
     Map extract( GPathResult content ) {

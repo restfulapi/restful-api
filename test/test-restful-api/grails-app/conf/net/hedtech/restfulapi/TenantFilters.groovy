@@ -1,4 +1,4 @@
-/*******************************************************************************
+/* ****************************************************************************
 Copyright 2009-2013 Ellucian Company L.P. and its affiliates.
 *******************************************************************************/
 package net.hedtech.restfulapi
@@ -6,10 +6,10 @@ package net.hedtech.restfulapi
 import org.apache.commons.logging.LogFactory
 
 
-
 /**
- * A grails filter used to establish a 'Tenant Context' to illustrate how
- * multi-tenancy may be supported when using the restful-api plugin.
+ * A grails filter used to establish a 'Tenant Context'.
+ * This filter is intended to illustrate how multi-tenancy may be 
+ * supported when using the restful-api plugin.
  **/
 class TenantFilters {
 

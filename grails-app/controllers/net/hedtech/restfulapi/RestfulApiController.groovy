@@ -1,4 +1,4 @@
-/*****************************************************************************
+/* ***************************************************************************
 Copyright 2013 Ellucian Company L.P. and its affiliates.
 ******************************************************************************/
 
@@ -42,8 +42,10 @@ import org.codehaus.groovy.grails.web.servlet.GrailsApplicationAttributes
 import org.apache.commons.logging.LogFactory
 
 /**
- * A default Restful API controller that delegates to a
- * transactional service corresponding to the resource
+ * A Restful API controller.
+ * This controller delegates to a transactional service
+ * corresponding to the resource (via naming convention or
+ * configuration) based on the pluralized resource name
  * identified on the URL. This controller may be subclassed
  * to create stateless resource-specific controllers when
  * necessary.  (If a stateful controller is needed, this
@@ -145,11 +147,8 @@ class RestfulApiController {
             }
         }
 
-        JSON.createNamedConfig('restapi-error:json') {
-        }
-
-        XML.createNamedConfig('restapi-error:xml') {
-        }
+        JSON.createNamedConfig('restapi-error:json') { }
+        XML.createNamedConfig('restapi-error:xml') { }
 
         log.trace 'Done initializing RestfulApiController...'
     }
@@ -344,8 +343,7 @@ class RestfulApiController {
 
 
     /**
-     * Renders a successful response using the supplied map and the msg resource
-     * code.
+     * Renders a successful response using the supplied map and msg resource code.
      * A message property with a value translated from the message resource code
      * provided with a localized and singularized resource name will be automatically
      * added to the map.
@@ -441,6 +439,7 @@ class RestfulApiController {
         return responseHolder
     }
 
+
     protected String selectContentTypeForResponse( RepresentationConfig representation ) {
         def result = representation.contentType
         if (null == result) {
@@ -456,7 +455,7 @@ class RestfulApiController {
                     break
             }
         }
-        return result
+        result
     }
 
 
@@ -491,7 +490,7 @@ class RestfulApiController {
                 result = service.marshalObject(data,representation)
                 break
         }
-        return result
+        result
      }
 
 
@@ -752,8 +751,7 @@ class RestfulApiController {
 
 
     /**
-     * Returns an adapter supporting the service for which this
-     * controller will delegate.
+     * Returns an adapter supporting the service.
      * This implementation will look for the single adapter that has
      * been registered within the Spring container.
      * This adapter will be used when delegating to all services.
@@ -775,6 +773,7 @@ class RestfulApiController {
         adapter
     }
 
+
     protected ExtractorAdapter getExtractorAdapter() {
         extractorAdapter
     }
@@ -787,6 +786,7 @@ class RestfulApiController {
         return restConfig.getRepresentation( pluralizedResourceName, allowedTypes.name )
     }
 
+
     protected void checkMethod( String method ) {
         def resource = getResourceConfig()
         if (!resource) {
@@ -798,6 +798,7 @@ class RestfulApiController {
         }
     }
 
+
     private void updatePagingQueryParams(requestParams) {
         if (pageMax != 'max' || pageOffset != 'offset') {
             if (requestParams."$pageMax")    requestParams.max = requestParams."$pageMax"
@@ -805,9 +806,11 @@ class RestfulApiController {
         }
     }
 
+
     private String localize(String name) {
         message( code: "${name}.label", default: "$name" )
     }
+
 
     private String domainName() {
         Inflector.asPropertyName(params.pluralizedResourceName)
@@ -967,7 +970,8 @@ class RestfulApiController {
             ]
         },
         'ApplicationException': { pluralizededResourceName, e ->
-            // wrap the 'message' invocation within a closure, so it can be passed into an ApplicationException to localize error messages
+            // wrap the 'message' invocation within a closure, so it can be 
+            // passed into an ApplicationException to localize error messages
             def localizer = { mapToLocalize ->
                 this.message( mapToLocalize )
             }
