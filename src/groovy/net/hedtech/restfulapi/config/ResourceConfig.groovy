@@ -11,7 +11,11 @@ class ResourceConfig {
     String name
     String serviceName
     def methods = [ 'list', 'show', 'create', 'update', 'delete' ]
-    def representations = [:]
+    //use a LinkedHashMap because we want to preserve
+    //the order in which representations are added
+    def representations = new LinkedHashMap()
+    //if set, defines the media type to use for */*
+    String anyMediaType
 
     private RestConfig restConfig
 
@@ -39,20 +43,34 @@ class ResourceConfig {
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c.call()
         delegate.mediaTypes.each { mediaType ->
-            if (representations[mediaType] != null) {
+            if (representations.get(mediaType) != null) {
                throw new AmbiguousRepresentationException( resourceName:name, mediaType:mediaType )
             }
             RepresentationConfig config = new RepresentationConfig(
                 mediaType:mediaType, marshallerFramework:delegate.marshallerFramework,
                 contentType:delegate.contentType,
                 marshallers:delegate.marshallers, extractor:delegate.extractor )
-            representations[mediaType] = config
+            representations.put(mediaType, config)
         }
         return this
     }
 
     RepresentationConfig getRepresentation( String mediaType ) {
-        representations[mediaType]
+        if ('*/*' == mediaType) {
+            mediaType = null //clear type, we need to choose one
+            if (null != anyMediaType) {
+                mediaType = anyMediaType
+            } else {
+                //pick the first type
+                if (representations.size() > 0) {
+                    mediaType = representations.entrySet().iterator().next().key
+                }
+            }
+        }
+        if (mediaType != null) {
+            return representations.get(mediaType)
+        }
+        return null
     }
 
     String getResourceName() {
@@ -69,6 +87,9 @@ class ResourceConfig {
                     throw new UnknownMethodException( resourceName:name, methodName: it )
                 }
             }
+        }
+        if (anyMediaType != null && representations.get(anyMediaType) == null) {
+            throw new MissingAnyMediaType(resourceName: name, mediaType:anyMediaType)
         }
     }
 }

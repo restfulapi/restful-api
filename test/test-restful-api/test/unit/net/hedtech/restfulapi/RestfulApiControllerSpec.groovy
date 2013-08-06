@@ -1257,6 +1257,111 @@ class RestfulApiControllerSpec extends Specification {
     }
 
     @Unroll
+    def "Test using */* without explicit anyMediaType mapping returns correct Content-Type"() {
+        setup:
+        config.restfulApiConfig = {
+            resource 'things' config {
+                representation {
+                    mediaTypes = ['application/custom+json','application/json']
+                    marshallerFramework = 'custom'
+                    jsonExtractor {}
+                }
+                representation {
+                    mediaTypes = ['application/custom+v1+json']
+                    marshallerFramework = 'custom'
+                    jsonExtractor {}
+                }
+            }
+        }
+        controller.init()
+
+        def mock = Mock(ThingService)
+        mock.list(_) >> {[]}
+        mock.count(_) >> {0}
+        mock.show(_) >> {new Thing(code:'aa', description:'thing')}
+        mock.create(_,_) >> {new Thing(code:'aa', description:'thing')}
+        mock.update(_,_,_) >> {new Thing(code:'aa', description:'thing')}
+        def marshallerService = Mock(MarshallingService)
+        marshallerService.marshalObject(_,_) >> {return 'string'}
+        mockCacheHeaders()
+        controller.metaClass.getMarshallingService = {String name -> marshallerService}
+        controller.metaClass.getService = {-> mock}
+
+        params.pluralizedResourceName = 'things'
+        params.id = 1
+        request.addHeader('Accept', '*/*')
+        request.addHeader('Content-Type', 'application/json')
+        if (id != null) params.id = id
+
+        when:
+        controller."$controllerMethod"()
+
+        then:
+        'application/json;charset=utf-8' == response.contentType
+        'application/custom+json'        == response.getHeader('X-hedtech-Media-Type')
+
+        where:
+        id   | controllerMethod
+        null | 'list'
+        1    | 'show'
+        null | 'create'
+        1    | 'update'
+    }
+
+    @Unroll
+    def "Test using */* with explicit anyMediaType mapping returns correct Content-Type"() {
+        setup:
+        config.restfulApiConfig = {
+            resource 'things' config {
+                anyMediaType = 'application/custom+v1+json'
+                representation {
+                    mediaTypes = ['application/custom+json']
+                    marshallerFramework = 'custom'
+                    jsonExtractor {}
+                }
+                representation {
+                    mediaTypes = ['application/json','application/custom+v1+json']
+                    marshallerFramework = 'custom'
+                    jsonExtractor {}
+                }
+            }
+        }
+        controller.init()
+
+        def mock = Mock(ThingService)
+        mock.list(_) >> {[]}
+        mock.count(_) >> {0}
+        mock.show(_) >> {new Thing(code:'aa', description:'thing')}
+        mock.create(_,_) >> {new Thing(code:'aa', description:'thing')}
+        mock.update(_,_,_) >> {new Thing(code:'aa', description:'thing')}
+        def marshallerService = Mock(MarshallingService)
+        marshallerService.marshalObject(_,_) >> {return 'string'}
+        mockCacheHeaders()
+        controller.metaClass.getMarshallingService = {String name -> marshallerService}
+        controller.metaClass.getService = {-> mock}
+
+        params.pluralizedResourceName = 'things'
+        params.id = 1
+        request.addHeader('Accept', '*/*')
+        request.addHeader('Content-Type', 'application/json')
+        if (id != null) params.id = id
+
+        when:
+        controller."$controllerMethod"()
+
+        then:
+        'application/json;charset=utf-8' == response.contentType
+        'application/custom+v1+json'     == response.getHeader('X-hedtech-Media-Type')
+
+        where:
+        id   | controllerMethod
+        null | 'list'
+        1    | 'show'
+        null | 'create'
+        1    | 'update'
+    }
+
+    @Unroll
     def "Test non json/xml media types can be used for extraction"() {
         setup:
         def theExtractor = Mock(RequestExtractor)

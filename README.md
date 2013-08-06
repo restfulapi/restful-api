@@ -302,7 +302,9 @@ The plugin uses the Content-Type header to determine the resource representation
 ###Content negotiation on requests
 The plugin performs content negotiation for a request by parsing the Accept Header, taking any q-values into account.  The plugin will then use the best known representation for the accepted type(s).
 
-For exmaple, for a request with an Accept Header of "application/xml;q=0.9,application/vnd.hedtech.v0+xml;q=1.0", the plugin would attempt to return the representation for 'application/vnd.hedtech.v0+xml', if one is configured.
+For exmaple, for a request with an Accept Header of "application/xml;q=0.9,application/vnd.hedtech.v0+xml;q=1.0", the plugin would attempt to return the representation for 'application/vnd.hedtech.v0+xml', if one is configured.  If not, it would attempt to return the representation for 'application/xml'.
+
+The controller also handles '*/*' values in the Accept Header.  See [Media Type Range](#media-type-range) for details.
 
 Note that at present, the selection of representation is done based only on what representations are configured.  If an error occurs when marshalling a response to that representation, the plugin does not fall back to the next best representation as specified by the Accept Header.  This may change in future releases.
 
@@ -646,6 +648,64 @@ You can also assign multiple media types to the same representation.  The most c
     }
 
 Both 'application/vnd.hedtech.v1+json' and 'application/json' identify the same representation.  As new versions are added, the 'application/json' can be moved to them, so that a client that always wants the latest/default representation can obtain it with 'application/json'.
+
+###<a id="media-type-range"></a>Media Type Range
+By default, an Accept-Header value of '\*/\*' is mapped to the first media type in the first representation for a resource.  For example:
+
+    restApiConfig = {
+        resource 'things' config {
+            representation {
+                mediaTypes = ["application/vnd.net.hedteach.v0+json", "application/json"]
+                marshallerFramework = 'json'
+                marshallers {
+                    jsonDomainMarshaller {
+                    }
+                }
+                jsonExtractor {}
+            }
+            representation {
+                mediaTypes = ["application/xml"]
+                marshallers {
+                    xmlDomainMarshaller {
+                    }
+                }
+                xmlExtractor {}
+            }
+        }
+    }
+
+A request for resource 'things' with an Accept Header of '\*/\*' with the above configuration will cause the controller to choose the  media-type of 'application/vnd.net.hedteach.v0+json' as the representation to return, and that is the type that will be returned in the X-hedtech-Media-Type header.
+
+You can explicitly define what media type will be used for a '\*/\*' in the Accept-Header with the anyMediaType attribute on a resource:
+
+    restApiConfig = {
+        resource 'things' config {
+            anyMediaType = 'application/xml'
+            representation {
+                mediaTypes = ["application/vnd.net.hedteach.v0+json", "application/json"]
+                marshallerFramework = 'json'
+                marshallers {
+                    jsonDomainMarshaller {
+                    }
+                }
+                jsonExtractor {}
+            }
+            representation {
+                mediaTypes = ["application/xml"]
+                marshallers {
+                    xmlDomainMarshaller {
+                    }
+                }
+                xmlExtractor {}
+            }
+        }
+    }
+
+With the above configuration, a request for resource 'things' with an Accept Header of '*/*' will return the "application/xml" representation.
+
+Support for '*/*' in the Accept Header is generally of use for APIs having representations in PDF or text/calendar, where you wish to return content to requests from browsers.  The support for '*/*' allows the Accept-Header sent by most browsers to be mapped to supported media type.
+
+Note that if you specify a value for anyMediaType that is not assigned to a representation for that resource, the controller will throw a validation exception during initialization.
 
 ###Overriding Content-Type on responses
 Sucessful responses will have a Content-Type header of 'appliction/json', 'application/xml', or 'text/plain', depending on whether the media type for the representation used ends in 'json', 'xml', or neither.  You can explicitly control the Content-Type header by specifying contentType on the representation:

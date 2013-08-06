@@ -743,4 +743,120 @@ class RestConfigSpec extends Specification {
         then:
         config.validate()
     }
+
+    def "Test */* media type without explicit assignment returns first representation"() {
+        setup:
+        def src =
+        {
+            resource 'things' config {
+                representation {
+                    mediaTypes = ['application/vnd.hedtech.v0+json','application/json']
+                    marshallers {
+                        marshaller {
+                            instance = 'v0'
+                            priority = 5
+                        }
+                    }
+                    extractor = 'v0'
+                }
+                representation {
+                    mediaTypes = ['application/vnd.hedtech.v1+json']
+                    marshallers {
+                        marshaller {
+                            instance = 'v1'
+                            priority = 5
+                        }
+                    }
+                    extractor = 'v1'
+                }
+            }
+        }
+
+        when:
+        def config = RestConfig.parse( grailsApplication, src )
+        RepresentationConfig conf = config.getRepresentation('things', '*/*' )
+
+        then:
+        null                              != conf
+        'application/vnd.hedtech.v0+json' == conf.mediaType
+        'v0'                              == conf.extractor
+    }
+
+    def "Test */* media type with explicit assignment returns correct representation"() {
+        setup:
+        def src =
+        {
+            resource 'things' config {
+                anyMediaType = 'application/json'
+                representation {
+                    mediaTypes = ['application/vnd.hedtech.v0+json']
+                    marshallers {
+                        marshaller {
+                            instance = 'v0'
+                            priority = 5
+                        }
+                    }
+                    extractor = 'v0'
+                }
+                representation {
+                    mediaTypes = ['application/vnd.hedtech.v1+json','application/json']
+                    marshallers {
+                        marshaller {
+                            instance = 'v1'
+                            priority = 5
+                        }
+                    }
+                    extractor = 'v1'
+                }
+            }
+        }
+
+        when:
+        def config = RestConfig.parse( grailsApplication, src )
+        RepresentationConfig conf = config.getRepresentation('things', '*/*' )
+
+        then:
+        null               != conf
+        'application/json' == conf.mediaType
+        'v1'               == conf.extractor
+    }
+
+    def "Test exception when a resource declares a non-existent anyMediaType"() {
+        setup:
+        def src =
+        {
+            resource 'things' config {
+                anyMediaType = 'application/json'
+                representation {
+                    mediaTypes = ['application/vnd.hedtech.v0+json']
+                    marshallers {
+                        marshaller {
+                            instance = 'v0'
+                            priority = 5
+                        }
+                    }
+                    extractor = 'v0'
+                }
+                representation {
+                    mediaTypes = ['application/vnd.hedtech.v1+json']
+                    marshallers {
+                        marshaller {
+                            instance = 'v1'
+                            priority = 5
+                        }
+                    }
+                    extractor = 'v1'
+                }
+            }
+        }
+
+        when:
+        def config = RestConfig.parse( grailsApplication, src )
+        config.validate()
+
+        then:
+        MissingAnyMediaType e = thrown()
+        'things'           == e.resourceName
+        'application/json' == e.mediaType
+    }
 }
