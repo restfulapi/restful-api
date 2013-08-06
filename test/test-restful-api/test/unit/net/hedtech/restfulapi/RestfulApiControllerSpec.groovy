@@ -1203,9 +1203,9 @@ class RestfulApiControllerSpec extends Specification {
 
         where:
         id   | controllerMethod
-        //null | 'list'
-        //1    | 'show'
-        //null | 'create'
+        null | 'list'
+        1    | 'show'
+        null | 'create'
         1    | 'update'
     }
 
@@ -1460,7 +1460,7 @@ class RestfulApiControllerSpec extends Specification {
     }
 
     @Unroll
-    def "Test non default content type is application/text"() {
+    def "Test media type is returned as content-type for non-json/non-xml types"() {
         setup:
         def theExtractor = Mock(RequestExtractor)
         theExtractor.extract(_) >> { ['foo':'bar']}
@@ -1502,7 +1502,7 @@ class RestfulApiControllerSpec extends Specification {
         then:
         status == response.status
         1 * marshallerService.marshalObject(_,_ as RepresentationConfig) >> {object, config -> return "foo"}
-        'application/text;charset=utf-8' == response.getHeaderValue('Content-Type')
+        'application/custom;charset=utf-8' == response.getHeaderValue('Content-Type')
 
         where:
         id   | controllerMethod | status

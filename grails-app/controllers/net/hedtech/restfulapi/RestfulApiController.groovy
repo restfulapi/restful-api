@@ -451,7 +451,7 @@ class RestfulApiController {
                     result = 'application/xml'
                     break
                 default:
-                    result = 'application/text'
+                    result = representation.mediaType
                     break
             }
         }
@@ -970,7 +970,7 @@ class RestfulApiController {
             ]
         },
         'ApplicationException': { pluralizededResourceName, e ->
-            // wrap the 'message' invocation within a closure, so it can be 
+            // wrap the 'message' invocation within a closure, so it can be
             // passed into an ApplicationException to localize error messages
             def localizer = { mapToLocalize ->
                 this.message( mapToLocalize )

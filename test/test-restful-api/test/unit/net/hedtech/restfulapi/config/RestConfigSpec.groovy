@@ -471,6 +471,7 @@ class RestConfigSpec extends Specification {
         {
             anyResource {
                 methods = ['list','show']
+                anyMediaType = 'application/custom'
                 representation {
                     mediaTypes = ['application/json']
                     marshallers {
@@ -485,6 +486,13 @@ class RestConfigSpec extends Specification {
                     }
                     extractor = 'DynamicJsonExtractor'
                 }
+
+                representation {
+                    mediaTypes = ['application/custom']
+                    marshallers {
+                    }
+                    extractor = 'custom'
+                }
             }
         }
 
@@ -493,12 +501,14 @@ class RestConfigSpec extends Specification {
         config.validate()
         def resource = config.getResource("")
         def rep = resource.getRepresentation('application/json')
+        def wildcardRep = resource.getRepresentation('*/*')
 
         then:
         ['list','show']        == resource.getMethods()
         ['a','b']              == rep.marshallers*.instance
         [5,6]                  == rep.marshallers*.priority
         'DynamicJsonExtractor' == rep.extractor
+        'custom'               == wildcardRep.extractor
     }
 
     def "Test getting a resource with a default resource config"() {
