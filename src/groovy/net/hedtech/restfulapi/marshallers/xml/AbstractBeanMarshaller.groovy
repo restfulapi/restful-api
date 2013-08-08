@@ -25,11 +25,13 @@ import org.codehaus.groovy.grails.support.proxy.EntityProxyHandler
 import org.codehaus.groovy.grails.web.converters.exceptions.ConverterException
 import org.codehaus.groovy.grails.web.converters.marshaller.ObjectMarshaller
 import org.codehaus.groovy.grails.orm.hibernate.proxy.HibernateProxyHandler
+import org.codehaus.groovy.grails.support.proxy.DefaultProxyHandler
 import org.codehaus.groovy.grails.support.proxy.ProxyHandler
 
 import org.springframework.beans.BeanUtils
 import org.springframework.beans.BeanWrapper
 import org.springframework.beans.BeanWrapperImpl
+import org.springframework.beans.factory.NoSuchBeanDefinitionException
 
 /**
  * A groovy bean marshaller.
@@ -44,6 +46,9 @@ class AbstractBeanMarshaller implements ObjectMarshaller<XML>, NameAwareMarshall
         LogFactory.getLog(AbstractBeanMarshaller.class)
 
     GrailsApplication app
+    //allow proxy handler to be explicitly set
+    //this field should never be used directly,
+    //use getProxyHandler() instead
     ProxyHandler proxyHandler
 
     protected static final String MAP_ATTRIBUTE = "map"
@@ -51,7 +56,6 @@ class AbstractBeanMarshaller implements ObjectMarshaller<XML>, NameAwareMarshall
     protected static final String NULL_ATTRIBUTE = "null"
 
     AbstractBeanMarshaller() {
-        this.proxyHandler = new HibernateProxyHandler()
     }
 
 
@@ -59,7 +63,7 @@ class AbstractBeanMarshaller implements ObjectMarshaller<XML>, NameAwareMarshall
         Class<?> clazz = value.getClass()
         log.trace "$this marshalObject() called for $clazz"
 
-        value = proxyHandler.unwrapIfProxy(value)
+        value = getProxyHandler().unwrapIfProxy(value)
         BeanWrapper beanWrapper = new BeanWrapperImpl(value)
 
         try {
@@ -128,8 +132,8 @@ class AbstractBeanMarshaller implements ObjectMarshaller<XML>, NameAwareMarshall
 
     @Override
     String getElementName(Object o) {
-        if (proxyHandler.isProxy(o) && (proxyHandler instanceof EntityProxyHandler)) {
-            EntityProxyHandler entityProxyHandler = (EntityProxyHandler) proxyHandler;
+        if (getProxyHandler().isProxy(o) && (getProxyHandler() instanceof EntityProxyHandler)) {
+            EntityProxyHandler entityProxyHandler = (EntityProxyHandler) getProxyHandler();
             final Class<?> cls = entityProxyHandler.getProxiedClass(o);
             return GrailsNameUtils.getPropertyName(cls);
         }
@@ -323,5 +327,22 @@ class AbstractBeanMarshaller implements ObjectMarshaller<XML>, NameAwareMarshall
 
     private String hyphenate(String str) {
         Inflector.hyphenate(str)
+    }
+
+    protected ProxyHandler getProxyHandler() {
+        //this should be thread-safe.  It proxyHandler is not
+        //set, then two concurrent threads could try to set it together.
+        //the worst case, one thread uses a (temporary) DefaultProxyHander,
+        //which is then discarded.
+        if (proxyHandler == null) {
+            def tmp
+            try {
+                tmp = app.getMainContext().getBean('proxyHandler')
+            } catch (NoSuchBeanDefinitionException e) {
+                tmp = new DefaultProxyHandler()
+            }
+            proxyHandler = tmp
+        }
+        return proxyHandler
     }
 }

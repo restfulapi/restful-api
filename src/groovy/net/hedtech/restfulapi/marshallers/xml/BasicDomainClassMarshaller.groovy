@@ -19,7 +19,7 @@ import org.codehaus.groovy.grails.commons.GrailsDomainClass
 import org.codehaus.groovy.grails.commons.GrailsDomainClassProperty
 import org.codehaus.groovy.grails.support.proxy.EntityProxyHandler
 import org.codehaus.groovy.grails.web.util.WebUtils
-import org.codehaus.groovy.grails.orm.hibernate.proxy.HibernateProxyHandler
+import org.codehaus.groovy.grails.support.proxy.DefaultProxyHandler
 import org.codehaus.groovy.grails.support.proxy.ProxyHandler
 import org.codehaus.groovy.grails.web.converters.marshaller.xml.*
 import org.codehaus.groovy.grails.web.xml.XMLStreamWriter
@@ -29,6 +29,7 @@ import org.codehaus.groovy.grails.web.converters.marshaller.ObjectMarshaller
 
 import org.springframework.beans.BeanWrapper
 import org.springframework.beans.BeanWrapperImpl
+import org.springframework.beans.factory.NoSuchBeanDefinitionException
 
 
 /**
@@ -44,6 +45,9 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<XML>, NameAwareMars
         LogFactory.getLog(BasicDomainClassMarshaller.class)
 
     GrailsApplication app
+    //allow proxy handler to be explicitly set
+    //this field should never be used directly,
+    //use getProxyHandler() instead
     ProxyHandler proxyHandler;
 
 
@@ -58,7 +62,6 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<XML>, NameAwareMars
 
 
     BasicDomainClassMarshaller() {
-        this.proxyHandler = new HibernateProxyHandler()
     }
 
 
@@ -69,7 +72,7 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<XML>, NameAwareMars
 
         Class<?> clazz = value.getClass()
         log.trace "$this marshalObject() called for $clazz"
-        value = proxyHandler.unwrapIfProxy(value)
+        value = getProxyHandler().unwrapIfProxy(value)
         GrailsDomainClass domainClass = app.getDomainClass(clazz.getName())
         BeanWrapper beanWrapper = new BeanWrapperImpl(value)
         GrailsDomainClassProperty[] persistentProperties = domainClass.getPersistentProperties()
@@ -130,8 +133,8 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<XML>, NameAwareMars
 
     @Override
     String getElementName(Object o) {
-        if (proxyHandler.isProxy(o) && (proxyHandler instanceof EntityProxyHandler)) {
-            EntityProxyHandler entityProxyHandler = (EntityProxyHandler) proxyHandler;
+        if (getProxyHandler().isProxy(o) && (getProxyHandler() instanceof EntityProxyHandler)) {
+            EntityProxyHandler entityProxyHandler = (EntityProxyHandler) getProxyHandler();
             final Class<?> cls = entityProxyHandler.getProxiedClass(o);
             return GrailsNameUtils.getPropertyName(cls);
         }
@@ -300,8 +303,8 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<XML>, NameAwareMars
 
     protected Object extractIdForReference( Object refObj, GrailsDomainClass refDomainClass ) {
         Object idValue;
-        if (proxyHandler instanceof EntityProxyHandler) {
-            idValue = ((EntityProxyHandler) proxyHandler).getProxyIdentifier(refObj);
+        if (getProxyHandler() instanceof EntityProxyHandler) {
+            idValue = ((EntityProxyHandler) getProxyHandler()).getProxyIdentifier(refObj);
             if (idValue == null) {
                 idValue = extractValue(refObj, refDomainClass.getIdentifier());
             }
@@ -354,7 +357,7 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<XML>, NameAwareMars
         startNode(beanWrapper, property, xml)
         Object referenceObject = beanWrapper.getPropertyValue(property.getName())
         if (referenceObject != null) {
-            referenceObject = proxyHandler.unwrapIfProxy(referenceObject);
+            referenceObject = getProxyHandler().unwrapIfProxy(referenceObject);
             if (referenceObject instanceof SortedMap) {
                 referenceObject = new TreeMap((SortedMap) referenceObject);
             } else if (referenceObject instanceof SortedSet) {
@@ -383,7 +386,7 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<XML>, NameAwareMars
             //hand off to marshaller chain
             log.trace( "$this marshalObject() handling field '${property.getName()}' for $clazz as a fully rendered object")
             startNode(beanWrapper, property, xml)
-            xml.convertAnother(proxyHandler.unwrapIfProxy(referenceObject))
+            xml.convertAnother(getProxyHandler().unwrapIfProxy(referenceObject))
             xml.end()
         } else if (property.isOneToOne() || property.isManyToOne()) {
             log.trace( "$this marshalObject() handling field '${property.getName()}' for $clazz as a short object")
@@ -447,16 +450,21 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<XML>, NameAwareMars
     }
 
 
-    protected String getBaseUrl(String val) {
-        if (val) {
-            if (val.startsWith("http://") || val.startsWith("https://")
-                    || val.startsWith("ftp://") || val.startsWith("file://")) {
-                return val
-            } else {
-                return ConfigurationHolder.config.grails.contentURL + "/" + val
+    protected ProxyHandler getProxyHandler() {
+        //this should be thread-safe.  It proxyHandler is not
+        //set, then two concurrent threads could try to set it together.
+        //the worst case, one thread uses a (temporary) DefaultProxyHander,
+        //which is then discarded.
+        if (proxyHandler == null) {
+            def tmp
+            try {
+                tmp = app.getMainContext().getBean('proxyHandler')
+            } catch (NoSuchBeanDefinitionException e) {
+                tmp = new DefaultProxyHandler()
             }
+            proxyHandler = tmp
         }
-        null
+        return proxyHandler
     }
 
     private String pluralize(String str) {
@@ -467,5 +475,4 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<XML>, NameAwareMars
     private String hyphenate(String str) {
         Inflector.hyphenate(str)
     }
-
 }

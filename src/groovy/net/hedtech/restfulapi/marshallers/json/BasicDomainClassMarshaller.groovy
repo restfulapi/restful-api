@@ -19,7 +19,7 @@ import org.codehaus.groovy.grails.commons.GrailsDomainClass
 import org.codehaus.groovy.grails.commons.GrailsDomainClassProperty
 import org.codehaus.groovy.grails.support.proxy.EntityProxyHandler;
 import org.codehaus.groovy.grails.web.util.WebUtils
-import org.codehaus.groovy.grails.orm.hibernate.proxy.HibernateProxyHandler
+import org.codehaus.groovy.grails.support.proxy.DefaultProxyHandler
 import org.codehaus.groovy.grails.support.proxy.ProxyHandler
 import org.codehaus.groovy.grails.web.converters.marshaller.json.*
 import org.codehaus.groovy.grails.web.json.JSONWriter
@@ -29,6 +29,7 @@ import org.codehaus.groovy.grails.web.converters.marshaller.ObjectMarshaller
 
 import org.springframework.beans.BeanWrapper
 import org.springframework.beans.BeanWrapperImpl
+import org.springframework.beans.factory.NoSuchBeanDefinitionException
 
 
 /**
@@ -44,6 +45,9 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<JSON> {
         LogFactory.getLog(BasicDomainClassMarshaller.class)
 
     GrailsApplication app
+    //allow proxy handler to be explicitly set
+    //this field should never be used directly,
+    //use getProxyHandler() instead
     ProxyHandler proxyHandler;
 
 
@@ -55,7 +59,6 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<JSON> {
 
 
     BasicDomainClassMarshaller() {
-        this.proxyHandler = new HibernateProxyHandler()
     }
 
 
@@ -71,7 +74,7 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<JSON> {
         Class<?> clazz = value.getClass()
         log.trace "$this marshalObject() called for $clazz"
         JSONWriter writer = json.getWriter()
-        value = proxyHandler.unwrapIfProxy(value)
+        value = getProxyHandler().unwrapIfProxy(value)
         GrailsDomainClass domainClass = app.getDomainClass(clazz.getName())
         BeanWrapper beanWrapper = new BeanWrapperImpl(value)
         GrailsDomainClassProperty[] persistentProperties = domainClass.getPersistentProperties()
@@ -288,8 +291,8 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<JSON> {
 
     protected Object extractIdForReference( Object refObj, GrailsDomainClass refDomainClass ) {
         Object idValue;
-        if (proxyHandler instanceof EntityProxyHandler) {
-            idValue = ((EntityProxyHandler) proxyHandler).getProxyIdentifier(refObj);
+        if (getProxyHandler() instanceof EntityProxyHandler) {
+            idValue = ((EntityProxyHandler) getProxyHandler()).getProxyIdentifier(refObj);
             if (idValue == null) {
                 idValue = extractValue(refObj, refDomainClass.getIdentifier());
             }
@@ -344,7 +347,7 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<JSON> {
         if (referenceObject == null) {
             json.getWriter().value(null)
         } else {
-            referenceObject = proxyHandler.unwrapIfProxy(referenceObject);
+            referenceObject = getProxyHandler().unwrapIfProxy(referenceObject);
             if (referenceObject instanceof SortedMap) {
                 referenceObject = new TreeMap((SortedMap) referenceObject);
             } else if (referenceObject instanceof SortedSet) {
@@ -372,7 +375,7 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<JSON> {
             //hand off to marshaller chain
             log.trace( "$this marshalObject() handling field '${property.getName()}' for $clazz as a fully rendered object")
             writeFieldName(beanWrapper, property, json)
-            json.convertAnother(proxyHandler.unwrapIfProxy(referenceObject))
+            json.convertAnother(getProxyHandler().unwrapIfProxy(referenceObject))
         } else if (property.isOneToOne() || property.isManyToOne()) {
             log.trace( "$this marshalObject() handling field '${property.getName()}' for $clazz as a short object")
             writeFieldName(beanWrapper, property, json)
@@ -452,6 +455,23 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<JSON> {
         null
     }
 
+    protected ProxyHandler getProxyHandler() {
+        //this should be thread-safe.  It proxyHandler is not
+        //set, then two concurrent threads could try to set it together.
+        //the worst case, one thread uses a (temporary) DefaultProxyHander,
+        //which is then discarded.
+        if (proxyHandler == null) {
+            def tmp
+            try {
+                tmp = app.getMainContext().getBean('proxyHandler')
+            } catch (NoSuchBeanDefinitionException e) {
+                tmp = new DefaultProxyHandler()
+            }
+            proxyHandler = tmp
+        }
+        return proxyHandler
+    }
+
     private String pluralize(String str) {
         Inflector.pluralize(str)
     }
@@ -460,5 +480,4 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<JSON> {
     private String hyphenate(String str) {
         Inflector.hyphenate(str)
     }
-
 }
