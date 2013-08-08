@@ -16,3 +16,4 @@ out/
 *.sha1
 plugin.xml
 *en_PS.properties
+test/test-restful-api/web-app/css/**-rtl.css
