@@ -3,6 +3,8 @@ Copyright 2013 Ellucian Company L.P. and its affiliates.
 ******************************************************************************/
 package net.hedtech.restfulapi.config
 
+import java.text.SimpleDateFormat
+
 import net.hedtech.restfulapi.extractors.xml.*
 
 class XMLExtractorDelegate {
@@ -14,6 +16,7 @@ class XMLExtractorDelegate {
         config.dottedShortObjectPaths.remove(name)
         config.dottedFlattenedPaths.remove(name)
         config.dottedValuePaths.remove(name)
+        config.dottedDatePaths.remove(name)
         new PropertyOptions(name)
     }
 
@@ -29,6 +32,18 @@ class XMLExtractorDelegate {
 
     XMLExtractorDelegate shortObject(Closure c) {
         setShortObjectClosure( c )
+        this
+    }
+
+    XMLExtractorDelegate setDateFormats(Collection formats) {
+        formats.each {
+            try {
+                new SimpleDateFormat(it)
+            } catch (IllegalArgumentException) {
+                throw new RuntimeException("Invalid date format $it")
+            }
+        }
+        config.dateFormats = formats
         this
     }
 
@@ -53,6 +68,15 @@ class XMLExtractorDelegate {
                 config.dottedShortObjectPaths.add propertyName
             } else {
                 config.dottedShortObjectPaths.remove propertyName
+            }
+            this
+        }
+
+        PropertyOptions date(boolean b) {
+            if (b) {
+                config.dottedDatePaths.add propertyName
+            } else {
+                config.dottedDatePats.remove propertyName
             }
             this
         }

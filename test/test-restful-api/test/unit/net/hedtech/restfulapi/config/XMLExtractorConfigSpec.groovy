@@ -129,7 +129,9 @@ class XMLExtractorConfigSpec extends Specification {
         setup:
         def src = {
             property 'person.name' name 'lastName' shortObject true flatObject true defaultValue 'Smith'
+            property 'person.birthday' date true
             property 'person.name'
+            property 'person.birthday'
         }
 
         when:
@@ -140,6 +142,7 @@ class XMLExtractorConfigSpec extends Specification {
         [:] == config.dottedValuePaths
         []  == config.dottedShortObjectPaths
         []  == config.dottedFlattenedPaths
+        []  == config.dottedDatePaths
     }
 
     def "Test merging configurations"() {
@@ -151,14 +154,18 @@ class XMLExtractorConfigSpec extends Specification {
             dottedFlattenedPaths:['flat1'],
             dottedValuePaths:['one':'Smith','two':'shoe'],
             dottedShortObjectPaths:['short1'],
-            shortObjectClosure:c1
+            shortObjectClosure:c1,
+            dottedDatePaths:['date1'],
+            dateFormats:['yyyy.MM.dd']
         )
         def two = new XMLExtractorConfig(
             dottedRenamedPaths:['two':'newTwo','three':'newThree'],
             dottedFlattenedPaths:['flat2'],
             dottedValuePaths:['two':'John','three':'Johnson'],
             dottedShortObjectPaths:['short2'],
-            shortObjectClosure:c2
+            shortObjectClosure:c2,
+            dottedDatePaths:['date2'],
+            dateFormats:['yyyy/MM/dd']
         )
 
         when:
@@ -170,6 +177,8 @@ class XMLExtractorConfigSpec extends Specification {
         ['one':'Smith','two':'John','three':'Johnson']     == config.dottedValuePaths
         ['short1','short2']                                == config.dottedShortObjectPaths
         c2                                                 == config.shortObjectClosure
+        ['date1','date2']                                  == config.dottedDatePaths
+        ['yyyy.MM.dd','yyyy/MM/dd']                        == config.dateFormats
     }
 
     def "Test merging configurations does not alter either object"() {
@@ -181,31 +190,39 @@ class XMLExtractorConfigSpec extends Specification {
             dottedFlattenedPaths:['flat1'],
             dottedValuePaths:['one':'Smith','two':'shoe'],
             dottedShortObjectPaths:['short1'],
-            shortObjectClosure:c1
+            shortObjectClosure:c1,
+            dottedDatePaths:['date1'],
+            dateFormats:['yyyy.MM.dd']
         )
         def two = new XMLExtractorConfig(
             dottedRenamedPaths:['two':'newTwo','three':'newThree'],
             dottedFlattenedPaths:['flat2'],
             dottedValuePaths:['two':'John','three':'Johnson'],
             dottedShortObjectPaths:['short2'],
-            shortObjectClosure:c2
+            shortObjectClosure:c2,
+            dottedDatePaths:['date2'],
+            dateFormats:['yyyy/MM/dd']
         )
 
         when:
         def config = one.merge(two)
 
         then:
-        ['one':'newOne','two':'myTwo'] == one.dottedRenamedPaths
-        ['flat1']                      == one.dottedFlattenedPaths
-        ['one':'Smith','two':'shoe']   == one.dottedValuePaths
-        ['short1']                     == one.dottedShortObjectPaths
-        c1                             == one.shortObjectClosure
+        ['one':'newOne','two':'myTwo']      == one.dottedRenamedPaths
+        ['flat1']                           == one.dottedFlattenedPaths
+        ['one':'Smith','two':'shoe']        == one.dottedValuePaths
+        ['short1']                          == one.dottedShortObjectPaths
+        c1                                  == one.shortObjectClosure
+        ['date1']                           == one.dottedDatePaths
+        ['yyyy.MM.dd']                      == one.dateFormats
 
         ['two':'newTwo','three':'newThree'] == two.dottedRenamedPaths
         ['flat2']                           == two.dottedFlattenedPaths
         ['two':'John','three':'Johnson']    == two.dottedValuePaths
         ['short2']                          == two.dottedShortObjectPaths
         c2                                  == two.shortObjectClosure
+        ['date2']                           == two.dottedDatePaths
+        ['yyyy/MM/dd']                      == two.dateFormats
     }
 
     def "Test merging with short object closure set only on the left"() {

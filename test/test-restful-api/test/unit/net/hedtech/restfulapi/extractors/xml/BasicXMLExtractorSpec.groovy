@@ -9,6 +9,11 @@ import spock.lang.*
 import grails.test.mixin.support.*
 import grails.converters.XML
 
+import java.text.SimpleDateFormat
+
+import net.hedtech.restfulapi.extractors.DateParseException
+
+
 @TestMixin([GrailsUnitTestMixin])
 class BasicXMLExtractorSpec extends Specification {
 
@@ -146,5 +151,64 @@ class BasicXMLExtractorSpec extends Specification {
 
         then:
         [customers:['smith':['id':'1'],'johnson':['id':'2']]] == map
+    }
+
+    def "Test date parsing"() {
+        setup:
+        BasicXMLExtractor.metaClass.getDatePaths << {
+            [['customers','date1'],['customers','date2']]
+        }
+        BasicXMLExtractor.metaClass.getDateFormats << {
+            ["yyyy-MM-dd'T'HH:mm:ssZ", "dd.MM.yyyy HH:mm:ss"]
+        }
+        BasicXMLExtractor extractor = new BasicXMLExtractor()
+        def base = (1000*(new Date().getTime()/1000).toLong()).toLong()
+        Date d1 = new Date( base )
+        Date d2 = new Date( base + 55000 )
+        def text = """<?xml version="1.0" encoding="UTF-8"?>
+            <object>
+                <customers array="true">
+                    <object>
+                        <date1>${formatDate(d1,"yyyy-MM-dd'T'HH:mm:ssZ")}</date1>
+                        <date2>${formatDate(d2,"dd.MM.yyyy HH:mm:ss")}</date2>
+                    </object>
+                    <object>
+                        <date1>${formatDate(d1,"yyyy-MM-dd'T'HH:mm:ssZ")}</date1>
+                        <date2>${formatDate(d2,"dd.MM.yyyy HH:mm:ss")}</date2>
+                    </object>
+                </customers>
+            </object>
+        """
+        def xml = XML.parse text
+
+        when:
+        def map = extractor.extract(xml)
+
+        then:
+        d1 == map['customers'][0]['date1']
+        d2 == map['customers'][0]['date2']
+        d1 == map['customers'][1]['date1']
+        d2 == map['customers'][1]['date2']
+    }
+
+    def "Test invalid date parsing"() {
+        setup:
+        BasicXMLExtractor.metaClass.getDatePaths << {
+            [['date']]
+        }
+        BasicXMLExtractor extractor = new BasicXMLExtractor()
+        def xml = XML.parse "<object><date>not a date</date></object>"
+
+        when:
+        extractor.extract(xml)
+
+        then:
+        DateParseException e = thrown()
+        'not a date'         == e.params[0]
+        400                  == e.getHttpStatusCode()
+    }
+
+    private String formatDate(Date d, String format) {
+        new SimpleDateFormat(format).format(d)
     }
 }

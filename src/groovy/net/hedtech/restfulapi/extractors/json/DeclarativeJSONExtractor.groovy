@@ -13,7 +13,9 @@ class DeclarativeJSONExtractor extends BasicJSONExtractor {
     Map<String,Object> dottedValuePaths = [:]
     List<String> dottedShortObjectPaths = []
     List<String> dottedFlattenedPaths = []
+    List<String> dottedDatePaths = []
     Closure shortObjectClosure
+    List<String> dateFormats = []
 
 
     /**
@@ -71,6 +73,32 @@ class DeclarativeJSONExtractor extends BasicJSONExtractor {
         }
         result
      }
+
+     /**
+      * Returns a List of String denoting paths whose
+      * values should be parsed as dates.
+      * The conversion is not lenient - if the value cannot
+      * be parsed as a date, an exception is thrown.
+      * Parses according to {@link #getDateFormats() getDateFormats},
+      * or default SimpleDateFormat if no formats are specified.
+      **/
+    @Override
+    protected List<List<String>> getDatePaths() {
+        def result = []
+        dottedDatePaths.each { String path ->
+            result.add(parse(path))
+        }
+        result
+    }
+
+    /**
+     * Returns a list of date formats to parse
+     * date values.
+     **/
+    @Override
+    protected List<String> getDateFormats() {
+        dateFormats.clone()
+    }
 
     /**
      * Returns a closure that can convert a 'short object'

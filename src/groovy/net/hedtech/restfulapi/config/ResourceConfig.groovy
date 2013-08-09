@@ -91,5 +91,8 @@ class ResourceConfig {
         if (anyMediaType != null && representations.get(anyMediaType) == null) {
             throw new MissingAnyMediaType(resourceName: name, mediaType:anyMediaType)
         }
+        representations.entrySet.each {
+            it.value.validate()
+        }
     }
 }

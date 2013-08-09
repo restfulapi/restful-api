@@ -9,6 +9,8 @@ import grails.test.mixin.web.*
 import spock.lang.*
 import grails.test.mixin.support.*
 
+import java.text.SimpleDateFormat
+
 @TestMixin([GrailsUnitTestMixin])
 class DeclarativeXMLExtractorSpec extends Specification {
 
@@ -152,5 +154,44 @@ class DeclarativeXMLExtractorSpec extends Specification {
 
         then:
         [customers:['smith':['id':'1'],'johnson':['id':'2']]] == map
+    }
+
+    def "Test date parsing"() {
+        setup:
+        DeclarativeXMLExtractor extractor = new DeclarativeXMLExtractor(
+            dottedDatePaths:['customers.date1','customers.date2'],
+            dateFormats:["yyyy-MM-dd'T'HH:mm:ssZ","dd.MM.yyyy HH:mm:ss"]
+        )
+        def base = (1000*(new Date().getTime()/1000).toLong()).toLong()
+        Date d1 = new Date( base )
+        Date d2 = new Date( base + 55000 )
+        def text = """
+            <object>
+                <customers array="true">
+                    <customer>
+                        <date1>${formatDate(d1,"yyyy-MM-dd'T'HH:mm:ssZ")}</date1>
+                        <date2>${formatDate(d2,"dd.MM.yyyy HH:mm:ss")}</date2>
+                    </customer>
+                    <customer>
+                        <date1>${formatDate(d1,"yyyy-MM-dd'T'HH:mm:ssZ")}</date1>
+                        <date2>${formatDate(d2,"dd.MM.yyyy HH:mm:ss")}</date2>
+                    </customer>
+                </customers>
+            </object>
+        """
+        def xml = XML.parse text
+
+        when:
+        def map = extractor.extract(xml)
+
+        then:
+        d1 == map['customers'][0]['date1']
+        d2 == map['customers'][0]['date2']
+        d1 == map['customers'][1]['date1']
+        d2 == map['customers'][1]['date2']
+    }
+
+    private String formatDate(Date d, String format) {
+        new SimpleDateFormat(format).format(d)
     }
 }

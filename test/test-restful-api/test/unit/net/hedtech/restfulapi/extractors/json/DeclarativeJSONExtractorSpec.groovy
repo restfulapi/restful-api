@@ -7,6 +7,8 @@ import grails.test.mixin.*
 import grails.test.mixin.web.*
 import grails.test.mixin.support.*
 
+import java.text.SimpleDateFormat
+
 import org.codehaus.groovy.grails.web.json.JSONObject
 
 import spock.lang.*
@@ -134,5 +136,34 @@ class DeclarativeJSONExtractorSpec extends Specification {
 
         then:
         [customers:['smith':['id':'1'],'johnson':['id':'2']]] == map
+    }
+
+    def "Test date parsing"() {
+        setup:
+        DeclarativeJSONExtractor extractor = new DeclarativeJSONExtractor(
+            dottedDatePaths:['customers.date1','customers.date2'],
+            dateFormats:["yyyy-MM-dd'T'HH:mm:ssZ","dd.MM.yyyy HH:mm:ss"]
+        )
+        def base = (1000*(new Date().getTime()/1000).toLong()).toLong()
+        Date d1 = new Date( base )
+        Date d2 = new Date( base + 55000 )
+        JSONObject json = new JSONObject([customers:
+            [
+                ['date1':formatDate(d1,"yyyy-MM-dd'T'HH:mm:ssZ"),'date2':formatDate(d2,"dd.MM.yyyy HH:mm:ss")],
+                ['date1':formatDate(d1,"yyyy-MM-dd'T'HH:mm:ssZ"),'date2':formatDate(d2,"dd.MM.yyyy HH:mm:ss")],
+            ]])
+
+        when:
+        def map = extractor.extract(json)
+
+        then:
+        d1 == map['customers'][0]['date1']
+        d2 == map['customers'][0]['date2']
+        d1 == map['customers'][1]['date1']
+        d2 == map['customers'][1]['date2']
+    }
+
+    private String formatDate(Date d, String format) {
+        new SimpleDateFormat(format).format(d)
     }
 }

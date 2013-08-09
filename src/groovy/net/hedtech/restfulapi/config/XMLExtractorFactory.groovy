@@ -21,6 +21,8 @@ class XMLExtractorFactory {
         extractor.dottedShortObjectPaths.addAll config.dottedShortObjectPaths
         extractor.dottedFlattenedPaths.addAll config.dottedFlattenedPaths
         if (config.isShortObjectClosureSet) extractor.shortObjectClosure = config.shortObjectClosure
+        extractor.dottedDatePaths = config.dottedDatePaths
+        extractor.dateFormats = config.dateFormats
 
         extractor
     }

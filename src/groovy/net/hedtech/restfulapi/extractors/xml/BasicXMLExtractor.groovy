@@ -3,6 +3,9 @@ Copyright 2013 Ellucian Company L.P. and its affiliates.
 ******************************************************************************/
 package net.hedtech.restfulapi.extractors.xml
 
+import java.text.ParseException
+import java.text.SimpleDateFormat
+
 import groovy.util.slurpersupport.GPathResult
 
 import net.hedtech.restfulapi.extractors.*
@@ -49,6 +52,27 @@ class BasicXMLExtractor extends MapExtractor {
         }
     }
 
+    private DEFAULT_DATE_CLOSURE = { value ->
+        if (value == null) return value
+        if (Date.class.isAssignableFrom(value.getClass())) {
+            return value
+        }
+        def formats = getDateFormats().clone()
+        if (formats.size() == 0) {
+            formats.add(new SimpleDateFormat().toPattern())
+        }
+        for (String format : formats) {
+            SimpleDateFormat df = new SimpleDateFormat(format)
+            try {
+                return df.parse(value.toString())
+            } catch (ParseException e) {
+                //ignore
+            }
+        }
+        //unable to parse
+        throw new DateParseException( "$value" )
+    }
+
     BasicXMLExtractor() {
     }
 
@@ -74,6 +98,9 @@ class BasicXMLExtractor extends MapExtractor {
                     }
                     getShortObjectPaths().each { def path ->
                         rules.addModifyValueRule(path,getShortObjectClosure())
+                    }
+                    getDatePaths().each { def path ->
+                        rules.addModifyValueRule(path,getDateClosure())
                     }
                     getFlattenPaths().each() { def path ->
                         rules.addFlattenRule(path)
@@ -121,6 +148,26 @@ class BasicXMLExtractor extends MapExtractor {
         []
      }
 
+     /**
+      * Returns a List of String denoting paths whose
+      * values should be parsed as dates.
+      * The conversion is not lenient - if the value cannot
+      * be parsed as a date, an exception is thrown.
+      * Parses according to {@link #getDateFormats() getDateFormats},
+      * or default SimpleDateFormat if no formats are specified.
+      **/
+    protected List<List<String>> getDatePaths() {
+        []
+    }
+
+    /**
+     * Returns a list of date formats to parse
+     * date values.
+     **/
+    protected def getDateFormats() {
+        []
+    }
+
     /**
      * Returns a closure that can convert a 'short object'
      * representation to a map containing the id represented
@@ -129,4 +176,13 @@ class BasicXMLExtractor extends MapExtractor {
     protected Closure getShortObjectClosure() {
         DEFAULT_SHORT_OBJECT_CLOSURE
     }
+
+    /**
+     * Returns a closure that can convert date representations
+     * into Dates.
+     **/
+    protected Closure getDateClosure() {
+        DEFAULT_DATE_CLOSURE
+    }
+
 }

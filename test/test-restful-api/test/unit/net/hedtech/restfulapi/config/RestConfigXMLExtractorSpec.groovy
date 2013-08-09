@@ -32,6 +32,8 @@ class RestConfigXMLExtractorSpec extends Specification {
                     property 'person.address' flatObject true
                     property 'person.customer' shortObject true
                     property 'lastName' defaultValue 'Smith'
+                    property 'date' date true
+                    dateFormats = ['yyyy.MM.dd', 'yyyy/MM/dd']
                     shortObject { def v -> 'short' }
                 }
             }
@@ -44,12 +46,14 @@ class RestConfigXMLExtractorSpec extends Specification {
         def shortObject = mConfig.shortObjectClosure.call([:])
 
         then:
-         2                     == config.xmlExtractor.configs.size()
-         ['person.name':'bar'] == mConfig.dottedRenamedPaths
-         ['person.address']    == mConfig.dottedFlattenedPaths
-         ['person.customer']   == mConfig.dottedShortObjectPaths
-         ['lastName':'Smith']  == mConfig.dottedValuePaths
-         'short'               == shortObject
+         2                            == config.xmlExtractor.configs.size()
+         ['person.name':'bar']        == mConfig.dottedRenamedPaths
+         ['person.address']           == mConfig.dottedFlattenedPaths
+         ['person.customer']          == mConfig.dottedShortObjectPaths
+         ['lastName':'Smith']         == mConfig.dottedValuePaths
+         'short'                      == shortObject
+         ['date']                     == mConfig.dottedDatePaths
+         ['yyyy.MM.dd', 'yyyy/MM/dd'] == mConfig.dateFormats
     }
 
     def "Test xml extractor creation"() {
@@ -64,6 +68,8 @@ class RestConfigXMLExtractorSpec extends Specification {
                         property 'person.address' flatObject true
                         property 'person.customer' shortObject true
                         property 'lastName' defaultValue 'Smith'
+                        property 'date' date true
+                        dateFormats = ['yyyy.MM.dd', 'yyyy/MM/dd']
                         shortObject { def v -> 'short' }
                     }
                 }
@@ -77,11 +83,13 @@ class RestConfigXMLExtractorSpec extends Specification {
         def shortObject = extractor.shortObjectClosure.call([:])
 
         then:
-         ['person.name':'bar'] == extractor.dottedRenamedPaths
-         ['person.address']    == extractor.dottedFlattenedPaths
-         ['person.customer']   == extractor.dottedShortObjectPaths
-         ['lastName':'Smith']  == extractor.dottedValuePaths
-         'short'               == shortObject
+         ['person.name':'bar']       == extractor.dottedRenamedPaths
+         ['person.address']          == extractor.dottedFlattenedPaths
+         ['person.customer']         == extractor.dottedShortObjectPaths
+         ['lastName':'Smith']        == extractor.dottedValuePaths
+         'short'                     == shortObject
+         ['date']                    == extractor.dottedDatePaths
+         ['yyyy.MM.dd','yyyy/MM/dd'] == extractor.dateFormats
     }
 
     def "Test xml extractor creation from merged configuration"() {

@@ -7,6 +7,10 @@ import grails.test.mixin.*
 import grails.test.mixin.web.*
 import grails.test.mixin.support.*
 
+import java.text.SimpleDateFormat
+
+import net.hedtech.restfulapi.extractors.DateParseException
+
 import org.codehaus.groovy.grails.web.json.JSONObject
 
 import spock.lang.*
@@ -142,18 +146,53 @@ class BasicJSONExtractorSpec extends Specification {
         [customers:['smith':['id':'1'],'johnson':['id':'2']]] == map
     }
 
-    def "Test default short object closure for maps"() {
+    def "Test date parsing"() {
         setup:
-        BasicJSONExtractor.metaClass.getShortObjectPaths << {
-            [['customers']]
+        BasicJSONExtractor.metaClass.getDatePaths << {
+            [['customers','date1'],['customers','date2']]
         }
-        JSONObject json = new JSONObject([customers:['smith':[_link:'/customers/1'],'johnson':[_link:'/customers/2']]])
+        BasicJSONExtractor.metaClass.getDateFormats << {
+            ["yyyy-MM-dd'T'HH:mm:ssZ", "dd.MM.yyyy HH:mm:ss"]
+        }
         BasicJSONExtractor extractor = new BasicJSONExtractor()
+        def base = (1000*(new Date().getTime()/1000).toLong()).toLong()
+        Date d1 = new Date( base )
+        Date d2 = new Date( base + 55000 )
+        JSONObject json = new JSONObject([customers:
+            [
+                ['date1':formatDate(d1,"yyyy-MM-dd'T'HH:mm:ssZ"),'date2':formatDate(d2,"dd.MM.yyyy HH:mm:ss")],
+                ['date1':formatDate(d1,"yyyy-MM-dd'T'HH:mm:ssZ"),'date2':formatDate(d2,"dd.MM.yyyy HH:mm:ss")],
+            ]])
 
         when:
         def map = extractor.extract(json)
 
         then:
-        [customers:['smith':['id':'1'],'johnson':['id':'2']]] == map
+        d1 == map['customers'][0]['date1']
+        d2 == map['customers'][0]['date2']
+        d1 == map['customers'][1]['date1']
+        d2 == map['customers'][1]['date2']
     }
+
+    def "Test invalid date parsing"() {
+        setup:
+        BasicJSONExtractor.metaClass.getDatePaths << {
+            [['date']]
+        }
+        BasicJSONExtractor extractor = new BasicJSONExtractor()
+        JSONObject json = new JSONObject(['date':'not a date'])
+
+        when:
+        extractor.extract(json)
+
+        then:
+        DateParseException e = thrown()
+        'not a date'         == e.params[0]
+        400                  == e.getHttpStatusCode()
+    }
+
+    private String formatDate(Date d, String format) {
+        new SimpleDateFormat(format).format(d)
+    }
+
 }

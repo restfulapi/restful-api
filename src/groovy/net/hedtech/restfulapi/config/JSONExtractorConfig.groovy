@@ -15,6 +15,9 @@ class JSONExtractorConfig implements MergeableConfig {
     List<String> dottedFlattenedPaths = []
     Closure shortObjectClosure
     boolean isShortObjectClosureSet = false
+    List<String> dottedDatePaths = []
+    List<String> dateFormats = []
+
 
 
     JSONExtractorConfig() {
@@ -59,6 +62,18 @@ class JSONExtractorConfig implements MergeableConfig {
 
         if (other.isShortObjectClosureSet) {
             config.shortObjectClosure = other.shortObjectClosure
+        }
+
+        other.dottedDatePaths.each {
+            if (!config.dottedDatePaths.contains(it)) {
+                config.dottedDatePaths.add(it)
+            }
+        }
+
+        other.dateFormats.each {
+            if (!config.dateFormats.contains(it)) {
+                config.dateFormats.add(it)
+            }
         }
 
         config

@@ -1889,6 +1889,36 @@ When specifying paths, alway do so in terms of the incoming JSON.  The extractor
 
 Will work correctly.
 
+###Parsing dates.
+You can specify paths that should be parsed into java.util.Date instances:
+
+    resource 'purchase-orders' config {
+        representation {
+            mediaTypes = ["application/json"]
+            jsonExtractor {
+                property 'signupDate' date true
+            }
+        }
+    }
+
+This can simplifying conversion of strings to Dates without dealing with Grails data-binding and custom property editors.
+
+By default, the extractor will use a default java.text.SimpleDateFormat to parse date fields.  You can specify which formats to use:
+
+    resource 'purchase-orders' config {
+        representation {
+            mediaTypes = ["application/json"]
+            jsonExtractor {
+                property 'signupDate' date true
+                dateFormats = ["yyyy-MM-dd'T'HH:mm:ss.SSSZ", "yyyyy.MMMMM.dd GGG hh:mm aaa"]
+            }
+        }
+    }
+
+Each date format will be tried in order, until one sucessfully parses the date string.  If no format is capable of parsing the string, a 400 response status will be returned.
+
+You can configure date formats in a single location by placing them on an [extractor template](#json-extractor-templates) and then inheriting them.
+
 ###Providing default values.
 As your system evolves, you may introduce new, required fields to domain objects.  If you are using versioned APIs, the new field cannot be added to existing representation(s) without breaking them, so when a caller uses one of these representations, it will be necessary to add a default value.  This can, of course, be done at the service layer, but only if the service layer can provide an appropriate default - it is more likely that the service will treat the missing value as a validation exception.  The declarative extractor can be configured to provide a default value for any missing key.
 
@@ -2087,7 +2117,7 @@ This is because when using the index and dot notation for grails data binding, g
 
 In other words, representations that deep-render associated objects, and use grails-data binding by flattening the objects, require the consumer of the API to worry about ordering within collections when performing an update.  For this reason, it is recommended that representations either use short-objects (i.e, representations only control the association of objects, but do not allow properties of sub-objects to be manipulated in the same API call), or the backing services should implement their own data binding strategies rather than rely on grails indexed data binding.  For example, the service could iterate through an array of associated objects on an update, retrieve them by ID instead of index position, and then bind the sub-map to them directly.
 
-###JSON extractor templates
+###<a id="json-extractor-templates"></a>JSON extractor templates
 JSON extractor templates are configuration blocks that do not directly create an extractor.  The 'config' block accepts any configuration that the jsonExractor block does (including the inherits option).  When a jsonExractor directive contains an 'inherits' element, the templates referenced will be merged with the configuration for the extractor in a depth-first manner.  Elements that represent collections or maps are merged together (later templates overriding previous ones, if there is a conflict), with the configuration in the jsonDomainMarshaller block itself overriding any previous values.
 
 In general, json domain templates are useful for overriding short-object handling, or defining rules that apply to properties present in all incoming JSON objects.

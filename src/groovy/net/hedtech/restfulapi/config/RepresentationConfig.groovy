@@ -37,8 +37,5 @@ class RepresentationConfig {
                 return null
                 break
         }
-
     }
-
-
 }

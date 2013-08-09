@@ -18,6 +18,7 @@ import net.hedtech.restfulapi.marshallers.*
 
 import org.codehaus.groovy.grails.web.converters.exceptions.ConverterException
 import org.codehaus.groovy.grails.web.converters.marshaller.ObjectMarshaller
+import org.codehaus.groovy.grails.web.json.JSONObject
 
 import spock.lang.*
 
@@ -1551,6 +1552,76 @@ class RestfulApiControllerSpec extends Specification {
         'create'         | 'POST'     | null | 'create'
         'update'         | 'PUT'      | '1'  | 'update'
         'delete'         | 'DELETE'   | '1'  | 'delete'
+    }
+
+    def "Test unparsable date in json returns 400"() {
+        setup:
+        //use default extractor for any methods with a request body
+         config.restfulApiConfig = {
+            resource 'things' config {
+                representation {
+                    mediaTypes = ['application/json']
+                    jsonExtractor {
+                        property 'date' date true
+                    }
+                }
+            }
+        }
+        controller.init()
+
+        //mock the appropriate service method, expect 0 invocations
+        def mock = Mock(ThingService)
+        controller.metaClass.getService = {-> mock}
+
+        request.addHeader( 'Accept', 'application/json' )
+        request.addHeader( 'Content-Type', 'application/json' )
+        request.method = 'POST'
+        request.setJSON( new JSONObject( ["date":"not a date"] ) )
+        params.pluralizedResourceName = 'things'
+
+        when:
+        controller.create()
+
+        then:
+        400                                     == response.status
+        'Validation failed'                     == response.getHeaderValue( 'X-Status-Reason' )
+        'default.rest.extractor.unparsableDate' == response.getHeaderValue( 'X-hedtech-message' )
+        0 * _._
+    }
+
+    def "Test unparsable date in xml returns 400"() {
+        setup:
+        //use default extractor for any methods with a request body
+         config.restfulApiConfig = {
+            resource 'things' config {
+                representation {
+                    mediaTypes = ['application/xml']
+                    xmlExtractor {
+                        property 'date' date true
+                    }
+                }
+            }
+        }
+        controller.init()
+
+        //mock the appropriate service method, expect 0 invocations
+        def mock = Mock(ThingService)
+        controller.metaClass.getService = {-> mock}
+
+        request.addHeader( 'Accept', 'application/xml' )
+        request.addHeader( 'Content-Type', 'application/xml' )
+        request.method = 'POST'
+        request.setXml( "<object><date>not a date</date></object>" )
+        params.pluralizedResourceName = 'things'
+
+        when:
+        controller.create()
+
+        then:
+        400                                     == response.status
+        'Validation failed'                     == response.getHeaderValue( 'X-Status-Reason' )
+        'default.rest.extractor.unparsableDate' == response.getHeaderValue( 'X-hedtech-message' )
+        0 * _._
     }
 
     private void mockCacheHeaders() {
