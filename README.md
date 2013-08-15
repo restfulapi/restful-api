@@ -49,11 +49,12 @@ In the plugins section of BuildConfig.groovy add:
 
         compile ":inflector:0.2"
         compile ":cache-headers:1.1.5"
-        compile ":functional-spock:0.6"
 
         test(":spock:0.7") {
           exclude "spock-grails-support"
         }
+
+        test ":funky-spock:0.1.0"
 
 ###3. Configure the UrlMappings to use the controller
 Edit the UrlMappings.groovy to look similar to the following defaults.  Your application map already have url mappings defined; if so, add the mappings for /api and /qapi as appropriate.
@@ -177,27 +178,6 @@ to the log4j configuration (in Config.groovy).  By default, errors that originat
 At this point, the plugin is configured to dynamically attempt to handle any request sent to /api or /qapi, assuming that your services match the [contract](#service-layer-contract) or you have an appropriate [adapter](#service-layer-adapter) configured.
 
 The rest of this document goes into details of how to configure the plugin to support features such as [whitelisting](#configuration) resources, configuring [declarative marshalling](#declarative-marshalling) to support versioned APIs, and how to use the RestSpecification to provide functional testing for your APIs.
-
-###6. Remove spock jars from war
-Using the functional-spock plugin pulls spock dependencies into the war, which aren't needed and can cause issues.  One way to work around it is to add a grails.war.resources closure to the BuildConfig.groovy to remove the spock jars:
-
-    //functional-spock as a compile dependencies drags
-    //spock dependencies into the war, which aren't needed
-    //and can cause deployment issues as it pulls
-    //in a version of spock-grails-support that isn't compatible
-    //with the groovy version used in grails >= 2.2
-    grails.war.resources = { stagingDir, args ->
-        List unwanted = [ "spock" ]
-
-        new File(stagingDir, "WEB-INF/lib").eachFile { File file ->
-            String name = file.name.toLowerCase()
-            if (file.name.endsWith(".jar")) {
-                if (unwanted.find { name.startsWith it }) {
-                    delete(file: file)
-                }
-            }
-        }
-    }
 
 ##Testing the Plugin
 The plugin contains a test application that uses Spock to test the plugin. To run all tests from the plugin's root directory run:
