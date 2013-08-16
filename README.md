@@ -33,7 +33,7 @@ Then add the in-place plugin definition to BuildConfig.groovy:
 Note that adding the plugin this way will the latest commit on the master branch at the time you ran the submodule command.  If you want to use an official release instead, go to the plugin directory and checkout a specific version, e.g.:
 
     cd plugins/restful-api.git
-    git checkout 0.5.0
+    git checkout 0.6.0
 
 Don't forget to go back to your project root and commit the change this will make to your git submodules file.
 

@@ -12,7 +12,7 @@ import org.codehaus.groovy.grails.web.converters.configuration.DefaultConverterC
 
 class RestfulApiGrailsPlugin {
 
-    def version = "0.5.0"
+    def version = "0.6.0"
     def grailsVersion = "2.2.1 > *"
     def dependsOn = [:]
     def pluginExcludes = [
@@ -25,7 +25,7 @@ class RestfulApiGrailsPlugin {
     def description = '''\
         |The resful-api plugin facilitates exposing a non-trivial,
         |versioned RESTful API. The plugin provides a DSL that may
-        |be used to declaratively specify how resources should be 
+        |be used to declaratively specify how resources should be
         |marshalled. Please see the README.md for details.
         |'''.stripMargin()
 
