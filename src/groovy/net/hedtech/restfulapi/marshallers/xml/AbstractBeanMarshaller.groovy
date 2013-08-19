@@ -140,8 +140,6 @@ class AbstractBeanMarshaller implements ObjectMarshaller<XML>, NameAwareMarshall
         return GrailsNameUtils.getPropertyName(o.getClass());
     }
 
-
-
 // ------------------- Methods to override to customize behavior ---------------------
 
     /**

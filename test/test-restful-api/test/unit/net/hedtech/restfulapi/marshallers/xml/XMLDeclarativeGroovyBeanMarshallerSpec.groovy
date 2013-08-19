@@ -30,6 +30,41 @@ class XMLDeclarativeGroovyBeanMarshallerSpec extends Specification {
 
     @Rule TestName testName = new TestName()
 
+    def "Test default element name"() {
+        setup:
+        def marshaller = new DeclarativeGroovyBeanMarshaller(
+            app:grailsApplication
+        )
+
+        register( marshaller )
+        SimpleBean bean = new SimpleBean(property:'foo', publicField:'bar')
+
+        when:
+        def content = render( bean )
+        def xml = XML.parse content
+
+        then:
+        'simpleBean'  == xml.name()
+    }
+
+    def "Test overidden element name"() {
+        setup:
+        def marshaller = new DeclarativeGroovyBeanMarshaller(
+            app:grailsApplication,
+            elementName:'Bean'
+        )
+
+        register( marshaller )
+        SimpleBean bean = new SimpleBean(property:'foo', publicField:'bar')
+
+        when:
+        def content = render( bean )
+        def xml = XML.parse content
+
+        then:
+        'Bean'  == xml.name()
+    }
+
     def "Test excluding fields and properties"() {
         setup:
         def marshaller = new DeclarativeGroovyBeanMarshaller(

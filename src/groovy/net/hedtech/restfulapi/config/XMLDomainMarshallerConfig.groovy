@@ -14,6 +14,8 @@ class XMLDomainMarshallerConfig implements MergeableConfig {
     int priority = 100
     Class supportClass
     private boolean isSupportClassSet = false
+    String elementName
+    private boolean isElementNameSet = false
     //map of field name to the name the field should be marshalled as.
     //allows fields to be renamed in the output
     def fieldNames = [:]
@@ -63,9 +65,14 @@ class XMLDomainMarshallerConfig implements MergeableConfig {
         this
     }
 
-    void setShortObjectClosure(Closure c) {
+    void setShortObjectClosure( Closure c ) {
         this.shortObjectClosure = c
         this.isShortObjectClosureSet = true
+    }
+
+    def setElementName( String name ) {
+        this.elementName = name
+        this.isElementNameSet = true
     }
 
 
@@ -80,6 +87,9 @@ class XMLDomainMarshallerConfig implements MergeableConfig {
 
         if (other.isSupportClassSet) {
             config.setSupportClass( other.supportClass )
+        }
+        if (other.isElementNameSet) {
+            config.setElementName( other.elementName )
         }
         if (other.includeId != null)      config.includeId      = other.includeId
         if (other.includeVersion != null) config.includeVersion = other.includeVersion

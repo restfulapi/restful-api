@@ -22,6 +22,7 @@ class DeclarativeDomainClassMarshaller extends BasicDomainClassMarshaller {
         LogFactory.getLog(DeclarativeDomainClassMarshaller.class)
 
     Class supportClass
+    String elementName
     def fieldNames = [:]
     def includedFields = []
     boolean requireIncludedFields = false
@@ -46,6 +47,15 @@ class DeclarativeDomainClassMarshaller extends BasicDomainClassMarshaller {
         xml.startNode("_link")
         xml.convertAnother("/$resource/$id")
         xml.end()
+    }
+
+    @Override
+    String getElementName(Object o) {
+        if (elementName != null) {
+            elementName
+        } else {
+            super.getElementName(o)
+        }
     }
 
     @Override

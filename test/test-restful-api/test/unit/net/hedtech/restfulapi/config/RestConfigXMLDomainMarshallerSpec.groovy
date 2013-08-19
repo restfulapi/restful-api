@@ -26,6 +26,7 @@ class RestConfigXMLDomainMarshallerSpec extends Specification {
                 group 'domain' marshallers {
                     xmlDomainMarshaller {
                         supports Thing
+                        elementName 'Thing'
                         deepMarshallsAssociations true
                         field 'foo' name 'bar' resource 'custom-foos' deep false
                         includesFields {
@@ -45,6 +46,7 @@ class RestConfigXMLDomainMarshallerSpec extends Specification {
 
         then:
         Thing                                     == marshaller.supportClass
+        'Thing'                                   == marshaller.elementName
         ['foo':'bar','bar':'customBar']           == marshaller.fieldNames
         ['foo':'custom-foos','bar':'custom-bars'] == marshaller.fieldResourceNames
         ['bar']                                   == marshaller.includedFields
@@ -66,6 +68,7 @@ class RestConfigXMLDomainMarshallerSpec extends Specification {
                     inherits = ['one']
                     priority = 5
                     supports Thing
+                    elementName 'Thing'
                     deepMarshallsAssociations true
                     requiresIncludedFields true
                     field 'foo' name 'bar'
@@ -99,6 +102,7 @@ class RestConfigXMLDomainMarshallerSpec extends Specification {
         ['one']                == mConfig.inherits
         5                      == mConfig.priority
         Thing                  == mConfig.supportClass
+        'Thing'                == mConfig.elementName
         true                   == mConfig.requireIncludedFields
         ['foo':'foobar']       == mConfig.fieldNames
         ['foo','f4']           == mConfig.includedFields
@@ -124,6 +128,7 @@ class RestConfigXMLDomainMarshallerSpec extends Specification {
                     marshallers {
                         xmlDomainMarshaller {
                             supports Thing
+                            elementName 'Thing'
                             requiresIncludedFields true
                             deepMarshallsAssociations true
                             field 'owner' resource 't-owners' deep false
@@ -153,6 +158,7 @@ class RestConfigXMLDomainMarshallerSpec extends Specification {
 
         then:
         Thing                                  == marshaller.supportClass
+        'Thing'                                == marshaller.elementName
         true                                   == marshaller.requireIncludedFields
         ['code':'productCode']                 == marshaller.fieldNames
         ['code','parts']                       == marshaller.includedFields

@@ -27,6 +27,7 @@ class XMLDomainMarshallerFactory {
         marshaller.deepMarshalledFields.putAll      config.deepMarshalledFields
 
         if (config.isSupportClassSet)       marshaller.supportClass       = config.supportClass
+        if (config.isElementNameSet)        marshaller.elementName        = config.elementName
         if (config.isShortObjectClosureSet) marshaller.shortObjectClosure = config.shortObjectClosure
         if (config.includeId != null)       marshaller.includeId          = config.includeId
         if (config.includeVersion != null)  marshaller.includeVersion     = config.includeVersion

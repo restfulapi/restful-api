@@ -9,8 +9,13 @@ class XMLGroovyBeanMarshallerDelegate {
 
     XMLGroovyBeanMarshallerConfig config = new XMLGroovyBeanMarshallerConfig()
 
-    XMLGroovyBeanMarshallerDelegate supports( Class clazz ) {
-        config.setSupportClass( clazz )
+    XMLGroovyBeanMarshallerDelegate supports(Class clazz) {
+        config.setSupportClass(clazz)
+        this
+    }
+
+    XMLGroovyBeanMarshallerDelegate elementName(String name) {
+        config.setElementName(name)
         this
     }
 

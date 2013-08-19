@@ -9,8 +9,13 @@ class XMLDomainMarshallerDelegate {
 
     XMLDomainMarshallerConfig config = new XMLDomainMarshallerConfig()
 
-    XMLDomainMarshallerDelegate supports( Class clazz ) {
-        config.setSupportClass( clazz )
+    XMLDomainMarshallerDelegate supports(Class clazz) {
+        config.setSupportClass(clazz)
+        this
+    }
+
+    XMLDomainMarshallerDelegate elementName(String name) {
+        config.setElementName(name)
         this
     }
 

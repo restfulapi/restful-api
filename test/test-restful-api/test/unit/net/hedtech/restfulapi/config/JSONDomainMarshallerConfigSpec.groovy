@@ -289,9 +289,8 @@ class JSONDomainMarshallerConfigSpec extends Specification {
         def config = one.merge(two)
 
         then:
-        true                                     == one.isSupportClassSet
-        true                                     == two.isSupportClassSet
-        PartOfThing                              == two.supportClass
+        true                                     == config.isSupportClassSet
+        PartOfThing                              == config.supportClass
         ['foo':'foo2','bar':'bar1','baz':'baz1'] == config.fieldNames
         ['foo','bar','baz']                      == config.includedFields
         ['e1','e2','e3']                         == config.excludedFields

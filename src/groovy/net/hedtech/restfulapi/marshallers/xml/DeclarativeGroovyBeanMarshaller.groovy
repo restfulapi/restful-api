@@ -24,12 +24,22 @@ class DeclarativeGroovyBeanMarshaller extends GroovyBeanMarshaller {
         LogFactory.getLog(DeclarativeGroovyBeanMarshaller.class)
 
     Class supportClass
+    String elementName
     def fieldNames = [:]
     def excludedFields = []
     def includedFields = []
     boolean requireIncludedFields = false
     def additionalFieldClosures = []
     def additionalFieldsMap = [:]
+
+    @Override
+    String getElementName(Object o) {
+        if (elementName != null) {
+            elementName
+        } else {
+            super.getElementName(o)
+        }
+    }
 
     @Override
     public boolean supports(Object object) {

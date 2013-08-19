@@ -251,12 +251,26 @@ class XMLDomainMarshallerConfigSpec extends Specification {
         true == config.isShortObjectClosureSet
     }
 
+    def "Test element name"() {
+        setup:
+        def src = {
+            elementName 'Foo'
+        }
+
+        when:
+        def config = invoke(src)
+
+        then:
+        'Foo' == config.elementName
+    }
+
     def "Test merging domain marshaller configurations"() {
         setup:
         def c1 = { Map m -> }
         def c2 = { Map m -> }
         XMLDomainMarshallerConfig one = new XMLDomainMarshallerConfig(
             supportClass:Thing,
+            elementName:'Thing',
             fieldNames:['foo':'foo1','bar':'bar1'],
             includedFields:['foo','bar'],
             excludedFields:['e1','e2'],
@@ -272,6 +286,7 @@ class XMLDomainMarshallerConfigSpec extends Specification {
         )
         XMLDomainMarshallerConfig two = new XMLDomainMarshallerConfig(
             supportClass:PartOfThing,
+            elementName:'PartOfThing',
             fieldNames:['foo':'foo2','baz':'baz1'],
             includedFields:['baz'],
             excludedFields:['e3'],
@@ -290,9 +305,10 @@ class XMLDomainMarshallerConfigSpec extends Specification {
         def config = one.merge(two)
 
         then:
-        true                                     == one.isSupportClassSet
-        true                                     == two.isSupportClassSet
-        PartOfThing                              == two.supportClass
+        true                                     == config.isSupportClassSet
+        PartOfThing                              == config.supportClass
+        true                                     == config.isElementNameSet
+        'PartOfThing'                            == config.elementName
         ['foo':'foo2','bar':'bar1','baz':'baz1'] == config.fieldNames
         ['foo','bar','baz']                      == config.includedFields
         ['e1','e2','e3']                         == config.excludedFields
@@ -314,6 +330,7 @@ class XMLDomainMarshallerConfigSpec extends Specification {
         def c2 = { Map m -> }
         XMLDomainMarshallerConfig one = new XMLDomainMarshallerConfig(
             supportClass:Thing,
+            elementName:'Thing',
             fieldNames:['foo':'foo1','bar':'bar1'],
             includedFields:['foo','bar'],
             excludedFields:['e1','e2'],
@@ -329,6 +346,7 @@ class XMLDomainMarshallerConfigSpec extends Specification {
         )
         XMLDomainMarshallerConfig two = new XMLDomainMarshallerConfig(
             supportClass:PartOfThing,
+            elementName:'PartOfThing',
             fieldNames:['foo':'foo2','baz':'baz1'],
             includedFields:['baz'],
             excludedFields:['e3'],
@@ -348,6 +366,8 @@ class XMLDomainMarshallerConfigSpec extends Specification {
 
         then:
         true                        == one.isSupportClassSet
+        Thing                       == one.supportClass
+        'Thing'                     == one.elementName
         ['foo':'foo1','bar':'bar1'] == one.fieldNames
         ['foo','bar']               == one.includedFields
         ['e1','e2']                 == one.excludedFields
@@ -362,6 +382,8 @@ class XMLDomainMarshallerConfigSpec extends Specification {
         ['one':true,'two':false]    == one.deepMarshalledFields
 
         true                        == two.isSupportClassSet
+        PartOfThing                 == two.supportClass
+        'PartOfThing'               == two.elementName
         ['foo':'foo2','baz':'baz1'] == two.fieldNames
         ['baz']                     == two.includedFields
         ['e3']                      == two.excludedFields
@@ -425,6 +447,21 @@ class XMLDomainMarshallerConfigSpec extends Specification {
         true == config.requireIncludedFields
     }
 
+    def "Test merging domain marshaller with elementName set only on the left"() {
+        setup:
+        def c1 = { Map m -> }
+        XMLDomainMarshallerConfig one = new XMLDomainMarshallerConfig(
+            elementName:'Foo'
+        )
+        XMLDomainMarshallerConfig two = new XMLDomainMarshallerConfig(
+        )
+
+        when:
+        def config = one.merge(two)
+
+        then:
+        'Foo' == config.elementName
+    }
 
     def "Test resolution of domain marshaller configuration inherits"() {
         setup:

@@ -161,12 +161,27 @@ class XMLGroovyBeanMarshallerConfigSpec extends Specification {
         [one:'one',two:'two'] == config.additionalFieldsMap
     }
 
+    def "Test element name"() {
+        setup:
+        def src = {
+            elementName 'Foo'
+        }
+
+        when:
+        def config = invoke(src)
+
+        then:
+        'Foo' == config.elementName
+    }
+
+
     def "Test merging configurations"() {
         setup:
         def c1 = { Map m -> }
         def c2 = { Map m -> }
         XMLGroovyBeanMarshallerConfig one = new XMLGroovyBeanMarshallerConfig(
             supportClass:SimpleBean,
+            elementName:'Bean',
             fieldNames:['foo':'foo1','bar':'bar1'],
             includedFields:['foo','bar'],
             excludedFields:['e1','e2'],
@@ -176,6 +191,7 @@ class XMLGroovyBeanMarshallerConfigSpec extends Specification {
         )
         XMLGroovyBeanMarshallerConfig two = new XMLGroovyBeanMarshallerConfig(
             supportClass:Thing,
+            elementName:'Thing',
             fieldNames:['foo':'foo2','baz':'baz1'],
             includedFields:['baz'],
             excludedFields:['e3'],
@@ -189,9 +205,10 @@ class XMLGroovyBeanMarshallerConfigSpec extends Specification {
         def config = one.merge(two)
 
         then:
-        true                                     == one.isSupportClassSet
-        true                                     == two.isSupportClassSet
-        Thing                                    == two.supportClass
+        true                                     == config.isSupportClassSet
+        Thing                                    == config.supportClass
+        true                                     == config.isElementNameSet
+        'Thing'                                  == config.elementName
         ['foo':'foo2','bar':'bar1','baz':'baz1'] == config.fieldNames
         ['foo','bar','baz']                      == config.includedFields
         ['e1','e2','e3']                         == config.excludedFields
@@ -206,6 +223,7 @@ class XMLGroovyBeanMarshallerConfigSpec extends Specification {
         def c2 = { Map m -> }
         XMLGroovyBeanMarshallerConfig one = new XMLGroovyBeanMarshallerConfig(
             supportClass:Thing,
+            elementName:'Thing',
             fieldNames:['foo':'foo1','bar':'bar1'],
             includedFields:['foo','bar'],
             excludedFields:['e1','e2'],
@@ -215,6 +233,7 @@ class XMLGroovyBeanMarshallerConfigSpec extends Specification {
         )
         XMLGroovyBeanMarshallerConfig two = new XMLGroovyBeanMarshallerConfig(
             supportClass:PartOfThing,
+            elementName:'PartOfThing',
             fieldNames:['foo':'foo2','baz':'baz1'],
             includedFields:['baz'],
             excludedFields:['e3'],
@@ -228,6 +247,9 @@ class XMLGroovyBeanMarshallerConfigSpec extends Specification {
 
         then:
         true                        == one.isSupportClassSet
+        Thing                       == one.supportClass
+        true                        == one.isElementNameSet
+        'Thing'                     == one.elementName
         ['foo':'foo1','bar':'bar1'] == one.fieldNames
         ['foo','bar']               == one.includedFields
         ['e1','e2']                 == one.excludedFields
@@ -236,6 +258,9 @@ class XMLGroovyBeanMarshallerConfigSpec extends Specification {
         true                        == one.requireIncludedFields
 
         true                        == two.isSupportClassSet
+        PartOfThing                 == two.supportClass
+        true                        == two.isElementNameSet
+        'PartOfThing'               == two.elementName
         ['foo':'foo2','baz':'baz1'] == two.fieldNames
         ['baz']                     == two.includedFields
         ['e3']                      == two.excludedFields
@@ -278,6 +303,21 @@ class XMLGroovyBeanMarshallerConfigSpec extends Specification {
         true == config.requireIncludedFields
     }
 
+    def "Test merging with elementName set only on the left"() {
+        setup:
+        def c1 = { Map m -> }
+        XMLGroovyBeanMarshallerConfig one = new XMLGroovyBeanMarshallerConfig(
+            elementName:'Foo'
+        )
+        XMLGroovyBeanMarshallerConfig two = new XMLGroovyBeanMarshallerConfig(
+        )
+
+        when:
+        def config = one.merge(two)
+
+        then:
+        'Foo' == config.elementName
+    }
 
     def "Test resolution of marshaller configuration inherits"() {
         setup:

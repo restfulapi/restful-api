@@ -36,6 +36,45 @@ class XMLDeclarativeDomainClassMarshallerSpec extends Specification {
     void setup() {
     }
 
+    def "Test default element name"() {
+        setup:
+        def marshaller = new DeclarativeDomainClassMarshaller(
+            app:grailsApplication
+        )
+
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:'AA thing' )
+        thing.save()
+        thing.id = 1
+
+        when:
+        def content = render( thing )
+        def xml = XML.parse content
+
+        then:
+        'marshalledThing'  == xml.name()
+    }
+
+    def "Test overidden element name"() {
+        setup:
+        def marshaller = new DeclarativeDomainClassMarshaller(
+            app:grailsApplication,
+            elementName:'Thing'
+        )
+
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:'AA thing' )
+        thing.save()
+        thing.id = 1
+
+        when:
+        def content = render( thing )
+        def xml = XML.parse content
+
+        then:
+        'Thing'  == xml.name()
+    }
+
     def "Test with Id"() {
         setup:
         def marshaller = new DeclarativeDomainClassMarshaller(

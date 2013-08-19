@@ -24,6 +24,7 @@ class XMLGroovyBeanMarshallerFactory {
         marshaller.additionalFieldClosures.addAll   config.additionalFieldClosures
         marshaller.additionalFieldsMap.putAll       config.additionalFieldsMap
         if (config.isSupportClassSet) marshaller.supportClass = config.supportClass
+        if (config.isElementNameSet) marshaller.elementName = config.elementName
         if (config.requireIncludedFields != null) marshaller.requireIncludedFields = config.requireIncludedFields
 
         marshaller

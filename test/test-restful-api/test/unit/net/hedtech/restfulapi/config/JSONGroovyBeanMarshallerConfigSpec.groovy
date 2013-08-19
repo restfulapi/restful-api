@@ -188,9 +188,8 @@ class JSONGroovyBeanMarshallerConfigSpec extends Specification {
         def config = one.merge(two)
 
         then:
-        true                                     == one.isSupportClassSet
-        true                                     == two.isSupportClassSet
-        Thing                                    == two.supportClass
+        true                                     == config.isSupportClassSet
+        Thing                                    == config.supportClass
         ['foo':'foo2','bar':'bar1','baz':'baz1'] == config.fieldNames
         ['foo','bar','baz']                      == config.includedFields
         ['e1','e2','e3']                         == config.excludedFields

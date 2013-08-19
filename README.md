@@ -2220,12 +2220,30 @@ Anywhere you can define a marshaller, you can define a declarative xml marshalle
     xmlDomainMarshaller {
     }
 
-With options specified in the closure.  The xml domain marshaller supports the same options as the JSON version.  In the interest of brevity, those options will not be repeated here.  You can configure templates for xml domain marshallers in a
+With options specified in the closure.  The xml domain marshaller supports a superset of the same options as the JSON version.  In the interest of brevity, options that are the same will not be repeated here.  You can configure templates for xml domain marshallers in a
 
     xmlDomainMarshallerTemplates {
     }
 
 block, just as you can for JSON domain marshallers.  The only differences are in the maps passed to short object and additional fields closures - see the sections on additional fields and customzing short object behavior for xml for more details.
+
+###Customizing element name for XML marshalling
+By default, the declarative marshaller for xml will use the classname of the instance being rendered to choose a name for the element.  For example, a Person class will get rendered as a
+
+    <person>
+
+element.  (The classname is treated as a property name.)  You can override this behavior by providing an elementName explicitly:
+
+    xmlDomainMarshaller {
+        supports Person
+        elementName 'APerson'
+    }
+
+A Person instance would have an xml representation
+
+    <APerson>
+
+using that configuration.
 
 ###Customizing short-object behavior for XML marshalling
 You can override how a declarative xml marshaller renders short-objects by specifying a closure that generates the content.  The marshaller will automatically pass the closure a Map containing the following keys:
@@ -2349,17 +2367,35 @@ where
 All the options for additional fields that apply to json marshalling also apply to xml marshalling.  The only difference is the closure will be passed an instance of the XML converter, instead of JSON, and care must be taken that additional fields must be added in such a way as to conform to the declarative xml format if the representation is intended to be extracted declaratively.
 
 ##Declarative Marshalling of Groovy Beans to XML
-The plugin contains net.hedtech.restfulapi.marshallers.xmlGroovyBeanMarshaller and net.hedtech.restfulapi.marshallers.xml.DeclarativeGroovyBeanMarshaller, which are counterparts to their json versions.  They support the same options as their json counterparts.
+The plugin contains net.hedtech.restfulapi.marshallers.xmlGroovyBeanMarshaller and net.hedtech.restfulapi.marshallers.xml.DeclarativeGroovyBeanMarshaller, which are counterparts to their json versions.
 
 Anywhere you can add a marshaller (in a marshaller group or representation), you can configure and add an xml declarative groovy bean marshaller with
 
     xmlGroovyBeanMarshaller {}
 
-The closure specifies how to configure the marshaller.  The options available are the same as for the json marshaller, except for the values passed when defining additional fields.
+The closure specifies how to configure the marshaller.  The options available are a superset of those for the json marshaller, except for the values passed when defining additional fields.
 
 As with json marshallers, you can define templates with re-usable configuration:
 
     xmlGroovyBeanMarshallerTemplates {}
+
+###Customizing element name for XML marshalling
+By default, the declarative marshaller for xml will use the classname of the instance being rendered to choose a name for the element.  For example, a Person class will get rendered as a
+
+    <person>
+
+element.  (The classname is treated as a property name.)  You can override this behavior by providing an elementName explicitly:
+
+    xmlGroovyBeanMarshaller {
+        supports Person
+        elementName 'APerson'
+    }
+
+A Person instance would have an xml representation
+
+    <APerson>
+
+using that configuration.
 
 ###Adding additional fields for XML marshalling
 You can add additional fields not directly present in a groovy bean to its marshalled representation.

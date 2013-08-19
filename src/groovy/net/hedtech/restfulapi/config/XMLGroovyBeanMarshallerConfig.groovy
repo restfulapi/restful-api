@@ -14,6 +14,8 @@ class XMLGroovyBeanMarshallerConfig implements MergeableConfig {
     int priority = 100
     Class supportClass
     private boolean isSupportClassSet = false
+    String elementName
+    private boolean isElementNameSet = false
     //map of field name to the name the field should be marshalled as.
     //allows fields to be renamed in the output
     def fieldNames = [:]
@@ -50,6 +52,12 @@ class XMLGroovyBeanMarshallerConfig implements MergeableConfig {
         this
     }
 
+    def setElementName( String name ) {
+        this.isElementNameSet = true
+        this.elementName = name
+        this
+    }
+
     /**
      * Merges two DomainMarshallerConfig instances together
      * The values of the other instance augment or override
@@ -61,6 +69,9 @@ class XMLGroovyBeanMarshallerConfig implements MergeableConfig {
 
         if (other.isSupportClassSet) {
             config.setSupportClass( other.supportClass )
+        }
+        if (other.isElementNameSet) {
+            config.setElementName( other.elementName )
         }
         config.fieldNames.putAll  other.fieldNames
         config.includedFields.addAll other.includedFields
