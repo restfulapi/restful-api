@@ -17,7 +17,7 @@ import org.codehaus.groovy.grails.commons.GrailsApplication
 import org.codehaus.groovy.grails.commons.GrailsClassUtils
 import org.codehaus.groovy.grails.commons.GrailsDomainClass
 import org.codehaus.groovy.grails.commons.GrailsDomainClassProperty
-import org.codehaus.groovy.grails.support.proxy.EntityProxyHandler;
+import org.codehaus.groovy.grails.support.proxy.EntityProxyHandler
 import org.codehaus.groovy.grails.web.util.WebUtils
 import org.codehaus.groovy.grails.support.proxy.DefaultProxyHandler
 import org.codehaus.groovy.grails.support.proxy.ProxyHandler
@@ -48,7 +48,7 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<JSON> {
     //allow proxy handler to be explicitly set
     //this field should never be used directly,
     //use getProxyHandler() instead
-    ProxyHandler proxyHandler;
+    ProxyHandler proxyHandler
 
 
     private static List EXCLUDED_FIELDS = Arrays.asList('lastModified', 'lastModifiedBy',
@@ -87,9 +87,9 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<JSON> {
         }
 
         if (includeVersionFor(value)) {
-            GrailsDomainClassProperty versionProperty = domainClass.getVersion();
-            Object version = extractValue(value, versionProperty);
-            json.property("version", version);
+            GrailsDomainClassProperty versionProperty = domainClass.getVersion()
+            Object version = extractValue(value, versionProperty)
+            json.property("version", version)
         }
 
         processAdditionalFields(beanWrapper, json)
@@ -285,20 +285,20 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<JSON> {
     }
 
     protected Object extractValue(Object domainObject, GrailsDomainClassProperty property) {
-        BeanWrapper beanWrapper = new BeanWrapperImpl(domainObject);
-        return beanWrapper.getPropertyValue(property.getName());
+        BeanWrapper beanWrapper = new BeanWrapperImpl(domainObject)
+        return beanWrapper.getPropertyValue(property.getName())
     }
 
     protected Object extractIdForReference( Object refObj, GrailsDomainClass refDomainClass ) {
-        Object idValue;
+        Object idValue
         if (getProxyHandler() instanceof EntityProxyHandler) {
-            idValue = ((EntityProxyHandler) getProxyHandler()).getProxyIdentifier(refObj);
+            idValue = ((EntityProxyHandler) getProxyHandler()).getProxyIdentifier(refObj)
             if (idValue == null) {
-                idValue = extractValue(refObj, refDomainClass.getIdentifier());
+                idValue = extractValue(refObj, refDomainClass.getIdentifier())
             }
         }
         else {
-            idValue = extractValue(refObj, refDomainClass.getIdentifier());
+            idValue = extractValue(refObj, refDomainClass.getIdentifier())
         }
         idValue
     }
@@ -347,19 +347,19 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<JSON> {
         if (referenceObject == null) {
             json.getWriter().value(null)
         } else {
-            referenceObject = getProxyHandler().unwrapIfProxy(referenceObject);
+            referenceObject = getProxyHandler().unwrapIfProxy(referenceObject)
             if (referenceObject instanceof SortedMap) {
-                referenceObject = new TreeMap((SortedMap) referenceObject);
+                referenceObject = new TreeMap((SortedMap) referenceObject)
             } else if (referenceObject instanceof SortedSet) {
-                referenceObject = new TreeSet((SortedSet) referenceObject);
+                referenceObject = new TreeSet((SortedSet) referenceObject)
             } else if (referenceObject instanceof Set) {
-                referenceObject = new HashSet((Set) referenceObject);
+                referenceObject = new HashSet((Set) referenceObject)
             } else if (referenceObject instanceof Map) {
-                referenceObject = new HashMap((Map) referenceObject);
+                referenceObject = new HashMap((Map) referenceObject)
             } else if (referenceObject instanceof Collection) {
-                referenceObject = new ArrayList((Collection) referenceObject);
+                referenceObject = new ArrayList((Collection) referenceObject)
             }
-            json.convertAnother(referenceObject);
+            json.convertAnother(referenceObject)
         }
     }
 
@@ -382,7 +382,7 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<JSON> {
             if (referenceObject == null) {
                 writer.value(null)
             } else {
-                asShortObject(property, referenceObject, json);
+                asShortObject(property, referenceObject, json)
             }
         } else {
             writeFieldName(beanWrapper, property, json)

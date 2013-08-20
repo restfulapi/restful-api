@@ -12,6 +12,7 @@ import grails.converters.XML
 import java.text.SimpleDateFormat
 
 import net.hedtech.restfulapi.extractors.DateParseException
+import net.hedtech.restfulapi.extractors.ShortObjectExtractionException
 
 
 @TestMixin([GrailsUnitTestMixin])
@@ -206,6 +207,82 @@ class BasicXMLExtractorSpec extends Specification {
         DateParseException e = thrown()
         'not a date'         == e.params[0]
         400                  == e.getHttpStatusCode()
+    }
+
+    def "Test invalid short object extraction when the collection doesn't contain maps"() {
+        setup:
+        BasicXMLExtractor.metaClass.getShortObjectPaths << {
+            [['foos']]
+        }
+
+        BasicXMLExtractor extractor = new BasicXMLExtractor()
+        def xml = XML.parse '<object><foos array="true"><foo>not a short-object</foo></foos></object>'
+
+        when:
+        extractor.extract(xml)
+
+        then:
+        ShortObjectExtractionException e = thrown()
+        'not a short-object'             == e.params[0]
+        400                              == e.getHttpStatusCode()
+    }
+
+    def "Test invalid short object extraction when the collection objects don't contain a _link attribute"() {
+        setup:
+        BasicXMLExtractor.metaClass.getShortObjectPaths << {
+            [['foos']]
+        }
+
+        BasicXMLExtractor extractor = new BasicXMLExtractor()
+        def xml = XML.parse '<object><foos array="true"><foo><name>bad ref</name></foo></foos></object>'
+
+        when:
+        extractor.extract(xml)
+
+        then:
+        ShortObjectExtractionException e = thrown()
+        [name:'bad ref']                 == e.params[0]
+        400                              == e.getHttpStatusCode()
+    }
+
+    def "Test invalid short object extraction when a map of short-objects doesn't contain a _link attribute"() {
+        setup:
+        BasicXMLExtractor.metaClass.getShortObjectPaths << {
+            [['foos']]
+        }
+
+        BasicXMLExtractor extractor = new BasicXMLExtractor()
+        def xml = XML.parse """<object>
+                                    <foos map="true">
+                                        <entry key="one"><name>bad ref</name></entry>
+                                    </foos>
+                               </object>"""
+
+        when:
+        extractor.extract(xml)
+
+        then:
+        ShortObjectExtractionException e = thrown()
+        [one:[name:'bad ref']]           == e.params[0]
+        400                              == e.getHttpStatusCode()
+    }
+
+    def "Test invalid short object extraction the value isn't a collection or map"() {
+        setup:
+        BasicXMLExtractor.metaClass.getShortObjectPaths << {
+            [['foo']]
+        }
+
+        BasicXMLExtractor extractor = new BasicXMLExtractor()
+        def xml = XML.parse '<object><foo>not a short-object</foo></object>'
+
+        when:
+        extractor.extract(xml)
+
+        then:
+        ShortObjectExtractionException e = thrown()
+        'not a short-object'             == e.params[0]
+        400                              == e.getHttpStatusCode()
     }
 
     private String formatDate(Date d, String format) {

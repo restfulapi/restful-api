@@ -21,11 +21,11 @@ class BasicXMLExtractor extends MapExtractor {
         if (Collection.class.isAssignableFrom(value.getClass())) {
             def result = []
             value.each() {
-                if (it !=null && Map.class.isAssignableFrom(it.getClass())) {
+                if (it !=null && Map.class.isAssignableFrom(it.getClass()) && it.containsKey('_link')) {
                     def v = it['_link']
                     result.add( v.substring(v.lastIndexOf('/') + 1) )
                 } else {
-                    throw new Exception( "Cannot convert from short object for $it" )
+                    throw new ShortObjectExtractionException( it )
                 }
             }
             return result.toArray()
@@ -41,13 +41,16 @@ class BasicXMLExtractor extends MapExtractor {
                     //assume map of short-objects
                     def result = [:]
                     value.entrySet().each { Map.Entry entry ->
+                        if (!entry.value.containsKey('_link')) {
+                          throw new ShortObjectExtractionException( value )
+                        }
                         def v = entry.value['_link']
                         result.put(entry.key, [id:v.substring(v.lastIndexOf('/')+1)] )
                     }
                     return result
                 }
             } else {
-                throw new Exception( "Cannot convert from short object for $value" )
+                throw new ShortObjectExtractionException( value )
             }
         }
     }
@@ -78,6 +81,8 @@ class BasicXMLExtractor extends MapExtractor {
 
     Map extract(GPathResult content) {
         Map map = super.extract(content)
+println map
+println ""
         getTransformer().transform(map)
     }
 

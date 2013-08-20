@@ -6,7 +6,7 @@ package net.hedtech.restfulapi.extractors
 /**
  * An application style exception for use when declarative extractors
  * encounter an error with input, for example, unparsable dates.
- * This 'dummy' exception satisfies the requirements of an
+ * This exception satisfies the requirements of an
  * ApplicationException. That is, it has:
  *   1) a public 'def getHttpStatusCode()' method
  *   2) a public 'returnMap' property that is a Closure

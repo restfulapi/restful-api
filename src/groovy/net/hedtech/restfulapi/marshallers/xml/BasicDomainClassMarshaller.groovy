@@ -48,7 +48,7 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<XML>, NameAwareMars
     //allow proxy handler to be explicitly set
     //this field should never be used directly,
     //use getProxyHandler() instead
-    ProxyHandler proxyHandler;
+    ProxyHandler proxyHandler
 
 
     private static List EXCLUDED_FIELDS = Arrays.asList('lastModified', 'lastModifiedBy',
@@ -85,8 +85,8 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<XML>, NameAwareMars
         }
 
         if (includeVersionFor(value)) {
-            GrailsDomainClassProperty versionProperty = domainClass.getVersion();
-            Object version = extractValue(value, versionProperty);
+            GrailsDomainClassProperty versionProperty = domainClass.getVersion()
+            Object version = extractValue(value, versionProperty)
             xml.startNode("version")
             xml.convertAnother(version)
             xml.end()
@@ -134,11 +134,11 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<XML>, NameAwareMars
     @Override
     String getElementName(Object o) {
         if (getProxyHandler().isProxy(o) && (getProxyHandler() instanceof EntityProxyHandler)) {
-            EntityProxyHandler entityProxyHandler = (EntityProxyHandler) getProxyHandler();
-            final Class<?> cls = entityProxyHandler.getProxiedClass(o);
-            return GrailsNameUtils.getPropertyName(cls);
+            EntityProxyHandler entityProxyHandler = (EntityProxyHandler) getProxyHandler()
+            final Class<?> cls = entityProxyHandler.getProxiedClass(o)
+            return GrailsNameUtils.getPropertyName(cls)
         }
-        return GrailsNameUtils.getPropertyName(o.getClass());
+        return GrailsNameUtils.getPropertyName(o.getClass())
     }
 
 // ------------------- Methods to override to customize behavior ---------------------
@@ -297,20 +297,20 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<XML>, NameAwareMars
     }
 
     protected Object extractValue(Object domainObject, GrailsDomainClassProperty property) {
-        BeanWrapper beanWrapper = new BeanWrapperImpl(domainObject);
-        return beanWrapper.getPropertyValue(property.getName());
+        BeanWrapper beanWrapper = new BeanWrapperImpl(domainObject)
+        return beanWrapper.getPropertyValue(property.getName())
     }
 
     protected Object extractIdForReference( Object refObj, GrailsDomainClass refDomainClass ) {
-        Object idValue;
+        Object idValue
         if (getProxyHandler() instanceof EntityProxyHandler) {
-            idValue = ((EntityProxyHandler) getProxyHandler()).getProxyIdentifier(refObj);
+            idValue = ((EntityProxyHandler) getProxyHandler()).getProxyIdentifier(refObj)
             if (idValue == null) {
-                idValue = extractValue(refObj, refDomainClass.getIdentifier());
+                idValue = extractValue(refObj, refDomainClass.getIdentifier())
             }
         }
         else {
-            idValue = extractValue(refObj, refDomainClass.getIdentifier());
+            idValue = extractValue(refObj, refDomainClass.getIdentifier())
         }
         idValue
     }
@@ -357,19 +357,19 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<XML>, NameAwareMars
         startNode(beanWrapper, property, xml)
         Object referenceObject = beanWrapper.getPropertyValue(property.getName())
         if (referenceObject != null) {
-            referenceObject = getProxyHandler().unwrapIfProxy(referenceObject);
+            referenceObject = getProxyHandler().unwrapIfProxy(referenceObject)
             if (referenceObject instanceof SortedMap) {
-                referenceObject = new TreeMap((SortedMap) referenceObject);
+                referenceObject = new TreeMap((SortedMap) referenceObject)
             } else if (referenceObject instanceof SortedSet) {
-                referenceObject = new TreeSet((SortedSet) referenceObject);
+                referenceObject = new TreeSet((SortedSet) referenceObject)
             } else if (referenceObject instanceof Set) {
-                referenceObject = new HashSet((Set) referenceObject);
+                referenceObject = new HashSet((Set) referenceObject)
             } else if (referenceObject instanceof Map) {
-                referenceObject = new HashMap((Map) referenceObject);
+                referenceObject = new HashMap((Map) referenceObject)
             } else if (referenceObject instanceof Collection) {
-                referenceObject = new ArrayList((Collection) referenceObject);
+                referenceObject = new ArrayList((Collection) referenceObject)
             }
-            xml.convertAnother(referenceObject);
+            xml.convertAnother(referenceObject)
         }
         xml.end()
     }
@@ -392,7 +392,7 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<XML>, NameAwareMars
             log.trace( "$this marshalObject() handling field '${property.getName()}' for $clazz as a short object")
             startNode(beanWrapper, property, xml)
             if (referenceObject != null) {
-                asShortObject(property, referenceObject, xml);
+                asShortObject(property, referenceObject, xml)
             }
             xml.end()
         } else {

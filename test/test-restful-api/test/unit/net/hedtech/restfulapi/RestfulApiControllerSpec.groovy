@@ -1591,7 +1591,6 @@ class RestfulApiControllerSpec extends Specification {
 
     def "Test unparsable date in xml returns 400"() {
         setup:
-        //use default extractor for any methods with a request body
          config.restfulApiConfig = {
             resource 'things' config {
                 representation {
@@ -1623,6 +1622,45 @@ class RestfulApiControllerSpec extends Specification {
         'default.rest.extractor.unparsableDate' == response.getHeaderValue( 'X-hedtech-message' )
         0 * _._
     }
+
+    def "Test ShortObjectExtractionException returns 400"() {
+        //not testing all paths that create this exception
+        //just testing that if it occurs, it correctly returns a
+        //400 response
+        setup:
+         config.restfulApiConfig = {
+            resource 'things' config {
+                representation {
+                    mediaTypes = ['application/json']
+                    jsonExtractor {
+                        property 'foo' shortObject true
+                    }
+                }
+            }
+        }
+
+        controller.init()
+
+        //mock the appropriate service method, expect 0 invocations
+        def mock = Mock(ThingService)
+        controller.metaClass.getService = {-> mock}
+
+        request.addHeader( 'Accept', 'application/json' )
+        request.addHeader( 'Content-Type', 'application/json' )
+        request.method = 'POST'
+        request.setJSON( new JSONObject( ["foo":["not a short-object"]] ) )
+        params.pluralizedResourceName = 'things'
+
+        when:
+        controller.create()
+
+        then:
+        400                                            == response.status
+        'Validation failed'                            == response.getHeaderValue( 'X-Status-Reason' )
+        'default.rest.extractor.unparsableShortObject' == response.getHeaderValue( 'X-hedtech-message' )
+        0 * _._
+    }
+
 
     private void mockCacheHeaders() {
         def cacheHeadersService = new CacheHeadersService()

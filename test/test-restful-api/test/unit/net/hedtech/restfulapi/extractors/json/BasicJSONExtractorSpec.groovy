@@ -10,6 +10,7 @@ import grails.test.mixin.support.*
 import java.text.SimpleDateFormat
 
 import net.hedtech.restfulapi.extractors.DateParseException
+import net.hedtech.restfulapi.extractors.ShortObjectExtractionException
 
 import org.codehaus.groovy.grails.web.json.JSONObject
 
@@ -146,6 +147,7 @@ class BasicJSONExtractorSpec extends Specification {
         [customers:['smith':['id':'1'],'johnson':['id':'2']]] == map
     }
 
+
     def "Test date parsing"() {
         setup:
         BasicJSONExtractor.metaClass.getDatePaths << {
@@ -189,6 +191,78 @@ class BasicJSONExtractorSpec extends Specification {
         DateParseException e = thrown()
         'not a date'         == e.params[0]
         400                  == e.getHttpStatusCode()
+    }
+
+    def "Test invalid short object extraction when the collection doesn't contain maps"() {
+        setup:
+        BasicJSONExtractor.metaClass.getShortObjectPaths << {
+            [['foo']]
+        }
+
+        BasicJSONExtractor extractor = new BasicJSONExtractor()
+        JSONObject json = new JSONObject(['foo':['not a short-object']])
+
+        when:
+        extractor.extract(json)
+
+        then:
+        ShortObjectExtractionException e = thrown()
+        'not a short-object'             == e.params[0]
+        400                              == e.getHttpStatusCode()
+    }
+
+    def "Test invalid short object extraction when the collection objects don't contain a _link attribute"() {
+        setup:
+        BasicJSONExtractor.metaClass.getShortObjectPaths << {
+            [['foos']]
+        }
+
+        BasicJSONExtractor extractor = new BasicJSONExtractor()
+        JSONObject json = new JSONObject(['foos':[[name:'bad ref']]])
+
+        when:
+        extractor.extract(json)
+
+        then:
+        ShortObjectExtractionException e = thrown()
+        [name:'bad ref']                 == e.params[0]
+        400                              == e.getHttpStatusCode()
+    }
+
+    def "Test invalid short object extraction when a map of short-objects doesn't contain a _link attribute"() {
+        setup:
+        BasicJSONExtractor.metaClass.getShortObjectPaths << {
+            [['foos']]
+        }
+
+        BasicJSONExtractor extractor = new BasicJSONExtractor()
+        JSONObject json = new JSONObject(['foos':[one:[name:'bad ref']]])
+
+        when:
+        extractor.extract(json)
+
+        then:
+        ShortObjectExtractionException e = thrown()
+        [one:[name:'bad ref']]           == e.params[0]
+        400                              == e.getHttpStatusCode()
+    }
+
+    def "Test invalid short object extraction the value isn't a collection or map"() {
+        setup:
+        BasicJSONExtractor.metaClass.getShortObjectPaths << {
+            [['foo']]
+        }
+
+        BasicJSONExtractor extractor = new BasicJSONExtractor()
+        JSONObject json = new JSONObject(['foo':'not a short-object'])
+
+        when:
+        extractor.extract(json)
+
+        then:
+        ShortObjectExtractionException e = thrown()
+        'not a short-object'             == e.params[0]
+        400                              == e.getHttpStatusCode()
     }
 
     private String formatDate(Date d, String format) {
