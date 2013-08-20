@@ -195,6 +195,10 @@ restfulApiConfig = {
             mediaTypes = ["application/json"]
             jsonExtractor {}
         }
+        representation {
+            mediaTypes = ["application/xml"]
+            xmlExtractor {}
+        }
     }
 
     resource 'things' config {

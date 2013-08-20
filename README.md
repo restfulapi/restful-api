@@ -402,6 +402,45 @@ HQLBuilder is not a sophisticated query engine, and provides limited support for
 
 The createHQL method accepts a third argument which is a boolean, and if true indicates the statement should be generated to perform a 'count(*)' versus a select. That is, the HQLBuilder may be used in both list() and count() service methods to ensure the totalCount properly reflects the filters provided on the request.
 
+##Query-with-POST
+If a /qapi url mapping has been defined to support querying with POST, the controller will attempt to parse the body of a POST to a resource using the qapi prefix by using the pseudo-resource name 'query-filters'.  In order for this to work, add a 'query-filters' resource to the restfulApiConfig:
+
+    // This pseudo resource is used when issuing a query using a POST. Such a POST is made
+    // against the actual resource being queried, but using a different URL prefix (e.g., qapi)
+    // so the request is routed to the 'list' method (versus the normal 'create' method).
+    resource 'query-filters' config {
+        representation {
+            mediaTypes = ["application/json"]
+            jsonExtractor {}
+        }
+        representation {
+            mediaTypes = ["application/xml"]
+            xmlExtractor {}
+        }
+    }
+
+Remove the json or xml representation as necessary.
+
+To pass query filters by POST, use a map where the keys are the names of the filter parameters.  For example, in json:
+
+    {
+        "filter[0][field]": "code",
+        "filter[0][operator]": "eq",
+        "filter[0][value]": "BB",
+        "max":"50"
+    }
+
+Or in xml, using the declarative extractor as defined above:
+
+    <filters map="true">
+        <entry key="filter[0][field]">code</entry>
+        <entry key="filter[0][operator]">eq</entry>
+        <entry key="filter[0][value]">BB</entry>
+        <entry key="max">1</entry>
+    </filters>
+
+You can, of course, assign custom extractors to the query-filters representation.  Any such extractor must return a map where the keys are valid parameter names for the filtering support.
+
 ##Supplemental data/affordances/HATEOS
 Since the plugin does not use an envelope in the message body, any affordances must be present in the resource representations themselves.
 

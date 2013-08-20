@@ -81,8 +81,6 @@ class BasicXMLExtractor extends MapExtractor {
 
     Map extract(GPathResult content) {
         Map map = super.extract(content)
-println map
-println ""
         getTransformer().transform(map)
     }
 

@@ -89,7 +89,7 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         "1" == responseHeader('X-hedtech-pageMaxSize')
     }
 
-    def "Test list filtering using POST with json response"() {
+    def "Test list filtering using POST with json"() {
         setup:
         createThing('AA')
         createThing('BB')
@@ -107,6 +107,44 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
                     "filter[0][value]": "BB",
                     "max":"1"
                 }
+                """
+            }
+        }
+
+        then:
+        200 == response.status
+        'application/json' == response.contentType
+        def json = JSON.parse response.text
+        1 == json.size()
+        "BB" == json[0].code
+        "An BB thing" == json[0].description
+
+        // assert localization of the message
+        "List of thing resources" == responseHeader('X-hedtech-message')
+
+        //check pagination headers
+        "1" == responseHeader('X-hedtech-totalCount')
+        "0" == responseHeader('X-hedtech-pageOffset')
+        "1" == responseHeader('X-hedtech-pageMaxSize')
+    }
+
+    def "Test list filtering using POST with xml"() {
+        setup:
+        createThing('AA')
+        createThing('BB')
+
+        when:"list with application/json accept"
+        post("$localBase/qapi/things") {
+            headers['Content-Type'] = 'application/xml'
+            headers['Accept']       = 'application/json'
+                body {
+                // akin to ?filter[0][field]=code&filter[0][operator]=eq&filter[0][value]=BB&max=1
+                """<filters map="true">
+                    <entry key="filter[0][field]">code</entry>
+                    <entry key="filter[0][operator]">eq</entry>
+                    <entry key="filter[0][value]">BB</entry>
+                    <entry key="max">1</entry>
+                </filters>
                 """
             }
         }
