@@ -5,21 +5,26 @@ package net.hedtech.restfulapi.config
 
 import org.codehaus.groovy.grails.commons.GrailsApplication
 
-class JSONGroovyBeanMarshallerDelegate {
+class XMLBeanMarshallerDelegate {
 
-    JSONGroovyBeanMarshallerConfig config = new JSONGroovyBeanMarshallerConfig()
+    XMLBeanMarshallerConfig config = new XMLBeanMarshallerConfig()
 
-    JSONGroovyBeanMarshallerDelegate supports( Class clazz ) {
-        config.setSupportClass( clazz )
+    XMLBeanMarshallerDelegate supports(Class clazz) {
+        config.setSupportClass(clazz)
         this
     }
 
-    JSONGroovyBeanMarshallerDelegate setPriority(int priority) {
+    XMLBeanMarshallerDelegate elementName(String name) {
+        config.setElementName(name)
+        this
+    }
+
+    XMLBeanMarshallerDelegate setPriority(int priority) {
         config.setPriority(priority)
         this
     }
 
-    JSONGroovyBeanMarshallerDelegate setInherits(Collection c) {
+    XMLBeanMarshallerDelegate setInherits(Collection c) {
         config.inherits = c
         this
     }
@@ -31,31 +36,31 @@ class JSONGroovyBeanMarshallerDelegate {
         return handleField(fieldName)
     }
 
-    JSONGroovyBeanMarshallerDelegate includesFields(Closure c) {
+    XMLBeanMarshallerDelegate includesFields(Closure c) {
         c.delegate = new IncludeConfig()
         c.resolveStrategy = Closure.DELEGATE_ONLY
         c.call()
         this
     }
 
-    JSONGroovyBeanMarshallerDelegate requiresIncludedFields(boolean b) {
+    XMLBeanMarshallerDelegate requiresIncludedFields(boolean b) {
         config.requireIncludedFields = b
         this
     }
 
-    JSONGroovyBeanMarshallerDelegate excludesFields(Closure c) {
+    XMLBeanMarshallerDelegate excludesFields(Closure c) {
         c.delegate = new ExcludeConfig()
         c.resolveStrategy = Closure.DELEGATE_ONLY
         c.call()
         this
     }
 
-    JSONGroovyBeanMarshallerDelegate additionalFields(Closure c) {
+    XMLBeanMarshallerDelegate additionalFields(Closure c) {
         config.additionalFieldClosures.add c
         this
     }
 
-    JSONGroovyBeanMarshallerDelegate setAdditionalFieldsMap(Map m) {
+    XMLBeanMarshallerDelegate setAdditionalFieldsMap(Map m) {
         config.additionalFieldsMap = m
         this
     }

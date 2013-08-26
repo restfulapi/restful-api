@@ -1,12 +1,13 @@
 /* ****************************************************************************
 Copyright 2013 Ellucian Company L.P. and its affiliates.
 ******************************************************************************/
-package net.hedtech.restfulapi.marshallers.xml
+
+package net.hedtech.restfulapi.marshallers.json
 
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 
-import grails.converters.XML
+import grails.converters.JSON
 import groovy.lang.GroovyObject
 
 import java.beans.PropertyDescriptor
@@ -15,31 +16,22 @@ import java.lang.reflect.Method
 import java.lang.reflect.Modifier
 
 import org.codehaus.groovy.grails.support.proxy.ProxyHandler
+import org.codehaus.groovy.grails.web.json.JSONWriter
 
 import org.springframework.beans.BeanWrapper
 
-class DeclarativeGroovyBeanMarshaller extends GroovyBeanMarshaller {
+class DeclarativeBeanMarshaller extends BeanMarshaller {
 
     protected static final Log log =
-        LogFactory.getLog(DeclarativeGroovyBeanMarshaller.class)
+        LogFactory.getLog(DeclarativeBeanMarshaller.class)
 
     Class supportClass
-    String elementName
     def fieldNames = [:]
     def excludedFields = []
     def includedFields = []
     boolean requireIncludedFields = false
     def additionalFieldClosures = []
     def additionalFieldsMap = [:]
-
-    @Override
-    String getElementName(Object o) {
-        if (elementName != null) {
-            elementName
-        } else {
-            super.getElementName(o)
-        }
-    }
 
     @Override
     public boolean supports(Object object) {
@@ -77,14 +69,14 @@ class DeclarativeGroovyBeanMarshaller extends GroovyBeanMarshaller {
     }
 
     @Override
-    protected void processAdditionalFields(BeanWrapper beanWrapper, XML xml) {
+    protected void processAdditionalFields(BeanWrapper beanWrapper, JSON json) {
         Map map = [:]
         map.putAll( additionalFieldsMap )
         map.putAll(
             [
                 'grailsApplication':app,
                 'beanWrapper':beanWrapper,
-                'xml':xml
+                'json':json
             ]
         )
         if (!map['resourceName']) {

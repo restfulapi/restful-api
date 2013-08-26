@@ -17,15 +17,15 @@ import spock.lang.*
 
 
 @TestMixin(GrailsUnitTestMixin)
-class RestConfigJSONGroovyBeanMarshallerSpec extends Specification {
+class RestConfigJSONBeanMarshallerSpec extends Specification {
 
-    def "Test json groovy bean marshaller in marshaller group"() {
+    def "Test json bean marshaller in marshaller group"() {
         setup:
         def src =
         {
             marshallerGroups {
-                group 'groovyBean' marshallers {
-                    jsonGroovyBeanMarshaller {
+                group 'jsonBean' marshallers {
+                    jsonBeanMarshaller {
                         supports SimpleBean
                         field 'foo' name 'bar'
                         includesFields {
@@ -41,7 +41,7 @@ class RestConfigJSONGroovyBeanMarshallerSpec extends Specification {
 
         when:
         def config = RestConfig.parse( grailsApplication, src )
-        def marshaller = config.marshallerGroups['groovyBean'].marshallers[0].instance
+        def marshaller = config.marshallerGroups['jsonBean'].marshallers[0].instance
 
         then:
         SimpleBean                                == marshaller.supportClass
@@ -50,11 +50,11 @@ class RestConfigJSONGroovyBeanMarshallerSpec extends Specification {
         ['foobar']                                == marshaller.excludedFields
     }
 
-    def "Test json groovy bean marshaller template parsing"() {
+    def "Test json  bean marshaller template parsing"() {
         setup:
         def src =
         {
-            jsonGroovyBeanMarshallerTemplates {
+            jsonBeanMarshallerTemplates {
                 template 'one' config {
                 }
 
@@ -81,10 +81,10 @@ class RestConfigJSONGroovyBeanMarshallerSpec extends Specification {
         when:
         def config = RestConfig.parse( grailsApplication, src )
         config.validate()
-        def mConfig = config.jsonGroovyBean.configs['two']
+        def mConfig = config.jsonBean.configs['two']
 
         then:
-         2                 == config.jsonGroovyBean.configs.size()
+         2                 == config.jsonBean.configs.size()
          ['one']           == mConfig.inherits
          5                 == mConfig.priority
          SimpleBean        == mConfig.supportClass
@@ -96,7 +96,7 @@ class RestConfigJSONGroovyBeanMarshallerSpec extends Specification {
          ['a':'b','c':'d'] == mConfig.additionalFieldsMap
     }
 
-    def "Test json groovy bean marshaller creation"() {
+    def "Test json bean marshaller creation"() {
         setup:
         def src =
         {
@@ -104,7 +104,7 @@ class RestConfigJSONGroovyBeanMarshallerSpec extends Specification {
                 representation {
                     mediaTypes = ['application/json']
                     marshallers {
-                        jsonGroovyBeanMarshaller {
+                        jsonBeanMarshaller {
                             supports SimpleBean
                             field 'owner' name 'myOwner'
                             requiresIncludedFields true
@@ -138,11 +138,11 @@ class RestConfigJSONGroovyBeanMarshallerSpec extends Specification {
         ['foo':'bar']                            == marshaller.additionalFieldsMap
     }
 
-    def "Test json groovy bean marshaller creation from merged configuration"() {
+    def "Test json bean marshaller creation from merged configuration"() {
         setup:
         def src =
         {
-            jsonGroovyBeanMarshallerTemplates {
+            jsonBeanMarshallerTemplates {
                 template 'one' config {
                     includesFields {
                         field 'field1'
@@ -160,7 +160,7 @@ class RestConfigJSONGroovyBeanMarshallerSpec extends Specification {
                 representation {
                     mediaTypes = ['application/json']
                     marshallers {
-                        jsonGroovyBeanMarshaller {
+                        jsonBeanMarshaller {
                             inherits = ['one','two']
                             supports Thing
                             includesFields {

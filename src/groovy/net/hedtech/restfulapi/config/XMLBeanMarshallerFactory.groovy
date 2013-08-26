@@ -6,16 +6,16 @@ package net.hedtech.restfulapi.config
 import net.hedtech.restfulapi.marshallers.xml.*
 
 /**
- * A factory for creating DeclarativeGroovyBeanMarshaller instances
+ * A factory for creating DeclarativeBeanMarshaller instances
  * from configuration.
  */
-class XMLGroovyBeanMarshallerFactory {
+class XMLBeanMarshallerFactory {
 
-    static DeclarativeGroovyBeanMarshaller instantiateMarshaller(XMLGroovyBeanMarshallerConfig config, RestConfig restConfig) {
+    static DeclarativeBeanMarshaller instantiateMarshaller(XMLBeanMarshallerConfig config, RestConfig restConfig) {
         //Merge the include chain into a final config
-        config = restConfig.xmlGroovyBean.getMergedConfig( config )
+        config = restConfig.xmlBean.getMergedConfig( config )
 
-        def marshaller = new DeclarativeGroovyBeanMarshaller(
+        def marshaller = new DeclarativeBeanMarshaller(
             app:restConfig.grailsApplication
         )
         marshaller.fieldNames.putAll                config.fieldNames

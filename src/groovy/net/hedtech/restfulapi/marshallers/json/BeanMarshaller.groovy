@@ -1,13 +1,13 @@
 /* ****************************************************************************
 Copyright 2013 Ellucian Company L.P. and its affiliates.
 ******************************************************************************/
-package net.hedtech.restfulapi.marshallers.xml
+
+package net.hedtech.restfulapi.marshallers.json
 
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
 
-import grails.converters.XML
-import groovy.lang.GroovyObject
+import grails.converters.JSON
 
 import java.beans.PropertyDescriptor
 import java.lang.reflect.Field
@@ -15,27 +15,27 @@ import java.lang.reflect.Method
 import java.lang.reflect.Modifier
 
 import org.codehaus.groovy.grails.support.proxy.ProxyHandler
-import org.codehaus.groovy.grails.web.xml.*
+import org.codehaus.groovy.grails.web.json.JSONWriter
 
 import org.springframework.beans.BeanWrapper
 
 /**
- * A groovy bean marshaller.
+ * A bean marshaller.
  * By default, it will marshall all properties and public (non-static/non-transient)
  * fields.
  * The class can be extended to override how an object is marshalled.
  **/
-class GroovyBeanMarshaller extends AbstractBeanMarshaller {
+class BeanMarshaller extends AbstractBeanMarshaller {
 
     protected static final Log log =
-        LogFactory.getLog(GroovyBeanMarshaller.class)
+        LogFactory.getLog(BeanMarshaller.class)
 
     private static List EXCLUDED_FIELDS =
         Arrays.asList('password', 'metaClass', 'class')
 
     @Override
     public boolean supports(Object object) {
-        return object instanceof GroovyObject;
+        !(object instanceof Collection) && !(object instanceof Map)
     }
 
     @Override

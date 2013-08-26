@@ -5,7 +5,6 @@ Copyright 2013 Ellucian Company L.P. and its affiliates.
 package net.hedtech.restfulapi.marshallers.json
 
 import grails.converters.JSON
-import groovy.lang.GroovyObject
 
 import org.apache.commons.logging.Log
 import org.apache.commons.logging.LogFactory
@@ -36,7 +35,7 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException
 
 
 /**
- * A groovy bean marshaller.
+ * A bean marshaller.
  * By default, it will marshall all properties and public (non-static/non-transient)
  * fields.
  * The class can be extended to override how an object is marshalled.

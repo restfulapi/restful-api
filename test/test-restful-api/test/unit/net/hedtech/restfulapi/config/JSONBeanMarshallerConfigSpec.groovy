@@ -17,7 +17,7 @@ import spock.lang.*
 
 
 @TestMixin(GrailsUnitTestMixin)
-class JSONGroovyBeanMarshallerConfigSpec extends Specification {
+class JSONBeanMarshallerConfigSpec extends Specification {
 
     def "Test inherits"() {
         setup:
@@ -165,7 +165,7 @@ class JSONGroovyBeanMarshallerConfigSpec extends Specification {
         setup:
         def c1 = { Map m -> }
         def c2 = { Map m -> }
-        JSONGroovyBeanMarshallerConfig one = new JSONGroovyBeanMarshallerConfig(
+        JSONBeanMarshallerConfig one = new JSONBeanMarshallerConfig(
             supportClass:SimpleBean,
             fieldNames:['foo':'foo1','bar':'bar1'],
             includedFields:['foo','bar'],
@@ -174,7 +174,7 @@ class JSONGroovyBeanMarshallerConfigSpec extends Specification {
             additionalFieldsMap:['one':'one','two':'two'],
             requireIncludedFields:true
         )
-        JSONGroovyBeanMarshallerConfig two = new JSONGroovyBeanMarshallerConfig(
+        JSONBeanMarshallerConfig two = new JSONBeanMarshallerConfig(
             supportClass:Thing,
             fieldNames:['foo':'foo2','baz':'baz1'],
             includedFields:['baz'],
@@ -202,7 +202,7 @@ class JSONGroovyBeanMarshallerConfigSpec extends Specification {
         setup:
         def c1 = { Map m -> }
         def c2 = { Map m -> }
-        JSONGroovyBeanMarshallerConfig one = new JSONGroovyBeanMarshallerConfig(
+        JSONBeanMarshallerConfig one = new JSONBeanMarshallerConfig(
             supportClass:Thing,
             fieldNames:['foo':'foo1','bar':'bar1'],
             includedFields:['foo','bar'],
@@ -211,7 +211,7 @@ class JSONGroovyBeanMarshallerConfigSpec extends Specification {
             additionalFieldsMap:['one':'1'],
             requireIncludedFields:true
         )
-        JSONGroovyBeanMarshallerConfig two = new JSONGroovyBeanMarshallerConfig(
+        JSONBeanMarshallerConfig two = new JSONBeanMarshallerConfig(
             supportClass:PartOfThing,
             fieldNames:['foo':'foo2','baz':'baz1'],
             includedFields:['baz'],
@@ -246,10 +246,10 @@ class JSONGroovyBeanMarshallerConfigSpec extends Specification {
         setup:
         def c1 = { Map m -> }
         def c2 = { Map m -> }
-        JSONGroovyBeanMarshallerConfig one = new JSONGroovyBeanMarshallerConfig(
+        JSONBeanMarshallerConfig one = new JSONBeanMarshallerConfig(
             supportClass:SimpleBean
         )
-        JSONGroovyBeanMarshallerConfig two = new JSONGroovyBeanMarshallerConfig(
+        JSONBeanMarshallerConfig two = new JSONBeanMarshallerConfig(
         )
 
         when:
@@ -263,10 +263,10 @@ class JSONGroovyBeanMarshallerConfigSpec extends Specification {
     def "Test merging marshaller with require included fields set only on the left"() {
         setup:
         def c1 = { Map m -> }
-        JSONGroovyBeanMarshallerConfig one = new JSONGroovyBeanMarshallerConfig(
+        JSONBeanMarshallerConfig one = new JSONBeanMarshallerConfig(
             requireIncludedFields:true
         )
-        JSONGroovyBeanMarshallerConfig two = new JSONGroovyBeanMarshallerConfig(
+        JSONBeanMarshallerConfig two = new JSONBeanMarshallerConfig(
         )
 
         when:
@@ -279,16 +279,16 @@ class JSONGroovyBeanMarshallerConfigSpec extends Specification {
 
     def "Test resolution of marshaller configuration inherits"() {
         setup:
-        JSONGroovyBeanMarshallerConfig part1 = new JSONGroovyBeanMarshallerConfig(
+        JSONBeanMarshallerConfig part1 = new JSONBeanMarshallerConfig(
         )
-        JSONGroovyBeanMarshallerConfig part2 = new JSONGroovyBeanMarshallerConfig(
+        JSONBeanMarshallerConfig part2 = new JSONBeanMarshallerConfig(
         )
-        JSONGroovyBeanMarshallerConfig part3 = new JSONGroovyBeanMarshallerConfig(
+        JSONBeanMarshallerConfig part3 = new JSONBeanMarshallerConfig(
         )
-        JSONGroovyBeanMarshallerConfig combined = new JSONGroovyBeanMarshallerConfig(
+        JSONBeanMarshallerConfig combined = new JSONBeanMarshallerConfig(
             inherits:['part1','part2']
         )
-        JSONGroovyBeanMarshallerConfig actual = new JSONGroovyBeanMarshallerConfig(
+        JSONBeanMarshallerConfig actual = new JSONBeanMarshallerConfig(
             inherits:['combined','part3']
         )
         ConfigGroup group = new ConfigGroup()
@@ -303,14 +303,14 @@ class JSONGroovyBeanMarshallerConfigSpec extends Specification {
 
     def "Test merge order of configuration inherits"() {
         setup:
-        JSONGroovyBeanMarshallerConfig part1 = new JSONGroovyBeanMarshallerConfig(
+        JSONBeanMarshallerConfig part1 = new JSONBeanMarshallerConfig(
             fieldNames:['1':'part1','2':'part1','3':'part1']
         )
-        JSONGroovyBeanMarshallerConfig part2 = new JSONGroovyBeanMarshallerConfig(
+        JSONBeanMarshallerConfig part2 = new JSONBeanMarshallerConfig(
             fieldNames:['2':'part2','3':'part2']
 
         )
-        JSONGroovyBeanMarshallerConfig actual = new JSONGroovyBeanMarshallerConfig(
+        JSONBeanMarshallerConfig actual = new JSONBeanMarshallerConfig(
             inherits:['part1','part2'],
             fieldNames:['3':'actual']
         )
@@ -342,8 +342,8 @@ class JSONGroovyBeanMarshallerConfigSpec extends Specification {
         [:] == config.fieldNames
     }
 
-    private JSONGroovyBeanMarshallerConfig invoke( Closure c ) {
-        JSONGroovyBeanMarshallerDelegate delegate = new JSONGroovyBeanMarshallerDelegate()
+    private JSONBeanMarshallerConfig invoke( Closure c ) {
+        JSONBeanMarshallerDelegate delegate = new JSONBeanMarshallerDelegate()
         c.delegate = delegate
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c.call()

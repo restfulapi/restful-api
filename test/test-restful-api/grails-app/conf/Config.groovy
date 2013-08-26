@@ -460,7 +460,7 @@ restfulApiConfig = {
                 jsonDomainMarshaller {
                     priority = 100
                 }
-                jsonGroovyBeanMarshaller {
+                jsonBeanMarshaller {
                     supports net.hedtech.restfulapi.ThingWrapper
                     includesFields {
                         field 'things'

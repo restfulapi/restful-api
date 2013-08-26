@@ -159,7 +159,7 @@ Edit the UrlMappings.groovy to look similar to the following defaults.  Your app
                 jsonDomainMarshaller {
                     priority = 101
                 }
-                jsonGroovyBeanMarshaller {
+                jsonBeanMarshaller {
                     priority = 100
                 }
             }
@@ -598,7 +598,7 @@ To dynamically expose services, you specify an anyResource block:
                     jsonDomainMarshaller {
                         priority = 101
                     }
-                    jsonGroovyBeanMarshaller {
+                    jsonBeanMarshaller {
                         priority = 100
                     }
                 }
@@ -607,7 +607,7 @@ To dynamically expose services, you specify an anyResource block:
         }
     }
 
-The configuration in the anyResource block applies to any resource that isn't explicitly listed in the configuration.  anyResource would be primarily used when you want to dynamically expose resources, and are not using versioned representations; e.g., you have a 'simple' system in which the resource representations can map directly to the objects they represent and the json or xml can be dynamically generated.  The above example uses the declarative domain and groovy bean marshallers to handle all resources.
+The configuration in the anyResource block applies to any resource that isn't explicitly listed in the configuration.  anyResource would be primarily used when you want to dynamically expose resources, and are not using versioned representations; e.g., you have a 'simple' system in which the resource representations can map directly to the objects they represent and the json or xml can be dynamically generated.  The above example uses the declarative domain and bean marshallers to handle all resources.
 
 Any configuration options for a resource/representation listed below can be applied to the anyResource block as well.  (So you can assign affordances, etc.)
 
@@ -621,7 +621,7 @@ If you define an anyResource block, and then expose one or more resources explic
                     jsonDomainMarshaller {
                         priority = 101
                     }
-                    jsonGroovyBeanMarshaller {
+                    jsonBeanMarshaller {
                         priority = 100
                     }
                 }
@@ -1501,37 +1501,37 @@ The domain marshaller will be configured with the results of merging the configu
 ###Configuration merging
 The order in which configurations are merged is significant.  When two configurations, first and second are merged, boolean values, or single valued options that are set in the second config override the first.  Collection or map values are combined.
 
-##Declarative Marshalling of Groovy Beans to JSON
-The plugin contains a GroovyBeanMarshaller and a DeclarativeGroovyBeanMarshaller, designed to simplify marshalling of groovy beans to a json representation.  The functioning of the marshallers is similar to the domain class marshallers, but operate against groovy bean instances, intead of domain objects.  (Of course, where a domain object can be treated as a groovy bean, the bean marshallers can also be used.)  The options these marshallers support are very similar to those of the domain marshallers, except that the bean marshallers do not have support for recognizes object associations.
+##Declarative Marshalling of Beans to JSON
+The plugin contains a BeanMarshaller and a DeclarativeBeanMarshaller, designed to simplify marshalling of beans to a json representation.  The functioning of the marshallers is similar to the domain class marshallers, but operate against bean instances, intead of domain objects.  (Of course, where a domain object can be treated as a bean, the bean marshallers can also be used.)  The options these marshallers support are very similar to those of the domain marshallers, except that the bean marshallers do not have support for recognizing object associations.
 
-The GroovyBeanMarshaller will marshall properties, and public non-static/non-transient fields of a groovy bean.  The properties 'class', 'metaClass', and 'pasword' are automatically excluded from being marshalled.
+The BeanMarshaller will marshall properties, and public non-static/non-transient fields of a bean.  The properties 'class', 'metaClass', and 'pasword' are automatically excluded from being marshalled.
 
-Use of the GroovyBeanMarshaller requires new subclasses to be created to customize marshalling behavior.  Marshalling of groovy beans can be customized without resorting to writing custom marshallers with the DeclarativeGroovyBeanMarshaller.
+Use of the BeanMarshaller requires new subclasses to be created to customize marshalling behavior.  Marshalling of beans can be customized without resorting to writing custom marshallers with the DeclarativeBeanMarshaller.
 
-The DeclarativeGroovyBeanMarshaller is a marshaller that can be used to customize json representations without code.
+The DeclarativeBeanMarshaller is a marshaller that can be used to customize json representations without code.
 
-By default, the DeclarativeGroovyBeanMarshaller behaves the same as the GroovyBeanMarshaller; however, it can be configured to include or exclude fields, add custom affordances or other fields, and rename fields.
+By default, the DeclarativeBeanMarshaller behaves the same as the BeanMarshaller; however, it can be configured to include or exclude fields, add custom affordances or other fields, and rename fields.
 
 To use the marshaller directly, see the javadocs for the class.
 
 The preferred way to utilize the class is to use the built-in support for the class in the configuration DSL.
 
-Anywhere you can add a marshaller (in a marshaller group or a representation), you can configure and add a json declarative groovy bean marshaller with
+Anywhere you can add a marshaller (in a marshaller group or a representation), you can configure and add a json declarative bean marshaller with
 
-    jsonGroovyBeanMarshaller {}
+    jsonBeanMarshaller {}
 
-The closure specifies how to configure the marshaller.  Specifying no information will register a marshaller that behaves identically to GroovyBeanMarshaller; that is, it will marshall all but the default excluded fields.
+The closure specifies how to configure the marshaller.  Specifying no information will register a marshaller that behaves identically to BeanMarshaller; that is, it will marshall all but the default excluded fields.
 
 The best way to describe the use of the marshaller is by examples.
 
 ###Limiting the marshaller to a class (and it's subclasses)
-By default, a declarative groovy bean marshaller will support any object that is an instance of GroovyObject.  If you are including or excluding fields however, it is likely that you want an instance of the marshaller for a particular class (or subclasses).  You can control this with the supports option:
+By default, a declarative bean marshaller will support any object that is an instance of GroovyObject.  If you are including or excluding fields however, it is likely that you want an instance of the marshaller for a particular class (or subclasses).  You can control this with the supports option:
 
     resource 'things' config {
         representation {
             mediaTypes = ["application/json"]
             marshallers {
-                jsonGroovyBeanMarshaller {
+                jsonBeanMarshaller {
                     supports net.hedtech.restfulapi.Thing
                 }
             }
@@ -1539,16 +1539,16 @@ By default, a declarative groovy bean marshaller will support any object that is
     }
 
 
-This will register a declarative groovy bean marshaller that will support the Thing class, and any subclasses of Thing.  Note that it is your responsibility to ensure that Thing can be treated as a groovy bean - if it is not, you should register a different type of marshaller for it.
+This will register a declarative bean marshaller that will support the Thing class, and any subclasses of Thing.  Note that it is your responsibility to ensure that Thing can be treated as a bean - if it is not, you should register a different type of marshaller for it.
 
 ###Excluding specific fields from a representation
-By default, the json groovy bean marshaller marshall all properties, and any public non-static non-transient field.  You can exclude additional fields or properties with the excludedFields block:
+By default, the json bean marshaller marshals all properties, and any public non-static, non-transient field.  You can exclude additional fields or properties with the excludedFields block:
 
     resource 'things' config {
         representation {
             mediaTypes = ["application/json"]
             marshallers {
-                jsonGroovyBeanMarshaller {
+                jsonBeanMarshaller {
                     supports net.hedtech.restfulapi.Thing
                     excludesFields {
                         field 'description'
@@ -1568,7 +1568,7 @@ By default, when a field is marshalled, its name in the representation is identi
         representation {
             mediaTypes = ["application/json"]
             marshallers {
-                jsonGroovyBeanMarshaller {
+                jsonBeanMarshaller {
                     supports net.hedtech.restfulapi.Thing
                     field 'code'        name 'productCode'
                     field 'description' name 'desc'
@@ -1586,7 +1586,7 @@ There are times when you want to include only certain fields in a representation
         representation {
             mediaTypes = ["application/json"]
             marshallers {
-                jsonGroovyBeanMarshaller {
+                jsonBeanMarshaller {
                     supports net.hedtech.restfulapi.Thing
                     includesFields {
                         field 'code'
@@ -1603,7 +1603,7 @@ This will marshall only the 'code' and 'description' fields into the representat
         representation {
             mediaTypes = ["application/json"]
             marshallers {
-                jsonGroovyBeanMarshaller {
+                jsonBeanMarshaller {
                     supports net.hedtech.restfulapi.Thing
                     includesFields {
                         field 'code' name 'productCode'
@@ -1626,7 +1626,7 @@ For example
         representation {
             mediaTypes = ["application/json"]
             marshallers {
-                jsonGroovyBeanMarshaller {
+                jsonBeanMarshaller {
                     supports net.hedtech.restfulapi.Thing
                     requiresIncludedFields true
                     includesFields {
@@ -1641,11 +1641,11 @@ For example
 Now if the Thing class does not have a field or property 'description', the marshaller will throw an exception.
 
 ###Adding additional fields
-You can add additional fields not directly present in a groovy bean to its marshalled representation.
+You can add additional fields not directly present in a bean to its marshalled representation.
 
-The declarative groovy bean marshaller allows any number of closures to be added to marshall additional content.  For example, let's say we want to add affordances to all of our json representations.  We will define a marshaller template containing the closure for the affordance, then add it to the marshallers:
+The declarative bean marshaller allows any number of closures to be added to marshall additional content.  For example, let's say we want to add affordances to all of our json representations.  We will define a marshaller template containing the closure for the affordance, then add it to the marshallers:
 
-    jsonGroovyBeanMarshallerTemplates {
+    jsonBeanMarshallerTemplates {
         template 'json-bean-affordance' config {
             additionalFields {Map map ->
                 map['json'].property("_href", "/${map['resourceName']}/${map['resourceId']}" )
@@ -1657,7 +1657,7 @@ The declarative groovy bean marshaller allows any number of closures to be added
         representation {
             mediaTypes = ["application/json"]
             marshallers {
-                jsonGroovyBeanMarshaller {
+                jsonBeanMarshaller {
                     inherits=['json-bean-affordance']
                     supports net.hedtech.restfulapi.Thing
                 }
@@ -1679,7 +1679,7 @@ where
 * beanWrapper is a BeanWrapper instance wrapping the object being marshalled
 * json is the JSON converter that should be used to generate content
 * resourceName is the resource name obtained as the pluralized, hyphenated version of the domain class
-* resourceId is the id (if available) of the groovy bean
+* resourceId is the id (if available) of the bean
 
 Note that if resourceName is specified in the additionalFieldsMap (see below), then that value is passed instead of the derived name.
 
@@ -1699,7 +1699,7 @@ For example:
         representation {
             mediaTypes = ["application/json"]
             marshallers {
-                jsonGroovyBeanMarshaller {
+                jsonBeanMarshaller {
                     supports net.hedtech.restfulapi.Customer
                     additionalFields { Map m -> //some content}
                     additionalFields { Map m -> //some more content}
@@ -1708,10 +1708,10 @@ For example:
         }
     }
 
-###Full list of configuration elements for a json groovy bean marshaller
+###Full list of configuration elements for a json bean marshaller
 The configuration block for the marshaller can contain the following in any order:
 
-    inherits = <array of json groovy bean marshaller template names>
+    inherits = <array of json bean marshaller template names>
     supports <class>
     deepMarshallsAssociations <true|false>
     <field-block>*
@@ -1780,15 +1780,15 @@ Is equivalent to
 
 The last definition of a field in any context is what is used.
 
-###Groovy bean marshaller templates
-JSON groovy bean marshaller templates are configuration blocks that do not directly create a marshaller.  The 'config' block accepts any configuration that the jsonGroovyBeanMarshaller block does (including the inherits option).  When a jsonGroovyBeanMarshaller directive contains an 'inherits' element, the templates referenced will be merged with the configuration for the marshaller in a depth-first manner.  Elements that represent collections or maps are merged together (later templates overriding previous ones, if there is a conflict), with the configuration in the jsonGroovyBeanMarshaller block itself overriding any previous values.
+###Bean marshaller templates
+JSON bean marshaller templates are configuration blocks that do not directly create a marshaller.  The 'config' block accepts any configuration that the jsonBeanMarshaller block does (including the inherits option).  When a jsonBeanMarshaller directive contains an 'inherits' element, the templates referenced will be merged with the configuration for the marshaller in a depth-first manner.  Elements that represent collections or maps are merged together (later templates overriding previous ones, if there is a conflict), with the configuration in the jsonBeanMarshaller block itself overriding any previous values.
 
 In general, templates are useful for defining affordances and other behavior that need to be applied across many representations.
 
 ###Template inheritance order.
-When a json groovy bean marshaller declaration includes an inherits directive, then the configuration of each template is merged with the declaration itself in depth-first order.  For example, consider the use of nested configuration:
+When a json bean marshaller declaration includes an inherits directive, then the configuration of each template is merged with the declaration itself in depth-first order.  For example, consider the use of nested configuration:
 
-    jsonGroovyBeanMarshallerTemplates {
+    jsonBeanMarshallerTemplates {
         template 'one' config {
             //some config
         }
@@ -1808,7 +1808,7 @@ When a json groovy bean marshaller declaration includes an inherits directive, t
         representation {
             mediaTypes = ["application/json"]
             marshallers {
-                jsonGroovyBeanMarshaller {
+                jsonBeanMarshaller {
                     inherits = ['three','four']
                     supports net.hedtech.restfulapi.Customer
                 }
@@ -1816,7 +1816,7 @@ When a json groovy bean marshaller declaration includes an inherits directive, t
         }
     }
 
-The domain marshaller will be configured with the results of merging the configuration blocks in the following order: 'one', 'two', 'three', 'four' and the contents of the jsonGroovyBeanMarshaller block itself.
+The domain marshaller will be configured with the results of merging the configuration blocks in the following order: 'one', 'two', 'three', 'four' and the contents of the jsonBeanMarshaller block itself.
 
 ###Configuration merging
 The order in which configurations are merged is significant.  When two configurations, first and second are merged, boolean values, or single valued options that are set in the second config override the first.  Collection or map values are combined.
@@ -2405,18 +2405,18 @@ where
 
 All the options for additional fields that apply to json marshalling also apply to xml marshalling.  The only difference is the closure will be passed an instance of the XML converter, instead of JSON, and care must be taken that additional fields must be added in such a way as to conform to the declarative xml format if the representation is intended to be extracted declaratively.
 
-##Declarative Marshalling of Groovy Beans to XML
-The plugin contains net.hedtech.restfulapi.marshallers.xmlGroovyBeanMarshaller and net.hedtech.restfulapi.marshallers.xml.DeclarativeGroovyBeanMarshaller, which are counterparts to their json versions.
+##Declarative Marshalling of Beans to XML
+The plugin contains net.hedtech.restfulapi.marshallers.xml.BeanMarshaller and net.hedtech.restfulapi.marshallers.xml.DeclarativeBeanMarshaller, which are counterparts to their json versions.
 
-Anywhere you can add a marshaller (in a marshaller group or representation), you can configure and add an xml declarative groovy bean marshaller with
+Anywhere you can add a marshaller (in a marshaller group or representation), you can configure and add an xml declarative bean marshaller with
 
-    xmlGroovyBeanMarshaller {}
+    xmlBeanMarshaller {}
 
 The closure specifies how to configure the marshaller.  The options available are a superset of those for the json marshaller, except for the values passed when defining additional fields.
 
 As with json marshallers, you can define templates with re-usable configuration:
 
-    xmlGroovyBeanMarshallerTemplates {}
+    xmlBeanMarshallerTemplates {}
 
 ###Customizing element name for XML marshalling
 By default, the declarative marshaller for xml will use the classname of the instance being rendered to choose a name for the element.  For example, a Person class will get rendered as a
@@ -2425,7 +2425,7 @@ By default, the declarative marshaller for xml will use the classname of the ins
 
 element.  (The classname is treated as a property name.)  You can override this behavior by providing an elementName explicitly:
 
-    xmlGroovyBeanMarshaller {
+    xmlBeanMarshaller {
         supports Person
         elementName 'APerson'
     }
@@ -2437,11 +2437,11 @@ A Person instance would have an xml representation
 using that configuration.
 
 ###Adding additional fields for XML marshalling
-You can add additional fields not directly present in a groovy bean to its marshalled representation.
+You can add additional fields not directly present in a bean to its marshalled representation.
 
-The declarative xml groovy bean marshaller allows any number of closures to be added to marshall additional content.  For example, let's say we want to add affordances to all of our xml representations.  We will define a marshaller template containing the closure for the affordance, then add it to the marshallers:
+The declarative xml bean marshaller allows any number of closures to be added to marshall additional content.  For example, let's say we want to add affordances to all of our xml representations.  We will define a marshaller template containing the closure for the affordance, then add it to the marshallers:
 
-    jsonGroovyBeanMarshallerTemplates {
+    jsonBeanMarshallerTemplates {
         template 'xml-bean-affordance' config {
             additionalFields {Map map ->
                 def xml = map['xml']
@@ -2456,7 +2456,7 @@ The declarative xml groovy bean marshaller allows any number of closures to be a
         representation {
             mediaTypes = ["application/xml"]
             marshallers {
-                jsonGroovyBeanMarshaller {
+                jsonBeanMarshaller {
                     inherits=['xml-bean-affordance']
                     supports net.hedtech.restfulapi.Thing
                 }
@@ -2478,7 +2478,7 @@ where
 * beanWrapper is a BeanWrapper instance wrapping the object being marshalled
 * xml is the XML converter that should be used to generate content
 * resourceName is the resource name obtained as the pluralized, hyphenated version of the domain class
-* resourceId is the id (if available) of the groovy bean
+* resourceId is the id (if available) of the bean
 
 Note that if resourceName is specified in the additionalFieldsMap (see below), then that value is passed instead of the derived name.
 

@@ -17,13 +17,13 @@ class RestConfig {
 
     //map of group name to MarshallerGroupConfig instance
     def marshallerGroups = [:]
-    ConfigGroup jsonDomain     = new ConfigGroup()
-    ConfigGroup jsonGroovyBean = new ConfigGroup()
-    ConfigGroup jsonExtractor  = new ConfigGroup()
+    ConfigGroup jsonDomain    = new ConfigGroup()
+    ConfigGroup jsonBean      = new ConfigGroup()
+    ConfigGroup jsonExtractor = new ConfigGroup()
 
-    ConfigGroup xmlDomain      = new ConfigGroup()
-    ConfigGroup xmlGroovyBean  = new ConfigGroup()
-    ConfigGroup xmlExtractor   = new ConfigGroup()
+    ConfigGroup xmlDomain     = new ConfigGroup()
+    ConfigGroup xmlBean       = new ConfigGroup()
+    ConfigGroup xmlExtractor  = new ConfigGroup()
 
     RestConfig( GrailsApplication grailsApplication ) {
         this.grailsApplication = grailsApplication
@@ -112,8 +112,8 @@ class RestConfig {
         this
     }
 
-    def jsonGroovyBeanMarshallerTemplates(Closure c) {
-        JSONGroovyBeanTemplates delegate = new JSONGroovyBeanTemplates(this)
+    def jsonBeanMarshallerTemplates(Closure c) {
+        JSONBeanTemplates delegate = new JSONBeanTemplates(this)
         c.delegate = delegate
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c.call()
@@ -136,8 +136,8 @@ class RestConfig {
         this
     }
 
-    def xmlGroovyBeanMarshallerTemplates(Closure c) {
-        XMLGroovyBeanTemplates delegate = new XMLGroovyBeanTemplates(this)
+    def xmlBeanMarshallerTemplates(Closure c) {
+        XMLBeanTemplates delegate = new XMLBeanTemplates(this)
         c.delegate = delegate
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c.call()
@@ -188,37 +188,37 @@ class RestConfig {
         }
     }
 
-    class JSONGroovyBeanTemplates {
+    class JSONBeanTemplates {
         RestConfig parent
-        JSONGroovyBeanTemplates(RestConfig parent) {
+        JSONBeanTemplates(RestConfig parent) {
             this.parent = parent
         }
 
         def template(String name) {
             def closure = { Closure c ->
-                JSONGroovyBeanMarshallerDelegate delegate = new JSONGroovyBeanMarshallerDelegate()
+                JSONBeanMarshallerDelegate delegate = new JSONBeanMarshallerDelegate()
                 c.delegate = delegate
                 c.resolveStrategy = Closure.DELEGATE_FIRST
                 c.call()
-                parent.jsonGroovyBean.configs[name] = delegate.config
+                parent.jsonBean.configs[name] = delegate.config
             }
             [config:closure]
         }
     }
 
-    class XMLGroovyBeanTemplates {
+    class XMLBeanTemplates {
         RestConfig parent
-        XMLGroovyBeanTemplates(RestConfig parent) {
+        XMLBeanTemplates(RestConfig parent) {
             this.parent = parent
         }
 
         def template(String name) {
             def closure = { Closure c ->
-                XMLGroovyBeanMarshallerDelegate delegate = new XMLGroovyBeanMarshallerDelegate()
+                XMLBeanMarshallerDelegate delegate = new XMLBeanMarshallerDelegate()
                 c.delegate = delegate
                 c.resolveStrategy = Closure.DELEGATE_FIRST
                 c.call()
-                parent.xmlGroovyBean.configs[name] = delegate.config
+                parent.xmlBean.configs[name] = delegate.config
             }
             [config:closure]
         }

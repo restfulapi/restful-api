@@ -17,15 +17,15 @@ import spock.lang.*
 
 
 @TestMixin(GrailsUnitTestMixin)
-class RestConfigXMLGroovyBeanMarshallerSpec extends Specification {
+class RestConfigXMLBeanMarshallerSpec extends Specification {
 
-    def "Test xml groovy bean marshaller in marshaller group"() {
+    def "Test xml bean marshaller in marshaller group"() {
         setup:
         def src =
         {
             marshallerGroups {
-                group 'groovyBean' marshallers {
-                    xmlGroovyBeanMarshaller {
+                group 'xmlBean' marshallers {
+                    xmlBeanMarshaller {
                         supports SimpleBean
                         elementName 'Bean'
                         field 'foo' name 'bar'
@@ -42,7 +42,7 @@ class RestConfigXMLGroovyBeanMarshallerSpec extends Specification {
 
         when:
         def config = RestConfig.parse( grailsApplication, src )
-        def marshaller = config.marshallerGroups['groovyBean'].marshallers[0].instance
+        def marshaller = config.marshallerGroups['xmlBean'].marshallers[0].instance
 
         then:
         SimpleBean                                == marshaller.supportClass
@@ -52,11 +52,11 @@ class RestConfigXMLGroovyBeanMarshallerSpec extends Specification {
         ['foobar']                                == marshaller.excludedFields
     }
 
-    def "Test xml groovy bean marshaller template parsing"() {
+    def "Test xml bean marshaller template parsing"() {
         setup:
         def src =
         {
-            xmlGroovyBeanMarshallerTemplates {
+            xmlBeanMarshallerTemplates {
                 template 'one' config {
                 }
 
@@ -84,10 +84,10 @@ class RestConfigXMLGroovyBeanMarshallerSpec extends Specification {
         when:
         def config = RestConfig.parse( grailsApplication, src )
         config.validate()
-        def mConfig = config.xmlGroovyBean.configs['two']
+        def mConfig = config.xmlBean.configs['two']
 
         then:
-         2                 == config.xmlGroovyBean.configs.size()
+         2                 == config.xmlBean.configs.size()
          ['one']           == mConfig.inherits
          5                 == mConfig.priority
          SimpleBean        == mConfig.supportClass
@@ -100,7 +100,7 @@ class RestConfigXMLGroovyBeanMarshallerSpec extends Specification {
          ['a':'b','c':'d'] == mConfig.additionalFieldsMap
     }
 
-    def "Test xml groovy bean marshaller creation"() {
+    def "Test xml bean marshaller creation"() {
         setup:
         def src =
         {
@@ -108,7 +108,7 @@ class RestConfigXMLGroovyBeanMarshallerSpec extends Specification {
                 representation {
                     mediaTypes = ['application/xml']
                     marshallers {
-                        xmlGroovyBeanMarshaller {
+                        xmlBeanMarshaller {
                             supports SimpleBean
                             elementName 'Bean'
                             requiresIncludedFields true
@@ -144,11 +144,11 @@ class RestConfigXMLGroovyBeanMarshallerSpec extends Specification {
         ['foo':'bar']                            == marshaller.additionalFieldsMap
     }
 
-    def "Test xml groovy bean marshaller creation from merged configuration"() {
+    def "Test xml bean marshaller creation from merged configuration"() {
         setup:
         def src =
         {
-            xmlGroovyBeanMarshallerTemplates {
+            xmlBeanMarshallerTemplates {
                 template 'one' config {
                     includesFields {
                         field 'field1'
@@ -166,7 +166,7 @@ class RestConfigXMLGroovyBeanMarshallerSpec extends Specification {
                 representation {
                     mediaTypes = ['application/xml']
                     marshallers {
-                        xmlGroovyBeanMarshaller {
+                        xmlBeanMarshaller {
                             inherits = ['one','two']
                             supports Thing
                             includesFields {

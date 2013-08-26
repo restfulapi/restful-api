@@ -33,13 +33,13 @@ import spock.lang.*
 @Mock([MarshalledThing,MarshalledPartOfThing,
        MarshalledSubPartOfThing,MarshalledThingContributor,
        MarshalledOwnerOfThing,MarshalledThingEmbeddedPart])
-class XMLGroovyBeanRoundTripSpec extends Specification {
+class XMLBeanRoundTripSpec extends Specification {
 
     @Rule TestName testName = new TestName()
 
     def "Test simple properties"() {
         setup:
-        def marshaller = new DeclarativeGroovyBeanMarshaller(
+        def marshaller = new DeclarativeBeanMarshaller(
             app:grailsApplication,
             includedFields:['code','description']
         )
@@ -60,12 +60,12 @@ class XMLGroovyBeanRoundTripSpec extends Specification {
     def "Test collection of objects"() {
         setup:
         def marshallers = []
-        marshallers.add new DeclarativeGroovyBeanMarshaller(
+        marshallers.add new DeclarativeBeanMarshaller(
             app:grailsApplication,
             supportClass:MarshalledThing,
             includedFields:['code','description', 'parts']
         )
-        marshallers.add new DeclarativeGroovyBeanMarshaller(
+        marshallers.add new DeclarativeBeanMarshaller(
             app:grailsApplication,
             supportClass:MarshalledPartOfThing,
             includedFields:['code','description']
@@ -92,7 +92,7 @@ class XMLGroovyBeanRoundTripSpec extends Specification {
 
     def "Test simple collection"() {
         setup:
-        def marshaller = new DeclarativeGroovyBeanMarshaller(
+        def marshaller = new DeclarativeBeanMarshaller(
             app:grailsApplication,
             includedFields:['code','description', 'simpleArray']
         )
@@ -117,12 +117,12 @@ class XMLGroovyBeanRoundTripSpec extends Specification {
     def "Test map of objects"() {
         setup:
         def marshallers = []
-        marshallers.add new DeclarativeGroovyBeanMarshaller(
+        marshallers.add new DeclarativeBeanMarshaller(
             app:grailsApplication,
             supportClass:MarshalledThing,
             includedFields:['code','description', 'contributors']
         )
-        marshallers.add new DeclarativeGroovyBeanMarshaller(
+        marshallers.add new DeclarativeBeanMarshaller(
             app:grailsApplication,
             supportClass:MarshalledThingContributor,
             includedFields:['firstName','lastName']
@@ -151,7 +151,7 @@ class XMLGroovyBeanRoundTripSpec extends Specification {
 
     def "Test simple map"() {
         setup:
-        def marshaller = new DeclarativeGroovyBeanMarshaller(
+        def marshaller = new DeclarativeBeanMarshaller(
             app:grailsApplication,
             includedFields:['code','description', 'simpleMap']
         )
@@ -175,12 +175,12 @@ class XMLGroovyBeanRoundTripSpec extends Specification {
     def "Test embedded"() {
         setup:
         def marshallers = []
-        marshallers.add new DeclarativeGroovyBeanMarshaller(
+        marshallers.add new DeclarativeBeanMarshaller(
             app:grailsApplication,
             supportClass:MarshalledThing,
             includedFields:['code','description', 'embeddedPart']
         )
-        marshallers.add new DeclarativeGroovyBeanMarshaller(
+        marshallers.add new DeclarativeBeanMarshaller(
             app:grailsApplication,
             supportClass:MarshalledThingEmbeddedPart,
             includedFields:['serialNumber','description']

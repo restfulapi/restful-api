@@ -510,7 +510,7 @@ class RestfulApiControllerSpec extends Specification {
                 representation {
                     mediaTypes = ['application/json']
                     marshallers {
-                        jsonGroovyBeanMarshaller {}
+                        jsonBeanMarshaller {}
                     }
                     jsonExtractor {}
                 }
@@ -1373,7 +1373,7 @@ class RestfulApiControllerSpec extends Specification {
                     mediaTypes = ['application/custom']
                     marshallerFramework = 'json'
                     marshallers {
-                        jsonGroovyBeanMarshaller {}
+                        jsonBeanMarshaller {}
                     }
                     extractor = theExtractor
                 }

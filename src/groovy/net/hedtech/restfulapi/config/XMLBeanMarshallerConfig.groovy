@@ -5,7 +5,7 @@ package net.hedtech.restfulapi.config
 
 import org.codehaus.groovy.grails.commons.GrailsApplication
 
-class JSONGroovyBeanMarshallerConfig implements MergeableConfig {
+class XMLBeanMarshallerConfig implements MergeableConfig {
 
     //Named domain marshaller configurations that this config should
     //be merged with
@@ -14,6 +14,8 @@ class JSONGroovyBeanMarshallerConfig implements MergeableConfig {
     int priority = 100
     Class supportClass
     private boolean isSupportClassSet = false
+    String elementName
+    private boolean isElementNameSet = false
     //map of field name to the name the field should be marshalled as.
     //allows fields to be renamed in the output
     def fieldNames = [:]
@@ -31,10 +33,10 @@ class JSONGroovyBeanMarshallerConfig implements MergeableConfig {
     def additionalFieldsMap = [:]
 
 
-    JSONGroovyBeanMarshallerConfig() {
+    XMLBeanMarshallerConfig() {
     }
 
-    JSONGroovyBeanMarshallerConfig( JSONGroovyBeanMarshallerConfig other ) {
+    XMLBeanMarshallerConfig( XMLBeanMarshallerConfig other ) {
         other.getClass().declaredFields.findAll { !it.synthetic }*.name.each {
             if ((other."$it" instanceof Cloneable) && !(other."$it" instanceof Closure)) {
                 this."$it" = other."$it".clone()
@@ -50,6 +52,12 @@ class JSONGroovyBeanMarshallerConfig implements MergeableConfig {
         this
     }
 
+    def setElementName( String name ) {
+        this.isElementNameSet = true
+        this.elementName = name
+        this
+    }
+
     /**
      * Merges two DomainMarshallerConfig instances together
      * The values of the other instance augment or override
@@ -57,10 +65,13 @@ class JSONGroovyBeanMarshallerConfig implements MergeableConfig {
      * @param other the other configuration to merge with
      */
     MergeableConfig merge( MergeableConfig other ) {
-        JSONGroovyBeanMarshallerConfig config = new JSONGroovyBeanMarshallerConfig( this )
+        XMLBeanMarshallerConfig config = new XMLBeanMarshallerConfig( this )
 
         if (other.isSupportClassSet) {
             config.setSupportClass( other.supportClass )
+        }
+        if (other.isElementNameSet) {
+            config.setElementName( other.elementName )
         }
         config.fieldNames.putAll  other.fieldNames
         config.includedFields.addAll other.includedFields

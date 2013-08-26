@@ -5,26 +5,21 @@ package net.hedtech.restfulapi.config
 
 import org.codehaus.groovy.grails.commons.GrailsApplication
 
-class XMLGroovyBeanMarshallerDelegate {
+class JSONBeanMarshallerDelegate {
 
-    XMLGroovyBeanMarshallerConfig config = new XMLGroovyBeanMarshallerConfig()
+    JSONBeanMarshallerConfig config = new JSONBeanMarshallerConfig()
 
-    XMLGroovyBeanMarshallerDelegate supports(Class clazz) {
-        config.setSupportClass(clazz)
+    JSONBeanMarshallerDelegate supports( Class clazz ) {
+        config.setSupportClass( clazz )
         this
     }
 
-    XMLGroovyBeanMarshallerDelegate elementName(String name) {
-        config.setElementName(name)
-        this
-    }
-
-    XMLGroovyBeanMarshallerDelegate setPriority(int priority) {
+    JSONBeanMarshallerDelegate setPriority(int priority) {
         config.setPriority(priority)
         this
     }
 
-    XMLGroovyBeanMarshallerDelegate setInherits(Collection c) {
+    JSONBeanMarshallerDelegate setInherits(Collection c) {
         config.inherits = c
         this
     }
@@ -36,31 +31,31 @@ class XMLGroovyBeanMarshallerDelegate {
         return handleField(fieldName)
     }
 
-    XMLGroovyBeanMarshallerDelegate includesFields(Closure c) {
+    JSONBeanMarshallerDelegate includesFields(Closure c) {
         c.delegate = new IncludeConfig()
         c.resolveStrategy = Closure.DELEGATE_ONLY
         c.call()
         this
     }
 
-    XMLGroovyBeanMarshallerDelegate requiresIncludedFields(boolean b) {
+    JSONBeanMarshallerDelegate requiresIncludedFields(boolean b) {
         config.requireIncludedFields = b
         this
     }
 
-    XMLGroovyBeanMarshallerDelegate excludesFields(Closure c) {
+    JSONBeanMarshallerDelegate excludesFields(Closure c) {
         c.delegate = new ExcludeConfig()
         c.resolveStrategy = Closure.DELEGATE_ONLY
         c.call()
         this
     }
 
-    XMLGroovyBeanMarshallerDelegate additionalFields(Closure c) {
+    JSONBeanMarshallerDelegate additionalFields(Closure c) {
         config.additionalFieldClosures.add c
         this
     }
 
-    XMLGroovyBeanMarshallerDelegate setAdditionalFieldsMap(Map m) {
+    JSONBeanMarshallerDelegate setAdditionalFieldsMap(Map m) {
         config.additionalFieldsMap = m
         this
     }

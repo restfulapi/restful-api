@@ -17,7 +17,7 @@ import spock.lang.*
 
 
 @TestMixin(GrailsUnitTestMixin)
-class XMLGroovyBeanMarshallerConfigSpec extends Specification {
+class XMLBeanMarshallerConfigSpec extends Specification {
 
     def "Test inherits"() {
         setup:
@@ -179,7 +179,7 @@ class XMLGroovyBeanMarshallerConfigSpec extends Specification {
         setup:
         def c1 = { Map m -> }
         def c2 = { Map m -> }
-        XMLGroovyBeanMarshallerConfig one = new XMLGroovyBeanMarshallerConfig(
+        XMLBeanMarshallerConfig one = new XMLBeanMarshallerConfig(
             supportClass:SimpleBean,
             elementName:'Bean',
             fieldNames:['foo':'foo1','bar':'bar1'],
@@ -189,7 +189,7 @@ class XMLGroovyBeanMarshallerConfigSpec extends Specification {
             additionalFieldsMap:['one':'one','two':'two'],
             requireIncludedFields:true
         )
-        XMLGroovyBeanMarshallerConfig two = new XMLGroovyBeanMarshallerConfig(
+        XMLBeanMarshallerConfig two = new XMLBeanMarshallerConfig(
             supportClass:Thing,
             elementName:'Thing',
             fieldNames:['foo':'foo2','baz':'baz1'],
@@ -221,7 +221,7 @@ class XMLGroovyBeanMarshallerConfigSpec extends Specification {
         setup:
         def c1 = { Map m -> }
         def c2 = { Map m -> }
-        XMLGroovyBeanMarshallerConfig one = new XMLGroovyBeanMarshallerConfig(
+        XMLBeanMarshallerConfig one = new XMLBeanMarshallerConfig(
             supportClass:Thing,
             elementName:'Thing',
             fieldNames:['foo':'foo1','bar':'bar1'],
@@ -231,7 +231,7 @@ class XMLGroovyBeanMarshallerConfigSpec extends Specification {
             additionalFieldsMap:['one':'1'],
             requireIncludedFields:true
         )
-        XMLGroovyBeanMarshallerConfig two = new XMLGroovyBeanMarshallerConfig(
+        XMLBeanMarshallerConfig two = new XMLBeanMarshallerConfig(
             supportClass:PartOfThing,
             elementName:'PartOfThing',
             fieldNames:['foo':'foo2','baz':'baz1'],
@@ -273,10 +273,10 @@ class XMLGroovyBeanMarshallerConfigSpec extends Specification {
         setup:
         def c1 = { Map m -> }
         def c2 = { Map m -> }
-        XMLGroovyBeanMarshallerConfig one = new XMLGroovyBeanMarshallerConfig(
+        XMLBeanMarshallerConfig one = new XMLBeanMarshallerConfig(
             supportClass:SimpleBean
         )
-        XMLGroovyBeanMarshallerConfig two = new XMLGroovyBeanMarshallerConfig(
+        XMLBeanMarshallerConfig two = new XMLBeanMarshallerConfig(
         )
 
         when:
@@ -290,10 +290,10 @@ class XMLGroovyBeanMarshallerConfigSpec extends Specification {
     def "Test merging with require included fields set only on the left"() {
         setup:
         def c1 = { Map m -> }
-        XMLGroovyBeanMarshallerConfig one = new XMLGroovyBeanMarshallerConfig(
+        XMLBeanMarshallerConfig one = new XMLBeanMarshallerConfig(
             requireIncludedFields:true
         )
-        XMLGroovyBeanMarshallerConfig two = new XMLGroovyBeanMarshallerConfig(
+        XMLBeanMarshallerConfig two = new XMLBeanMarshallerConfig(
         )
 
         when:
@@ -306,10 +306,10 @@ class XMLGroovyBeanMarshallerConfigSpec extends Specification {
     def "Test merging with elementName set only on the left"() {
         setup:
         def c1 = { Map m -> }
-        XMLGroovyBeanMarshallerConfig one = new XMLGroovyBeanMarshallerConfig(
+        XMLBeanMarshallerConfig one = new XMLBeanMarshallerConfig(
             elementName:'Foo'
         )
-        XMLGroovyBeanMarshallerConfig two = new XMLGroovyBeanMarshallerConfig(
+        XMLBeanMarshallerConfig two = new XMLBeanMarshallerConfig(
         )
 
         when:
@@ -321,16 +321,16 @@ class XMLGroovyBeanMarshallerConfigSpec extends Specification {
 
     def "Test resolution of marshaller configuration inherits"() {
         setup:
-        XMLGroovyBeanMarshallerConfig part1 = new XMLGroovyBeanMarshallerConfig(
+        XMLBeanMarshallerConfig part1 = new XMLBeanMarshallerConfig(
         )
-        XMLGroovyBeanMarshallerConfig part2 = new XMLGroovyBeanMarshallerConfig(
+        XMLBeanMarshallerConfig part2 = new XMLBeanMarshallerConfig(
         )
-        XMLGroovyBeanMarshallerConfig part3 = new XMLGroovyBeanMarshallerConfig(
+        XMLBeanMarshallerConfig part3 = new XMLBeanMarshallerConfig(
         )
-        XMLGroovyBeanMarshallerConfig combined = new XMLGroovyBeanMarshallerConfig(
+        XMLBeanMarshallerConfig combined = new XMLBeanMarshallerConfig(
             inherits:['part1','part2']
         )
-        XMLGroovyBeanMarshallerConfig actual = new XMLGroovyBeanMarshallerConfig(
+        XMLBeanMarshallerConfig actual = new XMLBeanMarshallerConfig(
             inherits:['combined','part3']
         )
         ConfigGroup group = new ConfigGroup()
@@ -345,14 +345,14 @@ class XMLGroovyBeanMarshallerConfigSpec extends Specification {
 
     def "Test merge order of configuration inherits"() {
         setup:
-        XMLGroovyBeanMarshallerConfig part1 = new XMLGroovyBeanMarshallerConfig(
+        XMLBeanMarshallerConfig part1 = new XMLBeanMarshallerConfig(
             fieldNames:['1':'part1','2':'part1','3':'part1']
         )
-        XMLGroovyBeanMarshallerConfig part2 = new XMLGroovyBeanMarshallerConfig(
+        XMLBeanMarshallerConfig part2 = new XMLBeanMarshallerConfig(
             fieldNames:['2':'part2','3':'part2']
 
         )
-        XMLGroovyBeanMarshallerConfig actual = new XMLGroovyBeanMarshallerConfig(
+        XMLBeanMarshallerConfig actual = new XMLBeanMarshallerConfig(
             inherits:['part1','part2'],
             fieldNames:['3':'actual']
         )
@@ -384,8 +384,8 @@ class XMLGroovyBeanMarshallerConfigSpec extends Specification {
         [:] == config.fieldNames
     }
 
-    private XMLGroovyBeanMarshallerConfig invoke( Closure c ) {
-        XMLGroovyBeanMarshallerDelegate delegate = new XMLGroovyBeanMarshallerDelegate()
+    private XMLBeanMarshallerConfig invoke( Closure c ) {
+        XMLBeanMarshallerDelegate delegate = new XMLBeanMarshallerDelegate()
         c.delegate = delegate
         c.resolveStrategy = Closure.DELEGATE_FIRST
         c.call()

@@ -30,21 +30,31 @@ import spock.lang.*
 
 
 @TestMixin([GrailsUnitTestMixin, ControllerUnitTestMixin])
-class XMLGroovyBeanMarshallerSpec extends Specification {
+class XMLBeanMarshallerSpec extends Specification {
 
     @Rule TestName testName = new TestName()
 
     void setup() {
     }
 
+    def "Test that collections and maps are not supported by default"() {
+        setup:
+        def marshaller = new BeanMarshaller(
+            app:grailsApplication
+        )
+
+        expect:
+        false == marshaller.supports(new DummyCollection())
+        false == marshaller.supports(new DummyMap())
+    }
+
+    @Unroll
     def "Test field access"() {
         setup:
-        def marshaller = new GroovyBeanMarshaller(
+        def marshaller = new BeanMarshaller(
             app:grailsApplication
         )
         register(marshaller)
-        SimpleBean bean = new SimpleBean(property:'foo', publicField:'bar')
-
 
         when:
         def content = render( bean )
@@ -57,8 +67,13 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
         0     == xml.privateField.size()
         0     == xml.transientField.size()
         0     == xml.staticField.size()
+
+        where:
+        bean << [new SimpleBean(property:'foo', publicField:'bar'),
+                 new SimpleJavaBean(property:'foo', publicField:'bar')]
     }
 
+    @Unroll
     def "Test excluding fields"() {
         setup:
         def marshaller = new TestMarshaller(
@@ -66,7 +81,6 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
         )
         marshaller.excludesClosure = {Object value-> ['property','publicField'] }
         register( marshaller )
-        SimpleBean bean = new SimpleBean(property:'foo', publicField:'bar')
 
         when:
         def content = render( bean )
@@ -75,15 +89,19 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
         then:
         0 == xml.property.size()
         0 == xml.publicField.size()
+
+        where:
+        bean << [new SimpleBean(property:'foo', publicField:'bar'),
+                 new SimpleJavaBean(property:'foo', publicField:'bar')]
     }
 
+    @Unroll
     def "Test default exclusions"() {
         setup:
-        def marshaller = new GroovyBeanMarshaller(
+        def marshaller = new BeanMarshaller(
             app:grailsApplication
         )
         register( marshaller )
-        SimpleBean bean = new SimpleBean(property:'foo', publicField:'bar')
 
         when:
         def content = render( bean )
@@ -93,9 +111,13 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
         0 == xml.password.size()
         0 == xml.'class'.size()
         0 == xml.'metaClass'.size()
+
+        where:
+        bean << [new SimpleBean(property:'foo', publicField:'bar'),
+                 new SimpleJavaBean(property:'foo', publicField:'bar')]
     }
 
-
+    @Unroll
     def "Test including fields"() {
         setup:
         def marshaller = new TestMarshaller(
@@ -103,7 +125,6 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
         )
         marshaller.includesClosure = {Object value-> [ 'property', 'publicField'] }
         register( marshaller )
-        SimpleBean bean = new SimpleBean(property:'foo', publicField:'bar')
 
         when:
         def content = render( bean )
@@ -114,8 +135,13 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
         'bar' == xml.publicField.text()
         0 == xml.property2.size()
         0 == xml.publicField2.size()
+
+        where:
+        bean << [new SimpleBean(property:'foo', publicField:'bar'),
+                 new SimpleJavaBean(property:'foo', publicField:'bar')]
     }
 
+    @Unroll
     def "Test require included fields"() {
         setup:
         def marshaller = new TestMarshaller(
@@ -124,7 +150,6 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
         marshaller.includesClosure = {Object value-> [ 'property', 'publicField', 'missingField1', 'missingField2'] }
         marshaller.requireIncludedFieldsClosure = {Object o -> true}
         register( marshaller )
-        SimpleBean bean = new SimpleBean(property:'foo', publicField:'bar')
 
         when:
         render( bean )
@@ -132,8 +157,13 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
         then:
         Exception e = thrown()
         ['missingField1', 'missingField2'] == e.getCause().missingNames
+
+        where:
+        bean << [new SimpleBean(property:'foo', publicField:'bar'),
+                 new SimpleJavaBean(property:'foo', publicField:'bar')]
     }
 
+    @Unroll
     def "Test that included fields overrides excluded fields"() {
         setup:
         def marshaller = new TestMarshaller(
@@ -146,9 +176,6 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
             [ 'property', 'publicField']
         }
         register( marshaller )
-        SimpleBean bean = new SimpleBean(
-            property:'foo', publicField:'bar',
-            property2:'prop2', publicField2:'field2')
 
         when:
         def content = render( bean )
@@ -160,8 +187,13 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
         'prop2'  == xml.property2.text()
         'field2' == xml.publicField2.text()
         4        == xml.children().size()
+
+        where:
+        bean << [new SimpleBean( property:'foo', publicField:'bar', property2:'prop2', publicField2:'field2'),
+                 new SimpleJavaBean( property:'foo', publicField:'bar', property2:'prop2', publicField2:'field2')]
     }
 
+    @Unroll
     def "Test special processing of properties"() {
         setup:
         def marshaller = new TestMarshaller(
@@ -179,7 +211,6 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
             }
         }
         register( marshaller )
-        SimpleBean bean = new SimpleBean(property:'foo', publicField:'bar')
 
         when:
         def content = render( bean )
@@ -188,8 +219,13 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
         then:
         0     == xml.property.size()
         'foo' == xml.modProperty.text()
+
+        where:
+        bean << [new SimpleBean(property:'foo', publicField:'bar'),
+                 new SimpleJavaBean(property:'foo', publicField:'bar')]
     }
 
+    @Unroll
     def "Test special processing of fields"() {
         setup:
         def marshaller = new TestMarshaller(
@@ -207,7 +243,6 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
             }
         }
         register( marshaller )
-        SimpleBean bean = new SimpleBean(property:'foo', publicField:'bar')
 
         when:
         def content = render( bean )
@@ -216,8 +251,13 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
         then:
         0     == xml.publicField.size()
         'bar' == xml.modPublicField.text()
+
+        where:
+        bean << [new SimpleBean(property:'foo', publicField:'bar'),
+                 new SimpleJavaBean(property:'foo', publicField:'bar')]
     }
 
+    @Unroll
     def "Test alternative names"() {
         setup:
         def marshaller = new TestMarshaller(
@@ -225,7 +265,6 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
         )
         marshaller.substitutionNames = ['property':'modProperty','publicField':'modPublicField']
         register( marshaller )
-        SimpleBean bean = new SimpleBean(property:'foo', publicField:'bar')
 
         when:
         def content = render( bean )
@@ -236,8 +275,13 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
         0     == xml.publicField.size()
         'foo' == xml.modProperty.text()
         'bar' == xml.modPublicField.text()
+
+        where:
+        bean << [new SimpleBean(property:'foo', publicField:'bar'),
+                 new SimpleJavaBean(property:'foo', publicField:'bar')]
     }
 
+    @Unroll
     def "Test additional fields"() {
         setup:
         def marshaller = new TestMarshaller(
@@ -249,7 +293,6 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
             xml.end()
         }
         register( marshaller )
-        SimpleBean bean = new SimpleBean(property:'foo', publicField:'bar')
 
         when:
         def content = render( bean )
@@ -257,8 +300,13 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
 
         then:
         'some value' == xml.additionalProp.text()
+
+        where:
+        bean << [new SimpleBean(property:'foo', publicField:'bar'),
+                 new SimpleJavaBean(property:'foo', publicField:'bar')]
     }
 
+    @Unroll
     def "Test overriding available properties"() {
         setup:
         def marshaller = new TestMarshaller(
@@ -268,7 +316,6 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
             [wrapper.getPropertyDescriptor('property2')]
         }
         register( marshaller )
-        SimpleBean bean = new SimpleBean(property:'foo', publicField:'bar')
 
         when:
         def content = render( bean )
@@ -277,9 +324,13 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
         then:
         0 == xml.property.size()
         1 == xml.property2.size()
+
+        where:
+        bean << [new SimpleBean(property:'foo', publicField:'bar'),
+                 new SimpleJavaBean(property:'foo', publicField:'bar')]
     }
 
-
+    @Unroll
     def "Test overriding available fields"() {
         setup:
         def marshaller = new TestMarshaller(
@@ -289,7 +340,6 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
             [value.getClass().getDeclaredField('publicField2')]
         }
         register( marshaller )
-        SimpleBean bean = new SimpleBean(property:'foo', publicField:'bar')
 
         when:
         def content = render( bean )
@@ -298,8 +348,13 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
         then:
         0 == xml.publicField.size()
         1 == xml.publicField2.size()
+
+        where:
+        bean << [new SimpleBean(property:'foo', publicField:'bar'),
+                 new SimpleJavaBean(property:'foo', publicField:'bar')]
     }
 
+    @Unroll
     def "Test collection property has array attribute"() {
         setup:
         def marshaller = new TestMarshaller(
@@ -307,7 +362,6 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
         )
         marshaller.includesClosure = {Object value-> [ 'listProperty' ] }
         register( marshaller )
-        SimpleBean bean = new SimpleBean()
         bean.listProperty = ['abc','123']
 
         when:
@@ -322,8 +376,13 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
         'true'        == xml.listProperty.@array.text()
         2             == xml.listProperty.children().size()
         ['abc','123'] == values
+
+        where:
+        bean << [new SimpleBean(),
+                 new SimpleJavaBean()]
     }
 
+    @Unroll
     def "Test collection field has array attribute"() {
         setup:
         def marshaller = new TestMarshaller(
@@ -331,7 +390,6 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
         )
         marshaller.includesClosure = {Object value-> [ 'listField' ] }
         register( marshaller )
-        SimpleBean bean = new SimpleBean()
         bean.listField = ['abc','123']
 
         when:
@@ -346,8 +404,13 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
         'true'        == xml.listField.@array.text()
         2             == xml.listField.children().size()
         ['abc','123'] == values
+
+        where:
+        bean << [new SimpleBean(),
+                 new SimpleJavaBean()]
     }
 
+    @Unroll
     def "Test map property has map attribute"() {
         setup:
         def marshaller = new TestMarshaller(
@@ -355,7 +418,6 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
         )
         marshaller.includesClosure = {Object value-> [ 'mapProperty' ] }
         register( marshaller )
-        SimpleBean bean = new SimpleBean()
         bean.mapProperty = ['abc':'123']
 
         when:
@@ -370,8 +432,13 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
         'true'        == xml.mapProperty.@map.text()
         1             == xml.mapProperty.children().size()
         ['abc':'123'] == values
+
+        where:
+        bean << [new SimpleBean(),
+                 new SimpleJavaBean()]
     }
 
+    @Unroll
     def "Test map field has map attribute"() {
         setup:
         def marshaller = new TestMarshaller(
@@ -379,7 +446,6 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
         )
         marshaller.includesClosure = {Object value-> [ 'mapField' ] }
         register( marshaller )
-        SimpleBean bean = new SimpleBean()
         bean.mapField = ['abc':'123']
 
         when:
@@ -394,76 +460,171 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
         'true'        == xml.mapField.@map.text()
         1             == xml.mapField.children().size()
         ['abc':'123'] == values
+
+        where:
+        bean << [new SimpleBean(),
+                 new SimpleJavaBean()]
     }
 
-    def "Test collection with complex objects"() {
+    @Unroll
+    def "Test collection property with complex objects"() {
         setup:
         def marshaller = new TestMarshaller(
             app:grailsApplication
         )
-        marshaller.includesClosure = {Object o -> ['simpleArray','lastName','firstName']}
+        marshaller.includesClosure = {Object o -> ['listProperty','lastName','firstName']}
         register( marshaller )
-        MarshalledThing bean = new MarshalledThing()
-        bean.simpleArray = [new MarshalledThingContributor(lastName:'Smith',firstName:"John")]
+        bean.listProperty = [new MarshalledThingContributor(lastName:'Smith',firstName:"John")]
 
         when:
         def content = render( bean )
         def xml = XML.parse content
 
         then:
-        'true'  == xml.simpleArray.@array.text()
-        1       == xml.simpleArray.children().size()
-        'Smith' == xml.simpleArray.children()[0].lastName.text()
-        'John'  == xml.simpleArray.children()[0].firstName.text()
+        'true'  == xml.listProperty.@array.text()
+        1       == xml.listProperty.children().size()
+        'Smith' == xml.listProperty.children()[0].lastName.text()
+        'John'  == xml.listProperty.children()[0].firstName.text()
+
+        where:
+        bean << [new SimpleBean(),
+                 new SimpleJavaBean()]
     }
 
-    def "Test map"() {
+    @Unroll
+    def "Test collection field with complex objects"() {
         setup:
         def marshaller = new TestMarshaller(
             app:grailsApplication
         )
-        marshaller.includesClosure = {Object value-> [ 'simpleMap' ] }
+        marshaller.includesClosure = {Object o -> ['listField','lastName','firstName']}
         register( marshaller )
-        MarshalledThing bean = new MarshalledThing()
-        bean.simpleMap = ['a':'1','b':'2']
+        bean.listField = [new MarshalledThingContributor(lastName:'Smith',firstName:"John")]
+
+        when:
+        def content = render( bean )
+        def xml = XML.parse content
+
+        then:
+        'true'  == xml.listField.@array.text()
+        1       == xml.listField.children().size()
+        'Smith' == xml.listField.children()[0].lastName.text()
+        'John'  == xml.listField.children()[0].firstName.text()
+
+        where:
+        bean << [new SimpleBean(),
+                 new SimpleJavaBean()]
+    }
+
+    @Unroll
+    def "Test map property"() {
+        setup:
+        def marshaller = new TestMarshaller(
+            app:grailsApplication
+        )
+        marshaller.includesClosure = {Object value-> [ 'mapProperty' ] }
+        register( marshaller )
+        bean.mapProperty = ['a':'1','b':'2']
 
         when:
         def content = render( bean )
         def xml = XML.parse content
         def map = [:]
-        xml.simpleMap.children().each() {
+        xml.mapProperty.children().each() {
             map.put(it.@key.text(), it.text())
         }
 
         then:
-        'true'            == xml.simpleMap.@map.text()
-        2                 == xml.simpleMap.children().size()
+        'true'            == xml.mapProperty.@map.text()
+        2                 == xml.mapProperty.children().size()
         ['a':'1','b':'2'] == map
+
+        where:
+        bean << [new SimpleBean(),
+                 new SimpleJavaBean()]
     }
 
-    def "Test map with complex objects"() {
+    @Unroll
+    def "Test map field"() {
         setup:
         def marshaller = new TestMarshaller(
             app:grailsApplication
         )
-        marshaller.includesClosure = {Object o -> ['simpleMap','lastName','firstName']}
+        marshaller.includesClosure = {Object value-> [ 'mapField' ] }
         register( marshaller )
-        MarshalledThing bean = new MarshalledThing()
-        bean.simpleMap = ['a':new MarshalledThingContributor(lastName:'Smith',firstName:"John")]
+        bean.mapField = ['a':'1','b':'2']
 
         when:
         def content = render( bean )
         def xml = XML.parse content
-        def value = xml.simpleMap.children()[0]
+        def map = [:]
+        xml.mapField.children().each() {
+            map.put(it.@key.text(), it.text())
+        }
 
         then:
-        'true'  == xml.simpleMap.@map.text()
-        1       == xml.simpleMap.children().size()
-        'Smith' == value.lastName.text()
-        'John'  == value.firstName.text()
+        'true'            == xml.mapField.@map.text()
+        2                 == xml.mapField.children().size()
+        ['a':'1','b':'2'] == map
+
+        where:
+        bean << [new SimpleBean(),
+                 new SimpleJavaBean()]
     }
 
+    @Unroll
+    def "Test map property with complex objects"() {
+        setup:
+        def marshaller = new TestMarshaller(
+            app:grailsApplication
+        )
+        marshaller.includesClosure = {Object o -> ['mapProperty','lastName','firstName']}
+        register( marshaller )
+        bean.mapProperty = ['a':new MarshalledThingContributor(lastName:'Smith',firstName:"John")]
 
+        when:
+        def content = render( bean )
+        def xml = XML.parse content
+        def value = xml.mapProperty.children()[0]
+
+        then:
+        'true'  == xml.mapProperty.@map.text()
+        1       == xml.mapProperty.children().size()
+        'Smith' == value.lastName.text()
+        'John'  == value.firstName.text()
+
+        where:
+        bean << [new SimpleBean(),
+                 new SimpleJavaBean()]
+    }
+
+    @Unroll
+    def "Test map field with complex objects"() {
+        setup:
+        def marshaller = new TestMarshaller(
+            app:grailsApplication
+        )
+        marshaller.includesClosure = {Object o -> ['mapField','lastName','firstName']}
+        register( marshaller )
+        bean.mapField = ['a':new MarshalledThingContributor(lastName:'Smith',firstName:"John")]
+
+        when:
+        def content = render( bean )
+        def xml = XML.parse content
+        def value = xml.mapField.children()[0]
+
+        then:
+        'true'  == xml.mapField.@map.text()
+        1       == xml.mapField.children().size()
+        'Smith' == value.lastName.text()
+        'John'  == value.firstName.text()
+
+        where:
+        bean << [new SimpleBean(),
+                 new SimpleJavaBean()]
+    }
+
+    @Unroll
     def "Test null collection property has null attribute"() {
         setup:
         def marshaller = new TestMarshaller(
@@ -471,7 +632,6 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
         )
         marshaller.includesClosure = {Object o -> ['listProperty']}
         register( marshaller )
-        SimpleBean bean = new SimpleBean()
 
         when:
         def content = render( bean )
@@ -480,8 +640,13 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
         then:
         'true'  == xml.listProperty.@null.text()
         0       == xml.listProperty.children().size()
+
+        where:
+        bean << [new SimpleBean(),
+                 new SimpleJavaBean()]
     }
 
+    @Unroll
     def "Test null collection field has null attribute"() {
         setup:
         def marshaller = new TestMarshaller(
@@ -489,7 +654,6 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
         )
         marshaller.includesClosure = {Object o -> ['listField']}
         register( marshaller )
-        SimpleBean bean = new SimpleBean()
 
         when:
         def content = render( bean )
@@ -498,8 +662,13 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
         then:
         'true'  == xml.listField.@null.text()
         0       == xml.listField.children().size()
+
+        where:
+        bean << [new SimpleBean(),
+                 new SimpleJavaBean()]
     }
 
+    @Unroll
     def "Test null map property has null attribute"() {
         setup:
         def marshaller = new TestMarshaller(
@@ -507,7 +676,6 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
         )
         marshaller.includesClosure = {Object o -> ['mapProperty']}
         register( marshaller )
-        SimpleBean bean = new SimpleBean()
 
         when:
         def content = render( bean )
@@ -516,8 +684,13 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
         then:
         'true'  == xml.mapProperty.@null.text()
         0       == xml.mapProperty.children().size()
+
+        where:
+        bean << [new SimpleBean(),
+                 new SimpleJavaBean()]
     }
 
+    @Unroll
     def "Test null map field has null attribute"() {
         setup:
         def marshaller = new TestMarshaller(
@@ -525,7 +698,6 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
         )
         marshaller.includesClosure = {Object o -> ['mapField']}
         register( marshaller )
-        SimpleBean bean = new SimpleBean()
 
         when:
         def content = render( bean )
@@ -534,10 +706,14 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
         then:
         'true'  == xml.mapField.@null.text()
         0       == xml.mapField.children().size()
+
+        where:
+        bean << [new SimpleBean(),
+                 new SimpleJavaBean()]
     }
 
     private void register( String name, def marshaller ) {
-        XML.createNamedConfig( "GroovyBeanMarshallerSpec:" + testName + ":$name" ) { xml ->
+        XML.createNamedConfig( "XMLBeanMarshallerSpec:" + testName.getMethodName() + ":$name" ) { xml ->
             xml.registerObjectMarshaller( marshaller, 100 )
         }
     }
@@ -547,8 +723,10 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
     }
 
     private String render( String name, def obj ) {
-        XML.use( "GroovyBeanMarshallerSpec:" + testName + ":$name" ) {
-            return (obj as XML) as String
+        XML.use( "XMLBeanMarshallerSpec:" + testName.getMethodName() + ":$name" ) {
+            //for some reason (obj as JSON) doesn't work in parameterized spock tests
+            def converter = new XML(obj)
+            converter.toString()
         }
     }
 
@@ -556,7 +734,7 @@ class XMLGroovyBeanMarshallerSpec extends Specification {
         render( "default", obj )
     }
 
-    class TestMarshaller extends GroovyBeanMarshaller {
+    class TestMarshaller extends BeanMarshaller {
         def availablePropertiesClosure
         def availableFieldsClosure
         def excludesClosure

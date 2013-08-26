@@ -57,13 +57,13 @@ class MarshallerGroupsDelegate {
             this
         }
 
-        GroupDelegate jsonGroovyBeanMarshaller( Closure c ) {
-            JSONGroovyBeanMarshallerDelegate delegate = new JSONGroovyBeanMarshallerDelegate()
+        GroupDelegate jsonBeanMarshaller( Closure c ) {
+            JSONBeanMarshallerDelegate delegate = new JSONBeanMarshallerDelegate()
             c.delegate = delegate
             c.resolveStrategy = Closure.DELEGATE_FIRST
             c.call()
 
-            def marshaller = JSONGroovyBeanMarshallerFactory.instantiateMarshaller(delegate.config,restConfig)
+            def marshaller = JSONBeanMarshallerFactory.instantiateMarshaller(delegate.config,restConfig)
 
             MarshallerConfig marshallerConfig = new MarshallerConfig()
             marshallerConfig.instance = marshaller
@@ -91,13 +91,13 @@ class MarshallerGroupsDelegate {
             this
         }
 
-        GroupDelegate xmlGroovyBeanMarshaller( Closure c ) {
-            XMLGroovyBeanMarshallerDelegate delegate = new XMLGroovyBeanMarshallerDelegate()
+        GroupDelegate xmlBeanMarshaller( Closure c ) {
+            XMLBeanMarshallerDelegate delegate = new XMLBeanMarshallerDelegate()
             c.delegate = delegate
             c.resolveStrategy = Closure.DELEGATE_FIRST
             c.call()
 
-            def marshaller = XMLGroovyBeanMarshallerFactory.instantiateMarshaller(delegate.config,restConfig)
+            def marshaller = XMLBeanMarshallerFactory.instantiateMarshaller(delegate.config,restConfig)
 
             MarshallerConfig marshallerConfig = new MarshallerConfig()
             marshallerConfig.instance = marshaller

@@ -6,8 +6,6 @@ package net.hedtech.restfulapi.marshallers.xml
 import grails.converters.XML
 import grails.util.GrailsNameUtils
 
-import groovy.lang.GroovyObject
-
 import java.beans.PropertyDescriptor
 import java.lang.reflect.Field
 import java.lang.reflect.Method
@@ -34,7 +32,7 @@ import org.springframework.beans.BeanWrapperImpl
 import org.springframework.beans.factory.NoSuchBeanDefinitionException
 
 /**
- * A groovy bean marshaller.
+ * A bean marshaller.
  * By default, it will marshall all properties and public (non-static/non-transient)
  * fields.
  * The class can be extended to override how an object is marshalled.

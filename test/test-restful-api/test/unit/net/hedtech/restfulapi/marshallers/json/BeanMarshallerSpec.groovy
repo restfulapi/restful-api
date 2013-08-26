@@ -33,21 +33,31 @@ import spock.lang.*
 
 
 @TestMixin([GrailsUnitTestMixin, ControllerUnitTestMixin])
-class GroovyBeanMarshallerSpec extends Specification {
+class BeanMarshallerSpec extends Specification {
 
     @Rule TestName testName = new TestName()
 
     void setup() {
     }
 
+    def "Test that collections and maps are not supported by default"() {
+        setup:
+        def marshaller = new BeanMarshaller(
+            app:grailsApplication
+        )
+
+        expect:
+        false == marshaller.supports(new DummyCollection())
+        false == marshaller.supports(new DummyMap())
+    }
+
+    @Unroll
     def "Test field access"() {
         setup:
-        def marshaller = new GroovyBeanMarshaller(
+        def marshaller = new BeanMarshaller(
             app:grailsApplication
         )
         register(marshaller)
-        SimpleBean bean = new SimpleBean(property:'foo', publicField:'bar')
-
 
         when:
         def content = render( bean )
@@ -61,8 +71,13 @@ class GroovyBeanMarshallerSpec extends Specification {
         !json.containsKey('transientField')
         !json.containsKey('staticField')
 
+        where:
+        bean << [new SimpleBean(property:'foo', publicField:'bar'),
+                 new SimpleJavaBean(property:'foo', publicField:'bar')]
+
     }
 
+    @Unroll
     def "Test excluding fields"() {
         setup:
         def marshaller = new TestMarshaller(
@@ -70,7 +85,6 @@ class GroovyBeanMarshallerSpec extends Specification {
         )
         marshaller.excludesClosure = {Object value-> ['property','publicField'] }
         register( marshaller )
-        SimpleBean bean = new SimpleBean(property:'foo', publicField:'bar')
 
         when:
         def content = render( bean )
@@ -79,15 +93,19 @@ class GroovyBeanMarshallerSpec extends Specification {
         then:
         !json.containsKey('property')
         !json.containsKey('publicField')
+
+        where:
+        bean << [new SimpleBean(property:'foo', publicField:'bar'),
+                 new SimpleJavaBean(property:'foo', publicField:'bar')]
     }
 
+    @Unroll
     def "Test default exclusions"() {
         setup:
-        def marshaller = new GroovyBeanMarshaller(
+        def marshaller = new BeanMarshaller(
             app:grailsApplication
         )
         register( marshaller )
-        SimpleBean bean = new SimpleBean(property:'foo', publicField:'bar')
 
         when:
         def content = render( bean )
@@ -98,8 +116,13 @@ class GroovyBeanMarshallerSpec extends Specification {
         !json.containsKey('class')
         !json.containsKey('metaClass')
 
+        where:
+        bean << [new SimpleBean(property:'foo', publicField:'bar'),
+                 new SimpleJavaBean(property:'foo', publicField:'bar')]
+
     }
 
+    @Unroll
     def "Test including fields"() {
         setup:
         def marshaller = new TestMarshaller(
@@ -107,7 +130,6 @@ class GroovyBeanMarshallerSpec extends Specification {
         )
         marshaller.includesClosure = {Object value-> [ 'property', 'publicField'] }
         register( marshaller )
-        SimpleBean bean = new SimpleBean(property:'foo', publicField:'bar')
 
         when:
         def content = render( bean )
@@ -118,8 +140,13 @@ class GroovyBeanMarshallerSpec extends Specification {
         'bar' == json.publicField
         !json.containsKey('property2')
         !json.containsKey('publicField2')
+
+        where:
+        bean << [new SimpleBean(property:'foo', publicField:'bar'),
+                 new SimpleJavaBean(property:'foo', publicField:'bar')]
     }
 
+    @Unroll
     def "Test require included fields"() {
         setup:
         def marshaller = new TestMarshaller(
@@ -128,7 +155,6 @@ class GroovyBeanMarshallerSpec extends Specification {
         marshaller.includesClosure = {Object value-> [ 'property', 'publicField', 'missingField1', 'missingField2'] }
         marshaller.requireIncludedFieldsClosure = {Object o -> true}
         register( marshaller )
-        SimpleBean bean = new SimpleBean(property:'foo', publicField:'bar')
 
         when:
         render( bean )
@@ -136,8 +162,13 @@ class GroovyBeanMarshallerSpec extends Specification {
         then:
         UnhandledException e = thrown()
         ['missingField1', 'missingField2'] == e.getCause().missingNames
+
+        where:
+        bean << [new SimpleBean(property:'foo', publicField:'bar'),
+                 new SimpleJavaBean(property:'foo', publicField:'bar')]
     }
 
+    @Unroll
     def "Test that included fields overrides excluded fields"() {
         setup:
         def marshaller = new TestMarshaller(
@@ -150,9 +181,6 @@ class GroovyBeanMarshallerSpec extends Specification {
             [ 'property', 'publicField']
         }
         register( marshaller )
-        SimpleBean bean = new SimpleBean(
-            property:'foo', publicField:'bar',
-            property2:'prop2', publicField2:'field2')
 
         when:
         def content = render( bean )
@@ -164,8 +192,13 @@ class GroovyBeanMarshallerSpec extends Specification {
         'prop2'  == json.property2
         'field2' == json.publicField2
         4        == json.keySet().size()
+
+        where:
+        bean << [new SimpleBean( property:'foo', publicField:'bar', property2:'prop2', publicField2:'field2'),
+                 new SimpleJavaBean( property:'foo', publicField:'bar', property2:'prop2', publicField2:'field2')]
     }
 
+    @Unroll
     def "Test special processing of properties"() {
         setup:
         def marshaller = new TestMarshaller(
@@ -182,7 +215,6 @@ class GroovyBeanMarshallerSpec extends Specification {
             }
         }
         register( marshaller )
-        SimpleBean bean = new SimpleBean(property:'foo', publicField:'bar')
 
         when:
         def content = render( bean )
@@ -191,8 +223,13 @@ class GroovyBeanMarshallerSpec extends Specification {
         then:
         !json.containsKey('property')
         'foo' == json.modProperty
+
+        where:
+        bean << [new SimpleBean(property:'foo', publicField:'bar'),
+                 new SimpleJavaBean(property:'foo', publicField:'bar')]
     }
 
+    @Unroll
     def "Test special processing of fields"() {
         setup:
         def marshaller = new TestMarshaller(
@@ -209,7 +246,6 @@ class GroovyBeanMarshallerSpec extends Specification {
             }
         }
         register( marshaller )
-        SimpleBean bean = new SimpleBean(property:'foo', publicField:'bar')
 
         when:
         def content = render( bean )
@@ -218,8 +254,13 @@ class GroovyBeanMarshallerSpec extends Specification {
         then:
         !json.containsKey('publicField')
         'bar' == json.modPublicField
+
+        where:
+        bean << [new SimpleBean(property:'foo', publicField:'bar'),
+                 new SimpleJavaBean(property:'foo', publicField:'bar')]
     }
 
+    @Unroll
     def "Test alternative names"() {
         setup:
         def marshaller = new TestMarshaller(
@@ -227,7 +268,6 @@ class GroovyBeanMarshallerSpec extends Specification {
         )
         marshaller.substitutionNames = ['property':'modProperty','publicField':'modPublicField']
         register( marshaller )
-        SimpleBean bean = new SimpleBean(property:'foo', publicField:'bar')
 
         when:
         def content = render( bean )
@@ -238,8 +278,13 @@ class GroovyBeanMarshallerSpec extends Specification {
         !json.containsKey('publicField')
         'foo' == json.modProperty
         'bar' == json.modPublicField
+
+        where:
+        bean << [new SimpleBean(property:'foo', publicField:'bar'),
+                 new SimpleJavaBean(property:'foo', publicField:'bar')]
     }
 
+    @Unroll
     def "Test additional fields"() {
         setup:
         def marshaller = new TestMarshaller(
@@ -249,7 +294,6 @@ class GroovyBeanMarshallerSpec extends Specification {
             json.property('additionalProp',"some value")
         }
         register( marshaller )
-        SimpleBean bean = new SimpleBean(property:'foo', publicField:'bar')
 
         when:
         def content = render( bean )
@@ -257,8 +301,13 @@ class GroovyBeanMarshallerSpec extends Specification {
 
         then:
         'some value' == json.additionalProp
+
+        where:
+        bean << [new SimpleBean(property:'foo', publicField:'bar'),
+                 new SimpleJavaBean(property:'foo', publicField:'bar')]
     }
 
+    @Unroll
     def "Test overriding available properties"() {
         setup:
         def marshaller = new TestMarshaller(
@@ -268,7 +317,6 @@ class GroovyBeanMarshallerSpec extends Specification {
             [wrapper.getPropertyDescriptor('property2')]
         }
         register( marshaller )
-        SimpleBean bean = new SimpleBean(property:'foo', publicField:'bar')
 
         when:
         def content = render( bean )
@@ -277,9 +325,13 @@ class GroovyBeanMarshallerSpec extends Specification {
         then:
         !json.containsKey('property')
         json.containsKey('property2')
+
+        where:
+        bean << [new SimpleBean(property:'foo', publicField:'bar'),
+                 new SimpleJavaBean(property:'foo', publicField:'bar')]
     }
 
-
+    @Unroll
     def "Test overriding available fields"() {
         setup:
         def marshaller = new TestMarshaller(
@@ -289,7 +341,6 @@ class GroovyBeanMarshallerSpec extends Specification {
             [value.getClass().getDeclaredField('publicField2')]
         }
         register( marshaller )
-        SimpleBean bean = new SimpleBean(property:'foo', publicField:'bar')
 
         when:
         def content = render( bean )
@@ -298,10 +349,14 @@ class GroovyBeanMarshallerSpec extends Specification {
         then:
         !json.containsKey('publicField')
         json.containsKey('publicField2')
+
+        where:
+        bean << [new SimpleBean(property:'foo', publicField:'bar'),
+                 new SimpleJavaBean(property:'foo', publicField:'bar')]
     }
 
     private void register( String name, def marshaller ) {
-        JSON.createNamedConfig( "GroovyBeanMarshallerSpec:" + testName + ":$name" ) { json ->
+        JSON.createNamedConfig( "BeanMarshallerSpec:" + testName.getMethodName() + ":$name" ) { json ->
             json.registerObjectMarshaller( marshaller, 100 )
         }
     }
@@ -311,8 +366,10 @@ class GroovyBeanMarshallerSpec extends Specification {
     }
 
     private String render( String name, def obj ) {
-        JSON.use( "GroovyBeanMarshallerSpec:" + testName + ":$name" ) {
-            return (obj as JSON) as String
+        JSON.use( "BeanMarshallerSpec:" + testName.getMethodName() + ":$name" ) {
+            //for some reason (obj as JSON) doesn't work in parameterized spock tests
+            def converter = new JSON(obj)
+            converter.toString()
         }
     }
 
@@ -320,7 +377,7 @@ class GroovyBeanMarshallerSpec extends Specification {
         render( "default", obj )
     }
 
-    class TestMarshaller extends GroovyBeanMarshaller {
+    class TestMarshaller extends BeanMarshaller {
         def availablePropertiesClosure
         def availableFieldsClosure
         def excludesClosure
