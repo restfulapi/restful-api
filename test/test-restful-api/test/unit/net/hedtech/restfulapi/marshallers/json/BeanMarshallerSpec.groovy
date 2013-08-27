@@ -355,6 +355,26 @@ class BeanMarshallerSpec extends Specification {
                  new SimpleJavaBean(property:'foo', publicField:'bar')]
     }
 
+    @Unroll
+    def "Test a field and property with the same name are marshalled once"() {
+        setup:
+        def marshaller = new TestMarshaller(
+            app:grailsApplication
+        )
+        marshaller.includesClosure = { Object value -> ['propertyAndField']}
+        register( marshaller )
+
+        when:
+        def content = render( bean )
+
+        then:
+        1 == content.count( "propertyAndField" )
+
+        where:
+        bean << [new SimpleBean(propertyAndField:'foo'),
+                 new SimpleJavaBean(propertyAndField:'foo')]
+    }
+
     private void register( String name, def marshaller ) {
         JSON.createNamedConfig( "BeanMarshallerSpec:" + testName.getMethodName() + ":$name" ) { json ->
             json.registerObjectMarshaller( marshaller, 100 )

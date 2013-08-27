@@ -103,6 +103,8 @@ class AbstractBeanMarshaller implements ObjectMarshaller<XML>, NameAwareMarshall
                 }
             }
 
+            def propertyNames = propertiesToMarshall*.name
+
             propertiesToMarshall.each() { PropertyDescriptor property ->
                 if (processProperty(beanWrapper, property, xml)) {
                     startNode(beanWrapper, property, xml)
@@ -112,7 +114,7 @@ class AbstractBeanMarshaller implements ObjectMarshaller<XML>, NameAwareMarshall
                 }
             }
             fieldsToMarshall.each() { Field field ->
-                if (processField(value, field, xml)) {
+                if (!propertyNames.contains(field.name) && processField(value, field, xml)) {
                     startNode(beanWrapper, field, value, xml)
                     Object val = field.get(value)
                     xml.convertAnother(val)

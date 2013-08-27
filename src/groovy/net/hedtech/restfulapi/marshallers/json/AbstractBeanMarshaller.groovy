@@ -104,6 +104,8 @@ class AbstractBeanMarshaller implements ObjectMarshaller<JSON> {
                 }
             }
 
+            def propertyNames = propertiesToMarshall*.name
+
             propertiesToMarshall.each() { PropertyDescriptor property ->
                 if (processProperty(beanWrapper, property, json)) {
                     writeFieldName(beanWrapper, property, json)
@@ -112,7 +114,7 @@ class AbstractBeanMarshaller implements ObjectMarshaller<JSON> {
                 }
             }
             fieldsToMarshall.each() { Field field ->
-                if (processField(value, field, json)) {
+                if (!propertyNames.contains(field.name) && processField(value, field, json)) {
                     writeFieldName(beanWrapper, field, json)
                     Object val = field.get(value)
                     json.convertAnother(val)

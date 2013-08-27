@@ -21,4 +21,14 @@ class SimpleBean {
     Map mapProperty
     public Map mapField
 
+    public String propertyAndField
+
+    public String getPropertyAndField() {
+        propertyAndField
+    }
+
+    public void setPropertyAndField(String s) {
+        propertyAndField = s
+    }
+
 }

@@ -712,6 +712,26 @@ class XMLBeanMarshallerSpec extends Specification {
                  new SimpleJavaBean()]
     }
 
+    @Unroll
+    def "Test a field and property with the same name are marshalled once"() {
+        setup:
+        def marshaller = new TestMarshaller(
+            app:grailsApplication
+        )
+        marshaller.includesClosure = { Object value -> ['propertyAndField']}
+        register( marshaller )
+
+        when:
+        def content = render( bean )
+
+        then:
+        1 == content.count( "<propertyAndField>" )
+
+        where:
+        bean << [new SimpleBean(propertyAndField:'foo'),
+                 new SimpleJavaBean(propertyAndField:'foo')]
+    }
+
     private void register( String name, def marshaller ) {
         XML.createNamedConfig( "XMLBeanMarshallerSpec:" + testName.getMethodName() + ":$name" ) { xml ->
             xml.registerObjectMarshaller( marshaller, 100 )

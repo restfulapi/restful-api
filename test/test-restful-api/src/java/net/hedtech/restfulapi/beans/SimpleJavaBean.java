@@ -24,6 +24,8 @@ public class SimpleJavaBean {
     private Map mapProperty;
     public Map mapField;
 
+    public String propertyAndField;
+
     public String getProperty() {
         return property;
     }
@@ -62,5 +64,13 @@ public class SimpleJavaBean {
 
     public void setMapProperty(Map m) {
         this.mapProperty = m;
+    }
+
+    public String getPropertyAndField() {
+        return this.propertyAndField;
+    }
+
+    public void setPropertyAndField(String s) {
+        this.propertyAndField = s;
     }
 }
