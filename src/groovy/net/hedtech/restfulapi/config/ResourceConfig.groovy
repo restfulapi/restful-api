@@ -50,6 +50,30 @@ class ResourceConfig {
                 mediaType:mediaType, marshallerFramework:delegate.marshallerFramework,
                 contentType:delegate.contentType,
                 marshallers:delegate.marshallers, extractor:delegate.extractor )
+
+            //if we are using the json or xml marshalling framework, check
+            //if we have default marshallers that should be automatically used
+            //for all representations, and add then to the configuration
+            def framework = config.resolveMarshallerFramework()
+            switch(framework) {
+                case ~/json/:
+                    if (restConfig.hasMarshallerGroup('json')) {
+                        def group = restConfig.getMarshallerGroup('json')
+                        config.marshallers.addAll(0,group.marshallers)
+                    }
+                break
+                case ~/xml/:
+                    if (restConfig.hasMarshallerGroup('xml')) {
+                        def group = restConfig.getMarshallerGroup('xml')
+                        config.marshallers.addAll(0,group.marshallers)
+                    }
+                break
+                default:
+                    break
+            }
+
+
+
             representations.put(mediaType, config)
         }
         return this

@@ -803,6 +803,53 @@ This configuration defines a reusable group of marshallers named 'defaultJSON' c
         }
     }
 
+###Default marshaller groups
+If you have marshallers that you want to be used automatically for all representations (e.g., a format for dates), you can define them in a marshaller group named 'json' or 'xml'.  Any marshallers defined in the 'json' group will automatically be added to the beginning of the marshaller list for all representations using the 'json' marshalling framework.  Similarly, all marshallers defined in an 'xml' group will be added to all representations using the 'xml' marshalling framework.  For example:
+
+    restfulApiConfig = {
+        marshallerGroups {
+            group 'json' marshallers {
+            marshaller {
+                instance = new org.codehaus.groovy.grails.web.converters.marshaller.ClosureOjectMarshaller<grails.converters.JSON>(
+                        java.util.Date, {return it?.format("yyyy-MM-dd'T'HH:mm:ssZ")})
+            }
+        }
+
+        resource 'students' config {
+            representation {
+                mediaTypes = ['application/json']
+                marshallers {
+                    marshaller {
+                        instance = new net.hedtech.restfulapi.marshallers.json.StudentMarshaller(grailsApplication)
+                        priority = 100
+                    }
+                }
+            }
+        }
+    }
+
+Will cause as Date fields in a student to be rendered using the "yyyy-MM-dd'T'HH:mm:ssZ".  The same will apply to every json representation defined for every resource.  The above configuration is functionally equivalent to:
+
+    restfulApiConfig = {
+        resource 'students' config {
+            representation {
+                mediaTypes = ['application/json']
+                marshallers {
+                    marshaller {
+                        instance = new org.codehaus.groovy.grails.web.converters.marshaller.ClosureOjectMarshaller<grails.converters.JSON>(
+                                java.util.Date, {return it?.format("yyyy-MM-dd'T'HH:mm:ssZ")})
+                    }
+                    marshaller {
+                        instance = new net.hedtech.restfulapi.marshallers.json.StudentMarshaller(grailsApplication)
+                        priority = 100
+                    }
+                }
+            }
+        }
+    }
+
+The default marshaller groups also apply to the anyResource block.
+
 ###Ordering
 Configuration elements are applied in the order in which they are encountered.  This means that ordering in the configuration is signficant.  For example:
 
@@ -890,11 +937,7 @@ The plugin will automatically use the grails json converters for any media type 
 ###Using grails converters
 To fully take advantage of marshalling, you should understand how the grails converters for JSON and xml work.  The plugin takes advantage of named converter configurations.  Each resource/representation in the configuration using grails converters for marshalling results in a new named converter configuration for JSON or XML.  When marshalling an object, the restful-api controller will use that named configuration to marshall the object.  It does this by asking each marshaller in the named configuration (marshallers with higher priority first) if the marshaller supports the object.  This means that the marshallers registered for a resource/representation are used only for that representation, and is what allows the plugin to support different representations for the same resource.
 
-However, you should be aware that these named configurations will fallback to the default converter configurations if they cannot locate a marshaller within the named config.  For example, let's say in your application's bootstrap you add
-
-    JSON.registerObjectMarshaller(Date) { return it?.format("yyyy-MM-dd'T'HH:mm:ssZ") }
-
-This registers a JSON marshaller for java.util.Date.  If you have an object with a date field, and define a representation for it, when the grails converter tries to marshall the date field, it will fallback to the above object marshaller.  You can take advantage of this behavior to establish default marshalling behavior for common objects like dates.
+However, you should be aware that these named configurations will fallback to the default converter configurations provided by grails (e.g., marshallers for Collections) if they cannot locate a marshaller within the named config.
 
 ##<a id="declarative-marshalling"></a>Declarative Marshalling of Domain classes to JSON
 The plugin contains a BasicDomainClassMarshaller and a DeclarativeDomainClassMarshaller, designed to simplify marshalling of grails domain objects to a json representation.
@@ -2594,7 +2637,7 @@ A value of 'json' indicates that the grails json converter framework should be u
 
 A value of 'xml' indicates that the grails xml converter framework should be used to marshal any response.
 
-Any value other than 'none', 'json', or 'xml' is treated as the name of a bean available in the grails application context that provides custom marshalling for the object.  It must implements a marshalObject method taking as arguments an Object and an instance of net.hedtech.restfulapi.config.RepresentationConfig.
+Any value other than 'none', 'json', or 'xml' is treated as the name of a bean available in the grails application context that provides custom marshalling for the object.  It must implement a marshalObject method taking as arguments an Object and an instance of net.hedtech.restfulapi.config.RepresentationConfig.
 
 If a value for the marshallerFramework is not explicitly set, the controller will infer the framework from the mediaType of the representation.  A media type ending in 'json' is assumed to use the 'json' framework; a type ending in 'xml' is assumed to use 'xml'.
 

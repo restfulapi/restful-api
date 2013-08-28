@@ -44,18 +44,12 @@ class RestfulApiGrailsPlugin {
     def doWithDynamicMethods = { ctx -> }
 
     def doWithApplicationContext = { applicationContext ->
-
-        // Use an ISO8601-compliant date format
-        //
-        JSON.registerObjectMarshaller(Date) { return it?.format("yyyy-MM-dd'T'HH:mm:ssZ") }
-
         // ------------------------ Common marshallers -----------------------
         // Initialize the Restful API controller (so it will register JSON and XML marshallers)
         //
         def artefact = application.getArtefactByLogicalPropertyName("Controller", "restfulApi")
         def restfulApiController = applicationContext.getBean(artefact.clazz.name)
         restfulApiController.init()
-
     }
 
     def onChange = { event -> }

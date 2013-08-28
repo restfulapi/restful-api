@@ -173,7 +173,7 @@ class RestConfigSpec extends Specification {
         RepresentationConfig conf = config.getRepresentation('things', types )
 
         then:
-        null != conf
+        null                              != conf
         'application/vnd.hedtech.v1+json' == conf.mediaType
     }
 
@@ -212,15 +212,15 @@ class RestConfigSpec extends Specification {
         RepresentationConfig version1 = config.getRepresentation( 'things', 'application/vnd.hedtech.v1+json' )
 
         then:
-        'application/json' == defaultConfig.mediaType
-        'v0' == defaultConfig.marshallers[0].instance
-        'v0' == defaultConfig.extractor
+        'application/json'                == defaultConfig.mediaType
+        'v0'                              == defaultConfig.marshallers[0].instance
+        'v0'                              == defaultConfig.extractor
         'application/vnd.hedtech.v0+json' == version0.mediaType
-        'v0' == version0.marshallers[0].instance
-        'v0' == version0.extractor
+        'v0'                              == version0.marshallers[0].instance
+        'v0'                              == version0.extractor
         'application/vnd.hedtech.v1+json' == version1.mediaType
-        'v1' == version1.marshallers[0].instance
-        'v1' == version1.extractor
+        'v1'                              == version1.marshallers[0].instance
+        'v1'                              == version1.extractor
     }
 
     def "Test detection when the same media type is assigned to two different representation"() {
@@ -310,6 +310,132 @@ class RestConfigSpec extends Specification {
         then:
         ['customThing','defaultJsonDate','foo','customDate','defaultThing'] == rep.marshallers.instance
         [15,5,10,15,5] == rep.marshallers.priority
+    }
+
+    def "Test default marshaller groups"() {
+        setup:
+        def src =
+        {
+            marshallerGroups {
+                group 'json' marshallers {
+                    marshaller {
+                        instance = 'defaultJsonDate'
+                        priority = 5
+                    }
+                    marshaller {
+                        instance = 'foo'
+                        priority = 10
+                    }
+                }
+                group 'xml' marshallers {
+                    marshaller {
+                        instance = 'defaultXmlDate'
+                        priority = 5
+                    }
+
+                    marshaller {
+                        instance = 'bar'
+                        priority = 5
+                    }
+                }
+            }
+
+            resource 'things' config {
+                representation {
+                    mediaTypes = ['application/json']
+                    marshallers {
+                        marshaller {
+                            instance = 'customJsonThing'
+                            priority = 15
+                        }
+                    }
+                }
+                representation {
+                    mediaTypes = ['application/xml']
+                    marshallers {
+                        marshaller {
+                            instance = 'customXmlThing'
+                            priority = 15
+                        }
+                    }
+                }
+            }
+
+        }
+
+        when:
+        def config = RestConfig.parse( grailsApplication, src )
+        RepresentationConfig jsonRep = config.getRepresentation( 'things', 'application/json' )
+        RepresentationConfig xmlRep = config.getRepresentation( 'things', 'application/xml' )
+
+        then:
+        ['defaultJsonDate','foo','customJsonThing'] == jsonRep.marshallers.instance
+        [5,10,15]                                   == jsonRep.marshallers.priority
+        ['defaultXmlDate','bar','customXmlThing']   == xmlRep.marshallers.instance
+        [5,5,15]                                    == xmlRep.marshallers.priority
+    }
+
+    def "Test default marshaller groups with anyResource"() {
+        setup:
+        def src =
+        {
+            marshallerGroups {
+                group 'json' marshallers {
+                    marshaller {
+                        instance = 'defaultJsonDate'
+                        priority = 5
+                    }
+                    marshaller {
+                        instance = 'foo'
+                        priority = 10
+                    }
+                }
+                group 'xml' marshallers {
+                    marshaller {
+                        instance = 'defaultXmlDate'
+                        priority = 5
+                    }
+
+                    marshaller {
+                        instance = 'bar'
+                        priority = 5
+                    }
+                }
+            }
+
+            anyResource {
+                representation {
+                    mediaTypes = ['application/json']
+                    marshallers {
+                        marshaller {
+                            instance = 'customJson'
+                            priority = 15
+                        }
+                    }
+                }
+                representation {
+                    mediaTypes = ['application/xml']
+                    marshallers {
+                        marshaller {
+                            instance = 'customXml'
+                            priority = 15
+                        }
+                    }
+                }
+            }
+
+        }
+
+        when:
+        def config = RestConfig.parse( grailsApplication, src )
+        RepresentationConfig jsonRep = config.getRepresentation( '', 'application/json' )
+        RepresentationConfig xmlRep = config.getRepresentation( '', 'application/xml' )
+
+        then:
+        ['defaultJsonDate','foo','customJson'] == jsonRep.marshallers.instance
+        [5,10,15]                                   == jsonRep.marshallers.priority
+        ['defaultXmlDate','bar','customXml']   == xmlRep.marshallers.instance
+        [5,5,15]                                    == xmlRep.marshallers.priority
     }
 
     def "Test missing marshaller group"() {

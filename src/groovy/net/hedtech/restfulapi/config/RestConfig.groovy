@@ -104,6 +104,10 @@ class RestConfig {
         group
     }
 
+    boolean hasMarshallerGroup(String name) {
+        return marshallerGroups[name] != null
+    }
+
     def jsonDomainMarshallerTemplates(Closure c) {
         JSONDomainTemplates delegate = new JSONDomainTemplates(this)
         c.delegate = delegate
