@@ -1,13 +1,12 @@
-grails.project.class.dir = "target/classes"
-grails.project.test.class.dir = "target/test-classes"
-grails.project.test.reports.dir = "target/test-reports"
+/* ****************************************************************************
+Copyright 2013 Ellucian Company L.P. and its affiliates.
+******************************************************************************/
+grails.project.work.dir = 'target'
+
+grails.project.repos.snap.url="http://m039200.ellucian.com:8081/artifactory/core-architecture-snapshot"
 
 grails.project.dependency.resolution = {
-    // inherit Grails' default dependencies
-    inherits("global") {
-        // uncomment to disable ehcache
-        // excludes 'ehcache'
-    }
+    inherits 'global'
     log "warn" // log level of Ivy resolver, either 'error', 'warn', 'info', 'debug' or 'verbose'
     repositories {
         grailsCentral()
@@ -18,13 +17,8 @@ grails.project.dependency.resolution = {
     }
 
     plugins {
-        build(":tomcat:$grailsVersion",
-              ":release:2.0.3",
-              ":rest-client-builder:1.0.2") {
+        build(":release:2.2.1") {
             export = false
-        }
-        test(":spock:0.7") {
-          exclude "spock-grails-support"
         }
         compile(":inflector:0.2",
                 ":cache-headers:1.1.5")

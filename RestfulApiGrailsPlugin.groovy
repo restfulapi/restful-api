@@ -12,11 +12,11 @@ import org.codehaus.groovy.grails.web.converters.configuration.DefaultConverterC
 
 class RestfulApiGrailsPlugin {
 
-    def version = "0.6.0"
-    def grailsVersion = "2.2.1 > *"
-    def dependsOn = [:]
+    def version = "0.7.0"
+    def grailsVersion = "2.2.0 > *"
     def pluginExcludes = [
-        "grails-app/views/error.gsp"
+        "grails-app/views/**",
+        "web-app/**"
     ]
 
     def title = "RESTful API Plugin"
@@ -33,29 +33,17 @@ class RestfulApiGrailsPlugin {
 
     def organization = [ name: "Ellucian", url: "http://www.ellucian.com/" ]
 
+    //def license = "APACHE"
+
 
 // ----------------------------------------------------------------------------
 
-
-    def doWithWebDescriptor = { xml -> }
-
-    def doWithSpring = { }
-
-    def doWithDynamicMethods = { ctx -> }
-
     def doWithApplicationContext = { applicationContext ->
-        // ------------------------ Common marshallers -----------------------
         // Initialize the Restful API controller (so it will register JSON and XML marshallers)
         //
         def artefact = application.getArtefactByLogicalPropertyName("Controller", "restfulApi")
         def restfulApiController = applicationContext.getBean(artefact.clazz.name)
         restfulApiController.init()
     }
-
-    def onChange = { event -> }
-
-    def onConfigChange = { event -> }
-
-    def onShutdown = { event -> }
 }
 

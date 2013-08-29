@@ -3,9 +3,7 @@ Copyright 2013 Ellucian Company L.P. and its affiliates.
 ******************************************************************************/
 
 grails.servlet.version          = "2.5" // Change depending on target container compliance (2.5 or 3.0)
-grails.project.class.dir        = "target/classes"
-grails.project.test.class.dir   = "target/test-classes"
-grails.project.test.reports.dir = "target/test-reports"
+grails.project.work.dir         = 'target'
 grails.project.target.level     = 1.6
 grails.project.source.level     = 1.6
 
@@ -13,8 +11,8 @@ grails.plugin.location.'restful-api' = "../.."
 
 grails.project.dependency.resolution = {
 
-    inherits("global") { }
-    log "error" // log level of Ivy resolver, either 'error', 'warn', 'info', 'debug' or 'verbose'
+    inherits 'global'
+    log "warn" // log level of Ivy resolver, either 'error', 'warn', 'info', 'debug' or 'verbose'
     checksums true // Whether to verify checksums on resolve
 
     repositories {
@@ -26,6 +24,7 @@ grails.project.dependency.resolution = {
 
         mavenLocal()
         mavenCentral()
+
     }
 
     dependencies {
@@ -36,9 +35,7 @@ grails.project.dependency.resolution = {
     }
 
     plugins {
-        compile(":inflector:0.2",
-                ":cache-headers:1.1.5",
-                ':cache:1.0.0')
+        compile(':cache:1.0.0')
 
         runtime(":hibernate:$grailsVersion",
                 ":jquery:1.7.2",

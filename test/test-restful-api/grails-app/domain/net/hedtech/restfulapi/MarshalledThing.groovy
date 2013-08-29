@@ -42,7 +42,9 @@ class MarshalledThing implements Serializable {
 
     static constraints = {
         parts              bindable: false
-        subPart            bindable: false, unique: true
+        subPart            nullable: true, bindable: false, unique: true
+        embeddedPart       nullable: true
+        owner              nullable: true
         code               ( nullable: false, maxSize: 2, unique: true  )
         description        ( nullable: true, maxSize: 30 )
         lastModified       ( nullable: true )
