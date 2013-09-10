@@ -35,21 +35,22 @@ grails.project.dependency.resolution = {
     }
 
     plugins {
-        compile(':cache:1.0.0')
+        compile(':cache:1.0.0',
+                ':inflector:0.2',
+                ':cache-headers:1.1.5')
 
         runtime(":hibernate:$grailsVersion",
                 ":jquery:1.7.2",
                 ":resources:1.1.6",
-                ":database-migration:1.1",
                 ":cors:1.1.0")
 
         test(":spock:0.7") {
           exclude "spock-grails-support"
         }
 
-        test ":funky-spock:0.1.0"
+        test ":funky-spock:0.2.0"
 
-        build   ":tomcat:$grailsVersion"
+        build ":tomcat:$grailsVersion"
     }
 }
 
