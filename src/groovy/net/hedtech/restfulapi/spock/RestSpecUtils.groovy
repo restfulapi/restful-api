@@ -47,7 +47,5 @@ class RestSpecUtils {
                 System.out.println("${key}: ${it.value}")
             }
         }
-
     }
-
 }

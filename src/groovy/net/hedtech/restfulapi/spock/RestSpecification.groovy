@@ -90,7 +90,9 @@ abstract class RestSpecification extends Specification {
 
         try {
             def entity = requestCustomizer.createEntity()
-            RestSpecUtils.dumpRequestInfo(url,method,entity)
+            if (isDisplay()) {
+                RestSpecUtils.dumpRequestInfo(url,method,entity)
+            }
             response = restTemplate.exchange(
                 url, method, entity, responseType
             )
@@ -100,6 +102,12 @@ abstract class RestSpecification extends Specification {
         catch (HttpStatusCodeException e) {
             response = new ErrorResponse(error:e)
         }
-        RestSpecUtils.dumpResponse( response )
+        if (isDisplay()) {
+            RestSpecUtils.dumpResponse( response )
+        }
+    }
+
+    protected boolean isDisplay() {
+        return System.getProperties().getProperty("RestSpecification.display")
     }
 }

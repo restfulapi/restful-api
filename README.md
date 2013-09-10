@@ -2742,7 +2742,7 @@ Errors encountered while servicing a request are logged at error level to the lo
 ##<a id="api-testing"></a>Testing an API
 The plugin contains the class net.hedtech.restfulapi.spock.RestSpecification which may be extended to write functional spock tests.  Spock is a testing and specification framework that is very expressive.  It is strongly recommended that you use spock to test your APIs.
 
-The RestSpecification class contains a number of convenience methods for making calls to Restful APIs as part of the functional test phase.
+The RestSpecification class contains a number of convenience methods for making calls to Restful APIs as part of the functional test phase, such as get and post methods that take closures in which you can define headers, body content, etc.
 
 For example
 
@@ -2783,6 +2783,8 @@ For example
     }
 
 Clone the plugin's git repo and look at the tests under test-restful-api for more examples of using spock and the RestSpecification to do functional testing of your APIs.
+
+The RestSpecification can also print out the details of the request/response for each test, including the headers.  To enable this, pass "-DRestSpecification.display=true --echoOut" when running the test.
 
 ##Cross-Origin Resource Sharing
 User agents typically apply same-origin restrictions to network requests; this prevents a client-side Web application from invoking APIs provided by the plugin from a different origin.
