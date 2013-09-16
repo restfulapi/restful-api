@@ -66,7 +66,6 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<JSON> {
 
 
 // Seeded from: http://grails4you.com/2012/04/restful-api-for-grails-domains/
-// TODO: Refactor -- very long marshalObject method with nested if statements...
 
     @Override
     public void marshalObject(Object value, JSON json) throws ConverterException {
@@ -131,11 +130,6 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<JSON> {
         }
         writer.endObject()
     }
-
-
-
-
-
 
 // ------------------- Methods to override to customize behavior ---------------------
 

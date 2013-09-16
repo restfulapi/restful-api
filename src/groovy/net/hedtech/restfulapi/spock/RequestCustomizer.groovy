@@ -19,6 +19,11 @@ import org.springframework.http.MediaType
 import org.springframework.util.LinkedMultiValueMap
 import org.springframework.util.MultiValueMap
 
+/*
+  Attribution:
+  Based on the rest-client-builder plugin by Graeme Rocher.
+  See <a href="http://grails.org/plugin/rest-client-builder"/>
+*/
 class RequestCustomizer {
 
     HttpHeaders headers = new HttpHeaders()

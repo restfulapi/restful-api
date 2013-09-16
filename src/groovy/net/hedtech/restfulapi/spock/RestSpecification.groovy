@@ -15,9 +15,18 @@ import org.springframework.web.client.HttpStatusCodeException
 import org.springframework.web.client.RestTemplate
 
 
+/*
+  Attribution:
+  Based on the rest-client-builder plugin by Graeme Rocher.
+  See <a href="http://grails.org/plugin/rest-client-builder"/>
+  Based on the functional-test plugin by Marc Palmer.
+  See <a href="http://grails.org/plugin/functional-test"/>
+*/
 abstract class RestSpecification extends Specification {
 
     def response
+
+    private RestSpecUtils utils
 
     /**
      * Issues a GET request and returns the response in the most appropriate type
@@ -91,7 +100,7 @@ abstract class RestSpecification extends Specification {
         try {
             def entity = requestCustomizer.createEntity()
             if (isDisplay()) {
-                RestSpecUtils.dumpRequestInfo(url,method,entity)
+                getUtils().dumpRequestInfo(url,method,entity)
             }
             response = restTemplate.exchange(
                 url, method, entity, responseType
@@ -103,11 +112,22 @@ abstract class RestSpecification extends Specification {
             response = new ErrorResponse(error:e)
         }
         if (isDisplay()) {
-            RestSpecUtils.dumpResponse( response )
+            getUtils().dumpResponse( response )
         }
     }
 
     protected boolean isDisplay() {
         return System.getProperties().getProperty("RestSpecification.display")
+    }
+
+    protected PrintStream getDisplayStream() {
+        System.out
+    }
+
+    protected getUtils() {
+        if (null == utils) {
+            utils = new RestSpecUtils(getDisplayStream())
+        }
+        utils
     }
 }

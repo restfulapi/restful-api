@@ -6,45 +6,56 @@ package net.hedtech.restfulapi.spock
 
 import org.springframework.http.*
 
+/*
+  Attribution:
+  Based on formatting request/response output in
+  the functional-test plugin by Marc Palmer.
+  See <a href="http://grails.org/plugin/functional-test"/>
+*/
 class RestSpecUtils {
     static maxW = 80
 
-    static final void dumpHeading(String title) {
+    protected PrintStream out
+
+    RestSpecUtils(PrintStream out) {
+        this.out = out
+    }
+
+    final void dumpHeading(String title) {
         def padL = '== '
         def padR = '=' * Math.max( (int)2, (int)(maxW - (padL.length() + 1 + title.length())) )
 
-        System.out.println(padL + title + ' ' + padR)
-
+        out.println(padL + title + ' ' + padR)
     }
 
-    static final void dumpSeparator() {
-        System.out.println('='*maxW)
+    final void dumpSeparator() {
+        out.println('='*maxW)
     }
 
-    static final void dumpRequestInfo(url, method, HttpEntity entity) {
-        System.out.println('')
+    final void dumpRequestInfo(url, method, HttpEntity entity) {
+        out.println('')
         dumpHeading("Making request ${method} ${url}")
         dumpHeading("Request headers:")
         dumpHeaders( entity?.getHeaders() )
         dumpHeading("Content")
-        if (entity.hasBody()) System.out.println(entity.getBody())
+        if (entity.hasBody()) out.println(entity.getBody())
         dumpSeparator()
     }
 
-    static final void dumpResponse(response) {
+    final void dumpResponse(response) {
         dumpHeading("Response was ${response.getStatusCode().value()} headers:")
         dumpHeaders( response?.getHeaders() )
         dumpSeparator()
         dumpHeading("Content")
-        System.out.println(response.getBody())
+        out.println(response.getBody())
         dumpSeparator()
     }
 
-    static final void dumpHeaders(def headers) {
+    final void dumpHeaders(def headers) {
         headers?.entrySet()?.each {
             def key = it.key
             it.value.each() {
-                System.out.println("${key}: ${it.value}")
+                out.println("${key}: ${it.value}")
             }
         }
     }
