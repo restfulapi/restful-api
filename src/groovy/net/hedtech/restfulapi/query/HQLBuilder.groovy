@@ -16,6 +16,16 @@ import org.codehaus.groovy.grails.commons.GrailsDomainClass
 import org.codehaus.groovy.grails.commons.GrailsDomainClassProperty
 
 
+/*
+Attribution:
+Although this implementation is significantly different, the HqlQueryBuilder.java
+file from the grails-restful-gorm plugin was reviewed and provided background that
+was helpful.  The grails-restful-gorm plugin was developed by Matthias Hryniszak.
+
+The specific code that was referenced is:
+https://github.com/padcom/grails-restful-gorm/blob/master/src/java/org/grails/plugins/rest/impl/HqlQueryBuilder.java
+*/
+
 /**
  * A builder that creates an HQL statement along with a map of named parameters,
  * ready for execution.
