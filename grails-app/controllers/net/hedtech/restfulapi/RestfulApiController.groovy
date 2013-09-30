@@ -110,45 +110,46 @@ class RestfulApiController {
         pageOffset = grailsApplication.config.restfulApi.page.offset
 
         log.trace 'Initializing RestfulApiController...'
-        if (!(grailsApplication.config.restfulApiConfig instanceof Closure)) {
-            throw new RuntimeException( "Missing restfulApiConfig" )
-        }
-        restConfig = RestConfig.parse( grailsApplication, grailsApplication.config.restfulApiConfig )
-        restConfig.validate()
+        JSON.createNamedConfig('restapi-error:json') { }
+        XML.createNamedConfig('restapi-error:xml') { }
 
-        restConfig.resources.values().each() { resource ->
-            resource.representations.values().each() { representation ->
-                def framework = representation.resolveMarshallerFramework()
-                switch(framework) {
-                    case ~/json/:
-                        JSON.createNamedConfig("restfulapi:" + resource.name + ":" + representation.mediaType) { json ->
-                            log.trace "Creating named config: 'restfulapi:${resource.name}:${representation.mediaType}'"
-                            representation.marshallers.each() {
-                                log.trace "    ...registering json marshaller ${it.instance}"
-                                json.registerObjectMarshaller(it.instance,it.priority)
+        if (!(grailsApplication.config.restfulApiConfig instanceof Closure)) {
+            log.warn( "No restfulApiConfig defined in configuration.  No resources will be exposed.")
+        } else {
+            restConfig = RestConfig.parse( grailsApplication, grailsApplication.config.restfulApiConfig )
+            restConfig.validate()
+
+            restConfig.resources.values().each() { resource ->
+                resource.representations.values().each() { representation ->
+                    def framework = representation.resolveMarshallerFramework()
+                    switch(framework) {
+                        case ~/json/:
+                            JSON.createNamedConfig("restfulapi:" + resource.name + ":" + representation.mediaType) { json ->
+                                log.trace "Creating named config: 'restfulapi:${resource.name}:${representation.mediaType}'"
+                                representation.marshallers.each() {
+                                    log.trace "    ...registering json marshaller ${it.instance}"
+                                    json.registerObjectMarshaller(it.instance,it.priority)
+                                }
                             }
-                        }
-                    break
-                    case ~/xml/:
-                        XML.createNamedConfig("restfulapi:" + resource.name + ":" + representation.mediaType) { xml ->
-                            representation.marshallers.each() {
-                                log.trace "    ...registering xml marshaller ${it.instance}"
-                                xml.registerObjectMarshaller(it.instance,it.priority)
-                            }
-                        }
-                    break
-                    default:
                         break
-                }
-                //register the extractor (if any)
-                if (null != representation.extractor) {
-                    ExtractorConfigurationHolder.registerExtractor(resource.name, representation.mediaType, representation.extractor )
+                        case ~/xml/:
+                            XML.createNamedConfig("restfulapi:" + resource.name + ":" + representation.mediaType) { xml ->
+                                representation.marshallers.each() {
+                                    log.trace "    ...registering xml marshaller ${it.instance}"
+                                    xml.registerObjectMarshaller(it.instance,it.priority)
+                                }
+                            }
+                        break
+                        default:
+                            break
+                    }
+                    //register the extractor (if any)
+                    if (null != representation.extractor) {
+                        ExtractorConfigurationHolder.registerExtractor(resource.name, representation.mediaType, representation.extractor )
+                    }
                 }
             }
         }
-
-        JSON.createNamedConfig('restapi-error:json') { }
-        XML.createNamedConfig('restapi-error:xml') { }
 
         log.trace 'Done initializing RestfulApiController...'
     }
