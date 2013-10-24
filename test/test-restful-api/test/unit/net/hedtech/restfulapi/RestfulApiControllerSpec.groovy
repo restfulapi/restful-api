@@ -470,6 +470,40 @@ class RestfulApiControllerSpec extends Specification {
         'default.rest.general.errors.message' == response.getHeaderValue( 'X-hedtech-message' )
     }
 
+    def "Test checked application exception"() {
+        setup:
+        //use default extractor for any methods with a request body
+         config.restfulApiConfig = {
+            resource 'things' config {
+                representation {
+                    mediaTypes = ['application/json']
+                    extractor = new DefaultJSONExtractor()
+                }
+            }
+        }
+        controller.init()
+
+        //mock the appropriate service method, expect exactly 1 invocation
+        def mock = Mock(ThingService)
+        controller.metaClass.getService = {-> mock}
+
+
+        request.addHeader( 'Accept', 'application/json' )
+        //incoming format always json, so no errors
+        request.addHeader( 'Content-Type', 'application/json' )
+        params.pluralizedResourceName = 'things'
+
+        when:
+        controller.list()
+
+        then:
+        1*mock.list(_) >> { throw new CheckedApplicationException( 400, 'my message' ) }
+        400 == response.status
+          0 == response.getContentLength()
+        'my message' == response.getHeaderValue( 'X-hedtech-message' )
+
+    }
+
     def "Test that delete with empty body ignores Content-Type"() {
         setup:
         //use default extractor for any methods with a request body
@@ -1696,6 +1730,33 @@ class RestfulApiControllerSpec extends Specification {
         public void marshalObject(Object value, XML xml) throws ConverterException {
             xml.startNode('dummy')
             xml.end()
+        }
+    }
+
+    static class CheckedApplicationException extends Exception {
+
+        private int statusCode
+        private def message
+
+        CheckedApplicationException( def statusCode, def message ) {
+            this.statusCode = statusCode.toInteger()
+            this.message = message
+        }
+
+        public def getHttpStatusCode() {
+            return statusCode
+        }
+
+        String getMessage() {
+            return this.message
+        }
+
+        public returnMap = { localize ->
+            def map = [:]
+            if (getMessage()) {
+                map['message'] = getMessage()
+            }
+            map
         }
     }
 }

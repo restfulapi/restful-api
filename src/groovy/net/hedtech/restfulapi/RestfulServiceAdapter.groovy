@@ -13,16 +13,16 @@ package net.hedtech.restfulapi
 interface RestfulServiceAdapter {
 
 
-    def list(def service, Map params)
+    def list(def service, Map params) throws Throwable
 
-    def count(def service, Map params)
+    def count(def service, Map params) throws Throwable
 
-    def show(def service, Map params)
+    def show(def service, Map params) throws Throwable
 
-    def create(def service, Map content, Map params)
+    def create(def service, Map content, Map params) throws Throwable
 
-    def update(def service, def id, Map content, Map params)
+    def update(def service, def id, Map content, Map params) throws Throwable
 
-    void delete(def service, def id, Map content, Map params)
+    void delete(def service, def id, Map content, Map params) throws Throwable
 
 }

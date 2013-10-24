@@ -48,7 +48,7 @@ grails.project.dependency.resolution = {
           exclude "spock-grails-support"
         }
 
-        test ":funky-spock:0.2.0"
+        test ":funky-spock:0.2.1"
 
         build ":tomcat:$grailsVersion"
     }

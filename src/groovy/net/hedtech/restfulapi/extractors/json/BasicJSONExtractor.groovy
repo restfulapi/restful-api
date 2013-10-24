@@ -56,6 +56,7 @@ class BasicJSONExtractor implements JSONExtractor {
 
     private DEFAULT_DATE_CLOSURE = { value ->
         if (value == null) return value
+        if (value == JSONObject.NULL) return null
         if (Date.class.isAssignableFrom(value.getClass())) {
             return value
         }

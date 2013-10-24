@@ -193,6 +193,21 @@ class BasicJSONExtractorSpec extends Specification {
         400                  == e.getHttpStatusCode()
     }
 
+    def "Test null date parsing"() {
+        setup:
+        BasicJSONExtractor.metaClass.getDatePaths << {
+            [['date']]
+        }
+        BasicJSONExtractor extractor = new BasicJSONExtractor()
+        JSONObject json = new JSONObject('{"date":null}')
+
+        when:
+        def map = extractor.extract(json)
+
+        then:
+        null == map['date']
+    }
+
     def "Test invalid short object extraction when the collection doesn't contain maps"() {
         setup:
         BasicJSONExtractor.metaClass.getShortObjectPaths << {
