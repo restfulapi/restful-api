@@ -106,6 +106,7 @@ class RestConfigXMLDomainMarshallerSpec extends Specification {
         true                   == mConfig.requireIncludedFields
         ['foo':'foobar']       == mConfig.fieldNames
         ['foo','f4']           == mConfig.includedFields
+        true                   == mConfig.useIncludedFields
         ['bar']                == mConfig.excludedFields
         1                      == mConfig.additionalFieldClosures.size()
         ['a':'b','c':'d']      == mConfig.additionalFieldsMap

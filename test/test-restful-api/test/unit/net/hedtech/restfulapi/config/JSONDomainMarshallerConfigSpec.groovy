@@ -91,6 +91,22 @@ class JSONDomainMarshallerConfigSpec extends Specification {
 
         then:
         ['one','two'] == config.includedFields
+        true          == config.useIncludedFields
+    }
+
+    def "Test including no fields"() {
+        setup:
+        def src = {
+            includesFields {
+            }
+        }
+
+        when:
+        def config = invoke( src )
+
+        then:
+        []   == config.includedFields
+        true == config.useIncludedFields
     }
 
     def "Test requires included fields"() {
@@ -258,6 +274,7 @@ class JSONDomainMarshallerConfigSpec extends Specification {
             supportClass:Thing,
             fieldNames:['foo':'foo1','bar':'bar1'],
             includedFields:['foo','bar'],
+            useIncludedFields:true,
             excludedFields:['e1','e2'],
             additionalFieldClosures:[{app,bean,json ->}],
             additionalFieldsMap:['one':'one','two':'two'],
@@ -273,6 +290,7 @@ class JSONDomainMarshallerConfigSpec extends Specification {
             supportClass:PartOfThing,
             fieldNames:['foo':'foo2','baz':'baz1'],
             includedFields:['baz'],
+            useIncludedFields:false,
             excludedFields:['e3'],
             additionalFieldClosures:[{app,bean,json ->}],
             additionalFieldsMap:['two':'2','three':'3'],
@@ -293,6 +311,7 @@ class JSONDomainMarshallerConfigSpec extends Specification {
         PartOfThing                              == config.supportClass
         ['foo':'foo2','bar':'bar1','baz':'baz1'] == config.fieldNames
         ['foo','bar','baz']                      == config.includedFields
+        true                                     == config.useIncludedFields
         ['e1','e2','e3']                         == config.excludedFields
         2                                        == config.additionalFieldClosures.size()
         ['one':'one',"two":'2','three':'3']      == config.additionalFieldsMap
@@ -313,6 +332,7 @@ class JSONDomainMarshallerConfigSpec extends Specification {
             supportClass:Thing,
             fieldNames:['foo':'foo1','bar':'bar1'],
             includedFields:['foo','bar'],
+            useIncludedFields:true,
             excludedFields:['e1','e2'],
             additionalFieldClosures:[{app,bean,json ->}],
             additionalFieldsMap:['one':'1'],
@@ -328,6 +348,7 @@ class JSONDomainMarshallerConfigSpec extends Specification {
             supportClass:PartOfThing,
             fieldNames:['foo':'foo2','baz':'baz1'],
             includedFields:['baz'],
+            useIncludedFields:false,
             excludedFields:['e3'],
             additionalFieldClosures:[{app,bean,json ->}],
             additionalFieldsMap:['two':'2'],
@@ -347,6 +368,7 @@ class JSONDomainMarshallerConfigSpec extends Specification {
         true                        == one.isSupportClassSet
         ['foo':'foo1','bar':'bar1'] == one.fieldNames
         ['foo','bar']               == one.includedFields
+        true                        == one.useIncludedFields
         ['e1','e2']                 == one.excludedFields
         1                           == one.additionalFieldClosures.size()
         ['one':'1']                 == one.additionalFieldsMap
@@ -361,6 +383,7 @@ class JSONDomainMarshallerConfigSpec extends Specification {
         true                        == two.isSupportClassSet
         ['foo':'foo2','baz':'baz1'] == two.fieldNames
         ['baz']                     == two.includedFields
+        false                       == two.useIncludedFields
         ['e3']                      == two.excludedFields
         1                           == two.additionalFieldClosures.size()
         ['two':'2']                 == two.additionalFieldsMap
@@ -404,6 +427,22 @@ class JSONDomainMarshallerConfigSpec extends Specification {
         then:
         c1   == config.shortObjectClosure
         true == config.isShortObjectClosureSet
+    }
+
+    def "Test merging domain marshaller with use included fields set only on the left"() {
+        setup:
+        def c1 = { Map m -> }
+        JSONDomainMarshallerConfig one = new JSONDomainMarshallerConfig(
+            useIncludedFields:true
+        )
+        JSONDomainMarshallerConfig two = new JSONDomainMarshallerConfig(
+        )
+
+        when:
+        def config = one.merge(two)
+
+        then:
+        true == config.useIncludedFields
     }
 
     def "Test merging domain marshaller with require included fields set only on the left"() {

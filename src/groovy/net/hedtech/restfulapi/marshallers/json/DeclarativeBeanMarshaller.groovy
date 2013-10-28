@@ -28,7 +28,7 @@ class DeclarativeBeanMarshaller extends BeanMarshaller {
     Class supportClass
     def fieldNames = [:]
     def excludedFields = []
-    def includedFields = []
+    def includedFields = null
     boolean requireIncludedFields = false
     def additionalFieldClosures = []
     def additionalFieldsMap = [:]

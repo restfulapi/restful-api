@@ -91,6 +91,22 @@ class XMLDomainMarshallerConfigSpec extends Specification {
 
         then:
         ['one','two'] == config.includedFields
+        true == config.useIncludedFields
+    }
+
+    def "Test including no fields"() {
+        setup:
+        def src = {
+            includesFields {
+            }
+        }
+
+        when:
+        def config = invoke( src )
+
+        then:
+        []   == config.includedFields
+        true == config.useIncludedFields
     }
 
     def "Test requires included fields"() {
@@ -273,6 +289,7 @@ class XMLDomainMarshallerConfigSpec extends Specification {
             elementName:'Thing',
             fieldNames:['foo':'foo1','bar':'bar1'],
             includedFields:['foo','bar'],
+            useIncludedFields:true,
             excludedFields:['e1','e2'],
             additionalFieldClosures:[{app,bean,xml ->}],
             additionalFieldsMap:['one':'one','two':'two'],
@@ -289,6 +306,7 @@ class XMLDomainMarshallerConfigSpec extends Specification {
             elementName:'PartOfThing',
             fieldNames:['foo':'foo2','baz':'baz1'],
             includedFields:['baz'],
+            useIncludedFields:false,
             excludedFields:['e3'],
             additionalFieldClosures:[{app,bean,xml ->}],
             additionalFieldsMap:['two':'2','three':'3'],
@@ -311,6 +329,7 @@ class XMLDomainMarshallerConfigSpec extends Specification {
         'PartOfThing'                            == config.elementName
         ['foo':'foo2','bar':'bar1','baz':'baz1'] == config.fieldNames
         ['foo','bar','baz']                      == config.includedFields
+        true                                     == config.useIncludedFields
         ['e1','e2','e3']                         == config.excludedFields
         2                                        == config.additionalFieldClosures.size()
         ['one':'one',"two":'2','three':'3']      == config.additionalFieldsMap
@@ -333,6 +352,7 @@ class XMLDomainMarshallerConfigSpec extends Specification {
             elementName:'Thing',
             fieldNames:['foo':'foo1','bar':'bar1'],
             includedFields:['foo','bar'],
+            useIncludedFields:true,
             excludedFields:['e1','e2'],
             additionalFieldClosures:[{app,bean,xml ->}],
             additionalFieldsMap:['one':'1'],
@@ -349,6 +369,7 @@ class XMLDomainMarshallerConfigSpec extends Specification {
             elementName:'PartOfThing',
             fieldNames:['foo':'foo2','baz':'baz1'],
             includedFields:['baz'],
+            useIncludedFields:false,
             excludedFields:['e3'],
             additionalFieldClosures:[{app,bean,xml ->}],
             additionalFieldsMap:['two':'2'],
@@ -370,6 +391,7 @@ class XMLDomainMarshallerConfigSpec extends Specification {
         'Thing'                     == one.elementName
         ['foo':'foo1','bar':'bar1'] == one.fieldNames
         ['foo','bar']               == one.includedFields
+        true                        == one.useIncludedFields
         ['e1','e2']                 == one.excludedFields
         1                           == one.additionalFieldClosures.size()
         ['one':'1']                 == one.additionalFieldsMap
@@ -386,6 +408,7 @@ class XMLDomainMarshallerConfigSpec extends Specification {
         'PartOfThing'               == two.elementName
         ['foo':'foo2','baz':'baz1'] == two.fieldNames
         ['baz']                     == two.includedFields
+        false                       == two.useIncludedFields
         ['e3']                      == two.excludedFields
         1                           == two.additionalFieldClosures.size()
         ['two':'2']                 == two.additionalFieldsMap
@@ -429,6 +452,22 @@ class XMLDomainMarshallerConfigSpec extends Specification {
         then:
         c1   == config.shortObjectClosure
         true == config.isShortObjectClosureSet
+    }
+
+    def "Test merging domain marshaller with use included fields set only on the left"() {
+        setup:
+        def c1 = { Map m -> }
+        XMLDomainMarshallerConfig one = new XMLDomainMarshallerConfig(
+            useIncludedFields:true
+        )
+        XMLDomainMarshallerConfig two = new XMLDomainMarshallerConfig(
+        )
+
+        when:
+        def config = one.merge(two)
+
+        then:
+        true == config.useIncludedFields
     }
 
     def "Test merging domain marshaller with require included fields set only on the left"() {

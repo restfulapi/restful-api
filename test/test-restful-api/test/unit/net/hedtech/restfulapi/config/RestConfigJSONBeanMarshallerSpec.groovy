@@ -50,7 +50,7 @@ class RestConfigJSONBeanMarshallerSpec extends Specification {
         ['foobar']                                == marshaller.excludedFields
     }
 
-    def "Test json  bean marshaller template parsing"() {
+    def "Test json bean marshaller template parsing"() {
         setup:
         def src =
         {
@@ -91,6 +91,7 @@ class RestConfigJSONBeanMarshallerSpec extends Specification {
          true              == mConfig.requireIncludedFields
          ['foo':'foobar']  == mConfig.fieldNames
          ['foo']           == mConfig.includedFields
+         true              == mConfig.useIncludedFields
          ['bar']           == mConfig.excludedFields
          1                 == mConfig.additionalFieldClosures.size()
          ['a':'b','c':'d'] == mConfig.additionalFieldsMap

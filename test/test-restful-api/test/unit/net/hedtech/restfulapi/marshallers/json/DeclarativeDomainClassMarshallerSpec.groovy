@@ -181,6 +181,25 @@ class DeclarativeDomainClassMarshallerSpec extends Specification {
         !json.containsKey('dataOrigin')
     }
 
+    def "Test including no fields"() {
+        setup:
+        def marshaller = new DeclarativeDomainClassMarshaller(
+            app:grailsApplication,
+            includedFields:[],
+            includeId:false,
+            includeVersion:false
+        )
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing" )
+
+        when:
+        def content = render( thing )
+        def json = JSON.parse content
+
+        then:
+        0 == json.keySet().size()
+    }
+
     def "Test that included fields overrides excluded fields"() {
         setup:
         def marshaller = new DeclarativeDomainClassMarshaller(

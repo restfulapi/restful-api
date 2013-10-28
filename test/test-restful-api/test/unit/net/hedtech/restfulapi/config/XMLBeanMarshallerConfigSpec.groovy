@@ -92,6 +92,22 @@ class XMLBeanMarshallerConfigSpec extends Specification {
 
         then:
         ['one','two'] == config.includedFields
+        true          == config.useIncludedFields
+    }
+
+    def "Test including no fields"() {
+        setup:
+        def src = {
+            includesFields {
+            }
+        }
+
+        when:
+        def config = invoke( src )
+
+        then:
+        []   == config.includedFields
+        true == config.useIncludedFields
     }
 
     def "Test requires included fields"() {
@@ -184,6 +200,7 @@ class XMLBeanMarshallerConfigSpec extends Specification {
             elementName:'Bean',
             fieldNames:['foo':'foo1','bar':'bar1'],
             includedFields:['foo','bar'],
+            useIncludedFields:true,
             excludedFields:['e1','e2'],
             additionalFieldClosures:[{app,bean,xml ->}],
             additionalFieldsMap:['one':'one','two':'two'],
@@ -194,6 +211,7 @@ class XMLBeanMarshallerConfigSpec extends Specification {
             elementName:'Thing',
             fieldNames:['foo':'foo2','baz':'baz1'],
             includedFields:['baz'],
+            useIncludedFields:false,
             excludedFields:['e3'],
             additionalFieldClosures:[{app,bean,xml ->}],
             additionalFieldsMap:['two':'2','three':'3'],
@@ -211,6 +229,7 @@ class XMLBeanMarshallerConfigSpec extends Specification {
         'Thing'                                  == config.elementName
         ['foo':'foo2','bar':'bar1','baz':'baz1'] == config.fieldNames
         ['foo','bar','baz']                      == config.includedFields
+        true                                     == config.useIncludedFields
         ['e1','e2','e3']                         == config.excludedFields
         2                                        == config.additionalFieldClosures.size()
         ['one':'one',"two":'2','three':'3']      == config.additionalFieldsMap
@@ -226,6 +245,7 @@ class XMLBeanMarshallerConfigSpec extends Specification {
             elementName:'Thing',
             fieldNames:['foo':'foo1','bar':'bar1'],
             includedFields:['foo','bar'],
+            useIncludedFields:true,
             excludedFields:['e1','e2'],
             additionalFieldClosures:[{app,bean,xml ->}],
             additionalFieldsMap:['one':'1'],
@@ -236,6 +256,7 @@ class XMLBeanMarshallerConfigSpec extends Specification {
             elementName:'PartOfThing',
             fieldNames:['foo':'foo2','baz':'baz1'],
             includedFields:['baz'],
+            useIncludedFields:false,
             excludedFields:['e3'],
             additionalFieldClosures:[{app,bean,xml ->}],
             additionalFieldsMap:['two':'2'],
@@ -252,6 +273,7 @@ class XMLBeanMarshallerConfigSpec extends Specification {
         'Thing'                     == one.elementName
         ['foo':'foo1','bar':'bar1'] == one.fieldNames
         ['foo','bar']               == one.includedFields
+        true                        == one.useIncludedFields
         ['e1','e2']                 == one.excludedFields
         1                           == one.additionalFieldClosures.size()
         ['one':'1']                 == one.additionalFieldsMap
@@ -263,6 +285,7 @@ class XMLBeanMarshallerConfigSpec extends Specification {
         'PartOfThing'               == two.elementName
         ['foo':'foo2','baz':'baz1'] == two.fieldNames
         ['baz']                     == two.includedFields
+        false                       == two.useIncludedFields
         ['e3']                      == two.excludedFields
         1                           == two.additionalFieldClosures.size()
         ['two':'2']                 == two.additionalFieldsMap
@@ -271,8 +294,6 @@ class XMLBeanMarshallerConfigSpec extends Specification {
 
     def "Test merging with support class set only on the left"() {
         setup:
-        def c1 = { Map m -> }
-        def c2 = { Map m -> }
         XMLBeanMarshallerConfig one = new XMLBeanMarshallerConfig(
             supportClass:SimpleBean
         )
@@ -289,7 +310,6 @@ class XMLBeanMarshallerConfigSpec extends Specification {
 
     def "Test merging with require included fields set only on the left"() {
         setup:
-        def c1 = { Map m -> }
         XMLBeanMarshallerConfig one = new XMLBeanMarshallerConfig(
             requireIncludedFields:true
         )
@@ -301,6 +321,21 @@ class XMLBeanMarshallerConfigSpec extends Specification {
 
         then:
         true == config.requireIncludedFields
+    }
+
+    def "Test merging with use included fields set only on the left"() {
+        setup:
+        XMLBeanMarshallerConfig one = new XMLBeanMarshallerConfig(
+            useIncludedFields:true
+        )
+        XMLBeanMarshallerConfig two = new XMLBeanMarshallerConfig(
+        )
+
+        when:
+        def config = one.merge(two)
+
+        then:
+        true == config.useIncludedFields
     }
 
     def "Test merging with elementName set only on the left"() {

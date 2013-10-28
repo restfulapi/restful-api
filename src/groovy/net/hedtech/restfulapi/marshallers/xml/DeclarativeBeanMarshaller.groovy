@@ -27,7 +27,7 @@ class DeclarativeBeanMarshaller extends BeanMarshaller {
     String elementName
     def fieldNames = [:]
     def excludedFields = []
-    def includedFields = []
+    def includedFields = null
     boolean requireIncludedFields = false
     def additionalFieldClosures = []
     def additionalFieldsMap = [:]

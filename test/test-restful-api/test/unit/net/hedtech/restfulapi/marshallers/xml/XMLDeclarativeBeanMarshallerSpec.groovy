@@ -144,6 +144,27 @@ class XMLDeclarativeBeanMarshallerSpec extends Specification {
     }
 
     @Unroll
+    def "Test including no fields"() {
+        setup:
+        def marshaller = new DeclarativeBeanMarshaller(
+            app:grailsApplication,
+            includedFields:[]
+        )
+        register( marshaller )
+
+        when:
+        def content = render(bean)
+        def xml = XML.parse content
+
+        then:
+        0 == xml.children().size()
+
+        where:
+        bean << [new SimpleBean(property:'foo', publicField:'bar'),
+                 new SimpleJavaBean(property:'foo', publicField:'bar')]
+    }
+
+    @Unroll
     def "Test require included fields"() {
         setup:
         def marshaller = new DeclarativeBeanMarshaller(

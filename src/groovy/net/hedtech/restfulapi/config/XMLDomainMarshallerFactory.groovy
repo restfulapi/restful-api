@@ -18,8 +18,10 @@ class XMLDomainMarshallerFactory {
         def marshaller = new DeclarativeDomainClassMarshaller(
             app:restConfig.grailsApplication
         )
+        if (config.useIncludedFields) {
+            marshaller.includedFields = config.includedFields
+        }
         marshaller.fieldNames.putAll                config.fieldNames
-        marshaller.includedFields.addAll            config.includedFields
         marshaller.excludedFields.addAll            config.excludedFields
         marshaller.additionalFieldClosures.addAll   config.additionalFieldClosures
         marshaller.additionalFieldsMap.putAll       config.additionalFieldsMap

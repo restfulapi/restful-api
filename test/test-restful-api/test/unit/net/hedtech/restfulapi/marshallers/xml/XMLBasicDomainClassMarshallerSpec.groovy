@@ -154,7 +154,6 @@ class XMLBasicDomainClassMarshallerSpec extends Specification {
 
     }
 
-
     def "Test including fields"() {
         setup:
         def marshaller = new BasicDomainClassMarshaller(
@@ -179,6 +178,25 @@ class XMLBasicDomainClassMarshallerSpec extends Specification {
         0 == xml.lastModified.size()
         0 == xml.lastModifiedBy.size()
         0 == xml.dataOrigin.size()
+    }
+
+    def "Test including no fields"() {
+        setup:
+        def marshaller = new BasicDomainClassMarshaller(
+            app:grailsApplication
+        )
+        marshaller.metaClass.getIncludedFields << {Object value -> []}
+        marshaller.metaClass.includeVersionFor << {Object value -> false}
+        marshaller.metaClass.includeIdFor << {Object value -> false}
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing" )
+
+        when:
+        def content = render( thing )
+        def xml = XML.parse content
+
+        then:
+        0 == xml.children().size()
     }
 
     def "Test require included fields"() {

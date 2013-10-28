@@ -20,8 +20,12 @@ class XMLDomainMarshallerConfig implements MergeableConfig {
     //allows fields to be renamed in the output
     def fieldNames = [:]
     //list of field names to explicity include
-    //overrides excludedFields
+    //the array is empty, instead of null, to make
+    //merging configs easier.  However, the includedFields
+    //is ignored when creating a marshaller unless
+    //useIncludedFields is true.
     def includedFields = []
+    boolean useIncludedFields
     Boolean requireIncludedFields
     //list of additional fields to ignore
     def excludedFields = []
@@ -98,6 +102,7 @@ class XMLDomainMarshallerConfig implements MergeableConfig {
 
         config.fieldNames.putAll  other.fieldNames
         config.includedFields.addAll other.includedFields
+        config.useIncludedFields = config.useIncludedFields || other.useIncludedFields
         config.excludedFields.addAll other.excludedFields
         config.additionalFieldClosures.addAll other.additionalFieldClosures
         config.additionalFieldsMap.putAll other.additionalFieldsMap

@@ -155,7 +155,6 @@ class BasicDomainClassMarshallerSpec extends Specification {
 
     }
 
-
     def "Test including fields"() {
         setup:
         def marshaller = new BasicDomainClassMarshaller(
@@ -180,6 +179,25 @@ class BasicDomainClassMarshallerSpec extends Specification {
         !json.containsKey('lastModified')
         !json.containsKey('lastModifiedBy')
         !json.containsKey('dataOrigin')
+    }
+
+    def "Test including no fields"() {
+        setup:
+        def marshaller = new BasicDomainClassMarshaller(
+            app:grailsApplication
+        )
+        marshaller.metaClass.getIncludedFields << {Object value-> [] }
+        marshaller.metaClass.includeVersionFor << {Object value-> false}
+        marshaller.metaClass.includeIdFor << {Object value-> false}
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing" )
+
+        when:
+        def content = render( thing )
+        def json = JSON.parse content
+
+        then:
+        0 == json.keySet().size()
     }
 
     def "Test that included fields overrides excluded fields"() {

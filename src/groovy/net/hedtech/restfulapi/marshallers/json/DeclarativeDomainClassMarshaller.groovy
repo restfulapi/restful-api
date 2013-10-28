@@ -36,7 +36,7 @@ class DeclarativeDomainClassMarshaller extends BasicDomainClassMarshaller {
 
     Class supportClass
     def fieldNames = [:]
-    def includedFields = []
+    def includedFields = null
     boolean requireIncludedFields = false
     def excludedFields = []
     def includeId = true

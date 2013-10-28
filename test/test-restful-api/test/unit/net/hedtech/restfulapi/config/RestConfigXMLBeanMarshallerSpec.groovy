@@ -87,17 +87,18 @@ class RestConfigXMLBeanMarshallerSpec extends Specification {
         def mConfig = config.xmlBean.configs['two']
 
         then:
-         2                 == config.xmlBean.configs.size()
-         ['one']           == mConfig.inherits
-         5                 == mConfig.priority
-         SimpleBean        == mConfig.supportClass
-         'Bean'            == mConfig.elementName
-         true              == mConfig.requireIncludedFields
-         ['foo':'foobar']  == mConfig.fieldNames
-         ['foo']           == mConfig.includedFields
-         ['bar']           == mConfig.excludedFields
-         1                 == mConfig.additionalFieldClosures.size()
-         ['a':'b','c':'d'] == mConfig.additionalFieldsMap
+        2                 == config.xmlBean.configs.size()
+        ['one']           == mConfig.inherits
+        5                 == mConfig.priority
+        SimpleBean        == mConfig.supportClass
+        'Bean'            == mConfig.elementName
+        true              == mConfig.requireIncludedFields
+        ['foo':'foobar']  == mConfig.fieldNames
+        ['foo']           == mConfig.includedFields
+        true              == mConfig.useIncludedFields
+        ['bar']           == mConfig.excludedFields
+        1                 == mConfig.additionalFieldClosures.size()
+        ['a':'b','c':'d'] == mConfig.additionalFieldsMap
     }
 
     def "Test xml bean marshaller creation"() {

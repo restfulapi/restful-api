@@ -216,6 +216,25 @@ class XMLDeclarativeDomainClassMarshallerSpec extends Specification {
         0          == xml.dataOrigin.size()
     }
 
+    def "Test including no fields"() {
+        setup:
+        def marshaller = new DeclarativeDomainClassMarshaller(
+            app:grailsApplication,
+            includedFields:[],
+            includeId:false,
+            includeVersion:false
+        )
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:"aa thing" )
+
+        when:
+        def content = render( thing )
+        def xml = XML.parse content
+
+        then:
+        0 == xml.children.size()
+    }
+
     def "Test require included fields"() {
         setup:
         def marshaller = new DeclarativeDomainClassMarshaller(

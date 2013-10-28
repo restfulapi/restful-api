@@ -96,7 +96,7 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<XML>, NameAwareMars
 
         def propertiesToMarshall
         List includedFields = getIncludedFields( value )
-        if (includedFields != null && includedFields.size() > 0) {
+        if (includedFields != null) {
             //use inclusion list
             propertiesToMarshall = persistentProperties.findAll {
                 includedFields.contains( it.getName() )
@@ -162,22 +162,21 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<XML>, NameAwareMars
      * Returns the list of fields that should be marshalled
      * for the specified object.
      *<p>
-     * If a null or zero-size list is returned, then
+     * If a null is returned, then
      * all fields except those specified by
      * {@link #getSkippedField(Object) getSkippedFields} and
      * {@link #getCommonSkippedFields} will be marshalled.
-     * If a non-zero sized list is returned, then only
+     * If a non-null list is returned, then only
      * the fields listed in it are marshalled.  Included fields
-     * overrides any skipped fields.  That is, if a field is returned
-     * by {@link getIncludedFields(Object) #getIncludedFields} then it
-     * will be marshalled even if it is also returned by
+     * overrides any skipped fields.  That is, if a non-null list is returned
+     * by {@link getIncludedFields(Object) #getIncludedFields} then
      * {@link #getSkippedField(Object) getSkippedFields} and
-     * {@link #getCommonSkippedFields}
+     * {@link #getCommonSkippedFields} are ignored.
      *
      * @return list of field names to marshall
      */
     protected List<String> getIncludedFields(Object value) {
-        []
+        null
     }
 
     /**

@@ -74,7 +74,7 @@ class AbstractBeanMarshaller implements ObjectMarshaller<JSON> {
             def propertiesToMarshall = []
             def fieldsToMarshall = []
             List<String> includedFields = getIncludedFields( value )
-            if (includedFields != null && includedFields.size() > 0) {
+            if (includedFields != null) {
                 //use inclusion list
                 propertiesToMarshall = availableProperties.findAll { PropertyDescriptor property ->
                     includedFields.contains(property.getName())
@@ -172,22 +172,22 @@ class AbstractBeanMarshaller implements ObjectMarshaller<JSON> {
      * Returns the list of fields/properties that should be marshalled
      * for the specified object.
      *<p>
-     * If a null or zero-size list is returned, then
+     * If a null list is returned, then
      * all fields except those specified by
      * {@link #getExcludedFields(Object) getExcludedFields} and
      * {@link #getCommonExcludedFields} will be marshalled.
-     * If a non-zero sized list is returned, then only
+     * If a non-null list is returned, then only
      * the fields listed in it are marshalled.  Included fields
-     * overrides any skipped fields.  That is, if a field is returned
-     * by {@link getIncludedFields(Object) #getIncludedFields} then it
-     * will be marshalled even if it is also returned by
+     * overrides any skipped fields.  That is, if
+     * {@link getIncludedFields(Object) #getIncludedFields} returns a
+     * non-null list, then
      * {@link #getExcludedFields(Object) getExcludedFields} and
-     * {@link #getCommonExcludedFields}
+     * {@link #getCommonExcludedFields} are ignored.
      *
      * @return list of field names to marshall
      */
     protected List<String> getIncludedFields(Object value) {
-        []
+        null
     }
 
 

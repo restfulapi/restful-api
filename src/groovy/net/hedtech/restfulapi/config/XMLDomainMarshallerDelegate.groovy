@@ -51,6 +51,7 @@ class XMLDomainMarshallerDelegate {
     }
 
     XMLDomainMarshallerDelegate includesFields(Closure c) {
+        config.useIncludedFields = true
         c.delegate = new IncludeConfig()
         c.resolveStrategy = Closure.DELEGATE_ONLY
         c.call()
