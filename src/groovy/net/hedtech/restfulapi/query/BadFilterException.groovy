@@ -15,4 +15,14 @@ class BadFilterException extends RuntimeException {
         this.pluralizedResourceName = pluralizedResourceName
         this.badFilters = badFilters
     }
+
+    public def getHttpStatusCode() {
+        return 400
+    }
+
+    public returnMap = { localize ->
+        def map = [:]
+        map.headers = ['X-Status-Reason':'Validation failed']
+        map
+    }
 }

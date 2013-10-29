@@ -99,7 +99,7 @@ class HQLBuilder {
                 }
                 else {
                     if (it.isNumeric()) namedParameters."${it.field}" = "${it.value}".toLong()
-                    else if (it.isDate()) namedParameters."${it.field}" = new Date( "${it.value}".toLong() )
+                    else if (it.isDate()) namedParameters."${it.field}" = parseDate( params, it )
                     else  namedParameters."${it.field}" = "${it.value}"
 
                     whereFragment += "${firstAlias}.${it.field} "
@@ -125,6 +125,26 @@ class HQLBuilder {
 
     private static boolean isProperty( GrailsDomainClass domainClass, String propertyName ) {
         domainClass.getProperties()?.find { it.name == propertyName }
+    }
+
+    private static Date parseDate(Map params, Filter filter) {
+        if (filter.value == null) return null
+        //see if its numeric, if so, treat as millis since Epoch
+        try {
+            Long l = Long.valueOf(filter.value)
+            return new Date(l)
+        } catch (Exception e) {
+            //can't parse as a long
+        }
+        //try to parse as ISO 8601
+        try {
+            def cal = javax.xml.datatype.DatatypeFactory.newInstance().newXMLGregorianCalendar(filter.value)
+            return cal.toGregorianCalendar().getTime()
+        } catch (Exception e) {
+            //can't parse as ISO 8601
+        }
+        //wasn't able to parse as a date
+        throw new BadDateFilterException(params.pluralizedResourceName,filter)
     }
 
 }

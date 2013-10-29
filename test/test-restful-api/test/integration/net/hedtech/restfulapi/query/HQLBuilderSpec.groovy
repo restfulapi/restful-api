@@ -13,6 +13,8 @@ import net.hedtech.restfulapi.*
 import org.codehaus.groovy.grails.commons.GrailsApplication
 import org.codehaus.groovy.grails.commons.DefaultGrailsApplication
 
+import java.text.*
+
 import spock.lang.*
 
 
@@ -313,7 +315,35 @@ class HQLBuilderSpec extends IntegrationSpec {
                        'filter[1][operator]':'contains',
                        'filter[0][field]':'dateManufactured',
                        'filter[0][operator]':'lt',
-                       'filter[0][value]': new Date().time,
+                       'filter[0][value]': new Long(new Date().time+10000).toString(),
+                       'filter[0][type]':'date',
+                       'max':'50'
+                     ]
+
+        when:
+        def query = HQLBuilder.createHQL( grailsApplication, params )
+
+        then:
+        "SELECT a FROM Thing a WHERE a.dateManufactured < :dateManufactured AND lower(a.description) LIKE lower(:description)" == query.statement
+
+        def things = Thing.executeQuery( query.statement, query.parameters, [:] )
+        1 == things.size()
+        'xx' == things[0].code
+    }
+
+    def "Test creating filter based on an ISO 8601 date field using 'lt' operator"() {
+
+        setup:
+        def xxId = createThing('xx')
+        def yyId = createThing('yy')
+
+        Map params = [ 'pluralizedResourceName':'things',
+                       'filter[1][value]':'An xx',
+                       'filter[1][field]':'description',
+                       'filter[1][operator]':'contains',
+                       'filter[0][field]':'dateManufactured',
+                       'filter[0][operator]':'lt',
+                       'filter[0][value]': getISO8601(new Date(new Date().time+10000)),
                        'filter[0][type]':'date',
                        'max':'50'
                      ]
@@ -344,7 +374,7 @@ class HQLBuilderSpec extends IntegrationSpec {
                        'filter[1][operator]':'contains',
                        'filter[0][field]':'dateManufactured',
                        'filter[0][operator]':'gt',
-                       'filter[0][value]': new Date().time,
+                       'filter[0][value]': new Long(new Date().time-10000).toString(),
                        'filter[0][type]':'date',
                        'max':'50'
                      ]
@@ -356,7 +386,7 @@ class HQLBuilderSpec extends IntegrationSpec {
         "SELECT a FROM Thing a WHERE a.dateManufactured > :dateManufactured AND lower(a.description) LIKE lower(:description)" == query.statement
 
         def things = Thing.executeQuery( query.statement, query.parameters, [:] )
-        0 == things.size()
+        1 == things.size()
     }
 
 
@@ -430,6 +460,21 @@ class HQLBuilderSpec extends IntegrationSpec {
 
         then:
             thrown BadFilterException
+    }
+
+    def "Testing filtering with an invalid date format results in an exception"() {
+      setup:
+      Map params = [ 'pluralizedResourceName':'things',
+                       'filter[0][field]':'dateManufactured',
+                       'filter[0][operator]':'lt',
+                       'filter[0][value]':'not a date',
+                       'filter[0][type]':'date'
+                     ]
+      when:
+          def query = HQLBuilder.createHQL( grailsApplication, params )
+
+      then:
+          thrown BadDateFilterException
     }
 
 
@@ -565,5 +610,12 @@ class HQLBuilderSpec extends IntegrationSpec {
         Thing.withNewSession {
             Thing.findAll().each() { it.delete( failOnError:true, flush:true ) }
         }
+    }
+
+    private String getISO8601(Date date) {
+        TimeZone tz = TimeZone.getTimeZone("UTC")
+        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'")
+        df.setTimeZone(tz)
+        df.format(date)
     }
 }
