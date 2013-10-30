@@ -128,8 +128,35 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         "1" == responseHeader('X-hedtech-pageMaxSize')
     }
 
+    def "Test filtering with date"() {
+        setup:
+        createThing('AA')
+
+        when:
+        get("$localBase/api/things?filter[0][field]=dateManufactured&filter[0][operator]=gt&filter[0][value]=2005-01-01T12:00:00Z&filter[0][type]=date&max=1") {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/json'
+        }
+
+        then:
+        200 == response.status
+        'application/json' == response.contentType
+        def json = JSON.parse response.text
+        1 == json.size()
+        "AA" == json[0].code
+        "An AA thing" == json[0].description
+
+        // assert localization of the message
+        "List of thing resources" == responseHeader('X-hedtech-message')
+
+        //check pagination headers
+        "1" == responseHeader('X-hedtech-totalCount')
+        "0" == responseHeader('X-hedtech-pageOffset')
+        "1" == responseHeader('X-hedtech-pageMaxSize')
+    }
+
     def "Test list filtering with bad date returns 400"() {
-                setup:
+        setup:
         createThing('AA')
         createThing('BB')
 

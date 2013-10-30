@@ -343,6 +343,10 @@ The list method must return a list of the objects for the resource being listed.
 ###count method
 The count method must return the total number of intances of the resource.  It is used in conjunction with the list method when returning a list of resources.  Support for filtering the count is also provided as discussed [below](#filter-list).
 
+It is more efficient if the list method can also return the total count.  If the list method returns an instance of grails.orm.PagedResultList, then the controller will obtain the the totalCount from the PagedResultList, and will not invoke the count method.
+
+If you are not returning an instance of grails.orm.PagedResultList, but your implementation can provide the total count from the list method, you can return an instance of net.hedtech.restfulapi.PagedResultList.  In this case, the controller will obtain the total count from the PagedResultList, and will not invoke the count method.  The plugin contains a default implementation based on an ArrayList, net.hedtech.restfulapi.PagedResultArrayList.
+
 ###show method
 The show method will be passed the request parameters object directly.
 It must return an object.  This object will be rendered as a resource representation via the configured marshallers for the resource.  For example, show may simply return a domain instance.

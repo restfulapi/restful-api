@@ -189,8 +189,10 @@ class RestfulApiController {
             def count
             if (result instanceof grails.orm.PagedResultList) {
                 count = result.totalCount
+            } else if (result instanceof PagedResultList) {
+                count = result.getTotalCount()
             } else {
-                count  = delegateToService.count(service, requestParams)
+                count = delegateToService.count(service, requestParams)
             }
 
             // Need to create etagValue outside of 'etag' block:
