@@ -208,6 +208,27 @@ class BasicJSONExtractorSpec extends Specification {
         null == map['date']
     }
 
+    def "Test that JSONObject.NULL is extracted as a java null"() {
+        setup:
+        BasicJSONExtractor extractor = new BasicJSONExtractor()
+        def s = '''
+        {"name":null,
+          address:{"line1":"404 lane","line2":null},
+          colors:['blue',null,'red']
+        }
+        '''
+        JSONObject json = new JSONObject(s)
+
+        when:
+        def map = extractor.extract(json)
+
+        then:
+        null                == map['name']
+        '404 lane'          == map['address']['line1']
+        null                == map['address']['line2']
+        ['blue',null,'red'] == map['colors']
+    }
+
     def "Test invalid short object extraction when the collection doesn't contain maps"() {
         setup:
         BasicJSONExtractor.metaClass.getShortObjectPaths << {

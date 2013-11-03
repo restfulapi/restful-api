@@ -7,7 +7,7 @@ import java.text.ParseException
 import java.text.SimpleDateFormat
 
 import net.hedtech.restfulapi.extractors.*
-import org.codehaus.groovy.grails.web.json.JSONObject
+import org.codehaus.groovy.grails.web.json.*
 
 class BasicJSONExtractor implements JSONExtractor {
 
@@ -56,7 +56,6 @@ class BasicJSONExtractor implements JSONExtractor {
 
     private DEFAULT_DATE_CLOSURE = { value ->
         if (value == null) return value
-        if (value == JSONObject.NULL) return null
         if (Date.class.isAssignableFrom(value.getClass())) {
             return value
         }
@@ -73,14 +72,15 @@ class BasicJSONExtractor implements JSONExtractor {
             }
         }
         //unable to parse
-        throw new DateParseException( "$value" )
+        throw new DateParseException("$value")
     }
 
     BasicJSONExtractor() {
     }
 
-    Map extract( JSONObject content ) {
-        getTransformer().transform( content )
+    Map extract(JSONObject content) {
+        Map map = unwrap(content)
+        getTransformer().transform(map)
     }
 
     boolean ready() {
@@ -185,5 +185,29 @@ class BasicJSONExtractor implements JSONExtractor {
      **/
     protected Closure getDateClosure() {
         DEFAULT_DATE_CLOSURE
+    }
+
+    /**
+     * Unwraps JSONObjects, converting any JSONObject.NULL
+     * instances to java null.
+     **/
+    protected def unwrap(def content) {
+        if (content == null) return null
+        if (content == JSONObject.NULL) return null
+        if (content instanceof Map) {
+          Map map = [:]
+          content.entrySet().each { entry ->
+            map[entry.key] = unwrap(entry.value)
+          }
+          return map
+        }
+        if (content instanceof Collection) {
+          def list = []
+          content.each { elt ->
+            list.add unwrap(elt)
+          }
+          return list
+        }
+        return content
     }
 }
