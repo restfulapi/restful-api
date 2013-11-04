@@ -14,11 +14,10 @@ The restful-api plugin is an implementation designed to conform to the our [API 
 The recommended approach is to install the plugin as a git submodule.
 
 ###1. Add Git submodule
-The plugin repo is located at ssh://git@devgit1/framework/plugins/restful-api.git and releases are tagged (e.g., '0.5.0'). We recommend using this plugin as an in-place plugin using Git submodules.
 
 To add the plugin as a Git submodule under a 'plugins' directory:
 
-        test_app (master)$ git submodule add ssh://git@devgit1/framework/plugins/restful-api.git plugins/restful-api.git
+        your_app (master)$ git submodule add {url_to_repository} plugins/restful-api.git
         Cloning into 'plugins/restful-api.git'...
         remote: Counting objects: 1585, done.
         remote: Compressing objects: 100% (925/925), done.
