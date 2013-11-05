@@ -1,23 +1,39 @@
-<!-- ********************************************************************
-     Copyright 2013 Ellucian Company L.P. and its affiliates.
-******************************************************************** -->
+<!-- ***************************************************************************
+ * Copyright 2013 Ellucian Company L.P. and its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *************************************************************************** -->
 
 #RESTful API plugin documentation
 
 ##Status
-Production quality, although subsequent changes may not be backward compatible.  Remember to include this software in export compliance reviews when shipping a solution that uses this plugin.
+Production quality, although subsequent changes may not be backward compatible. 
 
 ##Overview
-The restful-api plugin is an implementation designed to conform to the our [API Strategy](https://github.com/restfulapi/api-strategy) document.  It is not intended to implement all optional features of the strategy.  It is not intended to provide support for multiple ways to accomplish the same requirements; in general, it implements the recommended approaches specified in the strategy.
+
+An introduction to the plugin is provided within the accompanying "[Introducing the RESTful API Grails Plugin](http://restfulapi.github.io/intro-restful-api-slides/)" presentation. _(Please use Chrome, Firefox or Safari to view this presentation.)_
+
+The restful-api plugin is designed to facilitate exposing RESTful API endpoints that conform to our [API Strategy](https://github.com/restfulapi/api-strategy/blob/master/README.md).  Please note, however, it is not intended to implement all optional features discussed within the strategy  nor is it intended to provide support for multiple ways to accomplish the same requirements; in general, it implements the recommended approaches specified in the strategy.
 
 ##Installation and quickstart
-The recommended approach is to install the plugin as a git submodule.
+The current recommended approach is to install the plugin as a git submodule. _(This recommendation will change once the plugin is submitted and approved for inclusion in the grails.org maven repository.)_
+
 
 ###1. Add Git submodule
 
 To add the plugin as a Git submodule under a 'plugins' directory:
 
-        your_app (master)$ git submodule add {url_to_repository} plugins/restful-api.git
+        your_app (master)$ git submodule add git@github.com:restfulapi/restful-api.git plugins/restful-api.git
         Cloning into 'plugins/restful-api.git'...
         remote: Counting objects: 1585, done.
         remote: Compressing objects: 100% (925/925), done.
@@ -29,7 +45,7 @@ Then add the in-place plugin definition to BuildConfig.groovy:
 
         grails.plugin.location.'restful-api' = "plugins/restful-api.git"
 
-Note that adding the plugin this way will the latest commit on the master branch at the time you ran the submodule command.  If you want to use an official release instead, go to the plugin directory and checkout a specific version, e.g.:
+Note that adding the plugin this way will use the latest commit on the master branch at the time you ran the submodule command.  If you want to use an official release instead, go to the plugin directory and checkout a specific version, e.g.:
 
     cd plugins/restful-api.git
     git checkout 0.6.0
