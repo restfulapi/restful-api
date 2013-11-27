@@ -493,4 +493,21 @@ restfulApiConfig = {
         }
     }
 
+    // This resource is used to test that a service-specific service adapter
+    // may be used. See resources.groovy where a 'nothingServiceAdapter' is
+    // configured.
+    //
+    resource 'nothings' config {
+        serviceName = 'nothingService'
+        serviceAdapterName = 'nothingServiceAdapter'
+        representation {
+            mediaTypes = ["application/json"]
+            marshallers {
+                jsonDomainMarshaller {
+                    priority = 100
+                }
+            }
+            jsonExtractor {}
+        }
+    }
 }

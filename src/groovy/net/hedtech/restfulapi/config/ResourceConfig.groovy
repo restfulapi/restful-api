@@ -22,6 +22,7 @@ class ResourceConfig {
 
     String name
     String serviceName
+    String serviceAdapterName
     def methods = [ 'list', 'show', 'create', 'update', 'delete' ]
     //use a LinkedHashMap because we want to preserve
     //the order in which representations are added
@@ -33,6 +34,11 @@ class ResourceConfig {
 
     ResourceConfig setServiceName(String name) {
         this.serviceName = name
+        return this
+    }
+
+    ResourceConfig setServiceAdapterName(String name) {
+        this.serviceAdapterName = name
         return this
     }
 

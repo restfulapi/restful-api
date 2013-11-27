@@ -129,6 +129,44 @@ class RestfulApiControllerSpec extends Specification {
         'update'         | 'PUT'      | '1'  | 'update'      | 'foo'
     }
 
+    def "Test global service adapter is returned if configured"() {
+        setup:
+        defineBeans {
+            restfulServiceAdapter(DummyServiceAdapter)
+        }
+        controller.init()
+        //mock that the resource does not override the adapter
+        controller.metaClass.getServiceAdapterName = {->null}
+
+        when:
+        def adapter = controller.getServiceAdapter()
+
+        then:
+        DummyServiceAdapter.class == adapter.class
+    }
+
+
+    def "Test resource-specific service adapter overrides global adapter"() {
+        setup:
+        defineBeans {
+            restfulServiceAdapter(DummyServiceAdapter) {
+                name = 'default'
+            }
+            foo(DummyServiceAdapter) {
+                name = 'foo'
+            }
+        }
+        controller.init()
+        //mock that the resource does not override the adapter
+        controller.metaClass.getServiceAdapterName = {->'foo'}
+
+        when:
+        def adapter = controller.getServiceAdapter()
+
+        then:
+        'foo' == adapter.name
+    }
+
     def "Test delete with unsupported Accept header works, as there is no content returned"() {
         setup:
         //use default extractor for any methods with a request body
@@ -360,6 +398,27 @@ class RestfulApiControllerSpec extends Specification {
 
         then:
         'theThingService' == serviceName
+    }
+
+    def "Test that service adapter name can be overridden in configuration"() {
+      setup:
+         config.restfulApiConfig = {
+            resource 'things' config {
+                serviceAdapterName = 'thingServiceAdapter'
+                representation {
+                    mediaTypes = ['application/json']
+                    extractor = new DefaultJSONExtractor()
+                }
+            }
+        }
+        controller.init()
+        params.pluralizedResourceName = 'things'
+
+        when:
+        def serviceAdapterName = controller.getServiceAdapterName()
+
+        then:
+        'thingServiceAdapter' == serviceAdapterName
     }
 
     @Unroll
@@ -1599,6 +1658,47 @@ class RestfulApiControllerSpec extends Specification {
         'delete'         | 'DELETE'   | '1'  | 'delete'
     }
 
+    @Unroll
+    def "Test missing service adapter returns 404"() {
+        setup:
+         config.restfulApiConfig = {
+            resource 'things' config {
+                representation {
+                    mediaTypes = ['application/json']
+                    extractor = new DefaultJSONExtractor()
+                }
+            }
+        }
+        controller.init()
+
+        //mock the appropriate service method, expect 0 invocations
+        def mock = Mock(ThingService)
+        controller.metaClass.getService = {-> mock}
+        controller.metaClass.getServiceAdapterName = {->'noSuchAdapter'}
+
+        request.addHeader( 'Accept', 'application/json' )
+        request.addHeader( 'Content-Type', 'application/json' )
+        request.method = httpMethod
+        params.pluralizedResourceName = 'things'
+        if (id != null) params.id = id
+
+        when:
+        controller."$controllerMethod"()
+
+        then:
+        404 == response.status
+          0 == response.getContentLength()
+          0 * _._
+
+        where:
+        controllerMethod | httpMethod | id   | serviceMethod
+        'list'           | 'GET'      | null | 'list'
+        'show'           | 'GET'      | '1'  | 'show'
+        'create'         | 'POST'     | null | 'create'
+        'update'         | 'PUT'      | '1'  | 'update'
+        'delete'         | 'DELETE'   | '1'  | 'delete'
+    }
+
     def "Test unparsable date in json returns 400"() {
         setup:
         //use default extractor for any methods with a request body
@@ -1847,6 +1947,35 @@ class RestfulApiControllerSpec extends Specification {
             }
             map
         }
+    }
+
+    static class DummyServiceAdapter implements RestfulServiceAdapter {
+        String name
+
+        def list(def service, Map params) throws Throwable {
+            service.list(params)
+        }
+
+        def count(def service, Map params) throws Throwable {
+            service.count(params)
+        }
+
+        def show(def service, Map params) throws Throwable {
+            service.show(params)
+        }
+
+        def create(def service, Map content, Map params) throws Throwable {
+             service.create(content, params)
+        }
+
+        def update(def service, def id, Map content, Map params) throws Throwable {
+            service.update(id,content,params)
+        }
+
+        void delete(def service, def id, Map content, Map params) throws Throwable {
+            service.delete(id,content,params)
+        }
+
     }
 
 }

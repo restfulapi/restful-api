@@ -522,6 +522,28 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
          "Details for the thing resource" == responseHeader('X-hedtech-message')
     }
 
+    def "Test ability to use a service-specific service adapter"() {
+        setup:
+        def id = createThing('AA')
+        createThing('BB')
+
+        when:
+        get( "$localBase/api/nothings/$id" ) {
+            headers['Content-Type']  = 'application/json'
+            headers['Accept']        = 'application/json'
+        }
+
+        then:
+        200 == response.status
+        'application/json' == response.contentType
+
+        def json = JSON.parse response.text
+        "AA" == json.code
+        "Modified by the NothingServiceAdapter" == json.description
+         "Details for the nothing resource" == responseHeader('X-hedtech-message')
+    }
+
+
     def "Test show thing with xml response"() {
         setup:
         def id = createThing('AA')

@@ -504,6 +504,38 @@ class RestConfigSpec extends Specification {
         'TheThingService' == config.resources['things'].serviceName
     }
 
+    def "Test service adapter name override"() {
+        setup:
+        def src =
+        {
+            resource 'things' config {
+                serviceAdapterName = 'thingServiceAdapter'
+                representation {
+                    mediaTypes = ['application/vnd.hedtech.v0+json']
+                    marshallers {
+                        marshaller {
+                            instance = 'a'
+                            priority = 5
+                        }
+                        marshaller {
+                            instance = 'b'
+                            priority = 6
+                        }
+                    }
+                    extractor = 'net.hedtech.DynamicJsonExtractor'
+                }
+            }
+
+        }
+
+        when:
+        def config = RestConfig.parse( grailsApplication, src )
+
+        then:
+        1 == config.resources.size()
+        'thingServiceAdapter' == config.resources['things'].serviceAdapterName
+    }
+
     def "Test method overrides"() {
         setup:
         def src =

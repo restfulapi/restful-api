@@ -43,7 +43,7 @@ class Thing implements Serializable {
     static constraints = {
         parts              bindable: false
         code               ( nullable: false, maxSize: 2, unique: true  )
-        description        ( nullable: false, maxSize: 30 )
+        description        ( nullable: false, maxSize: 50 )
         dateManufactured   ( nullable: true )
         weight             ( nullable: true )
         lastUpdated        ( nullable: true )
