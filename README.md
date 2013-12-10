@@ -17,7 +17,7 @@
 #RESTful API plugin documentation
 
 ##Status
-Production quality, although subsequent changes may not be backward compatible. 
+Production quality, although subsequent changes may not be backward compatible.
 
 ##Overview
 
@@ -33,7 +33,7 @@ The current recommended approach is to install the plugin as a git submodule. _(
 
 To add the plugin as a Git submodule under a 'plugins' directory:
 
-        your_app (master)$ git submodule add git@github.com:restfulapi/restful-api.git plugins/restful-api.git
+        your_app (master)$ git submodule add https://github.com/restfulapi/restful-api.git plugins/restful-api.git
         Cloning into 'plugins/restful-api.git'...
         remote: Counting objects: 1585, done.
         remote: Compressing objects: 100% (925/925), done.
