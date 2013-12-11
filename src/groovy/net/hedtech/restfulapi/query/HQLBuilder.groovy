@@ -117,6 +117,8 @@ class HQLBuilder {
                     whereFragment += "${firstAlias}.${it.field} "
                     if ('lt' == it.operator) whereFragment += "< :${it.field}"
                     else if ('gt' == it.operator) whereFragment += "> :${it.field}"
+                    else if ('le' == it.operator) whereFragment += "<= :${it.field}"
+                    else if ('ge' == it.operator) whereFragment += ">= :${it.field}"
                     else whereFragment += "= :${it.field}"
                 }
             }

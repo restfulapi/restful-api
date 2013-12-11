@@ -45,8 +45,8 @@ class Filter {
     private static final Range ALIASES      = 'a'..'p'
     private static List FILTER_TERMS        = ['field', 'operator', 'value']
     private static List STRING_OPERATORS    = ['eq', 'equals', 'contains']
-    private static List NUMERIC_OPERATORS   = ['eq', 'equals', 'lt', 'gt']
-    private static List DATE_OPERATORS      = ['eq', 'equals', 'lt', 'gt']
+    private static List NUMERIC_OPERATORS   = ['eq', 'equals', 'lt', 'gt', 'le', 'ge']
+    private static List DATE_OPERATORS      = ['eq', 'equals', 'lt', 'gt', 'le', 'ge']
     private static List SUPPORTED_OPERATORS = STRING_OPERATORS + NUMERIC_OPERATORS + DATE_OPERATORS
 
     private static List NUMERIC_TYPES       = ['num', 'number']

@@ -102,6 +102,8 @@ class HQLBuilderSpec extends IntegrationSpec {
         'description'      | 'contains' | 'An xx'         | null       | 'SELECT a FROM Thing a WHERE lower(a.description) LIKE lower(:description)'
         'dateManufactured' | 'gt'       | new Date().time | 'date'     | 'SELECT a FROM Thing a WHERE a.dateManufactured > :dateManufactured'
         'weight'           | 'lt'       | 101             | 'num'      | 'SELECT a FROM Thing a WHERE a.weight < :weight'
+        'dateManufactured' | 'ge'       | new Date().time | 'date'     | 'SELECT a FROM Thing a WHERE a.dateManufactured >= :dateManufactured'
+        'weight'           | 'le'       | 101             | 'num'      | 'SELECT a FROM Thing a WHERE a.weight <= :weight'
     }
 
 
@@ -142,11 +144,16 @@ class HQLBuilderSpec extends IntegrationSpec {
         'description'      | 'contains' | null            | null       | false
         'dateManufactured' | 'contains' | new Date().time | 'date'     | false
         'dateManufactured' | 'gt'       | new Date().time | 'date'     | true
+        'dateManufactured' | 'ge'       | new Date().time | 'date'     | true
         'dateManufactured' | 'lt'       | new Date().time | 'date'     | true
+        'dateManufactured' | 'le'       | new Date().time | 'date'     | true
         'dateManufactured' | 'eq'       | new Date().time | 'date'     | true
         'weight'           | 'eq'       | 101             | 'int'      | false
         'weight'           | 'eq'       | 101             | 'long'     | false
         'weight'           | 'lt'       | 101             | 'num'      | true
+        'weight'           | 'gt'       | 101             | 'num'      | true
+        'weight'           | 'le'       | 101             | 'num'      | true
+        'weight'           | 'ge'       | 101             | 'num'      | true
         'weight'           | 'contains' | 101             | 'num'      | false
         null               | 'eq'       | 101             | null       | false
     }

@@ -743,15 +743,13 @@ class RestfulApiController {
         try {
             svc = applicationContext.getBean(getServiceName())
         } catch (e) {
-            log.error "Caught exception ${e.message}", e
-        }
-        log.trace "getService() will return service $svc"
-        if (null == svc) {
             log.warn "No service found for resource ${params.pluralizedResourceName}"
             throw new UnsupportedResourceException(params.pluralizedResourceName)
         }
+        log.trace "getService() will return service $svc"
         svc
     }
+
 
     protected def getMarshallingService(String name) {
         def svc
