@@ -56,6 +56,8 @@ Don't forget to go back to your project root and commit the change this will mak
 ###2. Configure plugin dependencies
 Irrespective of the method used to install the RESTful plugin, the following changes must be made to include the plugin dependencies.  The plugin depends on inflector, cache-headers, and spock plugins.  (The spock dependency is for the RestSpecification testing class, that you may use to [test your API](#api-testing).
 
+For Grails 2.2.x:
+
 In the dependencies section of BuildConfig.groovy add:
 
     test "org.spockframework:spock-grails-support:0.7-groovy-2.0"
@@ -69,7 +71,16 @@ In the plugins section of BuildConfig.groovy add:
           exclude "spock-grails-support"
         }
 
-        test ":funky-spock:0.1.0"
+        test ":funky-spock:0.2.1"
+
+For Grails 2.3.x, you do not need the spock dependencies:
+
+In the plugins section of BuildConfig.groovy add:
+
+        compile ":inflector:0.2"
+        compile ":cache-headers:1.1.5"
+
+        test ":funky-spock:0.2.1"
 
 ###3. Configure the UrlMappings to use the controller
 Edit the UrlMappings.groovy to look similar to the following defaults.  Your application map already have url mappings defined; if so, add the mappings for /api and /qapi as appropriate.
