@@ -35,7 +35,7 @@ class RestfulApiGrailsPlugin {
     def author = "Charles Hardt, Shane Riddell"
     def authorEmail = "shane_riddell@icloud.com"
     def developers = [
-        [name: "Charlie Hardt", email: "charles.hard@ellucian.com"]
+        [name: "Charlie Hardt", email: "chasdev@me.com"]
     ]
     def description = '''\
         |The resful-api plugin facilitates exposing a non-trivial,
@@ -45,8 +45,6 @@ class RestfulApiGrailsPlugin {
         |'''.stripMargin()
 
     def documentation = "README.md" // FYI: We use color-marked to generate HTML
-
-    def organization = [ name: "Ellucian", url: "http://www.ellucian.com/" ]
 
     def scm = [url: "https://github.com/restfulapi/restful-api.git"]
 

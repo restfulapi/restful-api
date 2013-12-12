@@ -102,6 +102,8 @@ class RestfulApiController {
     String pageMax
     String pageOffset
 
+    private Class pagedResultListClazz
+
 
     /**
      * Initializes the controller by registering the configured marshallers.
@@ -163,6 +165,16 @@ class RestfulApiController {
             }
         }
 
+        //see if we are running with hibernate and need to support PagedList
+        //as of grails 2.3, this class is in the hibernate plugin, not
+        //core, and we don't want direct hibernate dependencies
+        try {
+            pagedResultListClazz = Class.forName('grails.orm.PagedResultList')
+        } catch (ClassNotFoundException) {
+            //not using hibernate support
+        }
+
+
         log.trace 'Done initializing RestfulApiController...'
     }
 
@@ -199,7 +211,7 @@ class RestfulApiController {
             logger.trace "... service returned $result"
 
             def count
-            if (result instanceof grails.orm.PagedResultList) {
+            if ((null != pagedResultListClazz) && (pagedResultListClazz.isInstance(result))) {
                 count = result.totalCount
             } else if (result instanceof PagedResultList) {
                 count = result.getTotalCount()
