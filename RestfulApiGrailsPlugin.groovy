@@ -32,8 +32,11 @@ class RestfulApiGrailsPlugin {
     ]
 
     def title = "RESTful API Plugin"
-    def author = "Ellucian"
-    def authorEmail = ""
+    def author = "Charles Hardt, Shane Riddell"
+    def authorEmail = "shane_riddell@icloud.com"
+    def developers = [
+        [name: "Charlie Hardt", email: "charles.hard@ellucian.com"]
+    ]
     def description = '''\
         |The resful-api plugin facilitates exposing a non-trivial,
         |versioned RESTful API. The plugin provides a DSL that may
@@ -45,7 +48,11 @@ class RestfulApiGrailsPlugin {
 
     def organization = [ name: "Ellucian", url: "http://www.ellucian.com/" ]
 
-    //def license = "APACHE"
+    def scm = [url: "https://github.com/restfulapi/restful-api.git"]
+
+    def issueManagement = [ system: "GITHUB", url: "https://github.com/restfulapi/restful-api/issues" ]
+
+    def license = "APACHE"
 
 
 // ----------------------------------------------------------------------------
