@@ -23,15 +23,35 @@ Production quality, although subsequent changes may not be backward compatible.
 
 An introduction to the plugin is provided within the accompanying "[Introducing the RESTful API Grails Plugin](http://restfulapi.github.io/intro-restful-api-slides/)" presentation. _(Please use Chrome, Firefox or Safari to view this presentation.)_
 
-The restful-api plugin is designed to facilitate exposing RESTful API endpoints that conform to our [API Strategy](https://github.com/restfulapi/api-strategy/blob/master/README.md).  Please note, however, it is not intended to implement all optional features discussed within the strategy  nor is it intended to provide support for multiple ways to accomplish the same requirements; in general, it implements the recommended approaches specified in the strategy.
+Key features of this plugin include:
+
+* A DSL-based configuration that is used to expose resources
+* Use of custom media types to identify representations (and versioning)
+* Declarative marshaling and extraction of versioned representations (JSON and XML)
+ * Include, omit, and rename properties
+ * Group and reuse marshalers
+ * Add affordances (support HATEOAS)
+ * Ability to configure custom marshallers and extractors when declarative configuration is not sufficient (e.g., PDF, iCalendar, binary formats)
+* Route API requests to a single controller that delegates to transactional services based on naming convention or configuration
+* An ability to configure service adapters to accomodate services exposing a different contract
+* Consistent use of HTTP status codes and headers, including caching headers and CORS
+* Ability to 'query by POST' (to allow query criteria to be provided within the request body)
+* Support for developing functional tests using Spock
+* Extensive regression tests to provide confidence when adopting this plugin
+
+The restful-api plugin is designed to facilitate exposing RESTful API endpoints that conform to our [API Strategy](https://github.com/restfulapi/api-strategy/blob/master/README.md).  _Please note, however, it is not intended to implement all optional features discussed within the strategy  nor is it intended to provide support for multiple ways to accomplish the same requirements; in general, it implements the recommended approaches specified in the strategy._
 
 ##Installation and quickstart
-The current recommended approach is to install the plugin as a git submodule. _(This recommendation will change once the plugin is submitted and approved for inclusion in the grails.org maven repository.)_
 
+###1. Install the plugin
 
-###1. Add Git submodule
+This plugin should be installed from the official Grails Central Plugin Repository ([http://grails.org/plugins/restful-api]()) by setting the following dependency:
 
-To add the plugin as a Git submodule under a 'plugins' directory:
+```
+    compile ":restful-api:0.8.0"
+```
+
+_Note: It may sometimes be useful to install this plugin as a Git submodule instead (e.g., if you are actively contributing to the plugin). To add the plugin as a Git submodule under a 'plugins' directory:_
 
         your_app (master)$ git submodule add https://github.com/restfulapi/restful-api.git plugins/restful-api.git
         Cloning into 'plugins/restful-api.git'...
@@ -41,16 +61,16 @@ To add the plugin as a Git submodule under a 'plugins' directory:
         Receiving objects: 100% (1585/1585), 294.45 KiB | 215 KiB/s, done.
         Resolving deltas: 100% (545/545), done.
 
-Then add the in-place plugin definition to BuildConfig.groovy:
+_Then add the in-place plugin definition to BuildConfig.groovy:_
 
         grails.plugin.location.'restful-api' = "plugins/restful-api.git"
 
-Note that adding the plugin this way will use the latest commit on the master branch at the time you ran the submodule command.  If you want to use an official release instead, go to the plugin directory and checkout a specific version, e.g.:
+_Adding the plugin this way will use the latest commit on the master branch at the time you ran the submodule command.  If you want to use an official release instead, go to the plugin directory and checkout a specific version, e.g.:_
 
     cd plugins/restful-api.git
-    git checkout 0.6.0
+    git checkout 0.8.0
 
-Don't forget to go back to your project root and commit the change this will make to your git submodules file.
+_Lastly, don't forget to go back to your project root and commit the change this will make to your git submodules file._
 
 
 ###2. Configure plugin dependencies
