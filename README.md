@@ -305,6 +305,8 @@ Errors are not considered part of the resource representation, and do not have v
 ###Media type of requests
 The plugin uses the Content-Type header to determine the resource representation sent in a request body.  It uses the Accept header to determine the type of resource representation that should be used in the response.  The Content-Type and Accept headers on a request are not required to match.
 
+If your request body contains content in a particular charset, specify that in the Content-Type header.  For example, if sending json using the UTF-8 charset, you may use a Content-Type header of "application/json; charset=UTF-8".  If the charset is not specified, the default character set as determined by grails will apply.
+
 ###Content negotiation on requests
 The plugin performs content negotiation for a request by parsing the Accept Header, taking any q-values into account.  The plugin will then use the best known representation for the accepted type(s).
 
