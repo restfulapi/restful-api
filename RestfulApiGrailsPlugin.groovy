@@ -44,7 +44,7 @@ class RestfulApiGrailsPlugin {
         |marshalled. Please see the README.md for details.
         |'''.stripMargin()
 
-    def documentation = "README.md" // FYI: We use color-marked to generate HTML
+    def documentation = "https://github.com/restfulapi/restful-api/blob/master/README.md"
 
     def scm = [url: "https://github.com/restfulapi/restful-api.git"]
 
