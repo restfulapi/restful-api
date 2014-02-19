@@ -45,7 +45,7 @@ The restful-api plugin is designed to facilitate exposing RESTful API endpoints 
 
 ###1. Install the plugin
 
-This plugin should be installed from the official Grails Central Plugin Repository ([http://grails.org/plugins/restful-api]()) by setting the following dependency:
+This plugin should be installed from the official Grails Central Plugin Repository ([http://grails.org/plugins/restful-api](http://grails.org/plugins/restful-api)) by setting the following dependency:
 
 ```
     compile ":restful-api:0.8.0"
