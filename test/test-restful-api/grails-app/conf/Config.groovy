@@ -233,6 +233,17 @@ restfulApiConfig = {
             jsonExtractor {}
         }
         representation {
+            mediaTypes = ["application/vnd.hedtech.internal.v0+json"]
+            jsonArrayPrefix = 'while(1);'
+            marshallerFramework = 'json'
+            marshallers {
+                jsonDomainMarshaller {
+                    inherits = ['jsonDomainAffordance']
+                }
+            }
+            jsonExtractor {}
+        }
+        representation {
             mediaTypes = ["application/xml"]
             marshallers {
                 xmlDomainMarshaller {

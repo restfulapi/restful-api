@@ -336,6 +336,29 @@ The controller also handles '*/*' values in the Accept Header.  See [Media Type 
 
 Note that at present, the selection of representation is done based only on what representations are configured.  If an error occurs when marshalling a response to that representation, the plugin does not fall back to the next best representation as specified by the Accept Header.  This may change in future releases.
 
+#####JSON Array CSRF Protection
+JSON representations intended for internal use (e.g., using AJAX) may be configured with a 'jsonArrayPrefix' that will be added to the front of JSON Array content in the response.  
+
+This prefix may be used to protect against [CSRF](https://www.owasp.org/index.php/Cross-Site_Request_Forgery_(CSRF)) attacks that are possible when using old browsers which allow redefining of the JavaScript Array constructor. Please see [http://haacked.com/archive/2008/11/20/anatomy-of-a-subtle-json-vulnerability.aspx/](http://haacked.com/archive/2008/11/20/anatomy-of-a-subtle-json-vulnerability.aspx/). 
+
+Common prefixes include 'while(1);' and 'for(;;);'.  A configured prefix is only used when returning a JSON Array and is ignored in all other situations.  Following is an example configuration used to protect an 'internal' representation.  The client will need to strip off the prefix before parsing the JSON.
+
+```
+    representation {
+        mediaTypes = ["application/vnd.hedtech.internal.v0+json"]
+        jsonArrayPrefix = 'while(1);'
+        marshallerFramework = 'json'
+        marshallers {
+            jsonDomainMarshaller {
+                inherits = ['jsonDomainAffordance']
+            }
+        }
+        jsonExtractor {}
+    }
+```
+
+Note that if jsonArrayPrefix is set, it only applies to representations being marshalled with the 'json' framework.  Marshalling via the 'xml' framework, or custom marshalling services is not affected.  If you are marshalling to json via a custom service (by setting the value of marshallerFramework to the name of a bean), you must honor the value of the jsonArrayPrefix in your service yourself (the call to the service will provide the representation configuration.)
+
 ###Unsupported media types
 If a request specified an unsupported media type in the Accept header, for a request that returns a reponse body, the plugin will respond with a 406 status code.
 If the request specified an unsupported media type in the Content-Type header, for a request that processes a request body, the plugin will respond with a 415 status code.

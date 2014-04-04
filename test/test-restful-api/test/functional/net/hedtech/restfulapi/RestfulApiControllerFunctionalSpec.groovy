@@ -73,6 +73,42 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         null == json[0].sha1
     }
 
+    // tests 'internal' json representation for list where a
+    // configured prefix is prepended (to protect from json csrf vulnerability)
+    def "Test list with 'internal representation' json response"() {
+        setup:
+        createThing('AA')
+        createThing('BB')
+
+        when:"list with application/vnd.hedtech.internal.v0+json accept"
+        get("$localBase/api/things") {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/vnd.hedtech.internal.v0+json'
+        }
+
+        then:
+        200 == response.status
+        'application/json' == response.contentType
+
+        assert response.text.startsWith('while(1);')
+        def json = JSON.parse response.text.replaceFirst( /while\(1\);/, "")
+
+        2 == json.size()
+        "AA" == json[0].code
+        "An AA thing" == json[0].description
+
+        // assert localization of the message
+        "List of thing resources" == responseHeader('X-hedtech-message')
+
+        //check pagination headers
+        "2" == responseHeader('X-hedtech-totalCount')
+        null != responseHeader('X-hedtech-pageOffset')
+        null != responseHeader('X-hedtech-pageMaxSize')
+        json[0]._href?.contains('things')
+        null == json[0].numParts
+        null == json[0].sha1
+    }
+
     def "Test list filtering with json response"() {
         setup:
         createThing('AA')
@@ -504,6 +540,34 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         get( "$localBase/api/things/$id" ) {
             headers['Content-Type']  = 'application/json'
             headers['Accept']        = 'application/json'
+        }
+
+        then:
+        200 == response.status
+        'application/json' == response.contentType
+
+        def json = JSON.parse response.text
+        "AA" == json.code
+        "An AA thing" == json.description
+        json._href?.contains('things')
+        null == json.numParts
+        null == json.sha1
+        null != json.version
+
+        // assert localization of the message
+         "Details for the thing resource" == responseHeader('X-hedtech-message')
+    }
+
+    // tests that no prefix is added when a single representation is returned
+    def "Test show thing with json 'internal represenation' response"() {
+        setup:
+        def id = createThing('AA')
+        createThing('BB')
+
+        when:
+        get( "$localBase/api/things/$id" ) {
+            headers['Content-Type']  = 'application/json'
+            headers['Accept']        = 'application/vnd.hedtech.internal.v0+json'
         }
 
         then:

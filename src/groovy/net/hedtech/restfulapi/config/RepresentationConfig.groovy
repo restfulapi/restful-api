@@ -20,6 +20,7 @@ class RepresentationConfig {
     String mediaType
     String marshallerFramework
     String contentType
+    def jsonArrayPrefix
     def marshallers = []
     def extractor
 

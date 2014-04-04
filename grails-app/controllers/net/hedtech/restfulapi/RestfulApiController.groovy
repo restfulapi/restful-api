@@ -505,6 +505,14 @@ class RestfulApiController {
                 log.trace "Going to useJSON with representation $representation"
                 useJSON(representation) {
                     result = (data as JSON) as String
+
+                    // add a prefix if configured to protect from a JSON Array
+                    // vulnerability to CSRF attack. 
+                    if (data instanceof Collection) {
+                        if (representation.jsonArrayPrefix instanceof String) {
+                            result = representation.jsonArrayPrefix + result
+                        }
+                    }
                 }
                 break
             case ~/xml/:

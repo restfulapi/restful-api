@@ -67,6 +67,7 @@ class ResourceConfig {
             RepresentationConfig config = new RepresentationConfig(
                 mediaType:mediaType, marshallerFramework:delegate.marshallerFramework,
                 contentType:delegate.contentType,
+                jsonArrayPrefix:delegate.jsonArrayPrefix,
                 marshallers:delegate.marshallers, extractor:delegate.extractor )
 
             //if we are using the json or xml marshalling framework, check
