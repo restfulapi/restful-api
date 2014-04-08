@@ -37,6 +37,9 @@ class RestConfig {
     ConfigGroup xmlBean       = new ConfigGroup()
     ConfigGroup xmlExtractor  = new ConfigGroup()
 
+    //ordered list of exception handlers
+    def exceptionHandlers = []
+
     RestConfig( GrailsApplication grailsApplication ) {
         this.grailsApplication = grailsApplication
     }
@@ -168,6 +171,14 @@ class RestConfig {
         this
     }
 
+    def exceptionHandlers(Closure c) {
+        ExceptionHandlers delegate = new ExceptionHandlers(this)
+        c.delegate = delegate
+        c.resolveStrategy = Closure.DELEGATE_FIRST
+        c.call()
+        this
+    }
+
     class JSONDomainTemplates {
         RestConfig parent
         JSONDomainTemplates(RestConfig parent) {
@@ -273,6 +284,22 @@ class RestConfig {
                 parent.xmlExtractor.configs[name] = delegate.config
             }
             [config:closure]
+        }
+    }
+
+    class ExceptionHandlers {
+        RestConfig parent
+        ExceptionHandlers(RestConfig parent) {
+            this.parent = parent
+        }
+
+        def handler(Closure c) {
+            ExceptionHandlerConfig config = new ExceptionHandlerConfig()
+            c.delegate = config
+            c.resolveStrategy = Closure.DELEGATE_FIRST
+            c.call()
+            parent.exceptionHandlers.add config
+            this
         }
     }
 

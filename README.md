@@ -337,9 +337,9 @@ The controller also handles '*/*' values in the Accept Header.  See [Media Type 
 Note that at present, the selection of representation is done based only on what representations are configured.  If an error occurs when marshalling a response to that representation, the plugin does not fall back to the next best representation as specified by the Accept Header.  This may change in future releases.
 
 #####JSON Array CSRF Protection
-JSON representations intended for internal use (e.g., using AJAX) may be configured with a 'jsonArrayPrefix' that will be added to the front of JSON Array content in the response.  
+JSON representations intended for internal use (e.g., using AJAX) may be configured with a 'jsonArrayPrefix' that will be added to the front of JSON Array content in the response.
 
-This prefix may be used to protect against [CSRF](https://www.owasp.org/index.php/Cross-Site_Request_Forgery_(CSRF)) attacks that are possible when using old browsers which allow redefining of the JavaScript Array constructor. Please see [http://haacked.com/archive/2008/11/20/anatomy-of-a-subtle-json-vulnerability.aspx/](http://haacked.com/archive/2008/11/20/anatomy-of-a-subtle-json-vulnerability.aspx/). 
+This prefix may be used to protect against [CSRF](https://www.owasp.org/index.php/Cross-Site_Request_Forgery_(CSRF)) attacks that are possible when using old browsers which allow redefining of the JavaScript Array constructor. Please see [http://haacked.com/archive/2008/11/20/anatomy-of-a-subtle-json-vulnerability.aspx/](http://haacked.com/archive/2008/11/20/anatomy-of-a-subtle-json-vulnerability.aspx/).
 
 Common prefixes include 'while(1);' and 'for(;;);'.  A configured prefix is only used when returning a JSON Array and is ignored in all other situations.  Following is an example configuration used to protect an 'internal' representation.  The client will need to strip off the prefix before parsing the JSON.
 
@@ -591,42 +591,164 @@ digest.update("description${thing.getDescription()}".getBytes("UTF-8"))
 def properties = [sha1:new BigInteger(1,digest.digest()).toString(16).padLeft(40,'0')]
 thing.metaClass.getSupplementalRestProperties << {-> properties }`
 
-Note that the getSupplementalRestProperties method is being added only to the single object instance, not the entire class.  A marshaller can check to see whether the instance it is marshalling support the method, and if so, extract data from it to generate affordances.
+Note that the getSupplementalRestProperties method is being added only to the single object instance, not the entire class.  A marshaller can check to see whether the instance it is marshalling supports the method, and if so, extract data from it to generate affordances.
 
 ##Exception handling
-When an exception is encountered while servicing a request, the controller will classify the exception into one of the following existing categories:
+When an exception is encountered while servicing a request, the controller will delegate to an instance of net.hedtech.restfulapi.ExceptionHandler that is responsible for generating an error response.
 
-* ApplicationException
-* OptimisticLockException
-* Validation Exception
-* UnsupportedRequestRepresentationException
-* UnsupportedResponseRepresentationException
-* AnyOtherException
+The handler selection process is similar to how a Grails converter selects a marshaller for an object instance.  ExceptionHandler instances may be registered with the controller, along with a priority.  Each ExceptionHandler has a supports method that returns true or false depending on whether the handler can produce a response for a given Throwable instance.
 
-Each one of these categories has a registered handler that specifies the status code to return, along with any additional headers or response body.
+When the controller encounters an exception, it consults its registered handlers, in priority order.  The first handler that supports the instance of the exception is used to produce the error response.
 
-Except for the ApplicationException category, the other categories represent hard-coded responses mapped to exceptions as follows:
+The controller automatically registers handlers for the following types of exceptions:
 
-* OptimisticLockException: if the exception is an instance of org.springframework.dao.OptimisticLockingFailureException
-* Validation Exception: if the exception is an instance of grails.validation.ValidationException
-* UnsupportedRequestRepresentationException: internal exception thrown when a request  specifies a Content-Type that cannot be supported
-* UnsupportedResponseRepresentationException: internal exception thrown when a request specifies a media type in the Accept header that cannot be supported.
-* AnyOtherException: encountered an exception that doesn't fit any other category.  Will result in a 500 status
+* any exception that can be identified as an [ApplicationException](#application-exception) via duck typing.
+* instances of net.hedtech.restfulapi.IdMismatchException and its subclasses
+* instances of org.springframework.dao.OptimisticLockingFailureException and its subclasses
+* instances of net.hedtech.restfulapi.UnsupportedMethodException and its subclasses
+* instances of net.hedtech.restfulapi.UnsupportedRequestRepresentationException and its subclasses
+* instances of net.hedtech.restfulapi.UnsupportedResourceException and its subclasses
+* instances of net.hedtech.restfulapi.UnsupportedResponseRepresentationException and its subclasses
+* instances of grails.validation.ValidationException and its subclasses
 
-###ApplicationException
-The ApplicationException is treated as a special case that allows applications using the plugin to customize how their exceptions map to response codes.
+Finally, the controller registers a default exception handler that takes care of any exception not handled by any other handler, and that returns a 500 status code.
 
-An ApplicationException is not determined by inheritance; instead duck typing is used.  If the controller encounters an exception that responds to 'getHttpStatusCode' (it has a method getHttStatusCode()) and has a property named 'returnMap' that is an instance of Closure, then the controller will treat that exception as an ApplicationException, and extract data from it as follow:
+The controller uses negative priorities for all of the handlers it registers, so any application registered handlers at the default level (0) or higher are consulted first.
+
+
+###Customizing Exception Handling
+You can customize exception handling in two ways.  You can create (or use metaprogramming on existing classes) exceptions that meet the duck typing requirements for an [ApplicationException](#application-exception), or you can register custom handlers.  In general, registering custom handlers is a cleaner approach, as it isolates the details of how to map application and framework exceptions to RESTful responses in your api configuration.
+
+To create an exception handler, implement the net.hedtech.restfulapi.ExceptionHandler interface.  For example:
+```groovy
+package my.app.exceptionhandlers
+
+import net.hedtech.restfulapi.ErrorResponse
+import net.hedtech.restfulapi.ExceptionHandler
+import net.hedtech.restfulapi.ExceptionHandlerContext
+import net.hedtech.restfulapi.Inflector
+
+class OptimisticLockExceptionHandler implements ExceptionHandler {
+
+    boolean supports(Throwable e) {
+        (e instanceof my.app.OptimisticLockException)
+    }
+
+    ErrorResponse handle(Throwable e, ExceptionHandlerContext context) {
+        new ErrorResponse(
+            httpStatusCode: 409,
+            message: context.localizer.message(
+                code: "default.optimistic.locking.failure",
+                args: [ Inflector.singularize( context.pluralizedResourceName ) ] ),
+            content: ['originatingErrorMessage':e.getMessage()]
+        )
+    }
+}
+```
+
+The supports method returns true if the controller should use this handler to generate the response.  (Remember, the controller will consult its handlers in priority order, using the first one that supports the exception.)
+
+The handle method is passed the Throwable instance, and a context instance.  The context contains two fields:
+
+* pluralizedResourceName - the name of the resource that encountered the exception
+* localizer - a net.hedtech.restful.api.Localizer instance that can be used to lookup messages
+
+The method must return a net.hedtech.restfulapi.ErrorResponse instance containing the following:
+
+* httpStatusCode: The http status code to return in the response.  This is the only value that is required.
+* message: An optional message to include in the message header
+* headers: Optional map of headers to include with the response
+* content: An optional content map to render in the response body
+
+Exception handlers can be registered in the configuration:
+
+```groovy
+restApiConfig = {
+    exceptionHandlers {
+        handler {
+            instance = new my.app.exceptionhandlers.OptimisticLockExceptionHandler()
+            priority = 5
+        }
+        handler {
+            instance = new my.app.exceptionhandler.SomeExceptionHandler()
+            priority = 6
+        }
+    }
+}
+```
+
+Note that the implementation of custom handlers should conform to the Ellucian REST strategy.  For example, a handler that supports validation exceptions should return a 400 status code, and should also return an 'X-Status-Reason:Validation failed' header.
+
+You cannot remove the exception handlers that the controller automatically registers, but you can override them by registering handlers for the same conditions.
+
+If multiple handlers are registered with the same priority, they are consulted in reverse order in which they were registered; that is, the last one registered is consulted first.
+
+This can be useful if you wish to override an existing handler, without registering a handler at a higher priority.
+
+For example, the default exception handler is registered with a priority of Integer.MIN_VALUE.  To override its behavior and add additional header fields:
+
+```groovy
+package my.app.exceptionhandlers
+
+import net.hedtech.restfulapi.ErrorResponse
+import net.hedtech.restfulapi.ExceptionHandler
+import net.hedtech.restfulapi.ExceptionHandlerContext
+
+/**
+ * Default handler that treats any exception as a 500 response.
+ **/
+class DefaultExceptionHandler implements ExceptionHandler {
+
+    boolean supports(Throwable t) {
+        true
+    }
+
+    ErrorResponse handle(Throwable e, ExceptionHandlerContext context) {
+        new ErrorResponse(
+            httpStatusCode: 500,
+            message: context.localizer.message(
+                code: "default.rest.general.errors.message",
+                args: [ context.pluralizedResourceName ]),
+            headers:['Custom-app-header':'some value'],
+            content: [
+                errors: [
+                    [
+                        type: "general",
+                        errorMessage: e.message
+                    ]
+                ]
+            ]
+        )
+    }
+}
+```
+
+```
+restApiConfig = {
+    exceptionHandlers {
+        handler {
+            instance = new my.app.exceptionhandlers.DefaultExceptionHandler()
+            priority = Integer.MIN_VALUE
+        }
+    }
+}
+```
+
+Even though the controller automatically registers a default handler at the same priority, the custom one will be consulted first, because all handlers registered via configuration are added after the controller's.
+
+
+###<a id="application-exception"></a>ApplicationException
+The controller automatically registers an exception handler for 'application exceptions'.  This allows applications using the plugin to customize how exceptions generate error responses directly in the exception itself.  In general, it recommended to implement and register custom exception handlers instead, to eliminate direct coupling between application exception hierarchies and the api layer.
+
+An ApplicationException is not determined by inheritance; instead duck typing is used.  The controller registers an exception handler that supports any exception that responds to 'getHttpStatusCode' (it has a method getHttStatusCode()) and has a property named 'returnMap' that is an instance of Closure.  The handler extracts data from it as follow:
 
 * getHttpStatusCode() will be invoked to obtain the http status code that should be returned
 * the returnMap closure will be invoked, passing in a localizer so that localized messages can be contructed.  The closure must return a Map; entries in the map will be used as follows:
     * if the map contains a 'headers' key, the value is expected to be a map of header names/header values to return in the error response
-    * if the map contains a 'message' key, the value is expected to be a (localized) string to be returned in the X-hedtech-message header.
-    * if the map contains an 'errors' key, the value is expected to be an object that is to be rendered as JSON or xml in the response body
+    * if the map contains a 'message' key, the value is expected to be a (localized) string to be returned in the message header.
+    * if the map contains an 'errors' key, the value is expected to be a map that is to be rendered as JSON or xml in the response body
 
 This definition of ApplicationException allows any application to customize error handling without extending or overriding any controller methods.  However, the implementation of any application exceptions must take responsibility for conforming to the Ellucian REST strategy.  For example, if an application exception represents a validation exception, it needs to return a 400 status code, and should also return an 'X-Status-Reason:Validation failed' header.
-
-Also note that the contract on what to recognize as an application exception was chosen to be compatible with the existing Banner Core ApplicationException.
 
 ##Configuring resources
 The overall processing of a request proceeds as follows:

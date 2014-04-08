@@ -1040,7 +1040,7 @@ class RestConfigSpec extends Specification {
         'application/json' == e.mediaType
     }
 
-    def "Test collection prefix"() {
+    def "Test jsonArrayPrefix prefix"() {
         setup:
         def src =
         {
@@ -1065,9 +1065,9 @@ class RestConfigSpec extends Specification {
 
         then:
         'abc' == config.getRepresentation('things', 'application/vnd.hedtech.v0+json').jsonArrayPrefix
-    }    
+    }
 
-    def "Test collection prefix on anyResource"() {
+    def "Test jsonArrayPrefix on anyResource"() {
         setup:
         def src =
         {
@@ -1092,5 +1092,29 @@ class RestConfigSpec extends Specification {
 
         then:
         'abc' == config.getRepresentation('', 'application/vnd.hedtech.v0+json').jsonArrayPrefix
-    }      
+    }
+
+    def "Test exception handler configuration"() {
+        setup:
+        def src =
+        {
+            exceptionHandlers {
+                handler {
+                    instance = 'foo'
+                }
+                handler {
+                    instance = 'bar'
+                    priority = 2
+                }
+            }
+        }
+
+        when:
+        def config = RestConfig.parse( grailsApplication, src )
+        config.validate()
+
+        then:
+        ['foo', 'bar'] == config.exceptionHandlers*.instance
+        [0,2]          == config.exceptionHandlers*.priority
+    }
 }

@@ -18,7 +18,7 @@ package net.hedtech.restfulapi
 
 import grails.converters.JSON
 import grails.converters.XML
-import grails.validation.ValidationException
+
 
 import java.security.*
 
@@ -29,6 +29,8 @@ import javax.annotation.PostConstruct
 import net.hedtech.restfulapi.marshallers.StreamWrapper
 
 import net.hedtech.restfulapi.config.*
+
+import net.hedtech.restfulapi.exceptionhandlers.*
 
 import net.hedtech.restfulapi.extractors.*
 import net.hedtech.restfulapi.extractors.configuration.*
@@ -93,6 +95,10 @@ class RestfulApiController {
 
     private ExtractorAdapter extractorAdapter = new DefaultExtractorAdapter()
 
+    private HandlerRegistry<Throwable,ExceptionHandler> handlerConfig = new DefaultHandlerRegistry<Throwable,ExceptionHandler>()
+    def localizingClosure = { mapToLocalize -> this.message( mapToLocalize ) }
+    private Localizer localizer = new Localizer(localizingClosure)
+
     // Custom headers (configured within Config.groovy)
     String totalCountHeader
     String pageMaxHeader
@@ -115,6 +121,7 @@ class RestfulApiController {
     //       'init()' is invoked explicitly from RestfulApiGrailsPlugin.
     // @PostConstruct
     void init() {
+        initExceptionHandlers()
 
         totalCountHeader = grailsApplication.config.restfulApi.header.totalCount
         pageMaxHeader    = grailsApplication.config.restfulApi.header.pageMaxSize
@@ -141,17 +148,18 @@ class RestfulApiController {
                     switch(framework) {
                         case ~/json/:
                             JSON.createNamedConfig("restfulapi:" + resource.name + ":" + representation.mediaType) { json ->
-                                log.trace "Creating named config: 'restfulapi:${resource.name}:${representation.mediaType}'"
+                                log.info "Creating named config: 'restfulapi:${resource.name}:${representation.mediaType}'"
                                 representation.marshallers.each() {
-                                    log.trace "    ...registering json marshaller ${it.instance}"
+                                    log.info "    ...registering json marshaller ${it.instance}"
                                     json.registerObjectMarshaller(it.instance,it.priority)
                                 }
                             }
                         break
                         case ~/xml/:
                             XML.createNamedConfig("restfulapi:" + resource.name + ":" + representation.mediaType) { xml ->
+                                log.info "Creating named config: 'restfulapi:${resource.name}:${representation.mediaType}'"
                                 representation.marshallers.each() {
-                                    log.trace "    ...registering xml marshaller ${it.instance}"
+                                    log.info "    ...registering xml marshaller ${it.instance}"
                                     xml.registerObjectMarshaller(it.instance,it.priority)
                                 }
                             }
@@ -161,9 +169,23 @@ class RestfulApiController {
                     }
                     //register the extractor (if any)
                     if (null != representation.extractor) {
+                        log.info "registering extractor ${representation.extractor} for resource '${resource.name}'' and media type '${representation.mediaType}'"
                         ExtractorConfigurationHolder.registerExtractor(resource.name, representation.mediaType, representation.extractor )
                     }
                 }
+            }
+
+            restConfig.exceptionHandlers.each { config ->
+                log.info "registering exception handler class " + config.instance.getClass().getName() + " at priority " + config.priority
+                handlerConfig.add(config.instance, config.priority)
+            }
+            if (log.isInfoEnabled()) {
+                def sb = new StringBuffer()
+                sb.append "Registered exception handler order is:\n"
+                handlerConfig.getOrderedHandlers().each { handler->
+                    sb.append(handler.getClass().getName() + "\n")
+                }
+                log.info sb.toString()
             }
         }
 
@@ -391,7 +413,7 @@ class RestfulApiController {
      * @param e the exception to render an error response for
      **/
     protected void renderErrorResponse( Throwable e ) {
-        ResponseHolder responseHolder = createErrorResponse( e )
+        ResponseHolder responseHolder = createErrorResponse(e)
         //The versioning applies to resource representations, not to
         //errors.  In fact, it can't, as the error may be that an unrecognized format
         //was requested.  So if we are returning an error response, we switch the format
@@ -436,11 +458,12 @@ class RestfulApiController {
     protected ResponseHolder createErrorResponse( Throwable e ) {
         ResponseHolder responseHolder = new ResponseHolder()
         try {
-            def handler = exceptionHandlers[ getErrorType( e ) ]
-            if (!handler) {
-                handler = exceptionHandlers[ 'AnyOtherException' ]
-            }
-            def result = handler(params.pluralizedResourceName, e)
+            def handler = handlerConfig.getHandler(e)
+            ExceptionHandlerContext context = new ExceptionHandlerContext(
+                        pluralizedResourceName:params.pluralizedResourceName,
+                        localizer:localizer)
+
+            ErrorResponse result = handler.handle(e, context)
             if (result.headers) {
                 result.headers.each() { header ->
                     if (header.value instanceof Collection) {
@@ -452,9 +475,9 @@ class RestfulApiController {
                     }
                 }
             }
-            responseHolder.data = result.returnMap
+            responseHolder.data = result.content
             responseHolder.message = result.message
-            this.response.setStatus( result.httpStatusCode )
+            this.response.setStatus(result.httpStatusCode)
         }
         catch (t) {
             //We generated an exception trying to generate an error response.
@@ -507,7 +530,7 @@ class RestfulApiController {
                     result = (data as JSON) as String
 
                     // add a prefix if configured to protect from a JSON Array
-                    // vulnerability to CSRF attack. 
+                    // vulnerability to CSRF attack.
                     if (data instanceof Collection) {
                         if (representation.jsonArrayPrefix instanceof String) {
                             result = representation.jsonArrayPrefix + result
@@ -696,39 +719,6 @@ class RestfulApiController {
             unsupportedRequestRepresentation()
         }
         getExtractorAdapter().extract(extractor, request)
-    }
-
-
-    /**
-     * Maps an exception to an error type known to the controller.
-     * @param e the exception to map
-     **/
-    protected String getErrorType( e ) {
-
-        if (e.metaClass.respondsTo( e, "getHttpStatusCode") &&
-            e.hasProperty( "returnMap" ) &&
-            e.returnMap && (e.returnMap instanceof Closure)) {
-            //treat as an 'ApplicationException'.  That is, assume the exception is taking
-            //responsibility for specifying the correct status code and
-            //response message elements
-            return 'ApplicationException'
-        } else if (e instanceof OptimisticLockingFailureException) {
-            return 'OptimisticLockException'
-        } else if (e instanceof ValidationException) {
-            return 'ValidationException'
-        } else if (e instanceof UnsupportedResourceException) {
-            return 'UnsupportedResourceException'
-        } else if (e instanceof UnsupportedRequestRepresentationException) {
-            return 'UnsupportedRequestRepresentationException'
-        } else if (e instanceof UnsupportedResponseRepresentationException) {
-            return 'UnsupportedResponseRepresentationException'
-        } else if (e instanceof IdMismatchException) {
-            return 'IdMismatchException'
-        } else if (e instanceof UnsupportedMethodException) {
-            return 'UnsupportedMethodException'
-        } else {
-            return 'AnyOtherException'
-        }
     }
 
 
@@ -976,111 +966,16 @@ class RestfulApiController {
         restConfig.getResource( resource )
     }
 
-    private def exceptionHandlers = [
+    private initExceptionHandlers() {
+        handlerConfig.add(new UnsupportedMethodExceptionHandler(), -8)
+        handlerConfig.add(new IdMismatchExceptionHandler(), -7)
+        handlerConfig.add(new UnsupportedResponseRepresentationExceptionHandler(), -6)
+        handlerConfig.add(new UnsupportedRequestRepresentationExceptionHandler(), -5)
+        handlerConfig.add(new UnsupportedResourceExceptionHandler(), -4 )
+        handlerConfig.add(new ValidationExceptionHandler(), -3)
+        handlerConfig.add(new OptimisticLockExceptionHandler(), -2)
+        handlerConfig.add(new ApplicationExceptionHandler(), -1)
 
-        'ValidationException': { pluralizededResourceName, e->
-            [
-                httpStatusCode: 400,
-                headers: ['X-Status-Reason':'Validation failed'],
-                message: message( code: "default.rest.validation.errors.message",
-                                          args: [ Inflector.singularize( pluralizededResourceName ) ] ) as String,
-                returnMap: [
-                    errors: [
-                        [
-                            type: "validation",
-                            errorMessage: e.message
-                        ]
-                    ]
-                ]
-            ]
-        },
-        'OptimisticLockException': { pluralizededResourceName, e ->
-            [
-                httpStatusCode: 409,
-                message: message( code: "default.optimistic.locking.failure",
-                                          args: [ Inflector.singularize( pluralizededResourceName ) ] ) as String,
-            ]
-        },
-        'UnsupportedResourceException': { pluralizededResourceName, e ->
-            [
-                httpStatusCode: 404,
-                message: message( code: "default.rest.unknownresource.message",
-                                          args: [ e.getPluralizedResourceName() ] ) as String,
-            ]
-        },
-        'UnsupportedResponseRepresentationException': { pluralizededResourceName, e ->
-            [
-                httpStatusCode: 406,
-                message: message( code: "default.rest.unknownrepresentation.message",
-                                          args: [ e.getPluralizedResourceName(), e.getContentType() ] ) as String,
-            ]
-        },
-        'UnsupportedRequestRepresentationException': { pluralizededResourceName, e ->
-            [
-                httpStatusCode: 415,
-                message: message( code: "default.rest.unknownrepresentation.message",
-                                          args: [ e.getPluralizedResourceName(), e.getContentType() ] ) as String,
-            ]
-        },
-        'IdMismatchException': { pluralizededResourceName, e ->
-            [
-                httpStatusCode: 400,
-                headers: ['X-Status-Reason':'Id mismatch'],
-                message: message( code: "default.rest.idmismatch.message",
-                                  args: [ e.getPluralizedResourceName() ] ) as String
-            ]
-        },
-        'UnsupportedMethodException': { pluralizedResourceName, e ->
-            def allowedHTTPMethods = []
-            e.getSupportedMethods().each {
-                allowedHTTPMethods.add( Methods.getHttpMethod( it ) )
-            }
-            def r = [
-                httpStatusCode: 405,
-                headers: ['Allow':allowedHTTPMethods],
-                message: message( code: 'default.rest.method.not.allowed.message' ) as String
-            ]
-        },
-        'ApplicationException': { pluralizededResourceName, e ->
-            // wrap the 'message' invocation within a closure, so it can be
-            // passed into an ApplicationException to localize error messages
-            def localizer = { mapToLocalize ->
-                this.message( mapToLocalize )
-            }
-
-            def map = [:]
-            def appMap = e.returnMap( localizer )
-            map.httpStatusCode = e.getHttpStatusCode()
-            if (appMap.headers) {
-                map.headers = appMap.headers
-            }
-            if (appMap.message) {
-                map.message = appMap.message
-            }
-
-            def returnMap = [:]
-            if (appMap.errors) {
-                returnMap.errors = appMap.errors
-            }
-            map.returnMap = returnMap
-
-            return map
-        },
-        // Catch-all.  Unknown exception type.
-        'AnyOtherException': { pluralizededResourceName, e ->
-            [
-                httpStatusCode: 500,
-                message: message( code: "default.rest.general.errors.message",
-                                  args: [ pluralizededResourceName ] ) as String,
-                returnMap: [
-                    errors: [ [
-                        type: "general",
-                        errorMessage: e.message
-                        ]
-                    ]
-                ]
-            ]
-        }
-    ]
-
+        handlerConfig.add(new DefaultExceptionHandler(), Integer.MIN_VALUE)
+    }
 }
