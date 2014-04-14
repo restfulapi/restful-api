@@ -26,6 +26,7 @@ import java.lang.reflect.Field
 import java.lang.reflect.Method
 import java.lang.reflect.Modifier
 
+import org.codehaus.groovy.grails.commons.GrailsClassUtils
 import org.codehaus.groovy.grails.support.proxy.ProxyHandler
 import org.codehaus.groovy.grails.web.json.JSONWriter
 
@@ -47,7 +48,9 @@ class BeanMarshaller extends AbstractBeanMarshaller {
 
     @Override
     public boolean supports(Object object) {
-        !(object instanceof Collection) && !(object instanceof Map)
+        !(object instanceof Collection) &&
+        !(object instanceof Map) &&
+        !GrailsClassUtils.isJdk5Enum(object.getClass())
     }
 
     @Override

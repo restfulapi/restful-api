@@ -48,7 +48,7 @@ The restful-api plugin is designed to facilitate exposing RESTful API endpoints 
 This plugin should be installed from the official Grails Central Plugin Repository ([http://grails.org/plugins/restful-api](http://grails.org/plugins/restful-api)) by setting the following dependency:
 
 ```
-    compile ":restful-api:0.8.0"
+    compile ":restful-api:0.9.0"
 ```
 
 _Note: It may sometimes be useful to install this plugin as a Git submodule instead (e.g., if you are actively contributing to the plugin). To add the plugin as a Git submodule under a 'plugins' directory:_
@@ -68,7 +68,7 @@ _Then add the in-place plugin definition to BuildConfig.groovy:_
 _Adding the plugin this way will use the latest commit on the master branch at the time you ran the submodule command.  If you want to use an official release instead, go to the plugin directory and checkout a specific version, e.g.:_
 
     cd plugins/restful-api.git
-    git checkout 0.8.0
+    git checkout 0.9.0
 
 _Lastly, don't forget to go back to your project root and commit the change this will make to your git submodules file._
 
@@ -2174,6 +2174,47 @@ The domain marshaller will be configured with the results of merging the configu
 ###Configuration merging
 The order in which configurations are merged is significant.  When two configurations, first and second are merged, boolean values, or single valued options that are set in the second config override the first.  Collection or map values are combined.
 
+##Marshalling enumerations
+Marshalling an enum value with the default grails behavior will result in a json object containing an enumType and name field.
+
+For example, a simple bean with a name field and a field that holds and enum value would yield:
+
+```json
+{
+    "enumValue":
+    {
+        "enumType":"net.hedtech.restfulapi.beans.SimpleEnum",
+        "name":"VALUE2"
+    },
+    "name":"foo"
+}
+```
+
+It is likely that when marshalling an enum, that the value of the enum as a string is desired, instead of a json object.  The net.hedtech.restfulapi.marshallers.json.EnumMarshaller can be used to obtain this behavior.
+
+For example,
+```groovy
+    marshallerGroups {
+        //marshallers included in all json representations
+        group 'json' marshallers {
+            marshaller {
+                instance = new net.hedtech.restfulapi.marshallers.json.EnumMarshaller()
+            }
+        }
+    }
+```
+
+For the same bean as above, this would yield:
+
+```json
+{
+    "enumValue":"VALUE2",
+    "name":"foo"
+}
+```
+
+
+
 ##Extracting content
 Create, update and (optionally) delete operations will have a request body which ultimately needs to be parsed and acted upon by the service layer.  The plugin provides a number of ways to interact with this data.
 
@@ -2843,6 +2884,43 @@ Note that resourceId may not be present in the map. The marshaller attempts to p
 * if the bean has a public, non-transient, non-static id field, the value of the id field is used
 
 If none of the above conditions apply, then resourceId will not be passed in the map.
+
+##Marshalling enumerations to XML
+Marshalling an enum value with the default grails behavior will result in an xml element containing an enumType attribute with the value as the text of the element.
+
+For example:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<simpleBeanWithEnum>
+    <enumValue enumType="net.hedtech.restfulapi.beans.SimpleEnum">VALUE2</enumValue>
+    <name>foo</name>
+</simpleBeanWithEnum>
+```
+
+If you want the string value of the enum as the element content, with no attributes added, use the net.hedtech.restfulapi.marshallers.xml.EnumMarshaller.
+
+For example,
+```groovy
+    marshallerGroups {
+        //marshallers included in all json representations
+        group 'xml' marshallers {
+            marshaller {
+                instance = new net.hedtech.restfulapi.marshallers.xml.EnumMarshaller()
+            }
+        }
+    }
+```
+
+Rendering the same bean, this would instead yield:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<simpleBeanWithEnum>
+    <enumValue>VALUE2</enumValue>
+    <name>foo</name>
+</simpleBeanWithEnum>
+```
 
 ##Declarative extraction of XML content
 Just as with json, you can declaratively configure how to extract content from xml.  Anywhere you can define an extractor, you can declaratively define one with
