@@ -168,26 +168,29 @@ Edit the UrlMappings.groovy to look similar to the following defaults.  Your app
     //
     cors.url.pattern        = '/api/*'
     cors.allow.origin.regex ='.*'
-    cors.expose.headers     ='content-type,X-hedtech-totalCount,X-hedtech-pageOffset,X-hedtech-pageMaxSize,X-hedtech-message,X-hedtech-Media-Type'
+    cors.expose.headers     ='content-type,X-hedtech-totalCount,X-hedtech-pageOffset,X-hedtech-pageMaxSize,X-hedtech-message,X-hedtech-Media-Type,X-Request-ID'
 
 
     // ******************************************************************************
     //             RESTful API Custom Response Header Name Configuration
     // ******************************************************************************
+    // Uncomment and change to override.
     //
-    restfulApi.header.totalCount  = 'X-hedtech-totalCount'
-    restfulApi.header.pageOffset  = 'X-hedtech-pageOffset'
-    restfulApi.header.pageMaxSize = 'X-hedtech-pageMaxSize'
-    restfulApi.header.message     = 'X-hedtech-message'
-    restfulApi.header.mediaType   = 'X-hedtech-Media-Type'
+    //restfulApi.header.totalCount  = 'X-hedtech-totalCount'
+    //restfulApi.header.pageOffset  = 'X-hedtech-pageOffset'
+    //restfulApi.header.pageMaxSize = 'X-hedtech-pageMaxSize'
+    //restfulApi.header.message     = 'X-hedtech-message'
+    //restfulApi.header.mediaType   = 'X-hedtech-Media-Type'
 
+    //restfulApi.header.requestId   = 'X-Request-ID'
 
     // ******************************************************************************
     //             RESTful API 'Paging' Query Parameter Name Configuration
     // ******************************************************************************
+    // Uncomment and change to override.
     //
-    restfulApi.page.max    = 'max'
-    restfulApi.page.offset = 'offset'
+    //restfulApi.page.max    = 'max'
+    //restfulApi.page.offset = 'offset'
     // ******************************************************************************
     //                       RESTful API Endpoint Configuration
     // ******************************************************************************
@@ -786,7 +789,7 @@ The overall processing of a request proceeds as follows:
 * If at any point, an exception is thrown, it is rendered according to the rules in Exception handling (see above).
 
 ##<a id="configuration"></a>Configuration
-The restful-api plugin configuration allows configuration of custom HTTP header names, 'paging' query parameter names, and resource representation marshallers and extractors.
+The restful-api plugin configuration allows configuration of custom HTTP header names, 'paging' query parameter names, and resource representation marshallers and extractors. The custom header names and paging query parameter names need not be configured unless you want to override the defaults.
 
 Following is an example configuration of HTTP custom header names and paging query parameter names:
 
@@ -800,6 +803,13 @@ restfulApi.header.mediaType   = 'X-example-Media-Type'
 ```groovy
 restfulApi.page.max    = 'pageSize'
 restfulApi.page.offset = 'page'
+```
+
+The restful-api plugin supports use of the 'X-Request-ID' Header, which is an emerging best practice as it helps correlate log files. Ideally, this header will be set by middleware (e.g., a router), but if it is not a UUID will be generated and used to populate this Header in the response. This value is also captured as a request attribute for use during the request handling (e.g., in your service). While 'X-Request-ID' appears to be an emerging 'standard', the header used for this purpose is configurable. 
+
+```
+// while configurable, 'X-Request-ID' seems to be the emerging standard
+restfulApi.header.requestId = 'X-MyRequest-ID'
 ```
 
 Most of the restful-api configuration pertains to configuring the support for resource representation.  This configuration is performed by assigning a closure to the restfulApiConfig property in the grails configuration.

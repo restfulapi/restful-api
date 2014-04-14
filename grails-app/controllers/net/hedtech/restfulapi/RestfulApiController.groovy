@@ -19,7 +19,6 @@ package net.hedtech.restfulapi
 import grails.converters.JSON
 import grails.converters.XML
 
-
 import java.security.*
 
 import static java.util.UUID.randomUUID
@@ -99,12 +98,13 @@ class RestfulApiController {
     def localizingClosure = { mapToLocalize -> this.message( mapToLocalize ) }
     private Localizer localizer = new Localizer(localizingClosure)
 
-    // Custom headers (configured within Config.groovy)
+    // Custom headers (may be configured within Config.groovy)
     String totalCountHeader
     String pageMaxHeader
     String pageOffsetHeader
     String messageHeader
     String mediaTypeHeader
+    String requestIdHeader
 
     // Paging query parameter names (configured within Config.groovy)
     String pageMax
@@ -112,6 +112,16 @@ class RestfulApiController {
 
     private Class pagedResultListClazz
 
+    // Sets a 'request_id' attribute on the request. If an 'X-Request-ID'
+    // Header exists (or other configured header serving this purpose),
+    // the attribute will be set to that header's value.
+    // Otherwise, a UUID will be generated.
+    // Preferrably the value will be set by middleware, such as a router.
+    // and provided as a Header. Regardless of who sets the value, it will
+    // be included in the response as an 'X-Request-ID' Header.
+    // This is intended to facilitate troubleshooting and to be included
+    // in logging.
+    def beforeInterceptor = [action: this.&setRequestIdAttribute, except: 'init']
 
     /**
      * Initializes the controller by registering the configured marshallers.
@@ -123,16 +133,18 @@ class RestfulApiController {
     void init() {
         initExceptionHandlers()
 
-        totalCountHeader = grailsApplication.config.restfulApi.header.totalCount
-        pageMaxHeader    = grailsApplication.config.restfulApi.header.pageMaxSize
-        pageOffsetHeader = grailsApplication.config.restfulApi.header.pageOffset
-        messageHeader    = grailsApplication.config.restfulApi.header.message
-        mediaTypeHeader  = grailsApplication.config.restfulApi.header.mediaType
-
-        pageMax    = grailsApplication.config.restfulApi.page.max
-        pageOffset = grailsApplication.config.restfulApi.page.offset
-
         log.trace 'Initializing RestfulApiController...'
+
+        totalCountHeader = getHeaderName('totalCount', 'X-hedtech-totalCount')
+        pageMaxHeader    = getHeaderName('pageMaxSize', 'X-hedtech-pageMaxSize')
+        pageOffsetHeader = getHeaderName('pageOffset', 'X-hedtech-pageOffset')
+        messageHeader    = getHeaderName('message', 'X-hedtech-message')
+        mediaTypeHeader  = getHeaderName('mediaType', 'X-hedtech-Media-Type')
+        requestIdHeader  = getHeaderName('requestId', 'X-Request-ID')
+
+        pageMax    = getPagingConfiguration('max', 'max')
+        pageOffset = getPagingConfiguration('offset', 'offset')
+
         JSON.createNamedConfig('restapi-error:json') { }
         XML.createNamedConfig('restapi-error:xml') { }
 
@@ -210,7 +222,7 @@ class RestfulApiController {
     //
     public def list() {
 
-        log.trace "list invoked for ${params.pluralizedResourceName}"
+        log.trace "list invoked for ${params.pluralizedResourceName} - request_id=${request.request_id}"
         try {
             checkMethod( Methods.LIST )
             def responseRepresentation = getResponseRepresentation() // adds representation attribute to request
@@ -220,11 +232,11 @@ class RestfulApiController {
 
             if (request.method == "POST") {
                 def queryCriteria = parseRequestContent( request, 'query-filters' )
-                updatePagingQueryParams( queryCriteria ) // We'll ensure params uses expected Grails naming...
+                updatePagingQueryParams( queryCriteria ) // We'll ensure params uses expected Grails naming
                 requestParams << queryCriteria
             }
             else {
-                updatePagingQueryParams( requestParams ) // We'll ensure params uses expected Grails naming...
+                updatePagingQueryParams( requestParams ) // We'll ensure params uses expected Grails naming
             }
 
             def service = getService()
@@ -275,7 +287,7 @@ class RestfulApiController {
     // GET /api/pluralizedResourceName/id
     //
     public def show() {
-        log.trace "show() invoked for ${params.pluralizedResourceName}/${params.id}"
+        log.trace "show() invoked for ${params.pluralizedResourceName}/${params.id} - request_id=${request.request_id}"
         try {
             checkMethod( Methods.SHOW )
             def responseRepresentation = getResponseRepresentation()
@@ -314,7 +326,7 @@ class RestfulApiController {
     // POST /api/pluralizedResourceName
     //
     public def create() {
-        log.trace "create() invoked for ${params.pluralizedResourceName}"
+        log.trace "create() invoked for ${params.pluralizedResourceName} - request_id=${request.request_id}"
         def result
 
         try {
@@ -337,7 +349,7 @@ class RestfulApiController {
     // PUT/PATCH /api/pluralizedResourceName/id
     //
     public def update() {
-        log.trace "update() invoked for ${params.pluralizedResourceName}/${params.id}"
+        log.trace "update() invoked for ${params.pluralizedResourceName}/${params.id} - request_id=${request.request_id}"
         def result
 
         try {
@@ -360,7 +372,7 @@ class RestfulApiController {
     // DELETE /api/pluralizedResourceName/id
     //
     public def delete() {
-        log.trace "delete() invoked for ${params.pluralizedResourceName}/${params.id}"
+        log.trace "delete() invoked for ${params.pluralizedResourceName}/${params.id} - request_id=${request.request_id}"
         try {
             checkMethod( Methods.DELETE )
             def content = [:]
@@ -399,6 +411,7 @@ class RestfulApiController {
      protected void renderSuccessResponse(ResponseHolder holder, String msgResourceCode) {
         String localizedName = localize(Inflector.singularize(params.pluralizedResourceName))
         holder.message = message( code: msgResourceCode, args: [ localizedName ] )
+        if (request.request_id) holder.addHeader(requestIdHeader, request.request_id)
         renderResponse( holder )
     }
 
@@ -409,11 +422,12 @@ class RestfulApiController {
      **/
     protected void renderErrorResponse( Throwable e ) {
         ResponseHolder responseHolder = createErrorResponse(e)
+        if (request.request_id) responseHolder.addHeader(requestIdHeader, request.request_id)
         //The versioning applies to resource representations, not to
         //errors.  In fact, it can't, as the error may be that an unrecognized format
         //was requested.  So if we are returning an error response, we switch the format
         //to either json or xml.
-        //So we will look at the Accept-Header directly and try to determine if JSON or XML was
+        //So we'll look at the Accept-Header directly and try to determine if JSON or XML was
         //requested.  If we can't decide, we will return JSON.
         String contentType = null
         def content
@@ -837,7 +851,7 @@ class RestfulApiController {
 
 
     /**
-     * Returns the best match, or null if no supported representation for the resource exists.
+     * Returns the best match or null if no supported representation for the resource exists.
      **/
     protected RepresentationConfig getRepresentation(pluralizedResourceName, allowedTypes) {
         return restConfig.getRepresentation( pluralizedResourceName, allowedTypes.name )
@@ -861,6 +875,29 @@ class RestfulApiController {
             if (contentId != params.id) {
                 throw new IdMismatchException( params.pluralizedResourceName )
             }
+        }
+    }
+
+
+    private String getHeaderName(name, defaultString) {
+        def value = grailsApplication.config.restfulApi.header."${name}"
+        (value instanceof String) ? value : defaultString
+    }
+
+
+    private String getPagingConfiguration(name, defaultString) {
+        def value = grailsApplication.config.restfulApi.page."${name}"
+        (value instanceof String) ? value : defaultString
+    }
+
+
+    private setRequestIdAttribute() {
+        // we'll set an attribute that may be used for logging
+        if (request.getHeader(requestIdHeader)) {
+            request.request_id = request.getHeader(requestIdHeader)
+        }
+        else {
+            request.request_id = randomUUID()
         }
     }
 

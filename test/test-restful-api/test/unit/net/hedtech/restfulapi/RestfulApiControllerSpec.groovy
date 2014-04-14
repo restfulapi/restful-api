@@ -771,6 +771,7 @@ class RestfulApiControllerSpec extends Specification {
         'default.rest.deleted.message' == response.getHeaderValue( 'X-hedtech-message' )
     }
 
+    @Unroll
     def "Test anyResource support"() {
         setup:
         //use default extractor for any methods with a request body
@@ -811,7 +812,6 @@ class RestfulApiControllerSpec extends Specification {
         deleteCount * mock.delete(_,_,_) >> {}
         0 * _._
 
-
         where:
         controllerMethod | httpMethod | id   | status | listCount | showCount | updateCount | createCount | deleteCount | serviceReturn
         'list'           | 'GET'      | null | 200    | 1         | 0         | 0           | 0           | 0           | ['foo']
@@ -820,6 +820,58 @@ class RestfulApiControllerSpec extends Specification {
         'update'         | 'PUT'      | '1'  | 200    | 0         | 0         | 1           | 0           | 0           | [name:'foo']
         'delete'         | 'DELETE'   | '1'  | 200    | 0         | 0         | 0           | 0           | 1           | null
     }
+
+    @Unroll
+    def "Test support for 'request ID'"() {
+        setup:
+         if (headerName) config.restfulApi.header.requestId = "$headerName" as String
+         config.restfulApiConfig = {
+            anyResource {
+                representation {
+                    mediaTypes = ['application/json']
+                    marshallers {
+                        jsonBeanMarshaller {}
+                    }
+                    jsonExtractor {}
+                }
+            }
+        }
+        controller.init()
+
+        //mock the appropriate service method, expect exactly 1 invocation
+        def mock = Mock(ThingService)
+        controller.metaClass.getService = {-> mock}
+        mockCacheHeaders()
+
+        request.addHeader( 'Accept', 'application/json' )
+        request.addHeader( 'Content-Type', 'application/json' )
+        if (headerName) request.addHeader( headerName, requestId )
+        request.method = httpMethod
+        params.pluralizedResourceName = 'things'
+        if (id != null) params.id = id
+
+        when:
+        controller.setRequestIdAttribute()
+        controller."$controllerMethod"()
+        def headerNameUsed = headerName ?: "X-Request-ID"
+
+        then:
+        status == response.status
+        mock.list(_) >> { serviceReturn }
+        mock.count(_) >> { serviceReturn.size() }
+        null != response.getHeader(headerNameUsed)
+        requestId == response.getHeader(headerNameUsed) || (requestId.size() == 0 && response.getHeader(headerNameUsed)?.size() == 36)
+
+        where:
+        controllerMethod | httpMethod | id   | status | serviceReturn | headerName         | requestId
+        'list'           | 'GET'      | null | 200    | ['foo']       | ''                 | ''
+        'list'           | 'GET'      | null | 200    | ['foo']       | 'X-LISTRequest-ID' | '123-LIST-789'
+        'show'           | 'GET'      | '1'  | 200    | [name:'foo']  | 'X-Request-ID'     | '123-SHOW-9'
+        'create'         | 'POST'     | null | 201    | [name:'foo']  | 'X-Request-ID'     | '123-CREATE-789'
+        'update'         | 'PUT'      | '1'  | 200    | [name:'foo']  | 'X-Request-ID'     | '123-update-789'
+        'delete'         | 'DELETE'   | '1'  | 200    | null          | 'U-Request-ID'     | 'My-DELETE-ID'
+    }
+
 
     @Unroll
     def "Test delegation to JSONExtractor"() {
