@@ -29,6 +29,9 @@ class ResourceConfig {
     def representations = new LinkedHashMap()
     //if set, defines the media type to use for */*
     String anyMediaType
+    //if true, verify that an 'id' field in the content matches
+    //the id
+    boolean idMatchEnforced = true
 
     private RestConfig restConfig
 
@@ -44,6 +47,11 @@ class ResourceConfig {
 
     ResourceConfig setMethods( def methods ) {
         this.methods = methods
+        return this
+    }
+
+    ResourceConfig setIdMatchEnforced(boolean b) {
+        this.idMatchEnforced = b
         return this
     }
 

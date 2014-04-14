@@ -375,9 +375,98 @@ class RestfulApiControllerSpec extends Specification {
 
         where:
         controllerMethod | httpMethod | id   | body
-        'update'         | 'PUT'      | '1'  | '{id:2}'
-        'delete'         | 'DELETE'   | '1'  | '{id:2}'
+        'update'         | 'PUT'      | '1'  | '{id:"2"}'
+        'delete'         | 'DELETE'   | '1'  | '{id:"2"}'
     }
+
+    def "Test that mismatch between type for id in url and resource representation does not cause failure"(def controllerMethod, def httpMethod, def id, def body, def serviceMethod) {
+        setup:
+        //use default extractor for any methods with a request body
+         config.restfulApiConfig = {
+            resource 'things' config {
+
+                representation {
+                    mediaTypes = ['application/json']
+                    extractor = new DefaultJSONExtractor()
+                }
+            }
+        }
+        controller.init()
+
+        def mock = Mock(ThingService)
+        controller.metaClass.getService = {-> mock}
+
+        request.addHeader( 'Accept', 'application/json' )
+        request.addHeader( 'Content-Type', 'application/json' )
+        request.method = httpMethod
+        params.pluralizedResourceName = 'things'
+        params.id = id
+        request.setContent( body.getBytes('UTF-8' ) )
+
+        when:
+        controller."$controllerMethod"()
+
+        then:
+        200 == response.status
+        if (serviceMethod == 'update') {
+            1 * mock."$serviceMethod"(_,_,_) >> { [:] }
+        } else {
+            1 * mock."$serviceMethod"(_,_,_) >> { }
+        }
+
+
+        where:
+        controllerMethod | httpMethod | id   | body       | serviceMethod
+        'update'         | 'PUT'      | '1'  | '{id:1}'   | 'update'
+        'delete'         | 'DELETE'   | '1'  | '{id:1}'   | 'delete'
+        'update'         | 'PUT'      | '1'  | '{id:"1"}' | 'update'
+        'delete'         | 'DELETE'   | '1'  | '{id:"1"}' | 'delete'
+    }
+
+    def "Test overriding enforcement of content id matching"(def controllerMethod, def httpMethod, def id, def body, def serviceMethod) {
+        setup:
+        //use default extractor for any methods with a request body
+         config.restfulApiConfig = {
+            resource 'things' config {
+                idMatchEnforced = false
+                representation {
+                    mediaTypes = ['application/json']
+                    extractor = new DefaultJSONExtractor()
+                }
+            }
+        }
+        controller.init()
+
+        def mock = Mock(ThingService)
+        controller.metaClass.getService = {-> mock}
+
+        request.addHeader( 'Accept', 'application/json' )
+        request.addHeader( 'Content-Type', 'application/json' )
+        request.method = httpMethod
+        params.pluralizedResourceName = 'things'
+        params.id = id
+        request.setContent( body.getBytes('UTF-8' ) )
+
+        when:
+        controller."$controllerMethod"()
+
+        then:
+        200 == response.status
+        if (serviceMethod == 'update') {
+            1 * mock."$serviceMethod"(_,_,_) >> { [:] }
+        } else {
+            1 * mock."$serviceMethod"(_,_,_) >> { }
+        }
+
+
+        where:
+        controllerMethod | httpMethod | id   | body       | serviceMethod
+        'update'         | 'PUT'      | '1'  | '{id:2}'   | 'update'
+        'delete'         | 'DELETE'   | '1'  | '{id:2}'   | 'delete'
+        'update'         | 'PUT'      | '1'  | '{id:"2"}' | 'update'
+        'delete'         | 'DELETE'   | '1'  | '{id:"2"}' | 'delete'
+    }
+
 
     def "Test that service name can be overridden in configuration"() {
       setup:

@@ -1117,4 +1117,44 @@ class RestConfigSpec extends Specification {
         ['foo', 'bar'] == config.exceptionHandlers*.instance
         [0,2]          == config.exceptionHandlers*.priority
     }
+
+    def "Test id match configuration"() {
+        setup:
+        def src =
+        {
+            resource 'things' config {
+                idMatchEnforced = false
+                representation {
+                    mediaTypes = ['application/vnd.hedtech.v0+json']
+                    marshallers {
+                        marshaller {
+                            instance = 'a'
+                            priority = 5
+                        }
+                    }
+                    extractor = 'net.hedtech.DynamicJsonExtractor'
+                }
+            }
+
+            resource 'foos' config {
+                representation {
+                    mediaTypes = ['application/vnd.hedtech.v0+json']
+                    marshallers {
+                        marshaller {
+                            instance = 'a'
+                            priority = 5
+                        }
+                    }
+                    extractor = 'net.hedtech.DynamicJsonExtractor'
+                }
+            }
+        }
+
+        when:
+        def config = RestConfig.parse( grailsApplication, src )
+
+        then:
+        false == config.resources['things'].idMatchEnforced
+        true  == config.resources['foos'].idMatchEnforced
+    }
 }

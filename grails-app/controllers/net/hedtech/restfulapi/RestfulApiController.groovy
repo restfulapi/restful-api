@@ -343,10 +343,7 @@ class RestfulApiController {
         try {
             checkMethod( Methods.UPDATE )
             def content = parseRequestContent( request )
-            if (content && content.id && content.id != params.id) {
-                throw new IdMismatchException( params.pluralizedResourceName )
-            }
-
+            checkId(content)
             getResponseRepresentation()
             result = getServiceAdapter().update( getService(), params.id, content, params )
             response.setStatus( 200 )
@@ -376,9 +373,7 @@ class RestfulApiController {
             if (request.getContentLength() != 0) {
                 content = parseRequestContent( request )
             }
-            if (content && content.id && content.id != params.id) {
-                throw new IdMismatchException( params.pluralizedResourceName )
-            }
+            checkId(content)
             getServiceAdapter().delete( getService(), params.id, content, params )
             response.setStatus( 200 )
             renderSuccessResponse( new ResponseHolder(), 'default.rest.deleted.message' )
@@ -857,6 +852,15 @@ class RestfulApiController {
         if (!resource.allowsMethod( method ) ) {
             def allowed = resource.getMethods().intersect( Methods.getMethodGroup( method ) )
             throw new UnsupportedMethodException( supportedMethods:allowed )
+        }
+    }
+
+    protected checkId(Map content) {
+        if (content && content.containsKey('id') && getResourceConfig().idMatchEnforced) {
+            String contentId = content.id == null ? null : content.id.toString()
+            if (contentId != params.id) {
+                throw new IdMismatchException( params.pluralizedResourceName )
+            }
         }
     }
 
