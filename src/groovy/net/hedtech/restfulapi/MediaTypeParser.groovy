@@ -88,22 +88,20 @@ class MediaTypeParser {
                 }
             }
         }
-        return mimes.sort(new QualityComparator()) as MediaType[]
+
+        def comp = { t, t1 ->
+            def left = t.parameters.q.toBigDecimal()
+            def right = t1.parameters.q.toBigDecimal()
+            if (left > right) return -1
+            if (left < right) return 1
+            return 0
+        }
+
+        return mimes.sort(comp) as MediaType[]
     }
 
     private createMediaTypeAndAddToList(name, mimes, params = null) {
         def mime = params ? new MediaType(name, params) : new MediaType(name)
         mimes << mime
-    }
-}
-
-class QualityComparator implements Comparator {
-
-    int compare(Object t, Object t1) {
-        def left = t.parameters.q.toBigDecimal()
-        def right = t1.parameters.q.toBigDecimal()
-        if (left > right) return -1
-        if (left < right) return 1
-        return 0
     }
 }
