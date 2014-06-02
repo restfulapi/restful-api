@@ -15,21 +15,24 @@
  *****************************************************************************/
 package net.hedtech.restfulapi.extractors.xml
 
-import grails.test.mixin.*
-import grails.test.mixin.web.*
-import spock.lang.*
-import grails.test.mixin.support.*
 import grails.converters.XML
+import grails.test.mixin.*
+import grails.test.mixin.support.*
+import grails.test.mixin.web.*
 
 import java.text.SimpleDateFormat
 
 import net.hedtech.restfulapi.extractors.DateParseException
 import net.hedtech.restfulapi.extractors.ShortObjectExtractionException
-
+import spock.lang.*
 
 @TestMixin([GrailsUnitTestMixin])
 class BasicXMLExtractorSpec extends Specification {
 
+    def cleanup(){
+      GroovySystem.metaClassRegistry.removeMetaClass BasicXMLExtractor
+    }
+  
     def "Test rename paths"() {
         setup:
         BasicXMLExtractor.metaClass.getRenamePaths << {

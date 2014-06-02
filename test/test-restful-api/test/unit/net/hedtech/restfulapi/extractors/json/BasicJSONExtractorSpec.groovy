@@ -16,8 +16,8 @@
 package net.hedtech.restfulapi.extractors.json
 
 import grails.test.mixin.*
-import grails.test.mixin.web.*
 import grails.test.mixin.support.*
+import grails.test.mixin.web.*
 
 import java.text.SimpleDateFormat
 
@@ -28,9 +28,12 @@ import org.codehaus.groovy.grails.web.json.JSONObject
 
 import spock.lang.*
 
-
 @TestMixin([GrailsUnitTestMixin])
 class BasicJSONExtractorSpec extends Specification {
+
+    def cleanup(){
+      GroovySystem.metaClassRegistry.removeMetaClass BasicJSONExtractor
+    }
 
     def "Test rename paths"() {
         setup:
