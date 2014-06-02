@@ -574,7 +574,7 @@ class DeclarativeDomainClassMarshallerSpec extends Specification {
         render( thing )
 
         then:
-        UnhandledException e = thrown()
+        RuntimeException e = thrown()
         ['aFieldThatDoesNotExist', 'anotherFieldThatDoesNotExist'] == e.getCause().missingNames
     }
 
