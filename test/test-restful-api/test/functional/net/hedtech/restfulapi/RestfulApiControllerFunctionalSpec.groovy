@@ -1410,7 +1410,7 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
     }
 
 
-    def "Test saving a thing with version 1 json representation"() {
+    def "Test saving a thing with version 1 json representation2"() {
         when:
         post( "$localBase/api/things") {
             headers['Content-Type'] = 'application/vnd.hedtech.v1+json'
@@ -1910,7 +1910,7 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         'BB'   == xml.code[1].text()
     }
 
-    def "Test marshalling a list with a custom marshaller service that returns InputStream"() {
+    def "Test marshalling a list with a custom marshaller service that returns InputStream2"() {
         setup:
         createThing('AA')
         createThing('BB')

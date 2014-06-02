@@ -16,17 +16,11 @@
 
 package net.hedtech.restfulapi.query
 
-import grails.plugin.spock.IntegrationSpec
-
-import groovy.sql.Sql
-
-import net.hedtech.restfulapi.*
-
-import org.codehaus.groovy.grails.commons.GrailsApplication
-import org.codehaus.groovy.grails.commons.DefaultGrailsApplication
+import grails.test.spock.IntegrationSpec
 
 import java.text.*
 
+import net.hedtech.restfulapi.*
 import spock.lang.*
 
 

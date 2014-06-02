@@ -193,7 +193,7 @@ class BeanMarshallerSpec extends Specification {
         render( bean )
 
         then:
-        UnhandledException e = thrown()
+        RuntimeException e = thrown()
         ['missingField1', 'missingField2'] == e.getCause().missingNames
 
         where:

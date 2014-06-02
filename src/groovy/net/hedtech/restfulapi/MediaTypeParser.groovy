@@ -88,7 +88,7 @@ class MediaTypeParser {
                 }
             }
         }
-        return mimes.sort(new QualityComparator()) as MediaType[]
+        return mimes.sort(true, new QualityComparator()) as MediaType[]
     }
 
     private createMediaTypeAndAddToList(name, mimes, params = null) {

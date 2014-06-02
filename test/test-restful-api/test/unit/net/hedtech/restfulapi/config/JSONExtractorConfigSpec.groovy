@@ -69,7 +69,7 @@ class JSONExtractorConfigSpec extends Specification {
         ['person.name'] == config.dottedShortObjectPaths
     }
 
-    def "Test short object explicit true"() {
+    def "Test short object explicit true1"() {
         setup:
         def src = {
             property 'person.name' shortObject true
