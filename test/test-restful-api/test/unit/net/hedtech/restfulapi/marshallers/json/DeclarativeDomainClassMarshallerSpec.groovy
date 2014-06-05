@@ -23,8 +23,6 @@ import grails.test.mixin.support.*
 
 import net.hedtech.restfulapi.*
 
-import org.apache.commons.lang.UnhandledException
-
 import org.codehaus.groovy.grails.commons.GrailsDomainClassProperty
 import org.codehaus.groovy.grails.support.MockApplicationContext
 import org.codehaus.groovy.grails.web.converters.configuration.ConvertersConfigurationInitializer
@@ -574,7 +572,7 @@ class DeclarativeDomainClassMarshallerSpec extends Specification {
         render( thing )
 
         then:
-        UnhandledException e = thrown()
+        Exception e = thrown()
         ['aFieldThatDoesNotExist', 'anotherFieldThatDoesNotExist'] == e.getCause().missingNames
     }
 

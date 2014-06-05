@@ -28,8 +28,6 @@ import net.hedtech.restfulapi.*
 
 import net.hedtech.restfulapi.beans.*
 
-import org.apache.commons.lang.UnhandledException
-
 import org.codehaus.groovy.grails.commons.GrailsDomainClassProperty
 import org.codehaus.groovy.grails.support.MockApplicationContext
 import org.codehaus.groovy.grails.web.converters.configuration.ConvertersConfigurationInitializer

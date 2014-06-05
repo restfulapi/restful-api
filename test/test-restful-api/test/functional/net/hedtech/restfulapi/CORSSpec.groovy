@@ -22,7 +22,7 @@ import grails.plugins.rest.client.*
 import grails.converters.JSON
 import grails.converters.XML
 
-import org.springframework.http.client.CommonsClientHttpRequestFactory
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory
 
 import net.hedtech.restfulapi.extractors.configuration.*
 import net.hedtech.restfulapi.spock.*
@@ -55,7 +55,7 @@ class CORSSpec extends RestSpecification {
         "$method"("$url") {
             //java HttpURLConnection blocks CORS headers by default
             //using HttpClient so we can send Origin header
-            requestFactory new CommonsClientHttpRequestFactory()
+            requestFactory new HttpComponentsClientHttpRequestFactory()
             headers['Content-Type'] = 'application/json'
             headers['Accept']       = 'application/json'
             headers['Origin']       = localBase

@@ -95,7 +95,7 @@ class XMLExtractorConfigSpec extends Specification {
         ['person.name'] == config.dottedFlattenedPaths
     }
 
-    def "Test short object explicit true"() {
+    def "Test flat object explicit true"() {
         setup:
         def src = {
             property 'person.name' flatObject true

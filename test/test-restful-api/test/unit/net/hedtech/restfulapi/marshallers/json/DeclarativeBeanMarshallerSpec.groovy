@@ -24,8 +24,6 @@ import grails.test.mixin.web.*
 import net.hedtech.restfulapi.*
 import net.hedtech.restfulapi.beans.*
 
-import org.apache.commons.lang.UnhandledException
-
 import org.codehaus.groovy.grails.commons.GrailsDomainClassProperty
 import org.codehaus.groovy.grails.support.MockApplicationContext
 import org.codehaus.groovy.grails.web.converters.configuration.ConvertersConfigurationInitializer
@@ -149,7 +147,7 @@ class DeclarativeBeanMarshallerSpec extends Specification {
         render( bean )
 
         then:
-        UnhandledException e = thrown()
+        Exception e = thrown()
         ['missingField1', 'missingField2'] == e.getCause().missingNames
 
         where:
