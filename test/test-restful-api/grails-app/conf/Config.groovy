@@ -450,7 +450,7 @@ restfulApiConfig = {
                 }
             }
             jsonExtractor {
-                property 'thing' shortObject true flatObject true
+                property 'thing' shortObject true flatObject false
             }
         }
     }
