@@ -1,3 +1,7 @@
+#0.9.1
+* Fix Issue #10 to make compatible with Grails 2.4.x.
+* Various upgrades to the test application to make running it under Grails 2.4.x easier.
+
 #0.9.0
 * Add X-Request-ID support.
 * Allow custom exception handlers to be configured to map application or framework errors to responses.

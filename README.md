@@ -48,7 +48,7 @@ The restful-api plugin is designed to facilitate exposing RESTful API endpoints 
 This plugin should be installed from the official Grails Central Plugin Repository ([http://grails.org/plugins/restful-api](http://grails.org/plugins/restful-api)) by setting the following dependency:
 
 ```
-    compile ":restful-api:0.9.0"
+    compile ":restful-api:0.9.1"
 ```
 
 _Note: It may sometimes be useful to install this plugin as a Git submodule instead (e.g., if you are actively contributing to the plugin). To add the plugin as a Git submodule under a 'plugins' directory:_
@@ -68,7 +68,7 @@ _Then add the in-place plugin definition to BuildConfig.groovy:_
 _Adding the plugin this way will use the latest commit on the master branch at the time you ran the submodule command.  If you want to use an official release instead, go to the plugin directory and checkout a specific version, e.g.:_
 
     cd plugins/restful-api.git
-    git checkout 0.9.0
+    git checkout 0.9.1
 
 _Lastly, don't forget to go back to your project root and commit the change this will make to your git submodules file._
 
@@ -805,7 +805,7 @@ restfulApi.page.max    = 'pageSize'
 restfulApi.page.offset = 'page'
 ```
 
-The restful-api plugin supports use of the 'X-Request-ID' Header, which is an emerging best practice as it helps correlate log files. Ideally, this header will be set by middleware (e.g., a router), but if it is not a UUID will be generated and used to populate this Header in the response. This value is also captured as a request attribute for use during the request handling (e.g., in your service). While 'X-Request-ID' appears to be an emerging 'standard', the header used for this purpose is configurable. 
+The restful-api plugin supports use of the 'X-Request-ID' Header, which is an emerging best practice as it helps correlate log files. Ideally, this header will be set by middleware (e.g., a router), but if it is not a UUID will be generated and used to populate this Header in the response. This value is also captured as a request attribute for use during the request handling (e.g., in your service). While 'X-Request-ID' appears to be an emerging 'standard', the header used for this purpose is configurable.
 
 ```
 // while configurable, 'X-Request-ID' seems to be the emerging standard
