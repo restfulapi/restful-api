@@ -19,6 +19,9 @@ class ShortObjectExtractionException extends SyntaxException {
 
     ShortObjectExtractionException( def badValue ) {
         super('default.rest.extractor.unparsableShortObject', [badValue])
-        this.params = params
+    }
+
+    String getMessage() {
+        "Unable to parse '${params[0]}' as a short-object"
     }
 }

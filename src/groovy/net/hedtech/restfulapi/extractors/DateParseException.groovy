@@ -19,6 +19,9 @@ class DateParseException extends SyntaxException {
 
     DateParseException( String badValue ) {
         super('default.rest.extractor.unparsableDate', [badValue])
-        this.params = params
+    }
+
+    String getMessage() {
+        "Unable to parse '${params[0]}' as a Date"
     }
 }

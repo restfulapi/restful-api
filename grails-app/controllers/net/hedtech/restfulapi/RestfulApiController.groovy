@@ -277,7 +277,7 @@ class RestfulApiController {
             }
         }
         catch (e) {
-            messageLog.error "Caught exception ${e.message}", e
+            logMessageError(e)
             renderErrorResponse(e)
             return
         }
@@ -317,7 +317,7 @@ class RestfulApiController {
             }
         }
         catch (e) {
-            messageLog.error "Caught exception ${e.message}", e
+            logMessageError(e)
             renderErrorResponse(e)
         }
     }
@@ -340,7 +340,7 @@ class RestfulApiController {
                                    'default.rest.created.message' )
         }
         catch (e) {
-            messageLog.error "Caught exception ${e.message}", e
+            logMessageError(e)
             renderErrorResponse(e)
         }
     }
@@ -363,7 +363,7 @@ class RestfulApiController {
                                    'default.rest.updated.message' )
         }
         catch (e) {
-            messageLog.error "Caught exception ${e.message}", e
+            logMessageError(e)
             renderErrorResponse(e)
         }
     }
@@ -391,7 +391,7 @@ class RestfulApiController {
             renderSuccessResponse( new ResponseHolder(), 'default.rest.deleted.message' )
         }
         catch (e) {
-            messageLog.error "Caught exception ${e.message}", e
+            logMessageError(e)
             renderErrorResponse(e)
         }
     }
@@ -876,6 +876,10 @@ class RestfulApiController {
                 throw new IdMismatchException( params.pluralizedResourceName )
             }
         }
+    }
+
+    protected logMessageError(Throwable e) {
+        messageLog.error "Caught exception: ${e.message != null ? e.message : ''}", e
     }
 
 
