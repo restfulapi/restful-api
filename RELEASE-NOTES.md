@@ -1,4 +1,5 @@
 #0.9.1
+* Fix Issue #9 to improve error logging.
 * Fix Issue #10 to make compatible with Grails 2.4.x.
 * Various upgrades to the test application to make running it under Grails 2.4.x easier.
 
