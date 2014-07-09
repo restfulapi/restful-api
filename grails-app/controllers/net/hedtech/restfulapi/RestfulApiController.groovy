@@ -382,7 +382,7 @@ class RestfulApiController {
             //If we have a delete with a zero-length body,
             //we will skip parsing the request content and use an
             //empty map.
-            if (request.getContentLength() != 0) {
+            if (request.getContentLength() > 0) {
                 content = parseRequestContent( request )
             }
             checkId(content)
