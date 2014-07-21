@@ -1397,6 +1397,45 @@ For example
 
 Now if the Thing class does not have a persistent field 'description', the marshaller will throw an exception.
 
+#Marshalling only non-null fields.
+There may be times when a representation should only include a field if it has a non-null value.
+
+For a representation, you can specify that any null fields should not be marshalled with the marshallsNullFields setting:
+
+    resource 'things' config {
+        representation {
+            mediaTypes = ["application/json"]
+            marshallers {
+                jsonDomainMarshaller {
+                    supports net.hedtech.restfulapi.Thing
+                    marshallsNullFields false
+                    includesFields {
+                        field 'code' name 'productCode'
+                        field 'description'
+                    }
+                }
+            }
+        }
+    }
+
+In this example, if code or description are null, they will be omitted when the object is marshalled.  The marshallsNullFields setting controls the default behavior for all fields (marshallsNullFields is true by default).
+
+Whether or not to marshall a null field can also be specified on a per-field basis.  For example:
+
+    resource 'things' config {
+        representation {
+            mediaTypes = ["application/json"]
+            marshallers {
+                jsonDomainMarshaller {
+                    supports net.hedtech.restfulapi.Thing
+                    field 'description' marshallsNull false
+                }
+            }
+        }
+    }
+
+All fields of Thing will be marshalled, but if description is null, it will be omitted.
+
 ###Representing associations
 By default, the declarative marshaller renders the objects in any assocation as 'short objects'.  The default rendering of a 'short object' is a JSON object containing a single '_link' property having a value of '/resource/id' where resource is the pluralized resource name of the associated object (as derived by convention), and id is the id of the object.  So, for example, if the Thing class had a field called customer  holding a reference to an instance of class Customer with id 15, the customer field would render as :
 
@@ -1757,6 +1796,8 @@ The configuration block for the marshaller can contain the following in any orde
 
     inherits = <array of json marshaller template names>
     supports <class>
+    deepMarshallsAssociations <true|false>
+    marshallsNullFields <true|false>
     requiresIncludedFields <true|false>
     <field-block>*
     includesFields {
@@ -1772,7 +1813,7 @@ The configuration block for the marshaller can contain the following in any orde
 
 Where \<field-block\>* is any number of field-blocks, and a field-block is
 
-    field 'name' [name 'output-name'] [resource 'resource-name']
+    field 'name' [name 'output-name'] [resource 'resource-name'] [deep <true|false>] [marshallsNull <true|false>]
 
 Where values in brackets are optional.
 
@@ -2003,6 +2044,45 @@ For example
 
 Now if the Thing class does not have a field or property 'description', the marshaller will throw an exception.
 
+#Marshalling only non-null fields.
+There may be times when a representation should only include a field if it has a non-null value.
+
+For a representation, you can specify that any null fields should not be marshalled with the marshallsNullFields setting:
+
+    resource 'things' config {
+        representation {
+            mediaTypes = ["application/json"]
+            marshallers {
+                jsonBeanMarshaller {
+                    supports net.hedtech.restfulapi.Thing
+                    marshallsNullFields false
+                    includesFields {
+                        field 'code' name 'productCode'
+                        field 'description'
+                    }
+                }
+            }
+        }
+    }
+
+In this example, if code or description are null, they will be omitted when the object is marshalled.  The marshallsNullFields setting controls the default behavior for all fields (marshallsNullFields is true by default).
+
+Whether or not to marshall a null field can also be specified on a per-field basis.  For example:
+
+    resource 'things' config {
+        representation {
+            mediaTypes = ["application/json"]
+            marshallers {
+                jsonBeanMarshaller {
+                    supports net.hedtech.restfulapi.Thing
+                    field 'description' marshallsNull false
+                }
+            }
+        }
+    }
+
+All fields of Thing will be marshalled, but if description is null, it will be omitted.
+
 ###Adding additional fields
 You can add additional fields not directly present in a bean to its marshalled representation.
 
@@ -2076,7 +2156,7 @@ The configuration block for the marshaller can contain the following in any orde
 
     inherits = <array of json bean marshaller template names>
     supports <class>
-    deepMarshallsAssociations <true|false>
+    marshallsNullFields <true|false>
     <field-block>*
     includesFields {
         <field-block>*
@@ -2088,7 +2168,7 @@ The configuration block for the marshaller can contain the following in any orde
 
 Where \<field-block\>* is any number of field-blocks, and a field-block is
 
-    field 'name' [name 'output-name'] [resource 'resource-name'] [deep <true|false>]
+    field 'name' [name 'output-name'] [marshallsNull <true|false>]
 
 Where values in brackets are optional.
 
@@ -2579,7 +2659,7 @@ The extractor will be configured with the results of merging the configuration b
 The order in which configurations are merged is significant.  When two configurations, first and second are merged, boolean values, or single valued options that are set in the second config override the first.  Collection or map values are combined.
 
 ##Declarative Marshalling of Domain classes to XML
-The plugin supports declarative marshalling of domain classes to XML with the net.hedtech.restfulapi.marshallers.xml.BasicDomainClassMarshaller and net.hedtech.restfulapi.marshallers.xml.DeclarativeDomainClassMarshaller.
+The plugin supports marshalling of domain classes to XML with the net.hedtech.restfulapi.marshallers.xml.BasicDomainClassMarshaller and net.hedtech.restfulapi.marshallers.xml.DeclarativeDomainClassMarshaller.
 
 The BasicDomainClassMarshaller exposes methods which can be overridden to define what fields to include, etc.  It functions similarly to the json marshalling, but produces xml output instead.  The DeclarativeDomainClassMarshaller supports the configuration DSL.
 

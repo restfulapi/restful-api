@@ -278,6 +278,32 @@ class JSONDomainMarshallerConfigSpec extends Specification {
         true == config.isShortObjectClosureSet
     }
 
+    def "Test default marshalling null fields"() {
+        setup:
+        def src = {
+            marshallsNullFields false
+        }
+
+        when:
+        def config = invoke(src)
+
+        then:
+        false == config.marshallNullFields
+    }
+
+    def "Test marshalling null fields"() {
+        setup:
+        def src = {
+            field 'owner' marshallsNull true
+            field 'manager' marshallsNull false name 'mgr' resource 'thing-managers'
+        }
+
+        when:
+        def config = invoke(src)
+        then:
+        ['owner':true, 'manager':false] == config.marshalledNullFields
+    }
+
     def "Test merging domain marshaller configurations"() {
         setup:
         def c1 = { Map m -> }
@@ -296,7 +322,9 @@ class JSONDomainMarshallerConfigSpec extends Specification {
             includeVersion:true,
             requireIncludedFields:true,
             deepMarshalledFields:['one':true,'two':false],
-            deepMarshallAssociations:false
+            deepMarshallAssociations:false,
+            marshallNullFields:true,
+            marshalledNullFields:['one':true,'two':false],
         )
         JSONDomainMarshallerConfig two = new JSONDomainMarshallerConfig(
             supportClass:PartOfThing,
@@ -312,7 +340,9 @@ class JSONDomainMarshallerConfigSpec extends Specification {
             includeVersion:false,
             requireIncludedFields:false,
             deepMarshalledFields:['two':true,'three':false],
-            deepMarshallAssociations:true
+            deepMarshallAssociations:true,
+            marshallNullFields:false,
+            marshalledNullFields:['two':true,'three':false]
         )
 
         when:
@@ -334,6 +364,8 @@ class JSONDomainMarshallerConfigSpec extends Specification {
         false                                    == config.requireIncludedFields
         true                                     == config.deepMarshallAssociations
         ['one':true,'two':true,'three':false]    == config.deepMarshalledFields
+        false                                    == config.marshallNullFields
+        ['one':true,'two':true,'three':false]    == config.marshalledNullFields
     }
 
     def "Test merging domain marshaller configurations does not alter either object"() {
@@ -354,7 +386,9 @@ class JSONDomainMarshallerConfigSpec extends Specification {
             includeVersion:true,
             requireIncludedFields:true,
             deepMarshalledFields:['one':true,'two':false],
-            deepMarshallAssociations:false
+            deepMarshallAssociations:false,
+            marshallNullFields:true,
+            marshalledNullFields:['one':true,'two':false],
         )
         JSONDomainMarshallerConfig two = new JSONDomainMarshallerConfig(
             supportClass:PartOfThing,
@@ -370,7 +404,9 @@ class JSONDomainMarshallerConfigSpec extends Specification {
             includeVersion:false,
             requireIncludedFields:false,
             deepMarshalledFields:['two':true,'three':false],
-            deepMarshallAssociations:true
+            deepMarshallAssociations:true,
+            marshallNullFields:false,
+            marshalledNullFields:['two':true,'three':false]
         )
 
         when:
@@ -391,6 +427,8 @@ class JSONDomainMarshallerConfigSpec extends Specification {
         true                        == one.requireIncludedFields
         false                       == one.deepMarshallAssociations
         ['one':true,'two':false]    == one.deepMarshalledFields
+        true                        == one.marshallNullFields
+        ['one':true,'two':false]    == one.marshalledNullFields
 
         true                        == two.isSupportClassSet
         ['foo':'foo2','baz':'baz1'] == two.fieldNames
@@ -406,6 +444,8 @@ class JSONDomainMarshallerConfigSpec extends Specification {
         false                       == two.requireIncludedFields
         true                        == two.deepMarshallAssociations
         ['two':true,'three':false]  == two.deepMarshalledFields
+        false                       == two.marshallNullFields
+        ['two':true, 'three':false] == two.marshalledNullFields
     }
 
     def "Test merging domain marshaller with support class set only on the left"() {
@@ -489,6 +529,22 @@ class JSONDomainMarshallerConfigSpec extends Specification {
         true == config.deepMarshallAssociations
     }
 
+    def "Test merging domain marshaller with marshalling null fields set only on the left"() {
+        setup:
+        def c1 = { Map m -> }
+        JSONDomainMarshallerConfig one = new JSONDomainMarshallerConfig(
+            marshallNullFields:false
+        )
+        JSONDomainMarshallerConfig two = new JSONDomainMarshallerConfig(
+        )
+
+        when:
+        def config = one.merge(two)
+
+        then:
+        false == config.marshallNullFields
+    }
+
     def "Test resolution of domain marshaller configuration inherits"() {
         setup:
         JSONDomainMarshallerConfig part1 = new JSONDomainMarshallerConfig(
@@ -539,9 +595,9 @@ class JSONDomainMarshallerConfigSpec extends Specification {
     def "Test repeated field clears previous settings"() {
         setup:
         def src = {
-            field 'one' name 'modOne' resource 'resource-ones' deep true
+            field 'one' name 'modOne' resource 'resource-ones' deep true marshallsNull false
             field 'one'
-            field 'two' name 'modTwo' resource 'resource-twos' deep true
+            field 'two' name 'modTwo' resource 'resource-twos' deep true marshallsNull true
             includesFields {
                 field 'two'
             }
@@ -554,6 +610,7 @@ class JSONDomainMarshallerConfigSpec extends Specification {
         [:] == config.fieldNames
         [:] == config.fieldResourceNames
         [:] == config.deepMarshalledFields
+        [:] == config.marshalledNullFields
     }
 
     private JSONDomainMarshallerConfig invoke( Closure c ) {

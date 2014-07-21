@@ -24,7 +24,7 @@ import org.codehaus.groovy.grails.web.converters.configuration.DefaultConverterC
 
 class RestfulApiGrailsPlugin {
 
-    def version = "0.9.1"
+    def version = "0.10.0-SNAPSHOT"
     def grailsVersion = "2.2.0 > *"
     def pluginExcludes = [
         "grails-app/views/**",

@@ -621,6 +621,91 @@ class DeclarativeDomainClassMarshallerSpec extends Specification {
         fieldName << ['parts','subPart','owner','contributors']
     }
 
+    def "Test including only non-null fields"() {
+        setup:
+        def marshaller = new DeclarativeDomainClassMarshaller(
+            app:grailsApplication,
+            includeId:false,
+            includeVersion:false,
+            marshallNullFields:false
+        )
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:null, embeddedPart:null, owner:null )
+
+        when:
+        def content = render( thing )
+        def json = JSON.parse content
+
+        then:
+        [:]   == json.contributors
+        [:]   == json.simpleMap
+        []    == json.simpleArray
+        []    == json.parts
+        'AA'  == json.code
+        false == json.isLarge
+        !json.containsKey('embeddedPart')
+        !json.containsKey('owner')
+        !json.containsKey('description')
+    }
+
+    def "Test including non-null fields on a per-field basis"() {
+        setup:
+        def marshaller = new DeclarativeDomainClassMarshaller(
+            app:grailsApplication,
+            includeId:false,
+            includeVersion:false,
+            marshalledNullFields:['embeddedPart':false, 'owner':false]
+        )
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', embeddedPart:null, owner:null, description:null )
+
+        when:
+        def content = render( thing )
+        def json = JSON.parse content
+
+        then:
+        [:]             == json.contributors
+        [:]             == json.simpleMap
+        []              == json.simpleArray
+        []              == json.parts
+        'AA'            == json.code
+        false           == json.isLarge
+        JSONObject.NULL == json.description
+        !json.containsKey('embeddedPart')
+        !json.containsKey('owner')
+        json.containsKey('description')
+    }
+
+    def "Test including non-null fields on a per-field basis overrides default"() {
+        setup:
+        def marshaller = new DeclarativeDomainClassMarshaller(
+            app:grailsApplication,
+            includeId:false,
+            includeVersion:false,
+            marshallNullFields:false,
+            marshalledNullFields:['embeddedPart':true, 'owner':true]
+        )
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', embededPart:null, owner:null, description:null )
+
+        when:
+        def content = render( thing )
+        def json = JSON.parse content
+
+        then:
+        [:]             == json.contributors
+        [:]             == json.simpleMap
+        []              == json.simpleArray
+        []              == json.parts
+        'AA'            == json.code
+        false           == json.isLarge
+        JSONObject.NULL == json.embeddedPart
+        JSONObject.NULL == json.owner
+        json.containsKey('embeddedPart')
+        json.containsKey('owner')
+        !json.containsKey('description')
+    }
+
     private void register( String name, def marshaller ) {
         JSON.createNamedConfig( "DeclarativeDomainClassMarshaller:" + testName + ":$name" ) { json ->
             json.registerObjectMarshaller( marshaller, 100 )

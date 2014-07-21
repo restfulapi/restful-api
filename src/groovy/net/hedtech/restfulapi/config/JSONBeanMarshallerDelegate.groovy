@@ -36,6 +36,11 @@ class JSONBeanMarshallerDelegate {
         this
     }
 
+    JSONBeanMarshallerDelegate marshallsNullFields(boolean b) {
+        config.marshallNullFields = b
+        this
+    }
+
 
     def field(String fieldName) {
         //if a previous field definition has supplied
@@ -75,6 +80,7 @@ class JSONBeanMarshallerDelegate {
 
     private FieldOptions handleField(String name) {
         config.fieldNames.remove(name)
+        config.marshalledNullFields.remove(name)
         return new FieldOptions(name)
     }
 
@@ -86,6 +92,11 @@ class JSONBeanMarshallerDelegate {
 
         FieldOptions name(String name) {
             config.fieldNames[fieldName] = name
+            this
+        }
+
+        FieldOptions marshallsNull(boolean b) {
+            config.marshalledNullFields[fieldName] = b
             this
         }
 

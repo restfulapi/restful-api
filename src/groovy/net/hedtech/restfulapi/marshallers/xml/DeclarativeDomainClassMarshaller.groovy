@@ -41,6 +41,14 @@ class DeclarativeDomainClassMarshaller extends BasicDomainClassMarshaller {
     def excludedFields = []
     def includeId = true
     def includeVersion = true
+    //If a field is a key in the map, then represents
+    //a field-level override for whether to marshall that
+    //field if null.  Otherise, marshallNullFields is used
+    //to determine whether to marshall a field if null
+    def marshalledNullFields = [:]
+    //default behavior on whether to marshall null fields.
+    def marshallNullFields = true
+
     def additionalFieldClosures = []
     def additionalFieldsMap = [:]
     def fieldResourceNames = [:]
@@ -152,7 +160,19 @@ class DeclarativeDomainClassMarshaller extends BasicDomainClassMarshaller {
     protected boolean processField(BeanWrapper beanWrapper,
                                    GrailsDomainClassProperty property,
                                    XML xml) {
-        true
+        boolean ignoreNull = false
+        if (marshalledNullFields.containsKey(property.getName())) {
+            ignoreNull = !marshalledNullFields[property.getName()]
+        } else {
+            ignoreNull = !marshallNullFields
+        }
+
+        if (ignoreNull) {
+            Object val = beanWrapper.getPropertyValue(property.getName())
+            return val != null
+        } else {
+            return true
+        }
     }
 
     @Override

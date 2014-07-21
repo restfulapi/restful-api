@@ -189,6 +189,32 @@ class JSONBeanMarshallerConfigSpec extends Specification {
         [one:'one',two:'two'] == config.additionalFieldsMap
     }
 
+    def "Test default marshalling null fields"() {
+        setup:
+        def src = {
+            marshallsNullFields false
+        }
+
+        when:
+        def config = invoke(src)
+
+        then:
+        false == config.marshallNullFields
+    }
+
+    def "Test marshalling null fields"() {
+        setup:
+        def src = {
+            field 'owner' marshallsNull true
+            field 'manager' marshallsNull false name 'mgr'
+        }
+
+        when:
+        def config = invoke(src)
+        then:
+        ['owner':true, 'manager':false] == config.marshalledNullFields
+    }
+
     def "Test merging configurations"() {
         setup:
         def c1 = { Map m -> }
@@ -201,7 +227,9 @@ class JSONBeanMarshallerConfigSpec extends Specification {
             excludedFields:['e1','e2'],
             additionalFieldClosures:[{app,bean,json ->}],
             additionalFieldsMap:['one':'one','two':'two'],
-            requireIncludedFields:true
+            requireIncludedFields:true,
+            marshallNullFields:true,
+            marshalledNullFields:['one':true,'two':false]
         )
         JSONBeanMarshallerConfig two = new JSONBeanMarshallerConfig(
             supportClass:Thing,
@@ -211,7 +239,10 @@ class JSONBeanMarshallerConfigSpec extends Specification {
             excludedFields:['e3'],
             additionalFieldClosures:[{app,bean,json ->}],
             additionalFieldsMap:['two':'2','three':'3'],
-            requireIncludedFields:false
+            requireIncludedFields:false,
+            marshallNullFields:false,
+            marshalledNullFields:['two':true,'three':false]
+
         )
 
         when:
@@ -227,6 +258,10 @@ class JSONBeanMarshallerConfigSpec extends Specification {
         2                                        == config.additionalFieldClosures.size()
         ['one':'one',"two":'2','three':'3']      == config.additionalFieldsMap
         false                                    == config.requireIncludedFields
+        false                                    == config.marshallNullFields
+        ['one':true,'two':true,'three':false]    == config.marshalledNullFields
+
+
     }
 
     def "Test merging configurations does not alter either object"() {
@@ -241,7 +276,9 @@ class JSONBeanMarshallerConfigSpec extends Specification {
             excludedFields:['e1','e2'],
             additionalFieldClosures:[{app,bean,json ->}],
             additionalFieldsMap:['one':'1'],
-            requireIncludedFields:true
+            requireIncludedFields:true,
+            marshallNullFields:true,
+            marshalledNullFields:['one':true,'two':false],
         )
         JSONBeanMarshallerConfig two = new JSONBeanMarshallerConfig(
             supportClass:PartOfThing,
@@ -251,7 +288,9 @@ class JSONBeanMarshallerConfigSpec extends Specification {
             excludedFields:['e3'],
             additionalFieldClosures:[{app,bean,json ->}],
             additionalFieldsMap:['two':'2'],
-            requireIncludedFields:false
+            requireIncludedFields:false,
+            marshallNullFields:false,
+            marshalledNullFields:['two':true,'three':false]
         )
 
         when:
@@ -266,6 +305,8 @@ class JSONBeanMarshallerConfigSpec extends Specification {
         1                           == one.additionalFieldClosures.size()
         ['one':'1']                 == one.additionalFieldsMap
         true                        == one.requireIncludedFields
+        true                        == one.marshallNullFields
+        ['one':true,'two':false]    == one.marshalledNullFields
 
         true                        == two.isSupportClassSet
         ['foo':'foo2','baz':'baz1'] == two.fieldNames
@@ -275,6 +316,8 @@ class JSONBeanMarshallerConfigSpec extends Specification {
         1                           == two.additionalFieldClosures.size()
         ['two':'2']                 == two.additionalFieldsMap
         false                       == two.requireIncludedFields
+        false                       == two.marshallNullFields
+        ['two':true,'three':false]  == two.marshalledNullFields
     }
 
     def "Test merging with support class set only on the left"() {
@@ -323,6 +366,21 @@ class JSONBeanMarshallerConfigSpec extends Specification {
         true == config.useIncludedFields
     }
 
+    def "Test merging marshaller with marshallNullFields set only on the left"() {
+        setup:
+        def c1 = { Map m -> }
+        JSONDomainMarshallerConfig one = new JSONDomainMarshallerConfig(
+            marshallNullFields:false
+        )
+        JSONDomainMarshallerConfig two = new JSONDomainMarshallerConfig(
+        )
+
+        when:
+        def config = one.merge(two)
+
+        then:
+        false == config.marshallNullFields
+    }
 
     def "Test resolution of marshaller configuration inherits"() {
         setup:
@@ -374,9 +432,9 @@ class JSONBeanMarshallerConfigSpec extends Specification {
     def "Test repeated field clears previous settings"() {
         setup:
         def src = {
-            field 'one' name 'modOne'
+            field 'one' name 'modOne' marshallsNull false
             field 'one'
-            field 'two' name 'modTwo'
+            field 'two' name 'modTwo' marshallsNull true
             includesFields {
                 field 'two'
             }
@@ -387,6 +445,7 @@ class JSONBeanMarshallerConfigSpec extends Specification {
 
         then:
         [:] == config.fieldNames
+        [:] == config.marshalledNullFields
     }
 
     private JSONBeanMarshallerConfig invoke( Closure c ) {

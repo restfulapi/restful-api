@@ -51,6 +51,10 @@ class JSONDomainMarshallerDelegate {
         this
     }
 
+    JSONDomainMarshallerDelegate marshallsNullFields(boolean b) {
+        config.marshallNullFields = b
+        this
+    }
 
     def field(String fieldName) {
         //if a previous field definition has supplied
@@ -102,6 +106,7 @@ class JSONDomainMarshallerDelegate {
         config.fieldNames.remove(name)
         config.fieldResourceNames.remove(name)
         config.deepMarshalledFields.remove(name)
+        config.marshalledNullFields.remove(name)
         return new FieldOptions(name)
     }
 
@@ -123,6 +128,11 @@ class JSONDomainMarshallerDelegate {
 
         FieldOptions deep(boolean b) {
             config.deepMarshalledFields[fieldName] = b
+            return this
+        }
+
+        FieldOptions marshallsNull(boolean b) {
+            config.marshalledNullFields[fieldName] = b
             return this
         }
 

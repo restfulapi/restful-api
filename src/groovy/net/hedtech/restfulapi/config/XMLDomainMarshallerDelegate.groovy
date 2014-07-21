@@ -56,6 +56,11 @@ class XMLDomainMarshallerDelegate {
         this
     }
 
+    XMLDomainMarshallerDelegate marshallsNullFields(boolean b) {
+        config.marshallNullFields = b
+        this
+    }
+
     def field(String fieldName) {
         //if a previous field definition has supplied
         //names or resource names, clear them out
@@ -106,6 +111,7 @@ class XMLDomainMarshallerDelegate {
         config.fieldNames.remove(name)
         config.fieldResourceNames.remove(name)
         config.deepMarshalledFields.remove(name)
+        config.marshalledNullFields.remove(name)
         return new FieldOptions(name)
     }
 
@@ -117,7 +123,7 @@ class XMLDomainMarshallerDelegate {
 
         FieldOptions name(String name) {
             config.fieldNames[fieldName] = name
-            this
+            return this
         }
 
         FieldOptions resource(String name) {
@@ -127,6 +133,11 @@ class XMLDomainMarshallerDelegate {
 
         FieldOptions deep(boolean b) {
             config.deepMarshalledFields[fieldName] = b
+            return this
+        }
+
+        FieldOptions marshallsNull(boolean b) {
+            config.marshalledNullFields[fieldName] = b
             return this
         }
     }

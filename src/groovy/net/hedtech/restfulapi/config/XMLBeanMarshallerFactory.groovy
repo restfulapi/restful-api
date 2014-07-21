@@ -37,9 +37,11 @@ class XMLBeanMarshallerFactory {
         marshaller.excludedFields.addAll            config.excludedFields
         marshaller.additionalFieldClosures.addAll   config.additionalFieldClosures
         marshaller.additionalFieldsMap.putAll       config.additionalFieldsMap
+        marshaller.marshalledNullFields.putAll      config.marshalledNullFields
         if (config.isSupportClassSet) marshaller.supportClass = config.supportClass
         if (config.isElementNameSet) marshaller.elementName = config.elementName
         if (config.requireIncludedFields != null) marshaller.requireIncludedFields = config.requireIncludedFields
+        if (config.marshallNullFields != null) marshaller.marshallNullFields = config.marshallNullFields
 
         marshaller
     }

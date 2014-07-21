@@ -292,6 +292,32 @@ class XMLDomainMarshallerConfigSpec extends Specification {
         'Foo' == config.elementName
     }
 
+    def "Test default marshalling null fields"() {
+        setup:
+        def src = {
+            marshallsNullFields false
+        }
+
+        when:
+        def config = invoke(src)
+
+        then:
+        false == config.marshallNullFields
+    }
+
+    def "Test marshalling null fields"() {
+        setup:
+        def src = {
+            field 'owner' marshallsNull true
+            field 'manager' marshallsNull false name 'mgr' resource 'thing-managers'
+        }
+
+        when:
+        def config = invoke(src)
+        then:
+        ['owner':true, 'manager':false] == config.marshalledNullFields
+    }
+
     def "Test merging domain marshaller configurations"() {
         setup:
         def c1 = { Map m -> }
@@ -311,7 +337,9 @@ class XMLDomainMarshallerConfigSpec extends Specification {
             includeVersion:true,
             requireIncludedFields:true,
             deepMarshalledFields:['one':true,'two':false],
-            deepMarshallAssociations:false
+            deepMarshallAssociations:false,
+            marshallNullFields:true,
+            marshalledNullFields:['one':true,'two':false]
         )
         XMLDomainMarshallerConfig two = new XMLDomainMarshallerConfig(
             supportClass:PartOfThing,
@@ -328,7 +356,9 @@ class XMLDomainMarshallerConfigSpec extends Specification {
             includeVersion:false,
             requireIncludedFields:false,
             deepMarshalledFields:['two':true,'three':false],
-            deepMarshallAssociations:true
+            deepMarshallAssociations:true,
+            marshallNullFields:false,
+            marshalledNullFields:['two':true,'three':false]
         )
 
         when:
@@ -352,6 +382,9 @@ class XMLDomainMarshallerConfigSpec extends Specification {
         false                                    == config.requireIncludedFields
         true                                     == config.deepMarshallAssociations
         ['one':true,'two':true,'three':false]    == config.deepMarshalledFields
+        false                                    == config.marshallNullFields
+        ['one':true,'two':true,'three':false]    == config.marshalledNullFields
+
 
     }
 
@@ -374,7 +407,9 @@ class XMLDomainMarshallerConfigSpec extends Specification {
             includeVersion:true,
             requireIncludedFields:true,
             deepMarshalledFields:['one':true,'two':false],
-            deepMarshallAssociations:false
+            deepMarshallAssociations:false,
+            marshallNullFields:true,
+            marshalledNullFields:['one':true,'two':false]
         )
         XMLDomainMarshallerConfig two = new XMLDomainMarshallerConfig(
             supportClass:PartOfThing,
@@ -391,7 +426,9 @@ class XMLDomainMarshallerConfigSpec extends Specification {
             includeVersion:false,
             requireIncludedFields:false,
             deepMarshalledFields:['two':true,'three':false],
-            deepMarshallAssociations:true
+            deepMarshallAssociations:true,
+            marshallNullFields:false,
+            marshalledNullFields:['two':true,'three':false]
         )
 
         when:
@@ -414,6 +451,8 @@ class XMLDomainMarshallerConfigSpec extends Specification {
         true                        == one.requireIncludedFields
         false                       == one.deepMarshallAssociations
         ['one':true,'two':false]    == one.deepMarshalledFields
+        true                        == one.marshallNullFields
+        ['one':true,'two':false]    == one.marshalledNullFields
 
         true                        == two.isSupportClassSet
         PartOfThing                 == two.supportClass
@@ -431,6 +470,8 @@ class XMLDomainMarshallerConfigSpec extends Specification {
         false                       == two.requireIncludedFields
         true                        == two.deepMarshallAssociations
         ['two':true,'three':false]  == two.deepMarshalledFields
+        false                       == two.marshallNullFields
+        ['two':true,'three':false]  == two.marshalledNullFields
     }
 
     def "Test merging domain marshaller with support class set only on the left"() {
@@ -514,6 +555,22 @@ class XMLDomainMarshallerConfigSpec extends Specification {
         'Foo' == config.elementName
     }
 
+    def "Test merging domain marshaller with marshalling null fields set only on the left"() {
+        setup:
+        def c1 = { Map m -> }
+        XMLDomainMarshallerConfig one = new XMLDomainMarshallerConfig(
+            marshallNullFields:false
+        )
+        XMLDomainMarshallerConfig two = new XMLDomainMarshallerConfig(
+        )
+
+        when:
+        def config = one.merge(two)
+
+        then:
+        false == config.marshallNullFields
+    }
+
     def "Test resolution of domain marshaller configuration inherits"() {
         setup:
         XMLDomainMarshallerConfig part1 = new XMLDomainMarshallerConfig(
@@ -541,10 +598,10 @@ class XMLDomainMarshallerConfigSpec extends Specification {
     def "Test merging domain marshaller with deep marshalling associations set only on the left"() {
         setup:
         def c1 = { Map m -> }
-        JSONDomainMarshallerConfig one = new JSONDomainMarshallerConfig(
+        XMLDomainMarshallerConfig one = new XMLDomainMarshallerConfig(
             deepMarshallAssociations:true
         )
-        JSONDomainMarshallerConfig two = new JSONDomainMarshallerConfig(
+        XMLDomainMarshallerConfig two = new XMLDomainMarshallerConfig(
         )
 
         when:
@@ -580,9 +637,9 @@ class XMLDomainMarshallerConfigSpec extends Specification {
     def "Test repeated field clears previous settings"() {
         setup:
         def src = {
-            field 'one' name 'modOne' resource 'resource-ones' deep true
+            field 'one' name 'modOne' resource 'resource-ones' deep true marshallsNull false
             field 'one'
-            field 'two' name 'modTwo' resource 'resource-twos' deep true
+            field 'two' name 'modTwo' resource 'resource-twos' deep true marshallsNull true
             includesFields {
                 field 'two'
             }
@@ -595,6 +652,7 @@ class XMLDomainMarshallerConfigSpec extends Specification {
         [:] == config.fieldNames
         [:] == config.fieldResourceNames
         [:] == config.deepMarshalledFields
+        [:] == config.marshalledNullFields
 
     }
 

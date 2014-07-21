@@ -39,12 +39,14 @@ class JSONDomainMarshallerFactory {
         marshaller.additionalFieldsMap.putAll       config.additionalFieldsMap
         marshaller.fieldResourceNames.putAll        config.fieldResourceNames
         marshaller.deepMarshalledFields.putAll      config.deepMarshalledFields
+        marshaller.marshalledNullFields.putAll      config.marshalledNullFields
         if (config.isSupportClassSet)       marshaller.supportClass       = config.supportClass
         if (config.isShortObjectClosureSet) marshaller.shortObjectClosure = config.shortObjectClosure
         if (config.includeId != null)       marshaller.includeId          = config.includeId
         if (config.includeVersion != null)  marshaller.includeVersion     = config.includeVersion
         if (config.requireIncludedFields != null) marshaller.requireIncludedFields = config.requireIncludedFields
         if (config.deepMarshallAssociations != null) marshaller.deepMarshallAssociations = config.deepMarshallAssociations
+        if (config.marshallNullFields != null) marshaller.marshallNullFields = config.marshallNullFields
 
         marshaller
     }

@@ -665,6 +665,88 @@ class XMLDeclarativeDomainClassMarshallerSpec extends Specification {
         fieldName << ['parts','subPart','owner','contributors']
     }
 
+    def "Test including only non-null fields"() {
+        setup:
+        def marshaller = new DeclarativeDomainClassMarshaller(
+            app:grailsApplication,
+            includeId:false,
+            includeVersion:false,
+            marshallNullFields:false
+        )
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', description:null, embeddedPart:null, owner:null )
+
+        when:
+        def content = render(thing)
+        def xml = XML.parse content
+
+        then:
+        'AA' == xml.code.text()
+        0    == xml.description.size()
+        0    == xml.embeddedPart.size()
+        0    == xml.owner.size()
+        1    == xml.contributors.size()
+        1    == xml.simpleMap.size()
+        1    == xml.simpleArray.size()
+        1    == xml.parts.size()
+    }
+
+    def "Test including non-null fields on a per-field basis"() {
+        setup:
+        def marshaller = new DeclarativeDomainClassMarshaller(
+            app:grailsApplication,
+            includeId:false,
+            includeVersion:false,
+            marshalledNullFields:['embeddedPart':false, 'owner':false]
+        )
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', embeddedPart:null, owner:null, description:null )
+
+        when:
+        def content = render( thing )
+        def xml = XML.parse content
+
+        then:
+        'AA'   == xml.code.text()
+        1      == xml.description.size()
+        'true' == xml.description.'@null'.text()
+        0      == xml.embeddedPart.size()
+        0      == xml.owner.size()
+        1      == xml.contributors.size()
+        1      == xml.simpleMap.size()
+        1      == xml.simpleArray.size()
+        1      == xml.parts.size()
+    }
+
+    def "Test including non-null fields on a per-field basis overrides default"() {
+        setup:
+        def marshaller = new DeclarativeDomainClassMarshaller(
+            app:grailsApplication,
+            includeId:false,
+            includeVersion:false,
+            marshallNullFields:false,
+            marshalledNullFields:['embeddedPart':true, 'owner':true]
+        )
+        register( marshaller )
+        MarshalledThing thing = new MarshalledThing( code:'AA', embededPart:null, owner:null, description:null )
+
+        when:
+        def content = render( thing )
+        def xml = XML.parse content
+
+        then:
+        'AA'   == xml.code.text()
+        0      == xml.description.size()
+        1      == xml.embeddedPart.size()
+        1      == xml.owner.size()
+        'true' == xml.embeddedPart.'@null'.text()
+        'true' == xml.embeddedPart.'@null'.text()
+        1      == xml.contributors.size()
+        1      == xml.simpleMap.size()
+        1      == xml.simpleArray.size()
+        1      == xml.parts.size()
+    }
+
     private void register( String name, def marshaller ) {
         XML.createNamedConfig( "DeclarativeDomainClassMarshaller:" + testName + ":$name" ) { xml ->
             xml.registerObjectMarshaller( marshaller, 100 )

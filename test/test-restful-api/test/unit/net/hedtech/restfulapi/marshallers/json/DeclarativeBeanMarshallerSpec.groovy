@@ -441,6 +441,81 @@ class DeclarativeBeanMarshallerSpec extends Specification {
                  new SimpleJavaBeanWithIdProperty(property:'foo', publicField:'bar')]
     }
 
+    @Unroll
+    def "Test including only non-null fields"() {
+        setup:
+        def marshaller = new DeclarativeBeanMarshaller(
+            app:grailsApplication,
+            marshallNullFields:false
+        )
+        register(marshaller)
+
+        when:
+        def content = render(bean)
+        def json = JSON.parse content
+
+        then:
+        'foo'           == json.property
+        'bar'           == json.publicField
+        !json.containsKey('property2')
+        !json.containsKey('publicField2')
+
+        where:
+        bean << [new SimpleBean(property:'foo', publicField:'bar', property2:null, publicField2:null),
+                 new SimpleJavaBean(property:'foo', publicField:'bar', property2:null, publicField2:null)]
+    }
+    @Unroll
+
+    def "Test including non-null fields on a per-field basis"() {
+        setup:
+        def marshaller = new DeclarativeBeanMarshaller(
+            app:grailsApplication,
+            marshalledNullFields:['property2':false, 'publicField2':false]
+        )
+        register( marshaller )
+
+        when:
+        def content = render(bean)
+        def json = JSON.parse content
+        then:
+        'foo'           == json.property
+        'bar'           == json.publicField
+        JSONObject.NULL == json.listProperty
+        JSONObject.NULL == json.listField
+        !json.containsKey('property2')
+        !json.containsKey('publicField2')
+
+        where:
+        bean << [new SimpleBean(property:'foo', publicField:'bar', property2:null, publicField2:null, listProperty:null, listField: null),
+                 new SimpleJavaBean(property:'foo', publicField:'bar', property2:null, publicField2:null, listProperty:null, listField: null)]
+    }
+
+    def "Test including non-null fields on a per-field basis overrides default"() {
+        setup:
+        def marshaller = new DeclarativeBeanMarshaller(
+            app:grailsApplication,
+            marshallNullFields:false,
+            marshalledNullFields:['property2':true, 'publicField2':true]
+        )
+        register(marshaller)
+        when:
+        def content = render(bean)
+        def json = JSON.parse content
+
+        then:
+        'foo'           == json.property
+        'bar'           == json.publicField
+        JSONObject.NULL == json.property2
+        JSONObject.NULL == json.publicField2
+        !json.containsKey('listProperty')
+        !json.containsKey('listField')
+
+        where:
+        bean << [new SimpleBean(property:'foo', publicField:'bar', listProperty:null, listField: null),
+                 new SimpleJavaBean(property:'foo', publicField:'bar', listProperty:null, listField: null)]
+    }
+
+
 
     private void register( String name, def marshaller ) {
         JSON.createNamedConfig( "BeanMarshallerSpec:" + testName.getMethodName() + ":$name" ) { json ->
