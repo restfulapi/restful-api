@@ -382,7 +382,7 @@ class RestfulApiController {
             //If we have a delete with a zero-length body,
             //we will skip parsing the request content and use an
             //empty map.
-            if (request.getContentLength() != 0) {
+            if (request.getContentLength() > 0) {
                 content = parseRequestContent( request )
             }
             checkId(content)
@@ -635,8 +635,7 @@ class RestfulApiController {
         shaFor( resourceModel, digest, requestedMediaType )
     }
 
-
-    protected String shaFor( resourceModel, MessageDigest digest, String requestedMediaType ) {
+    protected boolean shaForUpdate( resourceModel, MessageDigest digest, String requestedMediaType ) {
 
         digest.update( requestedMediaType.getBytes( 'UTF-8' ) )
 
@@ -667,7 +666,12 @@ class RestfulApiController {
             digest.update( "${resourceModel.lastModified}".getBytes( 'UTF-8' ) )
         }
 
-        if (changeIndictorFound) {
+        return changeIndictorFound
+    }
+
+
+    protected String shaFor( resourceModel, MessageDigest digest, String requestedMediaType ) {
+        if (shaForUpdate(resourceModel, digest, requestedMediaType)) {
             log.trace "Returning an ETag based on id and a known change indicator"
             return "\"${new BigInteger( 1, digest.digest() ).toString( 16 ).padLeft( 40,'0' )}\""
         } else {
@@ -689,8 +693,9 @@ class RestfulApiController {
         digest.update( "${resourceModels.size()}".getBytes( 'UTF-8' ) )
         digest.update( "${totalCount}".getBytes( 'UTF-8' ) )
         resourceModels.each {
-            shaFor( it, digest, requestedMediaType )
+            shaForUpdate( it, digest, requestedMediaType )
         }
+
         "\"${new BigInteger( 1, digest.digest() ).toString( 16 ).padLeft( 40,'0' )}\""
     }
 
