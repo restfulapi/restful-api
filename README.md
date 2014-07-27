@@ -98,7 +98,7 @@ For Grails 2.3.x, you do not need the spock dependencies:
 In the plugins section of BuildConfig.groovy add:
 
         compile ":inflector:0.2"
-        compile ":cache-headers:1.1.5"
+        compile ":cache-headers:1.1.7"
 
         test ":funky-spock:0.2.1"
 
