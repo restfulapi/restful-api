@@ -32,6 +32,9 @@ class ResourceConfig {
     //if true, verify that an 'id' field in the content matches
     //the id
     boolean idMatchEnforced = true
+    //if true, use the Content-Type header to extract body
+    //content on DELETE
+    boolean bodyExtractedOnDelete = false
 
     private RestConfig restConfig
 
@@ -52,6 +55,11 @@ class ResourceConfig {
 
     ResourceConfig setIdMatchEnforced(boolean b) {
         this.idMatchEnforced = b
+        return this
+    }
+
+    ResourceConfig setBodyExtractedOnDelete(boolean b) {
+        this.bodyExtractedOnDelete = b
         return this
     }
 

@@ -206,6 +206,7 @@ class RestfulApiControllerSpec extends Specification {
         setup:
          config.restfulApiConfig = {
             resource 'things' config {
+                bodyExtractedOnDelete = true
             }
         }
         controller.init()
@@ -245,6 +246,7 @@ class RestfulApiControllerSpec extends Specification {
         setup:
         config.restfulApiConfig = {
             resource 'things' config {
+                bodyExtractedOnDelete = true
                 representation {
                     mediaTypes = ['application/json']
                 }
@@ -345,6 +347,7 @@ class RestfulApiControllerSpec extends Specification {
         //use default extractor for any methods with a request body
          config.restfulApiConfig = {
             resource 'things' config {
+                bodyExtractedOnDelete = true
                 representation {
                     mediaTypes = ['application/json']
                     extractor = new DefaultJSONExtractor()
@@ -739,11 +742,12 @@ class RestfulApiControllerSpec extends Specification {
         'dummy message' == response.getHeaderValue( 'X-hedtech-message' )
     }
 
-    def "Test that delete with empty body ignores Content-Type"() {
+    def "Test that delete with bodyExtractedOnDelete false ignores body and Content-Type"() {
         setup:
         //use default extractor for any methods with a request body
          config.restfulApiConfig = {
             resource 'things' config {
+                bodyExtractedOnDelete = false
                 representation {
                     mediaTypes = ['application/json']
                     extractor = new DefaultJSONExtractor()
@@ -756,7 +760,7 @@ class RestfulApiControllerSpec extends Specification {
         def mock = Mock(ThingService)
         controller.metaClass.getService = {-> mock}
 
-        request.setContent( new byte[0] )
+        request.setContent( '{"foo":"bar"}'.getBytes() )
         request.addHeader( 'Accept', 'application/json' )
         request.addHeader( 'Content-Type', 'application/xml' )
         params.pluralizedResourceName = 'things'
@@ -767,7 +771,7 @@ class RestfulApiControllerSpec extends Specification {
         then:
         200 == response.status
           0 == response.getContentLength()
-          1*mock.delete(_,_,_) >> { }
+          1*mock.delete(_,[:],_) >> { }
         'default.rest.deleted.message' == response.getHeaderValue( 'X-hedtech-message' )
     }
 
@@ -880,6 +884,7 @@ class RestfulApiControllerSpec extends Specification {
         //use default extractor for any methods with a request body
          config.restfulApiConfig = {
             anyResource {
+                bodyExtractedOnDelete = true
                 representation {
                     mediaTypes = ['application/json']
                     extractor = theExtractor
@@ -921,6 +926,7 @@ class RestfulApiControllerSpec extends Specification {
         //use default extractor for any methods with a request body
          config.restfulApiConfig = {
             anyResource {
+                bodyExtractedOnDelete = true
                 representation {
                     mediaTypes = ['application/xml']
                     extractor = theExtractor
@@ -963,6 +969,7 @@ class RestfulApiControllerSpec extends Specification {
         //use default extractor for any methods with a request body
          config.restfulApiConfig = {
             anyResource {
+                bodyExtractedOnDelete = true
                 representation {
                     mediaTypes = ['application/json']
                     extractor = theExtractor
@@ -1690,6 +1697,7 @@ class RestfulApiControllerSpec extends Specification {
         //use default extractor for any methods with a request body
          config.restfulApiConfig = {
             anyResource {
+                bodyExtractedOnDelete = true
                 representation {
                     mediaTypes = ['application/custom']
                     marshallerFramework = 'json'

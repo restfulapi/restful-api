@@ -1157,4 +1157,44 @@ class RestConfigSpec extends Specification {
         false == config.resources['things'].idMatchEnforced
         true  == config.resources['foos'].idMatchEnforced
     }
+
+    def "Test body extraction on delete"() {
+        setup:
+        def src =
+        {
+            resource 'things' config {
+                bodyExtractedOnDelete = true
+                representation {
+                    mediaTypes = ['application/vnd.hedtech.v0+json']
+                    marshallers {
+                        marshaller {
+                            instance = 'a'
+                            priority = 5
+                        }
+                    }
+                    extractor = 'net.hedtech.DynamicJsonExtractor'
+                }
+            }
+
+            resource 'foos' config {
+                representation {
+                    mediaTypes = ['application/vnd.hedtech.v0+json']
+                    marshallers {
+                        marshaller {
+                            instance = 'a'
+                            priority = 5
+                        }
+                    }
+                    extractor = 'net.hedtech.DynamicJsonExtractor'
+                }
+            }
+        }
+
+        when:
+        def config = RestConfig.parse( grailsApplication, src )
+
+        then:
+        true == config.resources['things'].bodyExtractedOnDelete
+        false  == config.resources['foos'].bodyExtractedOnDelete
+    }    
 }

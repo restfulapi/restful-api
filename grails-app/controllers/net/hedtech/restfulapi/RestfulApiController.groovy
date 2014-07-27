@@ -376,13 +376,8 @@ class RestfulApiController {
         try {
             checkMethod( Methods.DELETE )
             def content = [:]
-            //Using angular in some browsers causes the Content-Type header
-            //to be set as application/xml or some other default for zero-length
-            //bodies, instead of a configured type.
-            //If we have a delete with a zero-length body,
-            //we will skip parsing the request content and use an
-            //empty map.
-            if (request.getContentLength() != 0) {
+            ResourceConfig config = getResourceConfig()
+            if (config.bodyExtractedOnDelete) {
                 content = parseRequestContent( request )
             }
             checkId(content)

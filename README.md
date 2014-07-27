@@ -463,6 +463,18 @@ The delete method is passed the id of the resource to delete, (optionally) a con
 
 The delete method returns void.
 
+By default, the delete method will ignore both the body of the request, and the Content-Type header, and send an empty content map to the service.  This makes it easier to work with UI frameworks that may not set the Content-Type or Content-Length headers on delete requests when sending empty bodies.
+
+If you want the controller to check the Content-Type header and extract a content map, you can override the default behavior by setting bodyExtractedOnDelete to true in the resource configuration.  For example:
+
+```groovy
+    restfulApiConfig = {
+        resource 'things' config {
+            bodyExtractedOnDelete = true
+        }
+    }
+```
+
 Before invoking the service method, the controller will first check that if the extracted map contains an 'id' property, that when converted to a string, it matches the resource id passed in the url.  (That is, the controller assumes that an 'id' property extracted from the resource reprentation is the resource id).  The controller will raise an exception if this assumption is violated.
 
 If you do not want the controller to enforce this, you can override it on a per-resource basis by setting the idMatchEnforced on the resource to false, e.g.
@@ -2541,7 +2553,7 @@ Which would result in the map:
 Note that the closure must be able to handle single short-object references, collections of them, or maps of them.  In general, if you are overriding the short-object behavior, you would want to override it for all representations.  This is possible by using templates; see below for more details on how to do so.
 
 ###Flattening the final map
-If you intend to use grails data binding to bind the output of a declarative extractor to grails domain objects or POGOs, then you may need to flatten parts of the map that represent sub-objects.  This is because the data binding is designed to work with parameters submitted from web forms, so when dealing with nested objects, it expects key names to describe the associations, rather than nested maps.  For example it expects
+If you intend to use the orginal grails data binding (that used the Spring data binder) prior to Grails 2.3 to bind the output of a declarative extractor to grails domain objects or POGOs, then you may need to flatten parts of the map that represent sub-objects.  This is because the data binding is designed to work with parameters submitted from web forms, so when dealing with nested objects, it expects key names to describe the associations, rather than nested maps.  For example it expects
 
     ['orderID':12345, 'customer.name':'Smith']
 
@@ -2574,7 +2586,7 @@ Will generate a final map that looks like:
 
     ['orderId':123, 'customer.name':'Smith', 'customer.id':456, 'customer.phone-number':'555-555-5555']
 
-Which is suitable for grails data binding.
+Which is suitable for grails data binding prior to Grails 2.3, or if using legacy data binding in Grails 2.3 or later.  If using the new grails data binding introduced in 2.3, you should not need to use flatObject.
 
 Note that definining a property as a flat object only applies directly to the map (or collection of maps) representing the sub-object..  That is, it does not automatically handle further nested sub-objects.  If the customer sub-object in the above example also contained an address sub-object that needed to be flattened, that would need to be specified separately:
 
