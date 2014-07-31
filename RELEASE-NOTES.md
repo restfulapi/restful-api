@@ -1,6 +1,7 @@
 #0.10.0
 * BREAKING CHANGE.  By default, on a DELETE, the controller will ignore the Content-Type and request body, and send an empty content map to the service.  This is the opposite of previous behavior.  The original behavior can be obtained with the bodyExtractedOnDelete setting.  See the delete method documentation in the README.
-* Optional marshalling of default fields.  By default, if a field has a null value when marshalled, the field is included in the rendered representation with a null value.  This behavior can now be overridden on a per-marshaller, or per-field basis so that a field with a null value is excluded from the representation.  See the marshallsNull and marshallsNullFields descriptions in the README.
+* Optional marshalling of null fields.  By default, if a field has a null value when marshalled, the field is included in the rendered representation with a null value.  This behavior can now be overridden on a per-marshaller, or per-field basis so that a field with a null value is excluded from the representation.  See the marshallsNull and marshallsNullFields descriptions in the README.
+* Fix Issue #16.  Upgrade to use v 1.1.7 of cache-headers.
 
 
 #0.9.1
