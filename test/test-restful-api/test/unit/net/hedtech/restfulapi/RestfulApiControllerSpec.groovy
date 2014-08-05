@@ -198,7 +198,7 @@ class RestfulApiControllerSpec extends Specification {
         then:
         200 == response.status
           0 == response.getContentLength()
-          1 * mock.delete(_,_,_) >> {}
+          1 * mock.delete(_,_) >> {}
     }
 
     @Unroll
@@ -412,9 +412,9 @@ class RestfulApiControllerSpec extends Specification {
         then:
         200 == response.status
         if (serviceMethod == 'update') {
-            1 * mock."$serviceMethod"(_,_,_) >> { [:] }
+            1 * mock."$serviceMethod"(_,_) >> { [:] }
         } else {
-            1 * mock."$serviceMethod"(_,_,_) >> { }
+            1 * mock."$serviceMethod"(_,_) >> { }
         }
 
 
@@ -456,9 +456,9 @@ class RestfulApiControllerSpec extends Specification {
         then:
         200 == response.status
         if (serviceMethod == 'update') {
-            1 * mock."$serviceMethod"(_,_,_) >> { [:] }
+            1 * mock."$serviceMethod"(_,_) >> { [:] }
         } else {
-            1 * mock."$serviceMethod"(_,_,_) >> { }
+            1 * mock."$serviceMethod"(_,_) >> { }
         }
 
 
@@ -594,7 +594,7 @@ class RestfulApiControllerSpec extends Specification {
         controller.update()
 
         then:
-        1*mock.update(_,_,_) >> { throw new org.springframework.dao.OptimisticLockingFailureException( "foo" ) }
+        1*mock.update(_,_) >> { throw new org.springframework.dao.OptimisticLockingFailureException( "foo" ) }
         409 == response.status
           0 == response.getContentLength()
         'default.optimistic.locking.failure' == response.getHeaderValue( 'X-hedtech-message' )
@@ -627,7 +627,7 @@ class RestfulApiControllerSpec extends Specification {
         controller.update()
 
         then:
-        1*mock.update(_,_,_) >> { throw new Exception( 'foo' ) }
+        1*mock.update(_,_) >> { throw new Exception( 'foo' ) }
         500 == response.status
           0 == response.getContentLength()
         'default.rest.general.errors.message' == response.getHeaderValue( 'X-hedtech-message' )
@@ -771,7 +771,7 @@ class RestfulApiControllerSpec extends Specification {
         then:
         200 == response.status
           0 == response.getContentLength()
-          1*mock.delete(_,[:],_) >> { }
+          1*mock.delete([:],_) >> { }
         'default.rest.deleted.message' == response.getHeaderValue( 'X-hedtech-message' )
     }
 
@@ -811,9 +811,9 @@ class RestfulApiControllerSpec extends Specification {
         listCount * mock.list(_) >> { serviceReturn }
         listCount * mock.count(_) >> { serviceReturn.size() }
         showCount * mock.show(_) >> { serviceReturn }
-        updateCount * mock.update(_,_,_) >> { serviceReturn }
+        updateCount * mock.update(_,_) >> { serviceReturn }
         createCount * mock.create(_,_) >> { serviceReturn }
-        deleteCount * mock.delete(_,_,_) >> {}
+        deleteCount * mock.delete(_,_) >> {}
         0 * _._
 
         where:
@@ -909,8 +909,8 @@ class RestfulApiControllerSpec extends Specification {
         then:
         1 * theExtractor.extract(_) >> { ['foo':'bar']}
         createCount * mock.create(_,_)
-        updateCount * mock.update(_,_,_)
-        deleteCount * mock.delete(_,_,_)
+        updateCount * mock.update(_,_)
+        deleteCount * mock.delete(_,_)
 
         where:
         id   | controllerMethod | createCount | updateCount | deleteCount
@@ -952,8 +952,8 @@ class RestfulApiControllerSpec extends Specification {
         then:
         1 * theExtractor.extract(_) >> { ['foo':'bar']}
         createCount * mock.create(_,_)
-        updateCount * mock.update(_,_,_)
-        deleteCount * mock.delete(_,_,_)
+        updateCount * mock.update(_,_)
+        deleteCount * mock.delete(_,_)
 
         where:
         id   | controllerMethod | createCount | updateCount | deleteCount
@@ -994,8 +994,8 @@ class RestfulApiControllerSpec extends Specification {
         then:
         1 * theExtractor.extract(_) >> { ['foo':'bar']}
         createCount * mock.create(_,_)
-        updateCount * mock.update(_,_,_)
-        deleteCount * mock.delete(_,_,_)
+        updateCount * mock.update(_,_)
+        deleteCount * mock.delete(_,_)
 
         where:
         id   | controllerMethod | createCount | updateCount | deleteCount
@@ -1024,8 +1024,8 @@ class RestfulApiControllerSpec extends Specification {
         mock.count(_) >> {0}
         mock.show(_) >> {'string'}
         mock.create(_,_) >> {'string'}
-        mock.update(_,_,_) >> {'string'}
-        mock.delete(_,_,_) >> {}
+        mock.update(_,_) >> {'string'}
+        mock.delete(_,_) >> {}
         controller.metaClass.getService = {-> mock}
         controller.metaClass.getMarshallingService = {String name -> marshallerService}
         mockCacheHeaders()
@@ -1073,8 +1073,8 @@ class RestfulApiControllerSpec extends Specification {
         mock.count(_) >> {0}
         mock.show(_) >> {'string'}
         mock.create(_,_) >> {'string'}
-        mock.update(_,_,_) >> {'string'}
-        mock.delete(_,_,_) >> {}
+        mock.update(_,_) >> {'string'}
+        mock.delete(_,_) >> {}
         controller.metaClass.getService = {-> mock}
         controller.metaClass.getMarshallingService = {String name -> marshallerService}
         mockCacheHeaders()
@@ -1126,8 +1126,8 @@ class RestfulApiControllerSpec extends Specification {
         mock.count(_) >> {0}
         mock.show(_) >> {'string'}
         mock.create(_,_) >> {'string'}
-        mock.update(_,_,_) >> {'string'}
-        mock.delete(_,_,_) >> {}
+        mock.update(_,_) >> {'string'}
+        mock.delete(_,_) >> {}
         controller.metaClass.getService = {-> mock}
         controller.metaClass.getMarshallingService = {String name -> marshallerService}
         mockCacheHeaders()
@@ -1177,8 +1177,8 @@ class RestfulApiControllerSpec extends Specification {
         mock.count(_) >> {0}
         mock.show(_) >> {'string'}
         mock.create(_,_) >> {'string'}
-        mock.update(_,_,_) >> {'string'}
-        mock.delete(_,_,_) >> {}
+        mock.update(_,_) >> {'string'}
+        mock.delete(_,_) >> {}
         controller.metaClass.getService = {-> mock}
         controller.metaClass.getMarshallingService = {String name -> marshallerService}
         mockCacheHeaders()
@@ -1232,7 +1232,7 @@ class RestfulApiControllerSpec extends Specification {
         mock.count(_) >> {0}
         mock.show(_) >> {new Thing(code:'aa', description:'thing')}
         mock.create(_,_) >> {new Thing(code:'aa', description:'thing')}
-        mock.update(_,_,_) >> {new Thing(code:'aa', description:'thing')}
+        mock.update(_,_) >> {new Thing(code:'aa', description:'thing')}
         mockCacheHeaders()
         controller.metaClass.getService = {-> mock}
 
@@ -1278,7 +1278,7 @@ class RestfulApiControllerSpec extends Specification {
         mock.count(_) >> {0}
         mock.show(_) >> {new Thing(code:'aa', description:'thing')}
         mock.create(_,_) >> {new Thing(code:'aa', description:'thing')}
-        mock.update(_,_,_) >> {new Thing(code:'aa', description:'thing')}
+        mock.update(_,_) >> {new Thing(code:'aa', description:'thing')}
         mockCacheHeaders()
         controller.metaClass.getService = {-> mock}
 
@@ -1322,7 +1322,7 @@ class RestfulApiControllerSpec extends Specification {
         mock.count(_) >> {0}
         mock.show(_) >> {new Thing(code:'aa', description:'thing')}
         mock.create(_,_) >> {new Thing(code:'aa', description:'thing')}
-        mock.update(_,_,_) >> {new Thing(code:'aa', description:'thing')}
+        mock.update(_,_) >> {new Thing(code:'aa', description:'thing')}
         def marshallerService = Mock(MarshallingService)
         marshallerService.marshalObject(_,_) >> {return 'string'}
         mockCacheHeaders()
@@ -1368,7 +1368,7 @@ class RestfulApiControllerSpec extends Specification {
         mock.count(_) >> {0}
         mock.show(_) >> {new Thing(code:'aa', description:'thing')}
         mock.create(_,_) >> {new Thing(code:'aa', description:'thing')}
-        mock.update(_,_,_) >> {new Thing(code:'aa', description:'thing')}
+        mock.update(_,_) >> {new Thing(code:'aa', description:'thing')}
         def marshallerService = Mock(MarshallingService)
         marshallerService.marshalObject(_,_) >> {return 'string'}
         mockCacheHeaders()
@@ -1419,7 +1419,7 @@ class RestfulApiControllerSpec extends Specification {
         mock.count(_) >> {0}
         mock.show(_) >> {['dummy':'foo']}
         mock.create(_,_) >> {['dummy':'foo']}
-        mock.update(_,_,_) >> {['dummy':'foo']}
+        mock.update(_,_) >> {['dummy':'foo']}
         controller.metaClass.getService = {-> mock}
         mockCacheHeaders()
 
@@ -1467,7 +1467,7 @@ class RestfulApiControllerSpec extends Specification {
         mock.count(_) >> {0}
         mock.show(_) >> {['dummy':'foo']}
         mock.create(_,_) >> {['dummy':'foo']}
-        mock.update(_,_,_) >> {['dummy':'foo']}
+        mock.update(_,_) >> {['dummy':'foo']}
         controller.metaClass.getService = {-> mock}
         mockCacheHeaders()
 
@@ -1511,7 +1511,7 @@ class RestfulApiControllerSpec extends Specification {
         mock.count(_) >> {0}
         mock.show(_) >> {['dummy':'foo']}
         mock.create(_,_) >> {['dummy':'foo']}
-        mock.update(_,_,_) >> {['dummy':'foo']}
+        mock.update(_,_) >> {['dummy':'foo']}
         controller.metaClass.getService = {-> mock}
         def marshallerService = Mock(MarshallingService)
         marshallerService.marshalObject(_,_ as RepresentationConfig) >> {object, config -> return 'dummy'}
@@ -1558,7 +1558,7 @@ class RestfulApiControllerSpec extends Specification {
         mock.count(_) >> {0}
         mock.show(_) >> {['dummy':'foo']}
         mock.create(_,_) >> {['dummy':'foo']}
-        mock.update(_,_,_) >> {['dummy':'foo']}
+        mock.update(_,_) >> {['dummy':'foo']}
         controller.metaClass.getService = {-> mock}
         def marshallerService = Mock(MarshallingService)
         marshallerService.marshalObject(_,_ as RepresentationConfig) >> {object, config -> return 'dummy'}
@@ -1609,7 +1609,7 @@ class RestfulApiControllerSpec extends Specification {
         mock.count(_) >> {0}
         mock.show(_) >> {new Thing(code:'aa', description:'thing')}
         mock.create(_,_) >> {new Thing(code:'aa', description:'thing')}
-        mock.update(_,_,_) >> {new Thing(code:'aa', description:'thing')}
+        mock.update(_,_) >> {new Thing(code:'aa', description:'thing')}
         def marshallerService = Mock(MarshallingService)
         marshallerService.marshalObject(_,_) >> {return 'string'}
         mockCacheHeaders()
@@ -1662,7 +1662,7 @@ class RestfulApiControllerSpec extends Specification {
         mock.count(_) >> {0}
         mock.show(_) >> {new Thing(code:'aa', description:'thing')}
         mock.create(_,_) >> {new Thing(code:'aa', description:'thing')}
-        mock.update(_,_,_) >> {new Thing(code:'aa', description:'thing')}
+        mock.update(_,_) >> {new Thing(code:'aa', description:'thing')}
         def marshallerService = Mock(MarshallingService)
         marshallerService.marshalObject(_,_) >> {return 'string'}
         mockCacheHeaders()
@@ -1727,8 +1727,8 @@ class RestfulApiControllerSpec extends Specification {
         status == response.status
         1 * theExtractor.extract(_) >> { ['foo':'bar']}
         createCount * mock.create(_,_)
-        updateCount * mock.update(_,_,_)
-        deleteCount * mock.delete(_,_,_)
+        updateCount * mock.update(_,_)
+        deleteCount * mock.delete(_,_)
 
         where:
         id   | controllerMethod | httpMethod |createCount | updateCount | deleteCount | status
@@ -1759,8 +1759,8 @@ class RestfulApiControllerSpec extends Specification {
         mock.count(_) >> {0}
         mock.show(_) >> {[:]}
         mock.create(_,_) >> {[:]}
-        mock.update(_,_,_) >> {[:]}
-        mock.delete(_,_,_) >> {}
+        mock.update(_,_) >> {[:]}
+        mock.delete(_,_) >> {}
         controller.metaClass.getService = {-> mock}
 
         def marshallerService = Mock(MarshallingService)
@@ -1811,8 +1811,8 @@ class RestfulApiControllerSpec extends Specification {
         mock.count(_) >> {0}
         mock.show(_) >> {[:]}
         mock.create(_,_) >> {[:]}
-        mock.update(_,_,_) >> {[:]}
-        mock.delete(_,_,_) >> {}
+        mock.update(_,_) >> {[:]}
+        mock.delete(_,_) >> {}
         controller.metaClass.getService = {-> mock}
 
         def marshallerService = Mock(MarshallingService)
@@ -2193,12 +2193,12 @@ class RestfulApiControllerSpec extends Specification {
              service.create(content, params)
         }
 
-        def update(def service, def id, Map content, Map params) throws Throwable {
-            service.update(id,content,params)
+        def update(def service, Map content, Map params) throws Throwable {
+            service.update(content,params)
         }
 
-        void delete(def service, def id, Map content, Map params) throws Throwable {
-            service.delete(id,content,params)
+        void delete(def service, Map content, Map params) throws Throwable {
+            service.delete(content,params)
         }
     }
 

@@ -41,11 +41,11 @@ class NothingServiceAdapter implements RestfulServiceAdapter {
          service.create(content, params)
     }
 
-    def update(def service, def id, Map content, Map params) throws Throwable {
+    def update(def service, Map content, Map params) throws Throwable {
         service.update(id,content,params)
     }
 
-    void delete(def service, def id, Map content, Map params) throws Throwable {
+    void delete(def service, Map content, Map params) throws Throwable {
         service.delete(id,content,params)
     }
 

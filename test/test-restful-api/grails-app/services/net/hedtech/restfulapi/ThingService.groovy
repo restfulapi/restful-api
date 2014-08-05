@@ -122,14 +122,14 @@ class ThingService {
     }
 
 
-    def update( def id, Map content, Map params ) {
+    def update( Map content, Map params ) {
 
         log.trace "ThingService.update invoked"
         checkForExceptionRequest()
 
         def result
         Thing.withTransaction {
-            def thing = Thing.get(id)
+            def thing = Thing.get(params.id)
 
             checkOptimisticLock( thing, content )
 
@@ -143,10 +143,10 @@ class ThingService {
     }
 
 
-    void delete( def id, Map content, Map params ) {
+    void delete( Map content, Map params ) {
 
         Thing.withTransaction {
-            def thing = Thing.get(id)
+            def thing = Thing.get(params.id)
             thing.delete(failOnError:true)
         }
     }

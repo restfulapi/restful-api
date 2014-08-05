@@ -88,8 +88,8 @@ class RestfulApiController {
           count:  { def service, Map params                      -> service.count(params) },
           show:   { def service, Map params                      -> service.show(params) },
           create: { def service, Map content, Map params         -> service.create(content, params) },
-          update: { def service, def id, Map content, Map params -> service.update(id, content, params) },
-          delete: { def service, def id, Map content, Map params -> service.delete(id, content, params) }
+          update: { def service, Map content, Map params -> service.update(content, params) },
+          delete: { def service, Map content, Map params -> service.delete(content, params) }
         ] as RestfulServiceAdapter
 
     private ExtractorAdapter extractorAdapter = new DefaultExtractorAdapter()
@@ -357,7 +357,7 @@ class RestfulApiController {
             def content = parseRequestContent( request )
             checkId(content)
             getResponseRepresentation()
-            result = getServiceAdapter().update( getService(), params.id, content, params )
+            result = getServiceAdapter().update( getService(), content, params )
             response.setStatus( 200 )
             renderSuccessResponse( new ResponseHolder( data: result ),
                                    'default.rest.updated.message' )
@@ -381,7 +381,7 @@ class RestfulApiController {
                 content = parseRequestContent( request )
             }
             checkId(content)
-            getServiceAdapter().delete( getService(), params.id, content, params )
+            getServiceAdapter().delete( getService(), content, params )
             response.setStatus( 200 )
             renderSuccessResponse( new ResponseHolder(), 'default.rest.deleted.message' )
         }
