@@ -79,6 +79,8 @@ class RestfulApiController {
 
     private messageLog = LogFactory.getLog( 'RestfulApiController_messageLog' )
 
+    private etagGenerator = new EtagGenerator()
+
     private static final String RESPONSE_REPRESENTATION = 'net.hedtech.restfulapi.RestfulApiController.response_representation'
 
     // The default adapter simply passes through the method invocations to the service.
@@ -257,7 +259,7 @@ class RestfulApiController {
 
             // Need to create etagValue outside of 'etag' block:
             // http://jira.grails.org/browse/GPCACHEHEADERS-14
-            String etagValue = shaFor( result, count, responseRepresentation.mediaType )
+            String etagValue = etagGenerator.shaFor( result, count, responseRepresentation.mediaType )
 
             withCacheHeaders {
                 etag {
@@ -298,7 +300,7 @@ class RestfulApiController {
             def result = getServiceAdapter().show( getService(), requestParams )
             // Need to create etagValue outside of 'etag' block:
             // http://jira.grails.org/browse/GPCACHEHEADERS-14
-            String etagValue = shaFor( result, responseRepresentation.mediaType )
+            String etagValue = etagGenerator.shaFor( result, responseRepresentation.mediaType )
 
             withCacheHeaders {
 
@@ -622,71 +624,6 @@ class RestfulApiController {
 
     protected boolean hasProperty( Object obj, String name ) {
         obj.getMetaClass().hasProperty(obj, "$name") && obj."$name"
-    }
-
-
-    protected String shaFor( resourceModel, String requestedMediaType ) {
-        MessageDigest digest = MessageDigest.getInstance( 'SHA1' )
-        shaFor( resourceModel, digest, requestedMediaType )
-    }
-
-
-    protected String shaFor( resourceModel, MessageDigest digest, String requestedMediaType ) {
-
-        digest.update( requestedMediaType.getBytes( 'UTF-8' ) )
-
-        if (resourceModel.getMetaClass().respondsTo( resourceModel, "getEtag" )) {
-            log.trace "Will create ETag based upon a model's 'getEtag()' method"
-            digest.update( "${resourceModel.getEtag()}".getBytes( 'UTF-8' ) )
-            return "\"${new BigInteger( 1, digest.digest() ).toString( 16 ).padLeft( 40,'0' )}\""
-        }
-
-        if (!hasProperty( resourceModel, "id" )) {
-            log.trace "Cannot create ETag using a resource's identity, returning a UUID"
-            return randomUUID() as String
-        }
-        digest.update( "${resourceModel.id}".getBytes( 'UTF-8' ) )
-
-        // we'll require either version, lastModified, or (worst case) all properties
-        boolean changeIndictorFound = false
-        if (hasProperty( resourceModel, "version") ) {
-            changeIndictorFound = true
-            digest.update( "${resourceModel.version}".getBytes( 'UTF-8' ) )
-        }
-        else if (hasProperty( resourceModel, "lastUpdated" )) {
-            changeIndictorFound = true
-            digest.update( "${resourceModel.lastUpdated}".getBytes( 'UTF-8' ) )
-        }
-        else if (hasProperty( resourceModel, "lastModified" )) {
-            changeIndictorFound = true
-            digest.update( "${resourceModel.lastModified}".getBytes( 'UTF-8' ) )
-        }
-
-        if (changeIndictorFound) {
-            log.trace "Returning an ETag based on id and a known change indicator"
-            return "\"${new BigInteger( 1, digest.digest() ).toString( 16 ).padLeft( 40,'0' )}\""
-        } else {
-            // Note: we don't return empty ETags as doing so may cause some caching
-            //       infrastructure to reset connections.
-            log.trace "Cannot create ETag using a resource's change indicator, returning a UUID"
-            return randomUUID() as String
-        }
-    }
-
-
-    protected String shaFor( Collection resourceModels, long totalCount, String requestedMediaType ) {
-
-        if (!(resourceModels && totalCount)) return ''
-        MessageDigest digest = MessageDigest.getInstance( 'SHA1' )
-
-        // we'll use the collection size, the totalCount of resources,
-        // and the sha1 calculated for each item in the collection
-        digest.update( "${resourceModels.size()}".getBytes( 'UTF-8' ) )
-        digest.update( "${totalCount}".getBytes( 'UTF-8' ) )
-        resourceModels.each {
-            shaFor( it, digest, requestedMediaType )
-        }
-        "\"${new BigInteger( 1, digest.digest() ).toString( 16 ).padLeft( 40,'0' )}\""
     }
 
 
