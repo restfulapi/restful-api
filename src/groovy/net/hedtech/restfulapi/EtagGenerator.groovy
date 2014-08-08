@@ -31,10 +31,8 @@ class EtagGenerator {
      **/
     String shaFor(resourceModel, String mediaType) {
         MessageDigest digest = MessageDigest.getInstance( 'SHA1' )
-        def values = getValuesFor(resourceModel, mediaType)
-        values.each {
-            digest.update(it.getBytes('UTF-8'))
-        }
+        digest.update(mediaType.getBytes('UTF-8'))
+        update(digest, resourceModel)
         return "\"${new BigInteger( 1, digest.digest() ).toString( 16 ).padLeft( 40,'0' )}\""
     }
 
@@ -48,11 +46,7 @@ class EtagGenerator {
 
         if (!(resourceModels && totalCount)) return ''
         MessageDigest digest = MessageDigest.getInstance('SHA1')
-
-        def values = getValuesFor(resourceModels, totalCount, mediaType)
-        values.each {
-            digest.update(it.getBytes('UTF-8'))
-        }
+        def values = update(digest, resourceModels, totalCount, mediaType)
 
         return "\"${new BigInteger( 1, digest.digest() ).toString( 16 ).padLeft( 40,'0' )}\""
     }
@@ -64,72 +58,61 @@ class EtagGenerator {
      * totalCount: the total number of resources available
      * mediaType: the media type for the representation of resources
      **/
-    String[] getValuesFor(Collection resourceModels, totalCount, String mediaType) {
+    void update(MessageDigest digest, Collection resourceModels, totalCount, String mediaType) {
         def values = []
-        values.add(mediaType)
-        values.add("${resourceModels.size()}")
-        values.add("${totalCount}")
+        digest.update(mediaType.getBytes('UTF-8'))
+        digest.update("${resourceModels.size()}".getBytes('UTF-8'))
+        digest.update("${totalCount}".getBytes('UTF-8'))
         resourceModels.each {
-            values.addAll(getValuesFor(it))
+            update(digest,it)
         }
-        return values
-
     }
 
-
-    /**
-     * Returns an array of strings that can be used to generate an etag for
-     * the resource in the specified media type.
-     **/
-    String[] getValuesFor(resourceModel, String requestedMediaType) {
-        def values = [requestedMediaType]
-        values.addAll(getValuesFor(resourceModel))
-        return values
-    }
 
     /**
      * Returns an array of strings that can be hased to generate an etag for a resource.
      **/
-    String[] getValuesFor(resourceModel) {
-        def values = []
+    void update(MessageDigest digest, resourceModel) {
         if (resourceModel.getMetaClass().respondsTo( resourceModel, "getEtag" )) {
             log.trace "Will create ETag based upon a model's 'getEtag()' method"
-            values.add(resourceModel.getEtag())
-            return values
+            digest.update(resourceModel.getEtag().getBytes('UTF-8'))
+            return
         }
 
         if (!hasProperty( resourceModel, "id" )) {
             log.trace "Cannot create ETag using a resource's identity, returning a UUID"
-            values.add(randomUUID())
-            return values
+            digest.update("${randomUUID()}".getBytes('UTF-8'))
+            return
         }
 
-        values.add(resourceModel.id)
+        digest.update("${resourceModel.id}".getBytes('UTF-8'))
 
-        // we'll require either version, lastModified, or (worst case) all properties
+        // we'll require either version, lastUpdated, or lastModified
         boolean changeIndictorFound = false
         if (hasProperty( resourceModel, "version") ) {
             changeIndictorFound = true
-            values.add(resourceModel.version)
+            digest.update("${resourceModel.version}".getByte('UTF-8'))
         } else if (hasProperty( resourceModel, "lastUpdated" )) {
             changeIndictorFound = true
-            values.add(resourceModel.lastUpdated)
+            digest.update("${resourceModel.lastUpdated}".getBytes('UTF-8'))
         } else if (hasProperty( resourceModel, "lastModified" )) {
             changeIndictorFound = true
-            values.add(resourceModel.lastModified)
+            digest.update("${resourceModel.lastModified}".getBytes('UTF-8'))
         }
 
         if (changeIndictorFound) {
             log.trace "Returning an ETag based on id and a known change indicator"
-            return values
+            return
         } else {
             // Note: we don't return empty ETags as doing so may cause some caching
             //       infrastructure to reset connections.
             log.trace "Cannot create ETag using a resource's change indicator, returning a UUID"
-            return [randomUUID() as String]
+            digest.update("${randomUUID()}".getBytes('UTF-8'))
+            return
         }
 
     }
+
 
     protected boolean hasProperty( Object obj, String name ) {
         obj.getMetaClass().hasProperty(obj, "$name") && obj."$name"
