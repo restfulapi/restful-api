@@ -45,6 +45,7 @@ class RestConfigJSONExtractorSpec extends Specification {
                     property 'person.customer' shortObject true
                     property 'lastName' defaultValue 'Smith'
                     property 'date' date true
+                    lenientDates = true
                     dateFormats = ['yyyy.MM.dd', 'yyyy/MM/dd']
                     shortObject { def v -> 'short' }
                 }
@@ -65,6 +66,7 @@ class RestConfigJSONExtractorSpec extends Specification {
          ['lastName':'Smith']         == mConfig.dottedValuePaths
          'short'                      == shortObject
          ['date']                     == mConfig.dottedDatePaths
+         true                         == mConfig.lenientDates
          ['yyyy.MM.dd', 'yyyy/MM/dd'] == mConfig.dateFormats
     }
 
@@ -81,6 +83,7 @@ class RestConfigJSONExtractorSpec extends Specification {
                         property 'person.customer' shortObject true
                         property 'lastName' defaultValue 'Smith'
                         property 'date' date true
+                        lenientDates = true
                         dateFormats = ['yyyy.MM.dd', 'yyyy/MM/dd']
                         shortObject { def v -> 'short' }
                     }
@@ -102,6 +105,7 @@ class RestConfigJSONExtractorSpec extends Specification {
          'short'                     == shortObject
          ['date']                    == extractor.dottedDatePaths
          ['yyyy.MM.dd','yyyy/MM/dd'] == extractor.dateFormats
+         true                        == extractor.lenientDates
     }
 
     def "Test json extractor creation from merged configuration"() {

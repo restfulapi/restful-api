@@ -193,6 +193,7 @@ class BasicJSONExtractorSpec extends Specification {
         BasicJSONExtractor.metaClass.getDatePaths << {
             [['date']]
         }
+
         BasicJSONExtractor extractor = new BasicJSONExtractor()
         JSONObject json = new JSONObject(['date':'not a date'])
 
@@ -203,6 +204,50 @@ class BasicJSONExtractorSpec extends Specification {
         DateParseException e = thrown()
         'not a date'         == e.params[0]
         400                  == e.getHttpStatusCode()
+    }
+
+    def "Test non-lenient date parsing"() {
+        setup:
+        BasicJSONExtractor.metaClass.getDatePaths << {
+            [['date']]
+        }
+        BasicJSONExtractor.metaClass.getDateFormats << {
+            ["yyyy-MM-dd"]
+        }
+        BasicJSONExtractor extractor = new BasicJSONExtractor()
+        JSONObject json = new JSONObject(['date':'1982-99-99'])
+
+        when:
+        extractor.extract(json)
+
+        then:
+        DateParseException e = thrown()
+        '1982-99-99'         == e.params[0]
+        400                  == e.getHttpStatusCode()
+    }
+
+    def "Test lenient date parsing"() {
+        setup:
+        BasicJSONExtractor.metaClass.getDatePaths << {
+            [['date']]
+        }
+        BasicJSONExtractor.metaClass.getDateFormats << {
+            ["yyyy-MM-dd"]
+        }
+        BasicJSONExtractor.metaClass.getLenientDates << {
+            true
+        }
+        BasicJSONExtractor extractor = new BasicJSONExtractor()
+        JSONObject json = new JSONObject(['date':'1982-99-99'])
+        def f = new SimpleDateFormat('yyy-MM-dd')
+        f.setLenient(true)
+        Date expected = f.parse("1982-99-99")
+
+        when:
+        def map = extractor.extract(json)
+
+        then:
+        expected == map['date']
     }
 
     def "Test null date parsing"() {

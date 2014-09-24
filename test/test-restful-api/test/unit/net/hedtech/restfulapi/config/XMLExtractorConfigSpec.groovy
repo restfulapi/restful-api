@@ -137,6 +137,19 @@ class XMLExtractorConfigSpec extends Specification {
         closure == config.shortObjectClosure
     }
 
+    def "Test lenient dates"() {
+        setup:
+        def src = {
+            lenientDates = true
+        }
+
+        when:
+        def config = invoke(src)
+
+        then:
+        true == config.lenientDates
+    }
+
     def "Test repeated property clears previous settings"() {
         setup:
         def src = {
@@ -168,7 +181,8 @@ class XMLExtractorConfigSpec extends Specification {
             dottedShortObjectPaths:['short1'],
             shortObjectClosure:c1,
             dottedDatePaths:['date1'],
-            dateFormats:['yyyy.MM.dd']
+            dateFormats:['yyyy.MM.dd'],
+            lenientDates: false
         )
         def two = new XMLExtractorConfig(
             dottedRenamedPaths:['two':'newTwo','three':'newThree'],
@@ -177,7 +191,8 @@ class XMLExtractorConfigSpec extends Specification {
             dottedShortObjectPaths:['short2'],
             shortObjectClosure:c2,
             dottedDatePaths:['date2'],
-            dateFormats:['yyyy/MM/dd']
+            dateFormats:['yyyy/MM/dd'],
+            lenientDates: true
         )
 
         when:
@@ -191,6 +206,7 @@ class XMLExtractorConfigSpec extends Specification {
         c2                                                 == config.shortObjectClosure
         ['date1','date2']                                  == config.dottedDatePaths
         ['yyyy.MM.dd','yyyy/MM/dd']                        == config.dateFormats
+        true                                               == config.lenientDates
     }
 
     def "Test merging configurations does not alter either object"() {
@@ -204,7 +220,8 @@ class XMLExtractorConfigSpec extends Specification {
             dottedShortObjectPaths:['short1'],
             shortObjectClosure:c1,
             dottedDatePaths:['date1'],
-            dateFormats:['yyyy.MM.dd']
+            dateFormats:['yyyy.MM.dd'],
+            lenientDates: false
         )
         def two = new XMLExtractorConfig(
             dottedRenamedPaths:['two':'newTwo','three':'newThree'],
@@ -213,7 +230,8 @@ class XMLExtractorConfigSpec extends Specification {
             dottedShortObjectPaths:['short2'],
             shortObjectClosure:c2,
             dottedDatePaths:['date2'],
-            dateFormats:['yyyy/MM/dd']
+            dateFormats:['yyyy/MM/dd'],
+            lenientDates:true
         )
 
         when:
@@ -227,6 +245,7 @@ class XMLExtractorConfigSpec extends Specification {
         c1                                  == one.shortObjectClosure
         ['date1']                           == one.dottedDatePaths
         ['yyyy.MM.dd']                      == one.dateFormats
+        false                               == one.lenientDates
 
         ['two':'newTwo','three':'newThree'] == two.dottedRenamedPaths
         ['flat2']                           == two.dottedFlattenedPaths
@@ -235,6 +254,7 @@ class XMLExtractorConfigSpec extends Specification {
         c2                                  == two.shortObjectClosure
         ['date2']                           == two.dottedDatePaths
         ['yyyy/MM/dd']                      == two.dateFormats
+        true                                == two.lenientDates
     }
 
     def "Test merging with short object closure set only on the left"() {
@@ -250,6 +270,19 @@ class XMLExtractorConfigSpec extends Specification {
         c1   == config.shortObjectClosure
         true == config.isShortObjectClosureSet
     }
+
+    def "Test merging with lenient dates set only on the left"() {
+        setup:
+        def one = new XMLExtractorConfig(lenientDates:true)
+        def two = new XMLExtractorConfig()
+
+        when:
+        def config = one.merge(two)
+
+        then:
+        true   == config.lenientDates
+    }
+
 
     private XMLExtractorConfig invoke( Closure c ) {
         XMLExtractorDelegate delegate = new XMLExtractorDelegate()

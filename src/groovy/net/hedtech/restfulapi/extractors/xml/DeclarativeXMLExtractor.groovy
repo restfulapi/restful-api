@@ -26,6 +26,7 @@ class DeclarativeXMLExtractor extends BasicXMLExtractor {
     List<String> dottedDatePaths = []
     Closure shortObjectClosure
     List<String> dateFormats = []
+    boolean lenientDates = false
 
     /**
      * Returns a map of rename rules.  The keys
@@ -107,6 +108,17 @@ class DeclarativeXMLExtractor extends BasicXMLExtractor {
     @Override
     protected List<String> getDateFormats() {
         dateFormats.clone()
+    }
+
+    /**
+     * Return true if lenient date parsing should be used.
+     * If true, the default lenient behavior of SimpleDateFormatter
+     * is used.
+     * Default is to return false.
+     **/
+    @Override
+    protected boolean getLenientDates() {
+        lenientDates
     }
 
     /**

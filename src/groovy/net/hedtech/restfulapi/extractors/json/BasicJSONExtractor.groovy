@@ -77,6 +77,7 @@ class BasicJSONExtractor implements JSONExtractor {
         }
         for (String format : formats) {
             SimpleDateFormat df = new SimpleDateFormat(format)
+            df.setLenient(getLenientDates())
             try {
                 return df.parse(value.toString())
             } catch (ParseException e) {
@@ -165,8 +166,8 @@ class BasicJSONExtractor implements JSONExtractor {
      /**
       * Returns a List of String denoting paths whose
       * values should be parsed as dates.
-      * The conversion is not lenient - if the value cannot
-      * be parsed as a date, an exception is thrown.
+      * If the value cannot be parsed as a date,
+      * an exception is thrown.
       * Parses according to {@link #getDateFormats() getDateFormats},
       * or default SimpleDateFormat if no formats are specified.
       **/
@@ -183,6 +184,16 @@ class BasicJSONExtractor implements JSONExtractor {
     }
 
     /**
+     * Return true if lenient date parsing should be used.
+     * If true, the default lenient behavior of SimpleDateFormatter
+     * is used.
+     * Default is to return false.
+     **/
+     protected boolean getLenientDates() {
+        false
+     }
+
+    /**
      * Returns a closure that can convert a 'short object'
      * representation to a map containing the id represented
      * by the short object reference.
@@ -192,7 +203,7 @@ class BasicJSONExtractor implements JSONExtractor {
     }
 
     /**
-     * Returns a closure that can conver date representations
+     * Returns a closure that can convert date representations
      * into Dates.
      **/
     protected Closure getDateClosure() {

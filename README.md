@@ -2418,7 +2418,7 @@ You can specify paths that should be parsed into java.util.Date instances:
 
 This can simplifying conversion of strings to Dates without dealing with Grails data-binding and custom property editors.
 
-By default, the extractor will use a default java.text.SimpleDateFormat to parse date fields.  You can specify which formats to use:
+By default, the extractor will use a default java.text.SimpleDateFormat to parse date fields, with lenient parsing set to false.  You can specify which formats to use:
 
     resource 'purchase-orders' config {
         representation {
@@ -2433,6 +2433,21 @@ By default, the extractor will use a default java.text.SimpleDateFormat to parse
 Each date format will be tried in order, until one sucessfully parses the date string.  If no format is capable of parsing the string, a 400 response status will be returned.
 
 You can configure date formats in a single location by placing them on an [extractor template](#json-extractor-templates) and then inheriting them.
+
+If you want to allow the SimpleDateFormatter to use lenient parsing, where heuristics are used to allow a date such as 1999-99-99 to be sucessfully parsed, you can set lenientDates = true.  For example:
+
+    resource 'purchase-orders' config {
+        representation {
+            mediaTypes = ["application/json"]
+            jsonExtractor {
+                property 'signupDate' date true
+                dateFormats = ["yyyy-MM-dd'T'HH:mm:ss.SSSZ", "yyyyy.MMMMM.dd GGG hh:mm aaa"]
+                lenientDates = true
+            }
+        }
+    }
+
+Note that both the dateFormats and lenientDates settings apply the same to all properties identified as dates in a jsonExtractor.
 
 ###Providing default values.
 As your system evolves, you may introduce new, required fields to domain objects.  If you are using versioned APIs, the new field cannot be added to existing representation(s) without breaking them, so when a caller uses one of these representations, it will be necessary to add a default value.  This can, of course, be done at the service layer, but only if the service layer can provide an appropriate default - it is more likely that the service will treat the missing value as a validation exception.  The declarative extractor can be configured to provide a default value for any missing key.

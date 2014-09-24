@@ -29,6 +29,7 @@ class XMLExtractorConfig implements MergeableConfig {
     boolean isShortObjectClosureSet = false
     List<String> dottedDatePaths = []
     List<String> dateFormats = []
+    Boolean lenientDates
 
     XMLExtractorConfig() {
     }
@@ -84,6 +85,10 @@ class XMLExtractorConfig implements MergeableConfig {
             if (!config.dateFormats.contains(it)) {
                 config.dateFormats.add(it)
             }
+        }
+
+        if (other.lenientDates != null) {
+            config.lenientDates = other.lenientDates
         }
 
         config

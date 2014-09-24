@@ -221,6 +221,51 @@ class BasicXMLExtractorSpec extends Specification {
         400                  == e.getHttpStatusCode()
     }
 
+   def "Test non-lenient date parsing"() {
+        setup:
+        BasicXMLExtractor.metaClass.getDatePaths << {
+            [['date']]
+        }
+        BasicXMLExtractor.metaClass.getDateFormats << {
+            ["yyyy-MM-dd"]
+        }
+        BasicXMLExtractor extractor = new BasicXMLExtractor()
+        def xml = XML.parse "<object><date>1982-99-99</date></object>"
+
+        when:
+        extractor.extract(xml)
+
+        then:
+        DateParseException e = thrown()
+        '1982-99-99'         == e.params[0]
+        400                  == e.getHttpStatusCode()
+    }
+
+   def "Test lenient date parsing"() {
+        setup:
+        BasicXMLExtractor.metaClass.getDatePaths << {
+            [['date']]
+        }
+        BasicXMLExtractor.metaClass.getDateFormats << {
+            ["yyyy-MM-dd"]
+        }
+        BasicXMLExtractor.metaClass.getLenientDates << {
+            true
+        }
+        BasicXMLExtractor extractor = new BasicXMLExtractor()
+        def xml = XML.parse "<object><date>1982-99-99</date></object>"
+
+        def f = new SimpleDateFormat('yyy-MM-dd')
+        f.setLenient(true)
+        Date expected = f.parse("1982-99-99")
+
+        when:
+        def map = extractor.extract(xml)
+
+        then:
+        expected == map['date']
+    }
+
     def "Test invalid short object extraction when the collection doesn't contain maps"() {
         setup:
         BasicXMLExtractor.metaClass.getShortObjectPaths << {

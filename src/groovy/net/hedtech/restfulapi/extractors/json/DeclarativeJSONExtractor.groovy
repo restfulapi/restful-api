@@ -28,6 +28,7 @@ class DeclarativeJSONExtractor extends BasicJSONExtractor {
     List<String> dottedDatePaths = []
     Closure shortObjectClosure
     List<String> dateFormats = []
+    boolean lenientDates = false
 
 
     /**
@@ -111,6 +112,17 @@ class DeclarativeJSONExtractor extends BasicJSONExtractor {
     protected List<String> getDateFormats() {
         dateFormats.clone()
     }
+
+    /**
+     * Return true if lenient date parsing should be used.
+     * If true, the default lenient behavior of SimpleDateFormatter
+     * is used.
+     * Default is to return false.
+     **/
+     @Override
+     protected boolean getLenientDates() {
+        lenientDates
+     }
 
     /**
      * Returns a closure that can convert a 'short object'

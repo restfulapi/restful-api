@@ -35,6 +35,7 @@ class XMLExtractorFactory {
         if (config.isShortObjectClosureSet) extractor.shortObjectClosure = config.shortObjectClosure
         extractor.dottedDatePaths = config.dottedDatePaths
         extractor.dateFormats = config.dateFormats
+        if (config.lenientDates != null) extractor.lenientDates = config.lenientDates
 
         extractor
     }
