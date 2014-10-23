@@ -82,10 +82,10 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<JSON> {
     @Override
     public void marshalObject(Object value, JSON json) throws ConverterException {
 
+        value = getProxyHandler().unwrapIfProxy(value)
         Class<?> clazz = value.getClass()
         log.trace "$this marshalObject() called for $clazz"
         JSONWriter writer = json.getWriter()
-        value = getProxyHandler().unwrapIfProxy(value)
         GrailsDomainClass domainClass = app.getDomainClass(clazz.getName())
         BeanWrapper beanWrapper = new BeanWrapperImpl(value)
         GrailsDomainClassProperty[] persistentProperties = domainClass.getPersistentProperties()

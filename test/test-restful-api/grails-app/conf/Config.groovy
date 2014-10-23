@@ -376,6 +376,7 @@ restfulApiConfig = {
             contentType = 'application/zip'
             marshallerFramework = 'streamSizeCustomThingMarshallingService'
         }
+
     }
 
     resource 'thing-wrappers' config {
@@ -521,6 +522,30 @@ restfulApiConfig = {
             marshallers {
                 jsonDomainMarshaller {
                     priority = 100
+                }
+            }
+            jsonExtractor {}
+        }
+    }
+
+    resource 'parents' config {
+        methods = ['show']
+        representation {
+            mediaTypes = ["application/json"]
+            marshallers {
+                jsonDomainMarshaller {
+                    priority = 100
+                    deepMarshallsAssociations true
+                }
+            }
+            jsonExtractor {}
+        }
+        representation {
+            mediaTypes = ["application/xml"]
+            marshallers {
+                xmlDomainMarshaller {
+                    priority = 100
+                    deepMarshallsAssociations true
                 }
             }
             jsonExtractor {}

@@ -2026,6 +2026,43 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         "dev"                     == json.tenant
     }
 
+    def "Test proxy unwrapping for json marshallers"() {
+        setup:
+        Parent parent = new Parent(name:'foo')
+        parent.children = []
+        parent.children.add(new Child(name:'bar'))
+        parent.save(failOnError:true, flush:true)
+        def id = parent.getId()
+
+        when:
+        get("$localBase/api/parents/$id") {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/json'
+        }
+        def json = JSON.parse response.text
+
+        then:
+        200 == response.status
+    }
+
+    def "Test proxy unwrapping for xml marshallers"() {
+        setup:
+        Parent parent = new Parent(name:'foo')
+        parent.children = []
+        parent.children.add(new Child(name:'bar'))
+        parent.save(failOnError:true, flush:true)
+        def id = parent.getId()
+
+        when:
+        get("$localBase/api/parents/$id") {
+            headers['Content-Type'] = 'application/xml'
+            headers['Accept']       = 'application/xml'
+        }
+
+        then:
+        200 == response.status
+    }
+
     @Ignore // This test requires configuration on the test machine.
             // Specifically, edit the 'hosts' file to add 'test.local'
             // as an additional host mapped to 127.0.0.1 before re-enabling this test.
