@@ -16,7 +16,7 @@
 
 package net.hedtech.restfulapi.query
 
-import grails.plugin.spock.IntegrationSpec
+import grails.test.spock.IntegrationSpec
 
 import groovy.sql.Sql
 

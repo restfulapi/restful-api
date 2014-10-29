@@ -40,7 +40,7 @@ grails.project.dependency.resolution = {
     }
 
     dependencies {
-        test "org.spockframework:spock-grails-support:0.7-groovy-2.0"
+//        test "org.spockframework:spock-grails-support:0.7-groovy-2.0"
 
         // Dependency for CORS testing. see http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6996110
         test 'org.apache.httpcomponents:httpclient:4.3.3'
@@ -51,18 +51,18 @@ grails.project.dependency.resolution = {
         compile ':inflector:0.2'
         compile ':cache-headers:1.1.7'
 
-        runtime ":hibernate:$grailsVersion"
+        runtime ":hibernate:3.6.10.2"
         runtime ":jquery:1.11.1"
         runtime ":resources:1.2.8"
         runtime ":cors:1.1.0"
 
-        test(":spock:0.7") {
-          exclude "spock-grails-support"
-        }
+//        test(":spock:0.7") {
+//          exclude "spock-grails-support"
+//        }
 
         test ":funky-spock:0.2.1"
 
-        build ":tomcat:$grailsVersion"
+        build ":tomcat:7.0.42"
     }
 }
 

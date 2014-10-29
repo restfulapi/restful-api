@@ -199,14 +199,14 @@ restfulApiConfig = {
         //marshallers included in all json representations
         group 'json' marshallers {
             marshaller {
-                instance = new org.codehaus.groovy.grails.web.converters.marshaller.ClosureOjectMarshaller<grails.converters.JSON>(
+                instance = new org.codehaus.groovy.grails.web.converters.marshaller.ClosureObjectMarshaller<grails.converters.JSON>(
                         java.util.Date, {return it?.format("yyyy-MM-dd'T'HH:mm:ssZ")})
             }
         }
 
         group 'json-date-closure' marshallers {
             marshaller {
-                instance = new org.codehaus.groovy.grails.web.converters.marshaller.ClosureOjectMarshaller<grails.converters.JSON>(
+                instance = new org.codehaus.groovy.grails.web.converters.marshaller.ClosureObjectMarshaller<grails.converters.JSON>(
                     java.util.Date, {return "customized-date:" + it?.format("yyyy-MM-dd'T'HH:mm:ssZ")})
             }
         }
@@ -412,7 +412,7 @@ restfulApiConfig = {
                 }
             }
             jsonExtractor {
-                property 'thing' shortObject true flatObject true
+                property 'thing' shortObject true flatObject false
             }
         }
     }
