@@ -50,6 +50,7 @@ grails.project.dependency.resolution = {
         compile ':cache:1.1.6'
         compile ':inflector:0.2'
         compile ':cache-headers:1.1.7'
+        compile ":spring-security-core:2.0-RC4"
 
         runtime ":hibernate:3.6.10.2"
         runtime ":jquery:1.11.1"

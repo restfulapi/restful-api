@@ -552,3 +552,20 @@ restfulApiConfig = {
         }
     }
 }
+
+
+// Added by the Spring Security Core plugin:
+grails.plugin.springsecurity.userLookup.userDomainClassName = 'net.hedtech.security.User'
+grails.plugin.springsecurity.userLookup.authorityJoinClassName = 'net.hedtech.security.UserRole'
+grails.plugin.springsecurity.authority.className = 'net.hedtech.security.Role'
+grails.plugin.springsecurity.controllerAnnotations.staticRules = [
+	'/':                              ['permitAll'],
+	'/index':                         ['permitAll'],
+	'/index.gsp':                     ['permitAll'],
+	'/assets/**':                     ['permitAll'],
+	'/**/js/**':                      ['permitAll'],
+	'/**/css/**':                     ['permitAll'],
+	'/**/images/**':                  ['permitAll'],
+	'/**/favicon.ico':                ['permitAll']
+]
+
