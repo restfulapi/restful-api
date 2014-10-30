@@ -553,6 +553,14 @@ restfulApiConfig = {
     }
 }
 
+grails.plugin.springsecurity.useBasicAuth = true
+grails.plugin.springsecurity.basic.realmName = "HTTP Basic Auth Demo"
+grails.plugin.springsecurity.rejectIfNoRule = true
+
+grails.plugin.springsecurity.secureChannel.definition = [
+   '/j_spring_security_check':   'REQUIRES_SECURE_CHANNEL',
+   '/api/**':                    'REQUIRES_SECURE_CHANNEL'
+]
 
 // Added by the Spring Security Core plugin:
 grails.plugin.springsecurity.userLookup.userDomainClassName = 'net.hedtech.security.User'
@@ -566,6 +574,7 @@ grails.plugin.springsecurity.controllerAnnotations.staticRules = [
 	'/**/js/**':                      ['permitAll'],
 	'/**/css/**':                     ['permitAll'],
 	'/**/images/**':                  ['permitAll'],
-	'/**/favicon.ico':                ['permitAll']
+	'/**/favicon.ico':                ['permitAll'],
+    '/restfulapi/**':                 ['ROLE_API_USER']
 ]
 

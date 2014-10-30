@@ -15,6 +15,7 @@
  *****************************************************************************/
 
 import net.hedtech.restfulapi.*
+import net.hedtech.security.*
 
 import org.codehaus.groovy.grails.commons.ApplicationAttributes
 
@@ -32,12 +33,14 @@ class BootStrap {
         // Add some seed data if a 'seedThings' system property is set
         //
         if (System.getProperty('seedThings')) {
+println "Going to seed data...."
             ('A'..'Z').each { c1 ->
                 ('A'..'Z').each { c2 ->
                     createThing( "${c1}${c2}" )
                 }
             }
         }
+println "Done seeding data"
 
         def userRole = new Role(authority: 'ROLE_API_USER').save(flush: true)
         def testUser = new User(username: 'api', enabled: true, password: 'password')
