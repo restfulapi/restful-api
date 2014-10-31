@@ -1,5 +1,5 @@
 <!-- ***************************************************************************
- * Copyright 2013 Ellucian Company L.P. and its affiliates.
+ * Copyright 2014 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,13 +18,15 @@
 
 The restful-api plugin does not itself address security requirements, nor does it mandate any particular approach or library (such as Spring Security).
 
-This document is provided to show how the [Spring Security Core Plugin](http://grails.org/plugin/spring-security-core) 2.0-RC4 could be used to protect API endpoints using Basic Authentication.  This is, however, **NOT the preferred approach** as it requires either server-side state (a session) and a cookie (to identify the session), or re-authentication of every API call.  RESTful APIs should be stateless.
+This document is provided to show how the [Spring Security Core Plugin](http://grails.org/plugin/spring-security-core) 2.0-RC4 could be used to protect API endpoints using Basic Authentication and cookies.  Note this is **NOT the preferred approach** as it requires either server-side state (a session) and the passing of a cookie (to identify the session), or re-authentication of every API call.  RESTful APIs should be stateless, and using cookies in requests can be vulnerable to CSRF attacks.
 
-A token-based approach, as discussed in []() is preferrable to the Basic Authentication based approach discussed below. However, security requirements and environments vary and you may find the following approach reasonable and appropriate for your requirements...
+A token-based approach (as discussed in [docs/Using_Token_Based_Authentication](https://github.com/restfulapi/restful-api/blob/master/docs/Using_Token_Based_Authentication.md)) is preferrable.
 
-Please note this version of the Spring Security Core Plugin requires Grails 2.3.x.  As a starting point, we'll assume you have an existing application that exposes a RESTful API using the restful-api plugin.
+The token based approach is built on top of this (and the 'Using_Token_Based_Authentication' guide asks the reader to use this guide as a prerequisite step to implementing token-based authentication).
 
-_You can certainly follow this guide using the 'test-restful-api' application that resides under the test directory of this plugin. Just remember that Grails 2.3.x is required, so to support this you will first need to follow the instructions found in [docs/README-TESTING.md](https://github.com/restfulapi/restful-api/blob/master/docs/README-TESTING.md). (I used Grails 2.3.9 and the test-restful-api application for this guide.)._
+Please note the Spring Security Core Plugin requires Grails 2.3.x.  As a starting point, we'll assume you have an existing application that exposes a RESTful API using the restful-api plugin.
+
+_You can follow this guide using the 'test-restful-api' application that resides under the test directory of this plugin. Just remember that Grails 2.3.x is required, so to support this you will first need to follow the instructions found in [docs/README-TESTING.md](https://github.com/restfulapi/restful-api/blob/master/docs/README-TESTING.md). (I used Grails 2.3.9 and the test-restful-api application for this guide.)._
 
 ##Install and Configure the Spring Security Core Plugin
 
@@ -263,7 +265,6 @@ basicExceptionTranslationFilter(ExceptionTranslationFilter) {
     authenticationEntryPoint = ref('restApiAuthenticationEntryPoint')
     accessDeniedHandler = ref('accessDeniedHandler')
 }
-
 ```
 
 Invoking our endpoint now, without credentials or with bad credentials, will now result in the following:
@@ -282,5 +283,3 @@ Date: Wed, 29 Oct 2014 23:09:18 GMT
 ```
 
 Much better :-)
-
-

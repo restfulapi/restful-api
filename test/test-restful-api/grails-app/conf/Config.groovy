@@ -85,6 +85,12 @@ environments {
 import org.apache.log4j.*
 log4j = {
 
+    debug  'com.odobo',
+           'grails.app.controllers.com.odobo',
+           'grails.app.services.com.odobo',
+           'org.pac4j',
+           'org.springframework.security'
+
     error  'grails.app.controllers'
     error  'grails.app.services'
     error  'net.hedtech.restfulapi.marshallers'
@@ -552,6 +558,16 @@ restfulApiConfig = {
         }
     }
 }
+
+grails.plugin.springsecurity.filterChain.chainMap = [
+  '/api/**': 'JOINED_FILTERS,-exceptionTranslationFilter,-authenticationProcessingFilter,-securityContextPersistenceFilter,-rememberMeAuthenticationFilter',  // Stateless chain
+  '/**': 'JOINED_FILTERS,-restTokenValidationFilter,-restExceptionTranslationFilter'  // Traditional chain
+]
+
+grails.plugin.springsecurity.rest.token.storage.useGorm = true
+grails.plugin.springsecurity.rest.token.storage.gorm.tokenDomainClassName = 'net.hedtech.security.AuthenticationToken'
+grails.plugin.springsecurity.rest.token.storage.gorm.tokenValuePropertyName = 'tokenValue'
+grails.plugin.springsecurity.rest.token.storage.gorm.usernamePropertyName = 'username'
 
 grails.plugin.springsecurity.useBasicAuth = true
 grails.plugin.springsecurity.basic.realmName = "HTTP Basic Auth Demo"

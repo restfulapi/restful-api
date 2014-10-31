@@ -16,25 +16,25 @@
 
 import net.hedtech.restfulapi.adapters.NothingServiceAdapter
 
-import net.hedtech.security.RestApiAuthenticationEntryPoint
+//import net.hedtech.security.RestApiAuthenticationEntryPoint
 
-import org.springframework.security.web.access.ExceptionTranslationFilter
-import org.springframework.security.web.authentication.www.BasicAuthenticationFilter
+//import org.springframework.security.web.access.ExceptionTranslationFilter
+//import org.springframework.security.web.authentication.www.BasicAuthenticationFilter
 
 beans = {
     nothingServiceAdapter(NothingServiceAdapter)
 
-    restApiAuthenticationEntryPoint(RestApiAuthenticationEntryPoint) {
-        realmName = 'Example RESTful API Realm'
-    }
-
-    basicAuthenticationFilter(BasicAuthenticationFilter) {
-        authenticationManager = ref('authenticationManager')
-        authenticationEntryPoint = ref('restApiAuthenticationEntryPoint')
-    }
-
-    basicExceptionTranslationFilter(ExceptionTranslationFilter) {
-        authenticationEntryPoint = ref('restApiAuthenticationEntryPoint')
-        accessDeniedHandler = ref('accessDeniedHandler')
-    }
+//   restApiAuthenticationEntryPoint(RestApiAuthenticationEntryPoint) {
+//       realmName = 'Example RESTful API Realm'
+//   }
+//
+//   basicAuthenticationFilter(BasicAuthenticationFilter) {
+//       authenticationManager = ref('authenticationManager')
+//       authenticationEntryPoint = ref('restApiAuthenticationEntryPoint')
+//   }
+//
+//   basicExceptionTranslationFilter(ExceptionTranslationFilter) {
+//       authenticationEntryPoint = ref('restApiAuthenticationEntryPoint')
+//       accessDeniedHandler = ref('accessDeniedHandler')
+//   }
 }
