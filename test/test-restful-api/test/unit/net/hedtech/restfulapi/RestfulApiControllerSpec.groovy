@@ -1883,6 +1883,53 @@ class RestfulApiControllerSpec extends Specification {
         200   == response.status
         '2'   == response.getHeaderValue( 'X-hedtech-totalCount' )
     }
+    
+    def "Test HTTP Response Headers"() {
+        setup:
+        //use default extractor for any methods with a request body
+         config.restfulApiConfig = {
+            resource 'things' config {
+                representation {
+                    mediaTypes = ['application/json']
+                    extractor = new DefaultJSONExtractor()
+                }
+            }
+        }
+        controller.init()
+
+        //mock the appropriate service method, expect exactly 1 invocation
+        def mock = Mock(ThingService)
+        mock.list(_) >> {return new PagedResultArrayList([[name:'foo']], 5,
+            ["X-hedtech-responseHeader1":"value-1",
+             "X-hedtech-responseHeader2":42,    // used to verify number converted to string
+             "X-hedtech-responseHeader3":null,  // used to verify null valie is omitted
+             "X-hedtech-responseHeader4":"value-4"])}
+        controller.metaClass.getService = {-> mock}
+
+        mockCacheHeaders()
+
+        request.addHeader( 'Accept', 'application/json' )
+        //incoming format always json, so no errors
+        request.addHeader( 'Content-Type', 'application/json' )
+        params.pluralizedResourceName = 'things'
+
+        when:
+        controller.list()
+        def json = JSON.parse response.text
+
+        then:
+        0*mock.count(_) >> {}
+        200   == response.status
+        '5'   == response.getHeaderValue( 'X-hedtech-totalCount' )
+        1     == json.size()
+        'foo' == json[0].name
+        
+        // verify response headers
+        'value-1'   == response.getHeaderValue( 'X-hedtech-responseHeader1' )
+        '42'        == response.getHeaderValue( 'X-hedtech-responseHeader2' )
+        null        == response.getHeaderValue( 'X-hedtech-responseHeader3' )
+        'value-4'   == response.getHeaderValue( 'X-hedtech-responseHeader4' )
+    }
 
 
     private void mockCacheHeaders() {

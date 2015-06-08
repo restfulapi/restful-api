@@ -238,6 +238,11 @@ class RestfulApiController {
                     holder.addHeader(totalCountHeader, count)
                     holder.addHeader(pageOffsetHeader, requestParams.offset ? requestParams?.offset : 0)
                     holder.addHeader(pageMaxHeader, requestParams.max ? requestParams?.max : result.size())
+                    if (result.hasProperty("httpResponseHeaders") && result.httpResponseHeaders instanceof Map) {
+                        result.httpResponseHeaders.each {
+                            if (it.value != null) holder.addHeader(it.key, it.value.toString())
+                        }
+                    }
                     renderSuccessResponse( holder, 'default.rest.list.message' )
                 }
             }

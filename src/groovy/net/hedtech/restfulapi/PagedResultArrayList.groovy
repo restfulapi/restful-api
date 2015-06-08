@@ -22,13 +22,19 @@ package net.hedtech.restfulapi
 class PagedResultArrayList extends ArrayList implements PagedResultList {
 
     private long totalCount
+    private Map httpResponseHeaders
 
-    PagedResultArrayList(Collection c, long totalCount) {
+    PagedResultArrayList(Collection c, long totalCount, Map httpResponseHeaders = null) {
         super(c)
         this.totalCount = totalCount
+        this.httpResponseHeaders = httpResponseHeaders
     }
 
     long getTotalCount() {
         totalCount
+    }
+
+    Map getHttpResponseHeaders() {
+        httpResponseHeaders
     }
 }
