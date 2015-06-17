@@ -18,3 +18,7 @@ plugin.xml
 *en_PS.properties
 test/test-restful-api/web-app/css/**-rtl.css
 /plugin.xml
+/.settings
+/target-eclipse
+/.classpath
+/.project
