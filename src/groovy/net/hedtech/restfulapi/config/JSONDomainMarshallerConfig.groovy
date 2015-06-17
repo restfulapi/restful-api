@@ -60,6 +60,15 @@ class JSONDomainMarshallerConfig implements MergeableConfig {
     Boolean includeId
     Boolean includeVersion
 
+    //Whether to marshall fields that are null or not
+    //Applies as a default to all fields not explicitly configured
+    //inthe includeNullField map.
+    Boolean marshallNullFields
+    //Map of field names to boolean.  If true, that field will be
+    //marshalled, even if null.  If false, the field will only be
+    //marshalled if it has a non-null value.
+    def marshalledNullFields = [:]
+
 
     JSONDomainMarshallerConfig() {
 
@@ -103,6 +112,7 @@ class JSONDomainMarshallerConfig implements MergeableConfig {
         if (other.includeVersion != null) config.includeVersion = other.includeVersion
         if (other.requireIncludedFields != null) config.requireIncludedFields = other.requireIncludedFields
         if (other.deepMarshallAssociations != null) config.deepMarshallAssociations = other.deepMarshallAssociations
+        if (other.marshallNullFields != null) config.marshallNullFields = other.marshallNullFields
 
         config.fieldNames.putAll  other.fieldNames
         config.includedFields.addAll other.includedFields
@@ -115,6 +125,8 @@ class JSONDomainMarshallerConfig implements MergeableConfig {
         if (other.isShortObjectClosureSet) {
             config.shortObjectClosure = other.shortObjectClosure
         }
+        config.marshalledNullFields.putAll other.marshalledNullFields
+
 
         config
     }

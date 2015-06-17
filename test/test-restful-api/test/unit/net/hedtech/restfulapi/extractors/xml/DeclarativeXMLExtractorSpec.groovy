@@ -22,6 +22,7 @@ import spock.lang.*
 import grails.test.mixin.support.*
 
 import java.text.SimpleDateFormat
+import net.hedtech.restfulapi.extractors.DateParseException
 
 @TestMixin([GrailsUnitTestMixin])
 class DeclarativeXMLExtractorSpec extends Specification {
@@ -201,6 +202,44 @@ class DeclarativeXMLExtractorSpec extends Specification {
         d2 == map['customers'][0]['date2']
         d1 == map['customers'][1]['date1']
         d2 == map['customers'][1]['date2']
+    }
+
+    def "Test non-lenient date parsing"() {
+        setup:
+        DeclarativeXMLExtractor extractor = new DeclarativeXMLExtractor(
+            dottedDatePaths:['date'],
+            dateFormats:["yyyy-MM-dd"]
+        )
+        def text = """<object><date>1982-99-99</date></object>"""
+        def xml = XML.parse text
+
+        when:
+        extractor.extract(xml)
+
+        then:
+        DateParseException e = thrown()
+        '1982-99-99'         == e.params[0]
+        400                  == e.getHttpStatusCode()
+    }
+
+    def "Test lenient date parsing"() {
+        setup:
+        DeclarativeXMLExtractor extractor = new DeclarativeXMLExtractor(
+            dottedDatePaths:['date'],
+            dateFormats:["yyyy-MM-dd"],
+            lenientDates:true
+        )
+        def text = """<object><date>1982-99-99</date></object>"""
+        def xml = XML.parse text
+        def f = new SimpleDateFormat('yyy-MM-dd')
+        f.setLenient(true)
+        Date expected = f.parse("1982-99-99")
+
+        when:
+        def map = extractor.extract(xml)
+
+        then:
+        expected == map['date']
     }
 
     private String formatDate(Date d, String format) {

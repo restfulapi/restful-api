@@ -46,6 +46,7 @@ class RestConfigXMLExtractorSpec extends Specification {
                     property 'lastName' defaultValue 'Smith'
                     property 'date' date true
                     dateFormats = ['yyyy.MM.dd', 'yyyy/MM/dd']
+                    lenientDates = true
                     shortObject { def v -> 'short' }
                 }
             }
@@ -65,6 +66,7 @@ class RestConfigXMLExtractorSpec extends Specification {
          ['lastName':'Smith']         == mConfig.dottedValuePaths
          'short'                      == shortObject
          ['date']                     == mConfig.dottedDatePaths
+         true                         == mConfig.lenientDates
          ['yyyy.MM.dd', 'yyyy/MM/dd'] == mConfig.dateFormats
     }
 
@@ -82,6 +84,7 @@ class RestConfigXMLExtractorSpec extends Specification {
                         property 'lastName' defaultValue 'Smith'
                         property 'date' date true
                         dateFormats = ['yyyy.MM.dd', 'yyyy/MM/dd']
+                        lenientDates = true
                         shortObject { def v -> 'short' }
                     }
                 }
@@ -102,6 +105,7 @@ class RestConfigXMLExtractorSpec extends Specification {
          'short'                     == shortObject
          ['date']                    == extractor.dottedDatePaths
          ['yyyy.MM.dd','yyyy/MM/dd'] == extractor.dateFormats
+         true                        == extractor.lenientDates
     }
 
     def "Test xml extractor creation from merged configuration"() {

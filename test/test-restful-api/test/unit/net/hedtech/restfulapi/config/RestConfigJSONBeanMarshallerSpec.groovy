@@ -39,9 +39,10 @@ class RestConfigJSONBeanMarshallerSpec extends Specification {
                 group 'jsonBean' marshallers {
                     jsonBeanMarshaller {
                         supports SimpleBean
-                        field 'foo' name 'bar'
+                        marshallsNullFields false
+                        field 'foo' name 'bar' marshallsNull false
                         includesFields {
-                            field 'bar' name 'customBar'
+                            field 'bar' name 'customBar' marshallsNull true
                         }
                         excludesFields {
                             field 'foobar'
@@ -60,6 +61,8 @@ class RestConfigJSONBeanMarshallerSpec extends Specification {
         ['foo':'bar','bar':'customBar']           == marshaller.fieldNames
         ['bar']                                   == marshaller.includedFields
         ['foobar']                                == marshaller.excludedFields
+        false                                     == marshaller.marshallNullFields
+        [foo:false,bar:true]                      == marshaller.marshalledNullFields
     }
 
     def "Test json bean marshaller template parsing"() {
@@ -75,11 +78,12 @@ class RestConfigJSONBeanMarshallerSpec extends Specification {
                     priority = 5
                     supports SimpleBean
                     requiresIncludedFields true
+                    marshallsNullFields false
                     field 'foo' name 'bar'
                     field 'f1'
-                    field 'f2'
+                    field 'f2' marshallsNull true
                     includesFields {
-                        field 'foo' name 'foobar'
+                        field 'foo' name 'foobar' marshallsNull false
                     }
                     excludesFields {
                         field 'bar'
@@ -96,17 +100,19 @@ class RestConfigJSONBeanMarshallerSpec extends Specification {
         def mConfig = config.jsonBean.configs['two']
 
         then:
-         2                 == config.jsonBean.configs.size()
-         ['one']           == mConfig.inherits
-         5                 == mConfig.priority
-         SimpleBean        == mConfig.supportClass
-         true              == mConfig.requireIncludedFields
-         ['foo':'foobar']  == mConfig.fieldNames
-         ['foo']           == mConfig.includedFields
-         true              == mConfig.useIncludedFields
-         ['bar']           == mConfig.excludedFields
-         1                 == mConfig.additionalFieldClosures.size()
-         ['a':'b','c':'d'] == mConfig.additionalFieldsMap
+         2                      == config.jsonBean.configs.size()
+         ['one']                == mConfig.inherits
+         5                      == mConfig.priority
+         SimpleBean             == mConfig.supportClass
+         true                   == mConfig.requireIncludedFields
+         ['foo':'foobar']       == mConfig.fieldNames
+         ['foo']                == mConfig.includedFields
+         true                   == mConfig.useIncludedFields
+         ['bar']                == mConfig.excludedFields
+         1                      == mConfig.additionalFieldClosures.size()
+         ['a':'b','c':'d']      == mConfig.additionalFieldsMap
+         false                  == mConfig.marshallNullFields
+         ['f2':true,'foo':false] == mConfig.marshalledNullFields
     }
 
     def "Test json bean marshaller creation"() {
@@ -119,11 +125,12 @@ class RestConfigJSONBeanMarshallerSpec extends Specification {
                     marshallers {
                         jsonBeanMarshaller {
                             supports SimpleBean
-                            field 'owner' name 'myOwner'
+                            marshallsNullFields false
+                            field 'owner' name 'myOwner' marshallsNull false
                             requiresIncludedFields true
                             includesFields {
                                 field 'code' name 'productCode'
-                                field 'parts'
+                                field 'parts' marshallsNull true
                             }
                             excludesFields {
                                 field 'description'
@@ -149,6 +156,8 @@ class RestConfigJSONBeanMarshallerSpec extends Specification {
         ['description']                          == marshaller.excludedFields
         1                                        == marshaller.additionalFieldClosures.size()
         ['foo':'bar']                            == marshaller.additionalFieldsMap
+        false                                    == marshaller.marshallNullFields
+        ['owner':false, 'parts':true]            == marshaller.marshalledNullFields
     }
 
     def "Test json bean marshaller creation from merged configuration"() {

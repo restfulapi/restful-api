@@ -39,9 +39,10 @@ class RestConfigJSONDomainMarshallerSpec extends Specification {
                     jsonDomainMarshaller {
                         supports Thing
                         deepMarshallsAssociations true
-                        field 'foo' name 'bar' resource 'custom-foos' deep false
+                        marshallsNullFields false
+                        field 'foo' name 'bar' resource 'custom-foos' deep false marshallsNull false
                         includesFields {
-                            field 'bar' name 'customBar' resource 'custom-bars' deep true
+                            field 'bar' name 'customBar' resource 'custom-bars' deep true marshallsNull true
                         }
                         excludesFields {
                             field 'foobar'
@@ -63,6 +64,8 @@ class RestConfigJSONDomainMarshallerSpec extends Specification {
         ['foobar']                                == marshaller.excludedFields
         true                                      == marshaller.deepMarshallAssociations
         [foo:false,bar:true]                      == marshaller.deepMarshalledFields
+        false                                     == marshaller.marshallNullFields
+        [foo:false,bar:true]                      == marshaller.marshalledNullFields
     }
 
     def "Test json domain marshaller template parsing"() {
@@ -78,14 +81,15 @@ class RestConfigJSONDomainMarshallerSpec extends Specification {
                     priority = 5
                     supports Thing
                     deepMarshallsAssociations true
+                    marshallsNullFields false
                     requiresIncludedFields true
                     field 'foo' name 'bar'
                     field 'f1' resource 'r1'
                     field 'f2' resource 'r2'
-                    field 'f3' deep true
+                    field 'f3' deep true marshallsNull true
                     includesFields {
                         field 'foo' name 'foobar'
-                        field 'f4' deep false
+                        field 'f4' deep false marshallsNull false
                     }
                     excludesFields {
                         field 'bar'
@@ -123,6 +127,8 @@ class RestConfigJSONDomainMarshallerSpec extends Specification {
         false                  == mConfig.includeVersion
         true                   == mConfig.deepMarshallAssociations
         ['f3':true,'f4':false] == mConfig.deepMarshalledFields
+        false                  == mConfig.marshallNullFields
+        ['f3':true,'f4':false] == mConfig.marshalledNullFields
     }
 
     def "Test json domain marshaller creation"() {
@@ -137,10 +143,11 @@ class RestConfigJSONDomainMarshallerSpec extends Specification {
                             supports Thing
                             requiresIncludedFields true
                             deepMarshallsAssociations true
-                            field 'owner' resource 't-owners' deep false
+                            marshallsNullFields false
+                            field 'owner' resource 't-owners' deep false marshallsNull false
                             includesFields {
                                 field 'code' name 'productCode'
-                                field 'parts' resource 't-parts' deep true
+                                field 'parts' resource 't-parts' deep true marshallsNull true
                             }
                             excludesFields {
                                 field 'description'
@@ -176,6 +183,8 @@ class RestConfigJSONDomainMarshallerSpec extends Specification {
         'foo'                                  == shortObject
         true                                   == marshaller.deepMarshallAssociations
         ['owner':false, 'parts':true]          == marshaller.deepMarshalledFields
+        false                                  == marshaller.marshallNullFields
+        ['owner':false, 'parts':true]          == marshaller.marshalledNullFields
     }
 
     def "Test json domain marshaller creation from merged configuration"() {

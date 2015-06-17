@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * Copyright 2013 Ellucian Company L.P. and its affiliates.
+ * Copyright 2013-2014 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import org.codehaus.groovy.grails.web.converters.configuration.DefaultConverterC
 
 class RestfulApiGrailsPlugin {
 
-    def version = "0.8.0"
+    def version = "1.0.0"
     def grailsVersion = "2.2.0 > *"
     def pluginExcludes = [
         "grails-app/views/**",
@@ -39,12 +39,12 @@ class RestfulApiGrailsPlugin {
     ]
     def description = '''\
         |The resful-api plugin facilitates exposing a non-trivial,
-        |versioned RESTful API. The plugin provides a DSL that may
-        |be used to declaratively specify how resources should be
-        |marshalled. Please see the README.md for details.
+        | versioned RESTful API. The plugin provides a DSL that may
+        | be used to declaratively specify how resources should be
+        | marshalled. Please see the README.md for details.
         |'''.stripMargin()
 
-    def documentation = "README.md" // FYI: We use color-marked to generate HTML
+    def documentation = "https://github.com/restfulapi/restful-api/blob/master/README.md"
 
     def scm = [url: "https://github.com/restfulapi/restful-api.git"]
 

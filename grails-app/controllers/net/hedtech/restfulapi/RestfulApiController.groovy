@@ -18,7 +18,6 @@ package net.hedtech.restfulapi
 
 import grails.converters.JSON
 import grails.converters.XML
-import grails.validation.ValidationException
 
 import java.security.*
 
@@ -29,6 +28,8 @@ import javax.annotation.PostConstruct
 import net.hedtech.restfulapi.marshallers.StreamWrapper
 
 import net.hedtech.restfulapi.config.*
+
+import net.hedtech.restfulapi.exceptionhandlers.*
 
 import net.hedtech.restfulapi.extractors.*
 import net.hedtech.restfulapi.extractors.configuration.*
@@ -78,6 +79,8 @@ class RestfulApiController {
 
     private messageLog = LogFactory.getLog( 'RestfulApiController_messageLog' )
 
+    private etagGenerator = new EtagGenerator()
+
     private static final String RESPONSE_REPRESENTATION = 'net.hedtech.restfulapi.RestfulApiController.response_representation'
 
     // The default adapter simply passes through the method invocations to the service.
@@ -87,18 +90,23 @@ class RestfulApiController {
           count:  { def service, Map params                      -> service.count(params) },
           show:   { def service, Map params                      -> service.show(params) },
           create: { def service, Map content, Map params         -> service.create(content, params) },
-          update: { def service, def id, Map content, Map params -> service.update(id, content, params) },
-          delete: { def service, def id, Map content, Map params -> service.delete(id, content, params) }
+          update: { def service, Map content, Map params -> service.update(content, params) },
+          delete: { def service, Map content, Map params -> service.delete(content, params) }
         ] as RestfulServiceAdapter
 
     private ExtractorAdapter extractorAdapter = new DefaultExtractorAdapter()
 
-    // Custom headers (configured within Config.groovy)
+    private HandlerRegistry<Throwable,ExceptionHandler> handlerConfig = new DefaultHandlerRegistry<Throwable,ExceptionHandler>()
+    def localizingClosure = { mapToLocalize -> this.message( mapToLocalize ) }
+    private Localizer localizer = new Localizer(localizingClosure)
+
+    // Custom headers (may be configured within Config.groovy)
     String totalCountHeader
     String pageMaxHeader
     String pageOffsetHeader
     String messageHeader
     String mediaTypeHeader
+    String requestIdHeader
 
     // Paging query parameter names (configured within Config.groovy)
     String pageMax
@@ -106,6 +114,16 @@ class RestfulApiController {
 
     private Class pagedResultListClazz
 
+    // Sets a 'request_id' attribute on the request. If an 'X-Request-ID'
+    // Header exists (or other configured header serving this purpose),
+    // the attribute will be set to that header's value.
+    // Otherwise, a UUID will be generated.
+    // Preferrably the value will be set by middleware, such as a router.
+    // and provided as a Header. Regardless of who sets the value, it will
+    // be included in the response as an 'X-Request-ID' Header.
+    // This is intended to facilitate troubleshooting and to be included
+    // in logging.
+    def beforeInterceptor = [action: this.&setRequestIdAttribute, except: 'init']
 
     /**
      * Initializes the controller by registering the configured marshallers.
@@ -115,17 +133,20 @@ class RestfulApiController {
     //       'init()' is invoked explicitly from RestfulApiGrailsPlugin.
     // @PostConstruct
     void init() {
-
-        totalCountHeader = grailsApplication.config.restfulApi.header.totalCount
-        pageMaxHeader    = grailsApplication.config.restfulApi.header.pageMaxSize
-        pageOffsetHeader = grailsApplication.config.restfulApi.header.pageOffset
-        messageHeader    = grailsApplication.config.restfulApi.header.message
-        mediaTypeHeader  = grailsApplication.config.restfulApi.header.mediaType
-
-        pageMax    = grailsApplication.config.restfulApi.page.max
-        pageOffset = grailsApplication.config.restfulApi.page.offset
+        initExceptionHandlers()
 
         log.trace 'Initializing RestfulApiController...'
+
+        totalCountHeader = getHeaderName('totalCount', 'X-hedtech-totalCount')
+        pageMaxHeader    = getHeaderName('pageMaxSize', 'X-hedtech-pageMaxSize')
+        pageOffsetHeader = getHeaderName('pageOffset', 'X-hedtech-pageOffset')
+        messageHeader    = getHeaderName('message', 'X-hedtech-message')
+        mediaTypeHeader  = getHeaderName('mediaType', 'X-hedtech-Media-Type')
+        requestIdHeader  = getHeaderName('requestId', 'X-Request-ID')
+
+        pageMax    = getPagingConfiguration('max', 'max')
+        pageOffset = getPagingConfiguration('offset', 'offset')
+
         JSON.createNamedConfig('restapi-error:json') { }
         XML.createNamedConfig('restapi-error:xml') { }
 
@@ -141,17 +162,18 @@ class RestfulApiController {
                     switch(framework) {
                         case ~/json/:
                             JSON.createNamedConfig("restfulapi:" + resource.name + ":" + representation.mediaType) { json ->
-                                log.trace "Creating named config: 'restfulapi:${resource.name}:${representation.mediaType}'"
+                                log.info "Creating named config: 'restfulapi:${resource.name}:${representation.mediaType}'"
                                 representation.marshallers.each() {
-                                    log.trace "    ...registering json marshaller ${it.instance}"
+                                    log.info "    ...registering json marshaller ${it.instance}"
                                     json.registerObjectMarshaller(it.instance,it.priority)
                                 }
                             }
                         break
                         case ~/xml/:
                             XML.createNamedConfig("restfulapi:" + resource.name + ":" + representation.mediaType) { xml ->
+                                log.info "Creating named config: 'restfulapi:${resource.name}:${representation.mediaType}'"
                                 representation.marshallers.each() {
-                                    log.trace "    ...registering xml marshaller ${it.instance}"
+                                    log.info "    ...registering xml marshaller ${it.instance}"
                                     xml.registerObjectMarshaller(it.instance,it.priority)
                                 }
                             }
@@ -161,9 +183,23 @@ class RestfulApiController {
                     }
                     //register the extractor (if any)
                     if (null != representation.extractor) {
+                        log.info "registering extractor ${representation.extractor} for resource '${resource.name}'' and media type '${representation.mediaType}'"
                         ExtractorConfigurationHolder.registerExtractor(resource.name, representation.mediaType, representation.extractor )
                     }
                 }
+            }
+
+            restConfig.exceptionHandlers.each { config ->
+                log.info "registering exception handler class " + config.instance.getClass().getName() + " at priority " + config.priority
+                handlerConfig.add(config.instance, config.priority)
+            }
+            if (log.isInfoEnabled()) {
+                def sb = new StringBuffer()
+                sb.append "Registered exception handler order is:\n"
+                handlerConfig.getOrderedHandlers().each { handler->
+                    sb.append(handler.getClass().getName() + "\n")
+                }
+                log.info sb.toString()
             }
         }
 
@@ -188,7 +224,7 @@ class RestfulApiController {
     //
     public def list() {
 
-        log.trace "list invoked for ${params.pluralizedResourceName}"
+        log.trace "list invoked for ${params.pluralizedResourceName} - request_id=${request.request_id}"
         try {
             checkMethod( Methods.LIST )
             def responseRepresentation = getResponseRepresentation() // adds representation attribute to request
@@ -198,11 +234,11 @@ class RestfulApiController {
 
             if (request.method == "POST") {
                 def queryCriteria = parseRequestContent( request, 'query-filters' )
-                updatePagingQueryParams( queryCriteria ) // We'll ensure params uses expected Grails naming...
+                updatePagingQueryParams( queryCriteria ) // We'll ensure params uses expected Grails naming
                 requestParams << queryCriteria
             }
             else {
-                updatePagingQueryParams( requestParams ) // We'll ensure params uses expected Grails naming...
+                updatePagingQueryParams( requestParams ) // We'll ensure params uses expected Grails naming
             }
 
             def service = getService()
@@ -223,7 +259,7 @@ class RestfulApiController {
 
             // Need to create etagValue outside of 'etag' block:
             // http://jira.grails.org/browse/GPCACHEHEADERS-14
-            String etagValue = shaFor( result, count, responseRepresentation.mediaType )
+            String etagValue = etagGenerator.shaFor( result, count, responseRepresentation.mediaType )
 
             withCacheHeaders {
                 etag {
@@ -248,7 +284,7 @@ class RestfulApiController {
             }
         }
         catch (e) {
-            messageLog.error "Caught exception ${e.message}", e
+            logMessageError(e)
             renderErrorResponse(e)
             return
         }
@@ -258,7 +294,7 @@ class RestfulApiController {
     // GET /api/pluralizedResourceName/id
     //
     public def show() {
-        log.trace "show() invoked for ${params.pluralizedResourceName}/${params.id}"
+        log.trace "show() invoked for ${params.pluralizedResourceName}/${params.id} - request_id=${request.request_id}"
         try {
             checkMethod( Methods.SHOW )
             def responseRepresentation = getResponseRepresentation()
@@ -269,7 +305,7 @@ class RestfulApiController {
             def result = getServiceAdapter().show( getService(), requestParams )
             // Need to create etagValue outside of 'etag' block:
             // http://jira.grails.org/browse/GPCACHEHEADERS-14
-            String etagValue = shaFor( result, responseRepresentation.mediaType )
+            String etagValue = etagGenerator.shaFor( result, responseRepresentation.mediaType )
 
             withCacheHeaders {
 
@@ -288,7 +324,7 @@ class RestfulApiController {
             }
         }
         catch (e) {
-            messageLog.error "Caught exception ${e.message}", e
+            logMessageError(e)
             renderErrorResponse(e)
         }
     }
@@ -297,7 +333,7 @@ class RestfulApiController {
     // POST /api/pluralizedResourceName
     //
     public def create() {
-        log.trace "create() invoked for ${params.pluralizedResourceName}"
+        log.trace "create() invoked for ${params.pluralizedResourceName} - request_id=${request.request_id}"
         def result
 
         try {
@@ -311,7 +347,7 @@ class RestfulApiController {
                                    'default.rest.created.message' )
         }
         catch (e) {
-            messageLog.error "Caught exception ${e.message}", e
+            logMessageError(e)
             renderErrorResponse(e)
         }
     }
@@ -320,24 +356,21 @@ class RestfulApiController {
     // PUT/PATCH /api/pluralizedResourceName/id
     //
     public def update() {
-        log.trace "update() invoked for ${params.pluralizedResourceName}/${params.id}"
+        log.trace "update() invoked for ${params.pluralizedResourceName}/${params.id} - request_id=${request.request_id}"
         def result
 
         try {
             checkMethod( Methods.UPDATE )
             def content = parseRequestContent( request )
-            if (content && content.id && content.id != params.id) {
-                throw new IdMismatchException( params.pluralizedResourceName )
-            }
-
+            checkId(content)
             getResponseRepresentation()
-            result = getServiceAdapter().update( getService(), params.id, content, params )
+            result = getServiceAdapter().update( getService(), content, params )
             response.setStatus( 200 )
             renderSuccessResponse( new ResponseHolder( data: result ),
                                    'default.rest.updated.message' )
         }
         catch (e) {
-            messageLog.error "Caught exception ${e.message}", e
+            logMessageError(e)
             renderErrorResponse(e)
         }
     }
@@ -346,28 +379,21 @@ class RestfulApiController {
     // DELETE /api/pluralizedResourceName/id
     //
     public def delete() {
-        log.trace "delete() invoked for ${params.pluralizedResourceName}/${params.id}"
+        log.trace "delete() invoked for ${params.pluralizedResourceName}/${params.id} - request_id=${request.request_id}"
         try {
             checkMethod( Methods.DELETE )
             def content = [:]
-            //Using angular in some browsers causes the Content-Type header
-            //to be set as application/xml or some other default for zero-length
-            //bodies, instead of a configured type.
-            //If we have a delete with a zero-length body,
-            //we will skip parsing the request content and use an
-            //empty map.
-            if (request.getContentLength() != 0) {
+            ResourceConfig config = getResourceConfig()
+            if (config.bodyExtractedOnDelete) {
                 content = parseRequestContent( request )
             }
-            if (content && content.id && content.id != params.id) {
-                throw new IdMismatchException( params.pluralizedResourceName )
-            }
-            getServiceAdapter().delete( getService(), params.id, content, params )
+            checkId(content)
+            getServiceAdapter().delete( getService(), content, params )
             response.setStatus( 200 )
             renderSuccessResponse( new ResponseHolder(), 'default.rest.deleted.message' )
         }
         catch (e) {
-            messageLog.error "Caught exception ${e.message}", e
+            logMessageError(e)
             renderErrorResponse(e)
         }
     }
@@ -387,6 +413,7 @@ class RestfulApiController {
      protected void renderSuccessResponse(ResponseHolder holder, String msgResourceCode) {
         String localizedName = localize(Inflector.singularize(params.pluralizedResourceName))
         holder.message = message( code: msgResourceCode, args: [ localizedName ] )
+        if (request.request_id) holder.addHeader(requestIdHeader, request.request_id)
         renderResponse( holder )
     }
 
@@ -396,12 +423,13 @@ class RestfulApiController {
      * @param e the exception to render an error response for
      **/
     protected void renderErrorResponse( Throwable e ) {
-        ResponseHolder responseHolder = createErrorResponse( e )
+        ResponseHolder responseHolder = createErrorResponse(e)
+        if (request.request_id) responseHolder.addHeader(requestIdHeader, request.request_id)
         //The versioning applies to resource representations, not to
         //errors.  In fact, it can't, as the error may be that an unrecognized format
         //was requested.  So if we are returning an error response, we switch the format
         //to either json or xml.
-        //So we will look at the Accept-Header directly and try to determine if JSON or XML was
+        //So we'll look at the Accept-Header directly and try to determine if JSON or XML was
         //requested.  If we can't decide, we will return JSON.
         String contentType = null
         def content
@@ -441,11 +469,12 @@ class RestfulApiController {
     protected ResponseHolder createErrorResponse( Throwable e ) {
         ResponseHolder responseHolder = new ResponseHolder()
         try {
-            def handler = exceptionHandlers[ getErrorType( e ) ]
-            if (!handler) {
-                handler = exceptionHandlers[ 'AnyOtherException' ]
-            }
-            def result = handler(params.pluralizedResourceName, e)
+            def handler = handlerConfig.getHandler(e)
+            ExceptionHandlerContext context = new ExceptionHandlerContext(
+                        pluralizedResourceName:params.pluralizedResourceName,
+                        localizer:localizer)
+
+            ErrorResponse result = handler.handle(e, context)
             if (result.headers) {
                 result.headers.each() { header ->
                     if (header.value instanceof Collection) {
@@ -457,9 +486,9 @@ class RestfulApiController {
                     }
                 }
             }
-            responseHolder.data = result.returnMap
+            responseHolder.data = result.content
             responseHolder.message = result.message
-            this.response.setStatus( result.httpStatusCode )
+            this.response.setStatus(result.httpStatusCode)
         }
         catch (t) {
             //We generated an exception trying to generate an error response.
@@ -510,6 +539,14 @@ class RestfulApiController {
                 log.trace "Going to useJSON with representation $representation"
                 useJSON(representation) {
                     result = (data as JSON) as String
+
+                    // add a prefix if configured to protect from a JSON Array
+                    // vulnerability to CSRF attack.
+                    if (data instanceof Collection) {
+                        if (representation.jsonArrayPrefix instanceof String) {
+                            result = representation.jsonArrayPrefix + result
+                        }
+                    }
                 }
                 break
             case ~/xml/:
@@ -595,71 +632,6 @@ class RestfulApiController {
     }
 
 
-    protected String shaFor( resourceModel, String requestedMediaType ) {
-        MessageDigest digest = MessageDigest.getInstance( 'SHA1' )
-        shaFor( resourceModel, digest, requestedMediaType )
-    }
-
-
-    protected String shaFor( resourceModel, MessageDigest digest, String requestedMediaType ) {
-
-        digest.update( requestedMediaType.getBytes( 'UTF-8' ) )
-
-        if (resourceModel.getMetaClass().respondsTo( resourceModel, "getEtag" )) {
-            log.trace "Will create ETag based upon a model's 'getEtag()' method"
-            digest.update( "${resourceModel.getEtag()}".getBytes( 'UTF-8' ) )
-            return "\"${new BigInteger( 1, digest.digest() ).toString( 16 ).padLeft( 40,'0' )}\""
-        }
-
-        if (!hasProperty( resourceModel, "id" )) {
-            log.trace "Cannot create ETag using a resource's identity, returning a UUID"
-            return randomUUID() as String
-        }
-        digest.update( "${resourceModel.id}".getBytes( 'UTF-8' ) )
-
-        // we'll require either version, lastModified, or (worst case) all properties
-        boolean changeIndictorFound = false
-        if (hasProperty( resourceModel, "version") ) {
-            changeIndictorFound = true
-            digest.update( "${resourceModel.version}".getBytes( 'UTF-8' ) )
-        }
-        else if (hasProperty( resourceModel, "lastUpdated" )) {
-            changeIndictorFound = true
-            digest.update( "${resourceModel.lastUpdated}".getBytes( 'UTF-8' ) )
-        }
-        else if (hasProperty( resourceModel, "lastModified" )) {
-            changeIndictorFound = true
-            digest.update( "${resourceModel.lastModified}".getBytes( 'UTF-8' ) )
-        }
-
-        if (changeIndictorFound) {
-            log.trace "Returning an ETag based on id and a known change indicator"
-            return "\"${new BigInteger( 1, digest.digest() ).toString( 16 ).padLeft( 40,'0' )}\""
-        } else {
-            // Note: we don't return empty ETags as doing so may cause some caching
-            //       infrastructure to reset connections.
-            log.trace "Cannot create ETag using a resource's change indicator, returning a UUID"
-            return randomUUID() as String
-        }
-    }
-
-
-    protected String shaFor( Collection resourceModels, long totalCount, String requestedMediaType ) {
-
-        if (!(resourceModels && totalCount)) return ''
-        MessageDigest digest = MessageDigest.getInstance( 'SHA1' )
-
-        // we'll use the collection size, the totalCount of resources,
-        // and the sha1 calculated for each item in the collection
-        digest.update( "${resourceModels.size()}".getBytes( 'UTF-8' ) )
-        digest.update( "${totalCount}".getBytes( 'UTF-8' ) )
-        resourceModels.each {
-            shaFor( it, digest, requestedMediaType )
-        }
-        "\"${new BigInteger( 1, digest.digest() ).toString( 16 ).padLeft( 40,'0' )}\""
-    }
-
-
     protected Date lastModifiedFor( Collection resourceModels ) {
 
         if (!resourceModels) return new Date()
@@ -693,39 +665,6 @@ class RestfulApiController {
             unsupportedRequestRepresentation()
         }
         getExtractorAdapter().extract(extractor, request)
-    }
-
-
-    /**
-     * Maps an exception to an error type known to the controller.
-     * @param e the exception to map
-     **/
-    protected String getErrorType( e ) {
-
-        if (e.metaClass.respondsTo( e, "getHttpStatusCode") &&
-            e.hasProperty( "returnMap" ) &&
-            e.returnMap && (e.returnMap instanceof Closure)) {
-            //treat as an 'ApplicationException'.  That is, assume the exception is taking
-            //responsibility for specifying the correct status code and
-            //response message elements
-            return 'ApplicationException'
-        } else if (e instanceof OptimisticLockingFailureException) {
-            return 'OptimisticLockException'
-        } else if (e instanceof ValidationException) {
-            return 'ValidationException'
-        } else if (e instanceof UnsupportedResourceException) {
-            return 'UnsupportedResourceException'
-        } else if (e instanceof UnsupportedRequestRepresentationException) {
-            return 'UnsupportedRequestRepresentationException'
-        } else if (e instanceof UnsupportedResponseRepresentationException) {
-            return 'UnsupportedResponseRepresentationException'
-        } else if (e instanceof IdMismatchException) {
-            return 'IdMismatchException'
-        } else if (e instanceof UnsupportedMethodException) {
-            return 'UnsupportedMethodException'
-        } else {
-            return 'AnyOtherException'
-        }
     }
 
 
@@ -849,7 +788,7 @@ class RestfulApiController {
 
 
     /**
-     * Returns the best match, or null if no supported representation for the resource exists.
+     * Returns the best match or null if no supported representation for the resource exists.
      **/
     protected RepresentationConfig getRepresentation(pluralizedResourceName, allowedTypes) {
         return restConfig.getRepresentation( pluralizedResourceName, allowedTypes.name )
@@ -864,6 +803,42 @@ class RestfulApiController {
         if (!resource.allowsMethod( method ) ) {
             def allowed = resource.getMethods().intersect( Methods.getMethodGroup( method ) )
             throw new UnsupportedMethodException( supportedMethods:allowed )
+        }
+    }
+
+    protected checkId(Map content) {
+        if (content && content.containsKey('id') && getResourceConfig().idMatchEnforced) {
+            String contentId = content.id == null ? null : content.id.toString()
+            if (contentId != params.id) {
+                throw new IdMismatchException( params.pluralizedResourceName )
+            }
+        }
+    }
+
+    protected logMessageError(Throwable e) {
+        messageLog.error "Caught exception: ${e.message != null ? e.message : ''}", e
+    }
+
+
+    private String getHeaderName(name, defaultString) {
+        def value = grailsApplication.config.restfulApi.header."${name}"
+        (value instanceof String) ? value : defaultString
+    }
+
+
+    private String getPagingConfiguration(name, defaultString) {
+        def value = grailsApplication.config.restfulApi.page."${name}"
+        (value instanceof String) ? value : defaultString
+    }
+
+
+    private setRequestIdAttribute() {
+        // we'll set an attribute that may be used for logging
+        if (request.getHeader(requestIdHeader)) {
+            request.request_id = request.getHeader(requestIdHeader)
+        }
+        else {
+            request.request_id = randomUUID()
         }
     }
 
@@ -973,111 +948,16 @@ class RestfulApiController {
         restConfig.getResource( resource )
     }
 
-    private def exceptionHandlers = [
+    private initExceptionHandlers() {
+        handlerConfig.add(new UnsupportedMethodExceptionHandler(), -8)
+        handlerConfig.add(new IdMismatchExceptionHandler(), -7)
+        handlerConfig.add(new UnsupportedResponseRepresentationExceptionHandler(), -6)
+        handlerConfig.add(new UnsupportedRequestRepresentationExceptionHandler(), -5)
+        handlerConfig.add(new UnsupportedResourceExceptionHandler(), -4 )
+        handlerConfig.add(new ValidationExceptionHandler(), -3)
+        handlerConfig.add(new OptimisticLockExceptionHandler(), -2)
+        handlerConfig.add(new ApplicationExceptionHandler(), -1)
 
-        'ValidationException': { pluralizededResourceName, e->
-            [
-                httpStatusCode: 400,
-                headers: ['X-Status-Reason':'Validation failed'],
-                message: message( code: "default.rest.validation.errors.message",
-                                          args: [ Inflector.singularize( pluralizededResourceName ) ] ) as String,
-                returnMap: [
-                    errors: [
-                        [
-                            type: "validation",
-                            errorMessage: e.message
-                        ]
-                    ]
-                ]
-            ]
-        },
-        'OptimisticLockException': { pluralizededResourceName, e ->
-            [
-                httpStatusCode: 409,
-                message: message( code: "default.optimistic.locking.failure",
-                                          args: [ Inflector.singularize( pluralizededResourceName ) ] ) as String,
-            ]
-        },
-        'UnsupportedResourceException': { pluralizededResourceName, e ->
-            [
-                httpStatusCode: 404,
-                message: message( code: "default.rest.unknownresource.message",
-                                          args: [ e.getPluralizedResourceName() ] ) as String,
-            ]
-        },
-        'UnsupportedResponseRepresentationException': { pluralizededResourceName, e ->
-            [
-                httpStatusCode: 406,
-                message: message( code: "default.rest.unknownrepresentation.message",
-                                          args: [ e.getPluralizedResourceName(), e.getContentType() ] ) as String,
-            ]
-        },
-        'UnsupportedRequestRepresentationException': { pluralizededResourceName, e ->
-            [
-                httpStatusCode: 415,
-                message: message( code: "default.rest.unknownrepresentation.message",
-                                          args: [ e.getPluralizedResourceName(), e.getContentType() ] ) as String,
-            ]
-        },
-        'IdMismatchException': { pluralizededResourceName, e ->
-            [
-                httpStatusCode: 400,
-                headers: ['X-Status-Reason':'Id mismatch'],
-                message: message( code: "default.rest.idmismatch.message",
-                                  args: [ e.getPluralizedResourceName() ] ) as String
-            ]
-        },
-        'UnsupportedMethodException': { pluralizedResourceName, e ->
-            def allowedHTTPMethods = []
-            e.getSupportedMethods().each {
-                allowedHTTPMethods.add( Methods.getHttpMethod( it ) )
-            }
-            def r = [
-                httpStatusCode: 405,
-                headers: ['Allow':allowedHTTPMethods],
-                message: message( code: 'default.rest.method.not.allowed.message' ) as String
-            ]
-        },
-        'ApplicationException': { pluralizededResourceName, e ->
-            // wrap the 'message' invocation within a closure, so it can be
-            // passed into an ApplicationException to localize error messages
-            def localizer = { mapToLocalize ->
-                this.message( mapToLocalize )
-            }
-
-            def map = [:]
-            def appMap = e.returnMap( localizer )
-            map.httpStatusCode = e.getHttpStatusCode()
-            if (appMap.headers) {
-                map.headers = appMap.headers
-            }
-            if (appMap.message) {
-                map.message = appMap.message
-            }
-
-            def returnMap = [:]
-            if (appMap.errors) {
-                returnMap.errors = appMap.errors
-            }
-            map.returnMap = returnMap
-
-            return map
-        },
-        // Catch-all.  Unknown exception type.
-        'AnyOtherException': { pluralizededResourceName, e ->
-            [
-                httpStatusCode: 500,
-                message: message( code: "default.rest.general.errors.message",
-                                  args: [ pluralizededResourceName ] ) as String,
-                returnMap: [
-                    errors: [ [
-                        type: "general",
-                        errorMessage: e.message
-                        ]
-                    ]
-                ]
-            ]
-        }
-    ]
-
+        handlerConfig.add(new DefaultExceptionHandler(), Integer.MIN_VALUE)
+    }
 }

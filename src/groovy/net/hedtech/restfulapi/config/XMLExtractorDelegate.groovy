@@ -59,6 +59,11 @@ class XMLExtractorDelegate {
         this
     }
 
+    XMLExtractorDelegate setLenientDates(boolean b) {
+        config.lenientDates = b
+        this
+    }
+
     class PropertyOptions {
         String propertyName
         PropertyOptions(String propertyName) {

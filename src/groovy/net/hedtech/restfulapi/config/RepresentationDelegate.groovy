@@ -20,6 +20,7 @@ class RepresentationDelegate {
     def mediaTypes = []
     String marshallerFramework
     String contentType
+    def jsonArrayPrefix
     def marshallers = []
     def extractor
 

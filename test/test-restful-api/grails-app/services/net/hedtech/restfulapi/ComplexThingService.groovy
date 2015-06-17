@@ -54,11 +54,11 @@ class ComplexThingService {
         throw new RuntimeException("Not yet implemented!")
     }
 
-    def update(def id, Map content, Map params) {
+    def update(Map content, Map params) {
         throw new RuntimeException("Not yet implemented!")
     }
 
-    def delete(def id, Map content, Map params) {
+    def delete(Map content, Map params) {
         throw new RuntimeException("Not yet implemented!")
     }
 

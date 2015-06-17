@@ -249,8 +249,8 @@ class AbstractBeanMarshaller implements ObjectMarshaller<JSON> {
      *
      **/
     protected boolean processProperty(BeanWrapper beanWrapper,
-                                   PropertyDescriptor property,
-                                   JSON json) {
+                                      PropertyDescriptor property,
+                                      JSON json) {
         true
     }
 

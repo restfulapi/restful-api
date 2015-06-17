@@ -64,7 +64,61 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         // assert localization of the message
         "List of thing resources" == responseHeader('X-hedtech-message')
 
-        //check pagination headers
+        //check  headers
+        null != responseHeader('X-Request-ID')
+        "2" == responseHeader('X-hedtech-totalCount')
+        null != responseHeader('X-hedtech-pageOffset')
+        null != responseHeader('X-hedtech-pageMaxSize')
+        json[0]._href?.contains('things')
+        null == json[0].numParts
+        null == json[0].sha1
+    }
+
+    def "Test list with provided request ID"() {
+        setup:
+        createThing('AA')
+        createThing('BB')
+
+        when:"list with  application/json accept"
+        get("$localBase/api/things") {
+            headers['Accept']       = 'application/json'
+            headers['X-Request-ID'] = 'MY-Custom-ID'
+        }
+
+        then:
+        200 == response.status
+        'MY-Custom-ID' == responseHeader('X-Request-ID')
+    }
+
+    // tests 'internal' json representation for list where a
+    // configured prefix is prepended (to protect from json csrf vulnerability)
+    def "Test list with 'internal representation' json response"() {
+        setup:
+        createThing('AA')
+        createThing('BB')
+
+        when:"list with application/vnd.hedtech.internal.v0+json accept"
+        get("$localBase/api/things") {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/vnd.hedtech.internal.v0+json'
+        }
+
+        then:
+        200 == response.status
+        'application/json' == response.contentType
+
+        assert response.text.startsWith('while(1);')
+        def json = JSON.parse response.text.replaceFirst( /while\(1\);/, "")
+
+        2 == json.size()
+        "AA" == json[0].code
+        "An AA thing" == json[0].description
+
+        // assert localization of the message
+        "List of thing resources" == responseHeader('X-hedtech-message')
+
+        //check headers
+        null != responseHeader('X-Request-ID')
         "2" == responseHeader('X-hedtech-totalCount')
         null != responseHeader('X-hedtech-pageOffset')
         null != responseHeader('X-hedtech-pageMaxSize')
@@ -492,6 +546,7 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
 
         then:
         404 == response.status
+        null != responseHeader('X-Request-ID')
         "Unsupported resource 'unknown-things'" == responseHeader('X-hedtech-message')
     }
 
@@ -504,6 +559,52 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         get( "$localBase/api/things/$id" ) {
             headers['Content-Type']  = 'application/json'
             headers['Accept']        = 'application/json'
+        }
+
+        then:
+        200 == response.status
+        'application/json' == response.contentType
+
+        def json = JSON.parse response.text
+        "AA" == json.code
+        "An AA thing" == json.description
+        json._href?.contains('things')
+        null == json.numParts
+        null == json.sha1
+        null != json.version
+
+        // assert localization of the message
+        "Details for the thing resource" == responseHeader('X-hedtech-message')
+        null != responseHeader('X-Request-ID')
+    }
+
+    def "Test show with provided request ID"() {
+        setup:
+        def id = createThing('AA')
+        createThing('BB')
+
+        when:
+        get( "$localBase/api/things/$id" ) {
+            headers['Content-Type']  = 'application/json'
+            headers['Accept']        = 'application/json'
+        }
+
+        then:
+        200 == response.status
+        'application/json' == response.contentType
+        null != responseHeader('X-Request-ID')
+    }
+
+    // tests that no prefix is added when a single representation is returned
+    def "Test show thing with json 'internal represenation' response"() {
+        setup:
+        def id = createThing('AA')
+        createThing('BB')
+
+        when:
+        get( "$localBase/api/things/$id" ) {
+            headers['Content-Type']  = 'application/json'
+            headers['Accept']        = 'application/vnd.hedtech.internal.v0+json'
         }
 
         then:
@@ -799,6 +900,7 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         then:
         404 == response.status
         "Unsupported resource 'unknown-things'" == responseHeader('X-hedtech-message')
+        null != responseHeader('X-Request-ID')
     }
 
     def "Test save as json"() {
@@ -827,6 +929,7 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
 
         // assert localization of the message
         "thing resource created" == responseHeader('X-hedtech-message')
+        null != responseHeader('X-Request-ID')
         def json = JSON.parse response.text
         null != json.id
         "AC" == json.code
@@ -949,6 +1052,7 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         then:
         400 == response.status
         'Validation failed' == responseHeader("X-Status-Reason")
+        null != responseHeader('X-Request-ID')
 
         def json = JSON.parse response.text
         1 == json.errors.size()
@@ -997,6 +1101,7 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         then:
         404 == response.status
         "Unsupported resource 'unknown-things'" == responseHeader('X-hedtech-message')
+        null != responseHeader('X-Request-ID')
     }
 
     def "Test updating a thing with json"() {
@@ -1087,6 +1192,7 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         // assert localization of the message
         "Another user has updated this thing while you were editing" == responseHeader('X-hedtech-message')
         "" == response.text
+        null != responseHeader('X-Request-ID')
     }
 
     void "Test that optimistic lock returns 409 status, even with a conditional request"() {
@@ -1135,6 +1241,7 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         // assert localization of the message
         "thing resource deleted" == responseHeader('X-hedtech-message')
         0 == count
+        null != responseHeader('X-Request-ID')
     }
 
     def "Test that an OptimisticLockingFailureException returns a 409 status"() {
@@ -1355,7 +1462,7 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         // null != json.version
     }
 
-    def "Test saving a thing with version 1 json representation"() {
+    def "Test saving a thing with version 1 xml representation"() {
         when:
         post( "$localBase/api/things") {
             headers['Content-Type'] = 'application/vnd.hedtech.v1+xml'
@@ -1427,6 +1534,7 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         // assert localization of the message
         "Unsupported media type 'application/vnd.hedtech.no_extractor+xml' for resource 'things'" == responseHeader('X-hedtech-message')
         "" == response.text
+        null != responseHeader('X-Request-ID')
     }
 
     def "Test that a 406 status is returned if the accept type is an unsupported xml type"() {
@@ -1451,6 +1559,7 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         // assert localization of the message
         "Unsupported media type 'application/vnd.hedtech.no_such_type+xml' for resource 'things'" == responseHeader('X-hedtech-message')
         "" == response.text
+        null != responseHeader('X-Request-ID')
     }
 
     def "Test that a 406 status is returned if the accept type is an unsupported json type"() {
@@ -1827,7 +1936,7 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         'BB'   == xml.code[1].text()
     }
 
-    def "Test marshalling a list with a custom marshaller service that returns InputStream"() {
+    def "Test marshalling a list with a custom marshaller service that returns StreamWrapper"() {
         setup:
         createThing('AA')
         createThing('BB')
@@ -1915,6 +2024,43 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         null                      != json.numParts
         null                      != json.sha1
         "dev"                     == json.tenant
+    }
+
+    def "Test proxy unwrapping for json marshallers"() {
+        setup:
+        Parent parent = new Parent(name:'foo')
+        parent.children = []
+        parent.children.add(new Child(name:'bar'))
+        parent.save(failOnError:true, flush:true)
+        def id = parent.getId()
+
+        when:
+        get("$localBase/api/parents/$id") {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/json'
+        }
+        def json = JSON.parse response.text
+
+        then:
+        200 == response.status
+    }
+
+    def "Test proxy unwrapping for xml marshallers"() {
+        setup:
+        Parent parent = new Parent(name:'foo')
+        parent.children = []
+        parent.children.add(new Child(name:'bar'))
+        parent.save(failOnError:true, flush:true)
+        def id = parent.getId()
+
+        when:
+        get("$localBase/api/parents/$id") {
+            headers['Content-Type'] = 'application/xml'
+            headers['Accept']       = 'application/xml'
+        }
+
+        then:
+        200 == response.status
     }
 
     @Ignore // This test requires configuration on the test machine.

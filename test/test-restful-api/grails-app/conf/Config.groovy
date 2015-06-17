@@ -141,28 +141,33 @@ grails.date.formats = [ "yyyy-MM-dd'T'HH:mm:ssZ", "yyyy-MM-dd HH:mm:ss-SSSS", "d
 //
 cors.url.pattern        = '/api/*'
 cors.allow.origin.regex ='.*'
-cors.expose.headers     ='content-type,X-hedtech-totalCount,X-hedtech-pageOffset,X-hedtech-pageMaxSize,X-hedtech-message,X-hedtech-Media-Type'
+cors.expose.headers     ='content-type,X-hedtech-totalCount,X-hedtech-pageOffset,X-hedtech-pageMaxSize,X-hedtech-message,X-hedtech-Media-Type,X-Request-ID'
 
 
 // ******************************************************************************
 //             RESTful API Custom Response Header Name Configuration
 // ******************************************************************************
-// Note: Tests within this test app expect this 'X-hedtech...' naming to be used.
+// Note: Tests within this test app expect the default values that are shown below.
+// These do not need to be configured (hence they are commented out) unless you
+// want to override the naming. (The 'built-in' names are shown below.)
 //
-restfulApi.header.totalCount  = 'X-hedtech-totalCount'
-restfulApi.header.pageOffset  = 'X-hedtech-pageOffset'
-restfulApi.header.pageMaxSize = 'X-hedtech-pageMaxSize'
-restfulApi.header.message     = 'X-hedtech-message'
-restfulApi.header.mediaType   = 'X-hedtech-Media-Type'
+//restfulApi.header.totalCount  = 'X-hedtech-totalCount'
+//restfulApi.header.pageOffset  = 'X-hedtech-pageOffset'
+//restfulApi.header.pageMaxSize = 'X-hedtech-pageMaxSize'
+//restfulApi.header.message     = 'X-hedtech-message'
+//restfulApi.header.mediaType   = 'X-hedtech-Media-Type'
+
+//restfulApi.header.requestId   = 'X-Request-ID'
 
 
 // ******************************************************************************
 //             RESTful API 'Paging' Query Parameter Name Configuration
 // ******************************************************************************
-// Note: Tests within this test app expect this 'X-hedtech...' naming to be used.
+// The paging parameter names may be overriden if desired.
+// The commented out settings show the 'built in' defaults (grails default)
 //
-restfulApi.page.max    = 'max'
-restfulApi.page.offset = 'offset'
+//restfulApi.page.max    = 'max'
+//restfulApi.page.offset = 'offset'
 
 
 // ******************************************************************************
@@ -224,6 +229,17 @@ restfulApiConfig = {
     resource 'things' config {
         representation {
             mediaTypes = ["application/json"]
+            marshallerFramework = 'json'
+            marshallers {
+                jsonDomainMarshaller {
+                    inherits = ['jsonDomainAffordance']
+                }
+            }
+            jsonExtractor {}
+        }
+        representation {
+            mediaTypes = ["application/vnd.hedtech.internal.v0+json"]
+            jsonArrayPrefix = 'while(1);'
             marshallerFramework = 'json'
             marshallers {
                 jsonDomainMarshaller {
@@ -360,6 +376,7 @@ restfulApiConfig = {
             contentType = 'application/zip'
             marshallerFramework = 'streamSizeCustomThingMarshallingService'
         }
+
     }
 
     resource 'thing-wrappers' config {
@@ -505,6 +522,30 @@ restfulApiConfig = {
             marshallers {
                 jsonDomainMarshaller {
                     priority = 100
+                }
+            }
+            jsonExtractor {}
+        }
+    }
+
+    resource 'parents' config {
+        methods = ['show']
+        representation {
+            mediaTypes = ["application/json"]
+            marshallers {
+                jsonDomainMarshaller {
+                    priority = 100
+                    deepMarshallsAssociations true
+                }
+            }
+            jsonExtractor {}
+        }
+        representation {
+            mediaTypes = ["application/xml"]
+            marshallers {
+                xmlDomainMarshaller {
+                    priority = 100
+                    deepMarshallsAssociations true
                 }
             }
             jsonExtractor {}

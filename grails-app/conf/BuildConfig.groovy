@@ -33,6 +33,6 @@ grails.project.dependency.resolution = {
             export = false
         }
         compile(":inflector:0.2",
-                ":cache-headers:1.1.5")
+                ":cache-headers:1.1.7")
     }
 }

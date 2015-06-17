@@ -82,9 +82,9 @@ class BasicDomainClassMarshaller implements ObjectMarshaller<XML>, NameAwareMars
     @Override
     public void marshalObject(Object value, XML xml) throws ConverterException {
 
+        value = getProxyHandler().unwrapIfProxy(value)
         Class<?> clazz = value.getClass()
         log.trace "$this marshalObject() called for $clazz"
-        value = getProxyHandler().unwrapIfProxy(value)
         GrailsDomainClass domainClass = app.getDomainClass(clazz.getName())
         BeanWrapper beanWrapper = new BeanWrapperImpl(value)
         GrailsDomainClassProperty[] persistentProperties = domainClass.getPersistentProperties()

@@ -202,6 +202,31 @@ class XMLBeanMarshallerConfigSpec extends Specification {
         'Foo' == config.elementName
     }
 
+    def "Test default marshalling null fields"() {
+        setup:
+        def src = {
+            marshallsNullFields false
+        }
+
+        when:
+        def config = invoke(src)
+
+        then:
+        false == config.marshallNullFields
+    }
+
+    def "Test marshalling null fields"() {
+        setup:
+        def src = {
+            field 'owner' marshallsNull true
+            field 'manager' marshallsNull false name 'mgr'
+        }
+
+        when:
+        def config = invoke(src)
+        then:
+        ['owner':true, 'manager':false] == config.marshalledNullFields
+    }
 
     def "Test merging configurations"() {
         setup:
@@ -216,7 +241,9 @@ class XMLBeanMarshallerConfigSpec extends Specification {
             excludedFields:['e1','e2'],
             additionalFieldClosures:[{app,bean,xml ->}],
             additionalFieldsMap:['one':'one','two':'two'],
-            requireIncludedFields:true
+            requireIncludedFields:true,
+            marshallNullFields:true,
+            marshalledNullFields:['one':true,'two':false]
         )
         XMLBeanMarshallerConfig two = new XMLBeanMarshallerConfig(
             supportClass:Thing,
@@ -227,8 +254,9 @@ class XMLBeanMarshallerConfigSpec extends Specification {
             excludedFields:['e3'],
             additionalFieldClosures:[{app,bean,xml ->}],
             additionalFieldsMap:['two':'2','three':'3'],
-            requireIncludedFields:false
-
+            requireIncludedFields:false,
+            marshallNullFields:false,
+            marshalledNullFields:['two':true,'three':false]
         )
 
         when:
@@ -246,6 +274,8 @@ class XMLBeanMarshallerConfigSpec extends Specification {
         2                                        == config.additionalFieldClosures.size()
         ['one':'one',"two":'2','three':'3']      == config.additionalFieldsMap
         false                                    == config.requireIncludedFields
+        false                                    == config.marshallNullFields
+        ['one':true,'two':true,'three':false]    == config.marshalledNullFields
     }
 
     def "Test merging configurations does not alter either object"() {
@@ -261,7 +291,9 @@ class XMLBeanMarshallerConfigSpec extends Specification {
             excludedFields:['e1','e2'],
             additionalFieldClosures:[{app,bean,xml ->}],
             additionalFieldsMap:['one':'1'],
-            requireIncludedFields:true
+            requireIncludedFields:true,
+            marshallNullFields:true,
+            marshalledNullFields:['one':true,'two':false],
         )
         XMLBeanMarshallerConfig two = new XMLBeanMarshallerConfig(
             supportClass:PartOfThing,
@@ -272,7 +304,9 @@ class XMLBeanMarshallerConfigSpec extends Specification {
             excludedFields:['e3'],
             additionalFieldClosures:[{app,bean,xml ->}],
             additionalFieldsMap:['two':'2'],
-            requireIncludedFields:false
+            requireIncludedFields:false,
+            marshallNullFields:false,
+            marshalledNullFields:['two':true,'three':false]
         )
 
         when:
@@ -290,6 +324,8 @@ class XMLBeanMarshallerConfigSpec extends Specification {
         1                           == one.additionalFieldClosures.size()
         ['one':'1']                 == one.additionalFieldsMap
         true                        == one.requireIncludedFields
+        true                        == one.marshallNullFields
+        ['one':true,'two':false]    == one.marshalledNullFields
 
         true                        == two.isSupportClassSet
         PartOfThing                 == two.supportClass
@@ -302,6 +338,8 @@ class XMLBeanMarshallerConfigSpec extends Specification {
         1                           == two.additionalFieldClosures.size()
         ['two':'2']                 == two.additionalFieldsMap
         false                       == two.requireIncludedFields
+        false                       == two.marshallNullFields
+        ['two':true,'three':false]  == two.marshalledNullFields
     }
 
     def "Test merging with support class set only on the left"() {
@@ -366,6 +404,22 @@ class XMLBeanMarshallerConfigSpec extends Specification {
         'Foo' == config.elementName
     }
 
+    def "Test merging marshaller with marshallNullFields set only on the left"() {
+        setup:
+        def c1 = { Map m -> }
+        XMLBeanMarshallerConfig one = new XMLBeanMarshallerConfig(
+            marshallNullFields:false
+        )
+        XMLBeanMarshallerConfig two = new XMLBeanMarshallerConfig(
+        )
+
+        when:
+        def config = one.merge(two)
+
+        then:
+        false == config.marshallNullFields
+    }
+
     def "Test resolution of marshaller configuration inherits"() {
         setup:
         XMLBeanMarshallerConfig part1 = new XMLBeanMarshallerConfig(
@@ -416,9 +470,9 @@ class XMLBeanMarshallerConfigSpec extends Specification {
     def "Test repeated field clears previous settings"() {
         setup:
         def src = {
-            field 'one' name 'modOne'
+            field 'one' name 'modOne' marshallsNull false
             field 'one'
-            field 'two' name 'modTwo'
+            field 'two' name 'modTwo' marshallsNull true
             includesFields {
                 field 'two'
             }
@@ -429,6 +483,7 @@ class XMLBeanMarshallerConfigSpec extends Specification {
 
         then:
         [:] == config.fieldNames
+        [:] == config.marshalledNullFields
     }
 
     private XMLBeanMarshallerConfig invoke( Closure c ) {

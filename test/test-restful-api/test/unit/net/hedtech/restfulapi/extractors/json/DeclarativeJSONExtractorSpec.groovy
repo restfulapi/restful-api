@@ -21,10 +21,11 @@ import grails.test.mixin.support.*
 
 import java.text.SimpleDateFormat
 
+import net.hedtech.restfulapi.extractors.DateParseException
+
 import org.codehaus.groovy.grails.web.json.JSONObject
 
 import spock.lang.*
-
 
 @TestMixin([GrailsUnitTestMixin])
 class DeclarativeJSONExtractorSpec extends Specification {
@@ -173,6 +174,40 @@ class DeclarativeJSONExtractorSpec extends Specification {
         d2 == map['customers'][0]['date2']
         d1 == map['customers'][1]['date1']
         d2 == map['customers'][1]['date2']
+    }
+
+    def "Test non-lenient date parsing"() {
+        setup:
+        DeclarativeJSONExtractor extractor = new DeclarativeJSONExtractor(
+            dottedDatePaths:['date'],
+            dateFormats:["yyyy-MM-dd"]
+        )
+
+        when:
+        extractor.extract(new JSONObject(['date':'1982-99-99']))
+
+        then:
+        DateParseException e = thrown()
+        '1982-99-99'         == e.params[0]
+        400                  == e.getHttpStatusCode()
+    }
+
+   def "Test lenient date parsing"() {
+        setup:
+        DeclarativeJSONExtractor extractor = new DeclarativeJSONExtractor(
+            dottedDatePaths:['date'],
+            dateFormats:["yyyy-MM-dd"],
+            lenientDates: true
+        )
+        def f = new SimpleDateFormat('yyy-MM-dd')
+        f.setLenient(true)
+        Date expected = f.parse("1982-99-99")
+
+        when:
+        def map = extractor.extract(new JSONObject(['date':'1982-99-99']))
+
+        then:
+        expected == map['date']
     }
 
     private String formatDate(Date d, String format) {

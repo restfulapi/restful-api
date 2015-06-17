@@ -22,6 +22,7 @@ import grails.test.mixin.support.*
 import grails.test.mixin.web.*
 
 import net.hedtech.restfulapi.*
+import net.hedtech.restfulapi.beans.*
 import net.hedtech.restfulapi.extractors.xml.*
 
 import org.codehaus.groovy.grails.commons.GrailsDomainClassProperty
@@ -208,6 +209,27 @@ class XMLBeanRoundTripSpec extends Specification {
 
         when:
         def content = render(thing)
+        def map = extractor.extract(XML.parse(content))
+
+        then:
+        expected == map
+    }
+
+    def "Test enum"() {
+        setup:
+        def marshallers = []
+        marshallers.add new DeclarativeBeanMarshaller(
+            app:grailsApplication,
+        )
+        marshallers.add new EnumMarshaller()
+        register(marshallers)
+        SimpleBeanWithEnum bean = new SimpleBeanWithEnum(name:'foo', enumValue:SimpleEnum.VALUE2)
+        def extractor = new DeclarativeXMLExtractor()
+
+        def expected = [name:'foo', enumValue:'VALUE2']
+
+        when:
+        def content = render(bean)
         def map = extractor.extract(XML.parse(content))
 
         then:

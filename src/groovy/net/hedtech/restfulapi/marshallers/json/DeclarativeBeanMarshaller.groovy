@@ -44,6 +44,13 @@ class DeclarativeBeanMarshaller extends BeanMarshaller {
     boolean requireIncludedFields = false
     def additionalFieldClosures = []
     def additionalFieldsMap = [:]
+    //If a field is a key in the map, then represents
+    //a field-level override for whether to marshall that
+    //field if null.  Otherise, marshallNullFields is used
+    //to determine whether to marshall a field if null
+    def marshalledNullFields = [:]
+    //default behavior on whether to marshall null fields.
+    def marshallNullFields = true
 
     @Override
     public boolean supports(Object object) {
@@ -78,6 +85,44 @@ class DeclarativeBeanMarshaller extends BeanMarshaller {
     @Override
     protected String getSubstitutionName(Object value, Field field) {
         return fieldNames.get( field.getName() )
+    }
+
+    @Override
+    protected boolean processProperty(BeanWrapper beanWrapper,
+                                      PropertyDescriptor property,
+                                      JSON json) {
+        boolean ignoreNull = false
+        if (marshalledNullFields.containsKey(property.getName())) {
+            ignoreNull = !marshalledNullFields[property.getName()]
+        } else {
+            ignoreNull = !marshallNullFields
+        }
+
+        if (ignoreNull) {
+            Object val = beanWrapper.getPropertyValue(property.getName())
+            return val != null
+        } else {
+            return true
+        }
+    }
+
+    @Override
+    protected boolean processField(Object value,
+                                   Field field,
+                                   JSON json) {
+        boolean ignoreNull = false
+        if (marshalledNullFields.containsKey(field.getName())) {
+            ignoreNull = !marshalledNullFields[field.getName()]
+        } else {
+            ignoreNull = !marshallNullFields
+        }
+
+        if (ignoreNull) {
+            Object val = field.get(value)
+            return val != null
+        } else {
+            return true
+        }
     }
 
     @Override

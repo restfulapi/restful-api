@@ -78,6 +78,7 @@ class BasicXMLExtractor extends MapExtractor {
         }
         for (String format : formats) {
             SimpleDateFormat df = new SimpleDateFormat(format)
+            df.setLenient(getLenientDates())
             try {
                 return df.parse(value.toString())
             } catch (ParseException e) {
@@ -182,6 +183,16 @@ class BasicXMLExtractor extends MapExtractor {
     protected def getDateFormats() {
         []
     }
+
+    /**
+     * Return true if lenient date parsing should be used.
+     * If true, the default lenient behavior of SimpleDateFormatter
+     * is used.
+     * Default is to return false.
+     **/
+     protected boolean getLenientDates() {
+        false
+     }
 
     /**
      * Returns a closure that can convert a 'short object'

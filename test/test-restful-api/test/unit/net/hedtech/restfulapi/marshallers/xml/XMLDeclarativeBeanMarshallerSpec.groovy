@@ -492,6 +492,82 @@ class XMLDeclarativeBeanMarshallerSpec extends Specification {
                  new SimpleJavaBeanWithIdProperty(property:'foo', publicField:'bar')]
     }
 
+    @Unroll
+    def "Test including only non-null fields"() {
+        setup:
+        def marshaller = new DeclarativeBeanMarshaller(
+            app:grailsApplication,
+            marshallNullFields:false
+        )
+        register(marshaller)
+
+        when:
+        def content = render(bean)
+        def xml = XML.parse content
+
+        then:
+        'foo' == xml.property.text()
+        'bar' == xml.publicField.text()
+        0     == xml.property2.size()
+        0     == xml.publicField2.size()
+
+        where:
+        bean << [new SimpleBean(property:'foo', publicField:'bar', property2:null, publicField2:null),
+                 new SimpleJavaBean(property:'foo', publicField:'bar', property2:null, publicField2:null)]
+    }
+    @Unroll
+
+    def "Test including non-null fields on a per-field basis"() {
+        setup:
+        def marshaller = new DeclarativeBeanMarshaller(
+            app:grailsApplication,
+            marshalledNullFields:['property2':false, 'publicField2':false]
+        )
+        register( marshaller )
+
+        when:
+        def content = render(bean)
+        def xml = XML.parse content
+
+        then:
+        'foo'  == xml.property.text()
+        'bar'  == xml.publicField.text()
+        'true' == xml.listProperty.'@null'.text()
+        'true' == xml.listField.'@null'.text()
+        0      == xml.property2.size()
+        0      == xml.publicField2.size()
+
+        where:
+        bean << [new SimpleBean(property:'foo', publicField:'bar', property2:null, publicField2:null, listProperty:null, listField: null),
+                 new SimpleJavaBean(property:'foo', publicField:'bar', property2:null, publicField2:null, listProperty:null, listField: null)]
+    }
+
+    def "Test including non-null fields on a per-field basis overrides default"() {
+        setup:
+        def marshaller = new DeclarativeBeanMarshaller(
+            app:grailsApplication,
+            marshallNullFields:false,
+            marshalledNullFields:['property2':true, 'publicField2':true]
+        )
+        register(marshaller)
+        when:
+        def content = render(bean)
+        def xml = XML.parse content
+
+        then:
+        'foo'  == xml.property.text()
+        'bar'  == xml.publicField.text()
+        'true' == xml.property2.'@null'.text()
+        'true' == xml.publicField2.'@null'.text()
+        0      == xml.listProperty.size()
+        0      == xml.listField.size()
+
+        where:
+        bean << [new SimpleBean(property:'foo', publicField:'bar', listProperty:null, listField: null),
+                 new SimpleJavaBean(property:'foo', publicField:'bar', listProperty:null, listField: null)]
+    }
+
+
     private void register( String name, def marshaller ) {
         XML.createNamedConfig( "XMLDeclarativeBeanMarshallerSpec:" + testName.getMethodName() + ":$name" ) { xml ->
             xml.registerObjectMarshaller( marshaller, 100 )

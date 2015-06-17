@@ -235,7 +235,7 @@ class RestConfigSpec extends Specification {
         'v1'                              == version1.extractor
     }
 
-    def "Test detection when the same media type is assigned to two different representation"() {
+    def "Test detection when the same media type is assigned to two different representations"() {
         setup:
         def src =
         {
@@ -445,9 +445,9 @@ class RestConfigSpec extends Specification {
 
         then:
         ['defaultJsonDate','foo','customJson'] == jsonRep.marshallers.instance
-        [5,10,15]                                   == jsonRep.marshallers.priority
+        [5,10,15]                              == jsonRep.marshallers.priority
         ['defaultXmlDate','bar','customXml']   == xmlRep.marshallers.instance
-        [5,5,15]                                    == xmlRep.marshallers.priority
+        [5,5,15]                               == xmlRep.marshallers.priority
     }
 
     def "Test missing marshaller group"() {
@@ -1039,4 +1039,162 @@ class RestConfigSpec extends Specification {
         'things'           == e.resourceName
         'application/json' == e.mediaType
     }
+
+    def "Test jsonArrayPrefix prefix"() {
+        setup:
+        def src =
+        {
+            resource 'things' config {
+                representation {
+                    mediaTypes = ['application/vnd.hedtech.v0+json']
+                    jsonArrayPrefix = 'abc'
+                    marshallers {
+                        marshaller {
+                            instance = 'a'
+                            priority = 5
+                        }
+                    }
+                    extractor = 'net.hedtech.DynamicJsonExtractor'
+                }
+            }
+
+        }
+
+        when:
+        def config = RestConfig.parse( grailsApplication, src )
+
+        then:
+        'abc' == config.getRepresentation('things', 'application/vnd.hedtech.v0+json').jsonArrayPrefix
+    }
+
+    def "Test jsonArrayPrefix on anyResource"() {
+        setup:
+        def src =
+        {
+            anyResource {
+                representation {
+                    mediaTypes = ['application/vnd.hedtech.v0+json']
+                    jsonArrayPrefix = 'abc'
+                    marshallers {
+                        marshaller {
+                            instance = 'a'
+                            priority = 5
+                        }
+                    }
+                    extractor = 'net.hedtech.DynamicJsonExtractor'
+                }
+            }
+
+        }
+
+        when:
+        def config = RestConfig.parse( grailsApplication, src )
+
+        then:
+        'abc' == config.getRepresentation('', 'application/vnd.hedtech.v0+json').jsonArrayPrefix
+    }
+
+    def "Test exception handler configuration"() {
+        setup:
+        def src =
+        {
+            exceptionHandlers {
+                handler {
+                    instance = 'foo'
+                }
+                handler {
+                    instance = 'bar'
+                    priority = 2
+                }
+            }
+        }
+
+        when:
+        def config = RestConfig.parse( grailsApplication, src )
+        config.validate()
+
+        then:
+        ['foo', 'bar'] == config.exceptionHandlers*.instance
+        [0,2]          == config.exceptionHandlers*.priority
+    }
+
+    def "Test id match configuration"() {
+        setup:
+        def src =
+        {
+            resource 'things' config {
+                idMatchEnforced = false
+                representation {
+                    mediaTypes = ['application/vnd.hedtech.v0+json']
+                    marshallers {
+                        marshaller {
+                            instance = 'a'
+                            priority = 5
+                        }
+                    }
+                    extractor = 'net.hedtech.DynamicJsonExtractor'
+                }
+            }
+
+            resource 'foos' config {
+                representation {
+                    mediaTypes = ['application/vnd.hedtech.v0+json']
+                    marshallers {
+                        marshaller {
+                            instance = 'a'
+                            priority = 5
+                        }
+                    }
+                    extractor = 'net.hedtech.DynamicJsonExtractor'
+                }
+            }
+        }
+
+        when:
+        def config = RestConfig.parse( grailsApplication, src )
+
+        then:
+        false == config.resources['things'].idMatchEnforced
+        true  == config.resources['foos'].idMatchEnforced
+    }
+
+    def "Test body extraction on delete"() {
+        setup:
+        def src =
+        {
+            resource 'things' config {
+                bodyExtractedOnDelete = true
+                representation {
+                    mediaTypes = ['application/vnd.hedtech.v0+json']
+                    marshallers {
+                        marshaller {
+                            instance = 'a'
+                            priority = 5
+                        }
+                    }
+                    extractor = 'net.hedtech.DynamicJsonExtractor'
+                }
+            }
+
+            resource 'foos' config {
+                representation {
+                    mediaTypes = ['application/vnd.hedtech.v0+json']
+                    marshallers {
+                        marshaller {
+                            instance = 'a'
+                            priority = 5
+                        }
+                    }
+                    extractor = 'net.hedtech.DynamicJsonExtractor'
+                }
+            }
+        }
+
+        when:
+        def config = RestConfig.parse( grailsApplication, src )
+
+        then:
+        true == config.resources['things'].bodyExtractedOnDelete
+        false  == config.resources['foos'].bodyExtractedOnDelete
+    }    
 }

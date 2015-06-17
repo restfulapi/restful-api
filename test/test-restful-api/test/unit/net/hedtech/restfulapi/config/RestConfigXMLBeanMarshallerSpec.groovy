@@ -40,9 +40,10 @@ class RestConfigXMLBeanMarshallerSpec extends Specification {
                     xmlBeanMarshaller {
                         supports SimpleBean
                         elementName 'Bean'
-                        field 'foo' name 'bar'
+                        marshallsNullFields false
+                        field 'foo' name 'bar' marshallsNull false
                         includesFields {
-                            field 'bar' name 'customBar'
+                            field 'bar' name 'customBar' marshallsNull true
                         }
                         excludesFields {
                             field 'foobar'
@@ -62,6 +63,8 @@ class RestConfigXMLBeanMarshallerSpec extends Specification {
         ['foo':'bar','bar':'customBar']           == marshaller.fieldNames
         ['bar']                                   == marshaller.includedFields
         ['foobar']                                == marshaller.excludedFields
+        false                                     == marshaller.marshallNullFields
+        ['foo':false,'bar':true]                  == marshaller.marshalledNullFields
     }
 
     def "Test xml bean marshaller template parsing"() {
@@ -78,11 +81,12 @@ class RestConfigXMLBeanMarshallerSpec extends Specification {
                     supports SimpleBean
                     elementName 'Bean'
                     requiresIncludedFields true
+                    marshallsNullFields false
                     field 'foo' name 'bar'
                     field 'f1'
-                    field 'f2'
+                    field 'f2' marshallsNull true
                     includesFields {
-                        field 'foo' name 'foobar'
+                        field 'foo' name 'foobar' marshallsNull false
                     }
                     excludesFields {
                         field 'bar'
@@ -99,18 +103,20 @@ class RestConfigXMLBeanMarshallerSpec extends Specification {
         def mConfig = config.xmlBean.configs['two']
 
         then:
-        2                 == config.xmlBean.configs.size()
-        ['one']           == mConfig.inherits
-        5                 == mConfig.priority
-        SimpleBean        == mConfig.supportClass
-        'Bean'            == mConfig.elementName
-        true              == mConfig.requireIncludedFields
-        ['foo':'foobar']  == mConfig.fieldNames
-        ['foo']           == mConfig.includedFields
-        true              == mConfig.useIncludedFields
-        ['bar']           == mConfig.excludedFields
-        1                 == mConfig.additionalFieldClosures.size()
-        ['a':'b','c':'d'] == mConfig.additionalFieldsMap
+        2                       == config.xmlBean.configs.size()
+        ['one']                 == mConfig.inherits
+        5                       == mConfig.priority
+        SimpleBean              == mConfig.supportClass
+        'Bean'                  == mConfig.elementName
+        true                    == mConfig.requireIncludedFields
+        ['foo':'foobar']        == mConfig.fieldNames
+        ['foo']                 == mConfig.includedFields
+        true                    == mConfig.useIncludedFields
+        ['bar']                 == mConfig.excludedFields
+        1                       == mConfig.additionalFieldClosures.size()
+        ['a':'b','c':'d']       == mConfig.additionalFieldsMap
+        false                   == mConfig.marshallNullFields
+        ['f2':true,'foo':false] == mConfig.marshalledNullFields
     }
 
     def "Test xml bean marshaller creation"() {
@@ -125,10 +131,11 @@ class RestConfigXMLBeanMarshallerSpec extends Specification {
                             supports SimpleBean
                             elementName 'Bean'
                             requiresIncludedFields true
-                            field 'owner' name 'myOwner'
+                            marshallsNullFields false
+                            field 'owner' name 'myOwner' marshallsNull false
                             includesFields {
                                 field 'code' name 'productCode'
-                                field 'parts'
+                                field 'parts' marshallsNull true
                             }
                             excludesFields {
                                 field 'description'
@@ -155,6 +162,8 @@ class RestConfigXMLBeanMarshallerSpec extends Specification {
         ['description']                          == marshaller.excludedFields
         1                                        == marshaller.additionalFieldClosures.size()
         ['foo':'bar']                            == marshaller.additionalFieldsMap
+        false                                    == marshaller.marshallNullFields
+        ['owner':false,'parts':true]             == marshaller.marshalledNullFields
     }
 
     def "Test xml bean marshaller creation from merged configuration"() {

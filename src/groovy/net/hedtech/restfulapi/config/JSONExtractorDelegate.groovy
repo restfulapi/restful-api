@@ -47,6 +47,7 @@ class JSONExtractorDelegate {
         this
     }
 
+
     JSONExtractorDelegate setDateFormats(Collection formats) {
         formats.each {
             try {
@@ -56,6 +57,11 @@ class JSONExtractorDelegate {
             }
         }
         config.dateFormats = formats
+        this
+    }
+
+    JSONExtractorDelegate setLenientDates(boolean b) {
+        config.lenientDates = b
         this
     }
 

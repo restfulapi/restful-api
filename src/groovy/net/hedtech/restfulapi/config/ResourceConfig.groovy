@@ -29,6 +29,12 @@ class ResourceConfig {
     def representations = new LinkedHashMap()
     //if set, defines the media type to use for */*
     String anyMediaType
+    //if true, verify that an 'id' field in the content matches
+    //the id
+    boolean idMatchEnforced = true
+    //if true, use the Content-Type header to extract body
+    //content on DELETE
+    boolean bodyExtractedOnDelete = false
 
     private RestConfig restConfig
 
@@ -44,6 +50,16 @@ class ResourceConfig {
 
     ResourceConfig setMethods( def methods ) {
         this.methods = methods
+        return this
+    }
+
+    ResourceConfig setIdMatchEnforced(boolean b) {
+        this.idMatchEnforced = b
+        return this
+    }
+
+    ResourceConfig setBodyExtractedOnDelete(boolean b) {
+        this.bodyExtractedOnDelete = b
         return this
     }
 
@@ -67,6 +83,7 @@ class ResourceConfig {
             RepresentationConfig config = new RepresentationConfig(
                 mediaType:mediaType, marshallerFramework:delegate.marshallerFramework,
                 contentType:delegate.contentType,
+                jsonArrayPrefix:delegate.jsonArrayPrefix,
                 marshallers:delegate.marshallers, extractor:delegate.extractor )
 
             //if we are using the json or xml marshalling framework, check
