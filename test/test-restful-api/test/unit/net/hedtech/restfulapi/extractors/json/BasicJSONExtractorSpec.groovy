@@ -32,6 +32,8 @@ import spock.lang.*
 @TestMixin([GrailsUnitTestMixin])
 class BasicJSONExtractorSpec extends Specification {
 
+    def cleanup() { GroovySystem.metaClassRegistry.removeMetaClass BasicJSONExtractor }
+
     def "Test rename paths"() {
         setup:
         BasicJSONExtractor.metaClass.getRenamePaths << {

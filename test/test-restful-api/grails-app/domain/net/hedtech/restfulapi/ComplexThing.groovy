@@ -32,7 +32,7 @@ class ComplexThing implements Serializable {
     // We'll include database 'Transient' properties
     // (which are not (always) supported by DomainClassMarshaller)
     @Transient boolean      xlarge = false
-    @Transient List<String> listOfStuff = ['Apple']
+    @Transient ArrayList<String> listOfStuff = ['Apple']
 
     // BigDecimal is used often within Banner XE domains
     BigDecimal size

@@ -21,6 +21,8 @@ grails.project.source.level     = 1.6
 
 grails.plugin.location.'restful-api' = "../.."
 
+grails.project.dependency.resolver = "maven"
+
 grails.project.dependency.resolution = {
 
     inherits 'global'
@@ -40,29 +42,27 @@ grails.project.dependency.resolution = {
     }
 
     dependencies {
-        test "org.spockframework:spock-grails-support:0.7-groovy-2.0"
 
         // Dependency for CORS testing. see http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6996110
         test 'org.apache.httpcomponents:httpclient:4.3.3'
     }
 
     plugins {
-        compile ':cache:1.1.6'
+        compile ':cache:1.1.8'
+        //compile ":scaffolding:2.1.2"
         compile ':inflector:0.2'
         compile ':cache-headers:1.1.7'
+        compile ":asset-pipeline:2.1.5"
 
-        runtime ":hibernate:$grailsVersion"
+        runtime ":hibernate:3.6.10.18"
+        runtime ":database-migration:1.4.0"
         runtime ":jquery:1.11.1"
         runtime ":resources:1.2.8"
         runtime ":cors:1.1.0"
 
-        test(":spock:0.7") {
-          exclude "spock-grails-support"
-        }
-
         test ":funky-spock:0.2.1"
 
-        build ":tomcat:$grailsVersion"
+        build ":tomcat:7.0.55.2" 
     }
 }
 
