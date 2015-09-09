@@ -1,5 +1,5 @@
 /* ***************************************************************************
- * Copyright 2013 Ellucian Company L.P. and its affiliates.
+ * Copyright 2013-2015 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *****************************************************************************/
-
 package net.hedtech.restfulapi
 
 import grails.converters.JSON
@@ -61,10 +60,7 @@ import org.apache.commons.logging.LogFactory
  * This controller delegates to a transactional service
  * corresponding to the resource (via naming convention or
  * configuration) based on the pluralized resource name
- * identified on the URL. This controller may be subclassed
- * to create stateless resource-specific controllers when
- * necessary.  (If a stateful controller is needed, this
- * should not be used as a base class.)
+ * identified on the URL.
  **/
 class RestfulApiController {
 
@@ -102,8 +98,8 @@ class RestfulApiController {
 
     // Custom headers (may be configured within Config.groovy)
     String totalCountHeader
-    String pageMaxHeader
-    String pageOffsetHeader
+    String pageMaxHeader    // note this is deprecated, in favor of Link Header
+    String pageOffsetHeader // note this is deprecated, in favor of Link Header
     String messageHeader
     String mediaTypeHeader
     String requestIdHeader
@@ -137,12 +133,15 @@ class RestfulApiController {
 
         log.trace 'Initializing RestfulApiController...'
 
-        totalCountHeader = getHeaderName('totalCount', 'X-hedtech-totalCount')
+        messageHeader    = getHeaderName('message', 'X-Status-Reason')
+        mediaTypeHeader  = getHeaderName('mediaType', 'X-Media-Type')
+        requestIdHeader  = getHeaderName('requestId', 'X-Request-ID')
+        totalCountHeader = getHeaderName('totalCount', 'X-Total-Count')
+
+        // Note pageMaxHeader and pageOffsetHeader are deprecated in favor of using
+        // a Link header.
         pageMaxHeader    = getHeaderName('pageMaxSize', 'X-hedtech-pageMaxSize')
         pageOffsetHeader = getHeaderName('pageOffset', 'X-hedtech-pageOffset')
-        messageHeader    = getHeaderName('message', 'X-hedtech-message')
-        mediaTypeHeader  = getHeaderName('mediaType', 'X-hedtech-Media-Type')
-        requestIdHeader  = getHeaderName('requestId', 'X-Request-ID')
 
         pageMax    = getPagingConfiguration('max', 'max')
         pageOffset = getPagingConfiguration('offset', 'offset')
@@ -211,8 +210,6 @@ class RestfulApiController {
         } catch (ClassNotFoundException) {
             //not using hibernate support
         }
-
-
         log.trace 'Done initializing RestfulApiController...'
     }
 
@@ -248,18 +245,18 @@ class RestfulApiController {
             def result = delegateToService.list(service, requestParams)
             logger.trace "... service returned $result"
 
-            def count
+            def totalCount
             if ((null != pagedResultListClazz) && (pagedResultListClazz.isInstance(result))) {
-                count = result.totalCount
+                totalCount = result.totalCount
             } else if (result instanceof PagedResultList) {
-                count = result.getTotalCount()
+                totalCount = result.getTotalCount()
             } else {
-                count = delegateToService.count(service, requestParams)
+                totalCount = delegateToService.count(service, requestParams)
             }
 
             // Need to create etagValue outside of 'etag' block:
             // http://jira.grails.org/browse/GPCACHEHEADERS-14
-            String etagValue = etagGenerator.shaFor( result, count, responseRepresentation.mediaType )
+            String etagValue = etagGenerator.shaFor( result, totalCount, responseRepresentation.mediaType )
 
             withCacheHeaders {
                 etag {
@@ -271,7 +268,18 @@ class RestfulApiController {
                 generate {
                     ResponseHolder holder = new ResponseHolder()
                     holder.data = result
-                    holder.addHeader(totalCountHeader, count)
+                    holder.addHeader(totalCountHeader, totalCount)
+
+                    def offset = requestParams.offset instanceof String ?
+                                 requestParams.offset.toInteger() : 0
+                    def max    = requestParams.max instanceof String ?
+                                 requestParams.max.toInteger() : result.size()
+
+                    def linkHeader =
+                        LinkHeaderUtils.generate( requestParams.pluralizedResourceName,
+                                                  offset, max, totalCount )
+
+                    holder.addHeader('Link', linkHeader)
                     holder.addHeader(pageOffsetHeader, requestParams.offset ? requestParams?.offset : 0)
                     holder.addHeader(pageMaxHeader, requestParams.max ? requestParams?.max : result.size())
                     renderSuccessResponse( holder, 'default.rest.list.message' )

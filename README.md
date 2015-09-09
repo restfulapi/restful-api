@@ -1,5 +1,5 @@
 <!-- ***************************************************************************
- * Copyright 2013 Ellucian Company L.P. and its affiliates.
+ * Copyright 2013-2015 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,13 @@
  * limitations under the License.
  *************************************************************************** -->
 
-#RESTful API plugin documentation
+# RESTful API plugin documentation
 
-##Status
+## Status
+
 Production quality, although subsequent changes may not be backward compatible.
 
-##Overview
+## Overview
 
 An introduction to the plugin is provided within the accompanying "[Introducing the RESTful API Grails Plugin](http://restfulapi.github.io/intro-restful-api-slides/)" presentation. _(Please use Chrome, Firefox or Safari to view this presentation.)_
 
@@ -41,9 +42,9 @@ Key features of this plugin include:
 
 The restful-api plugin is designed to facilitate exposing RESTful API endpoints that conform to our [API Strategy](https://github.com/restfulapi/api-strategy/blob/master/README.md).  _Please note, however, it is not intended to implement all optional features discussed within the strategy  nor is it intended to provide support for multiple ways to accomplish the same requirements; in general, it implements the recommended approaches specified in the strategy._
 
-##Installation and quickstart
+## Installation and quickstart
 
-###1. Install the plugin
+### 1. Install the plugin
 
 This plugin should be installed from the official Grails Central Plugin Repository ([http://grails.org/plugins/restful-api](http://grails.org/plugins/restful-api)) by setting the following dependency:
 
@@ -73,7 +74,8 @@ _Adding the plugin this way will use the latest commit on the master branch at t
 _Lastly, don't forget to go back to your project root and commit the change this will make to your git submodules file._
 
 
-###2. Configure plugin dependencies
+### 2. Configure plugin dependencies
+
 Irrespective of the method used to install the RESTful plugin, the following changes must be made to include the plugin dependencies.  The plugin depends on inflector, cache-headers, and spock plugins.  (The spock dependency is for the RestSpecification testing class, that you may use to [test your API](#api-testing).
 
 For Grails 2.2.x:
@@ -102,7 +104,8 @@ In the plugins section of BuildConfig.groovy add:
 
         test ":funky-spock:0.2.1"
 
-###3. Configure the UrlMappings to use the controller
+### 3. Configure the UrlMappings to use the controller
+
 Edit the UrlMappings.groovy to look similar to the following defaults.  Your application map already have url mappings defined; if so, add the mappings for /api and /qapi as appropriate.
 
     static mappings = {
@@ -158,8 +161,9 @@ Edit the UrlMappings.groovy to look similar to the following defaults.  Your app
         "500"(view:'/error')
     }
 
-###4. Configure default settings for the controller
-    Add the following to the Config.groovy:
+### 4. Configure default settings for the controller
+
+Add the following to the Config.groovy:
 
     // ******************************************************************************
     //                              CORS Configuration
@@ -168,32 +172,46 @@ Edit the UrlMappings.groovy to look similar to the following defaults.  Your app
     //
     cors.url.pattern        = '/api/*'
     cors.allow.origin.regex ='.*'
-    cors.expose.headers     ='content-type,X-hedtech-totalCount,X-hedtech-pageOffset,X-hedtech-pageMaxSize,X-hedtech-message,X-hedtech-Media-Type,X-Request-ID'
+    cors.expose.headers     ='content-type,X-Total-Count,X-Status-Reason,X-Media-Type,X-Request-ID'
 
 
-    // ******************************************************************************
-    //             RESTful API Custom Response Header Name Configuration
-    // ******************************************************************************
-    // Uncomment and change to override.
+    // ************************************************************************
+    //         RESTful API Custom Response Header Name Configuration
+    // ************************************************************************
     //
-    //restfulApi.header.totalCount  = 'X-hedtech-totalCount'
+    // Uncomment and change to override. 
+    // Note the default values have been changed and both old and new defaults
+    // are shown below for each header.
+    //
+    //restfulApi.header.totalCount  = 'X-Total-Count'        // new default
+    //restfulApi.header.totalCount  = 'X-hedtech-totalCount' // old default
+
+    //restfulApi.header.message     = 'X-Status-Reason'      // new default
+    //restfulApi.header.message     = 'X-hedtech-message'    // old default
+
+    //restfulApi.header.mediaType   = 'X-Media-Type'         // new default
+    //restfulApi.header.mediaType   = 'X-hedtech-Media-Type' // old default
+
+    //restfulApi.header.requestId   = 'X-Request-ID'   // default unchanged
+
+    // The pageOffset and pageMaxSize headers are deprecated in favor of a 
+    // Link Header that is now included and contains this information.
+    //
     //restfulApi.header.pageOffset  = 'X-hedtech-pageOffset'
     //restfulApi.header.pageMaxSize = 'X-hedtech-pageMaxSize'
-    //restfulApi.header.message     = 'X-hedtech-message'
-    //restfulApi.header.mediaType   = 'X-hedtech-Media-Type'
 
-    //restfulApi.header.requestId   = 'X-Request-ID'
-
-    // ******************************************************************************
-    //             RESTful API 'Paging' Query Parameter Name Configuration
-    // ******************************************************************************
+    // ************************************************************************
+    //           RESTful API 'Paging' Query Parameter Name Configuration
+    // ************************************************************************
+    //
     // Uncomment and change to override.
     //
-    //restfulApi.page.max    = 'max'
-    //restfulApi.page.offset = 'offset'
-    // ******************************************************************************
-    //                       RESTful API Endpoint Configuration
-    // ******************************************************************************
+    //restfulApi.page.max    = 'max'    // 'limit' is used by Ellucian
+    //restfulApi.page.offset = 'offset' 
+
+    // ************************************************************************
+    //                     RESTful API Endpoint Configuration
+    // ************************************************************************
     //
     restfulApiConfig = {
       //handle any pluralized resource name by mapping it to the singularized service name,
@@ -217,7 +235,8 @@ Edit the UrlMappings.groovy to look similar to the following defaults.  Your app
       }
     }
 
-###5. Configure logging
+### 5. Configure logging
+
 Add
 
     fatal  'RestfulApiController_messageLog'
@@ -228,20 +247,23 @@ At this point, the plugin is configured to dynamically attempt to handle any req
 
 The rest of this document goes into details of how to configure the plugin to support features such as [whitelisting](#configuration) resources, configuring [declarative marshalling](#declarative-marshalling) to support versioned APIs, and how to use the RestSpecification to provide functional testing for your APIs.
 
-##Testing the Plugin
+## Testing the Plugin
+
 The plugin contains a test application that uses Spock to test the plugin. To run all tests from the plugin's root directory run:
 ```bash
 grails clean && (cd test/test-restful-api && grails clean && grails test-app)
 ```
 
-##Details
+## Details
 
-###Use of conventions
+### Use of conventions
+
 The plugin relies heavily on convention-over-configuration.  A request to a resource named 'things' will be delegated to the bean registered as 'thingService'.  De-pluralization of the resource name happens automatically; it is also assumed that there is a unique bean registered as thingService that can be looked up in the grails application.
 
 You can override this convention by specifying a different service name in the configuration.
 
-###Url Mapping
+### Url Mapping
+
 To use the restful plugin, you need to configure your UrlMappings.groovy to route the requests to the controller.  The URLs are expected to following normal REST conventions.
 
 | HTTP Method | Purpose |
@@ -310,36 +332,42 @@ To use the restful plugin, you need to configure your UrlMappings.groovy to rout
 
 Note that in order to conform to the strategy and for support for limiting methods exposed by a resource to operate correctly, all the api urls must conform to the pattern above.  That is, 'show', 'update', and 'delete' methods are mapped to urls that have an even number of parts after the api prefix; 'list' and 'create' methods map to urls that have an odd number of parts after the api prefix.
 
-###Use of custom media types
+### Use of custom media types
+
 The plugin relies on custom media types to specify resource representations.  For requests, the media type in the Content-Type header is used to identify the resource representation in the request body, in order to extract parameters from it to be passed to the resource's service.
 
 For media types representing json or xml content, it is strongly recommended that they end with either 'json' or 'xml' (e.g. 'application/json' or 'application/vnd.hedtech.v0+xml').  Media types ending with 'json' or 'xml' will automatically have a Content-Type on responses of 'application/json' or 'application/xml'
 
-###Media type of responses
+### Media type of responses
+
 As a convenience to viewing responses in browsers or other tools without having to configure them for all custom media types used by an API, the controller defaults to setting the Content-Type header of responses to 'application/json', 'application/xml', or 'text/plain'.  You can think of it as the Content-Type of the response identifies the format of the response body, but not the specific type of the representation contained within.  The controller will choose the content type based on the media type of the response representation: 'application/json' for media types ending in 'json', 'application/xml' for types ending in 'xml', and 'text/plain' for anything else.  You can explicity set what the content type header in a response containing a specific representation with the contentType option (see Configuring Resources).
 
 Successful responses generated by the plugin will always include a 'X-hedtech-Media-Type' header specifying the (versioned) media-type of the representation, e.g., 'application/vnd.hedtech.v0+json' or 'application/vnd.hedtech.minimal-thing.v0+xml'.  Consumers of the API can use the X-hedtech-Media-Type header to determine how to perform data binding on the resource representation returned.
 
-###Media type of error responses
+### Media type of error responses
+
 If a request results in an error response, the Media Type will always be 'application/json' or 'application/xml', based on whether the Accept header in the request specified an xml or json format.  If the Accept header could not be understood to request json or xml, then 'application/json' will be used for any data in the return body.
 
 Errors are not considered part of the resource representation, and do not have versioned or custom representations.
 
-###Media type of requests
+### Media type of requests
+
 The plugin uses the Content-Type header to determine the resource representation sent in a request body.  It uses the Accept header to determine the type of resource representation that should be used in the response.  The Content-Type and Accept headers on a request are not required to match.
 
 If your request body contains content in a particular charset, specify that in the Content-Type header.  For example, if sending json using the UTF-8 charset, you may use a Content-Type header of "application/json; charset=UTF-8".  If the charset is not specified, the default character set as determined by grails will apply.
 
-###Content negotiation on requests
+### Content negotiation on requests
+
 The plugin performs content negotiation for a request by parsing the Accept Header, taking any q-values into account.  The plugin will then use the best known representation for the accepted type(s).
 
-For exmaple, for a request with an Accept Header of "application/xml;q=0.9,application/vnd.hedtech.v0+xml;q=1.0", the plugin would attempt to return the representation for 'application/vnd.hedtech.v0+xml', if one is configured.  If not, it would attempt to return the representation for 'application/xml'.
+For example, for a request with an Accept Header of "application/xml;q=0.9,application/vnd.hedtech.v0+xml;q=1.0", the plugin would attempt to return the representation for 'application/vnd.hedtech.v0+xml', if one is configured.  If not, it would attempt to return the representation for 'application/xml'.
 
 The controller also handles '*/*' values in the Accept Header.  See [Media Type Range](#media-type-range) for details.
 
 Note that at present, the selection of representation is done based only on what representations are configured.  If an error occurs when marshalling a response to that representation, the plugin does not fall back to the next best representation as specified by the Accept Header.  This may change in future releases.
 
-#####JSON Array CSRF Protection
+##### JSON Array CSRF Protection
+
 JSON representations intended for internal use (e.g., using AJAX) may be configured with a 'jsonArrayPrefix' that will be added to the front of JSON Array content in the response.
 
 This prefix may be used to protect against [CSRF](https://www.owasp.org/index.php/Cross-Site_Request_Forgery_(CSRF)) attacks that are possible when using old browsers which allow redefining of the JavaScript Array constructor. Please see [http://haacked.com/archive/2008/11/20/anatomy-of-a-subtle-json-vulnerability.aspx/](http://haacked.com/archive/2008/11/20/anatomy-of-a-subtle-json-vulnerability.aspx/).
@@ -362,13 +390,15 @@ Common prefixes include 'while(1);' and 'for(;;);'.  A configured prefix is only
 
 Note that if jsonArrayPrefix is set, it only applies to representations being marshalled with the 'json' framework.  Marshalling via the 'xml' framework, or custom marshalling services is not affected.  If you are marshalling to json via a custom service (by setting the value of marshallerFramework to the name of a bean), you must honor the value of the jsonArrayPrefix in your service yourself (the call to the service will provide the representation configuration.)
 
-###Unsupported media types
+### Unsupported media types
+
 If a request specified an unsupported media type in the Accept header, for a request that returns a reponse body, the plugin will respond with a 406 status code.
 If the request specified an unsupported media type in the Content-Type header, for a request that processes a request body, the plugin will respond with a 415 status code.
 A delete operation does not return a response body, and will not return a 406 regardless of the Accept header.
 Request bodies for list and show operations are ignored (and will not generate a 415) regardless of the Content-Type header.
 
-###Response envelope.
+### Response envelope
+
 Any response body will be one of the following:
 
 * A representation of a resource
@@ -380,16 +410,16 @@ Currently, the following response headers are supported:
 
 | Header | Purpose |
 |:------:|:--------|
-| X-hedtech-totalCount | Returned with list responses to indicate the total count of resources. |
-| X-hedtech-pageOffset |  Returned with list responses to identify the current page. |
-| X-hedtech-pageMaxSize | Returned with list responses to indicate the max page size. |
-| X-hedtech-Media-Type | Returned with all (success) responses, and contains the exact type of the response. |
-| X-hedtech-message | May optionally be returned with any response.  Contains a localized message for the response. |
+| X-Total-Count | Returned with list responses to indicate the total count of resources. |
+| X-hedtech-pageOffset | DEPRECATED Returned with list responses to identify the offset for the current page. |
+| X-hedtech-pageMaxSize | DEPRECATED Returned with list responses to indicate the max page size. |
+| X-Media-Type | Returned with all (success) responses, and contains the exact type of the response. |
 | X-Status-Reason | Optionally returned with a 400 response to provide additional information on why the request could not be understood |
 
-_NOTE: The names used for these custom response headers must be configured within Config.groovy, as discussed in the '[configuration](#configuration)' section below._
+_NOTE: The names used for these custom response headers may be configured within Config.groovy, as discussed in the '[configuration](#configuration)' section below. Also note the default values have recently been changed._
 
-##Cache Headers
+## Cache Headers
+
 The plugin supports client caching (unless disabled within Config.groovy).  When caching support is enabled, the plugin will include both 'ETag' and 'Last-Modified' HTTP Headers within responses to GET requests and will support conditional GET requests containing either an 'If-None-Match' or 'If-Modified-Since' header.  This support is provided by the [cache-headers](https://github.com/Grailsrocks/grails-cache-headers) plugin.
 
 Specifically, a GET request (for either a resource or collection of resources) will include an ETag header (whose value is a SHA1 specifically calculated for the resource representation) and a 'Last-Modified' header (whose value is based upon a 'lastUpdated' or 'lastModified' property when available).
@@ -398,7 +428,8 @@ A subsequent conditional GET request containing an 'If-None-Match' header (whose
 
 Note that at this time, conditional PUT requests are not supported.  Although a conditional PUT request is not supported, optimistic lock violations will be reported (so the end result is that a client will receive a 409 'conflict' versus a 412 'precondition failure' when using a conditional PUT request).
 
-##<a id="service-layer-contract"></a>Service layer contract
+## <a id="service-layer-contract"></a>Service layer contract
+
 The plugin delegates to the following methods on a service:
 
 * list
@@ -408,24 +439,28 @@ The plugin delegates to the following methods on a service:
 * update
 * delete
 
-###list method
+### list method
+
 The list method will be passed the request parameters object directly.
 If paging support is being used, params.max, and params.offset should be used to indicate the maximum number of results to return and the offset. Support for filtering the list is also provided as discussed [below](#filter-list).
 
 The list method must return a list of the objects for the resource being listed.  These objects will be rendered as a resource representation via the configured marshallers.
 
-###count method
+### count method
+
 The count method must return the total number of intances of the resource.  It is used in conjunction with the list method when returning a list of resources.  Support for filtering the count is also provided as discussed [below](#filter-list).
 
 It is more efficient if the list method can also return the total count.  If the list method returns an instance of grails.orm.PagedResultList, then the controller will obtain the the totalCount from the PagedResultList, and will not invoke the count method.
 
 If you are not returning an instance of grails.orm.PagedResultList, but your implementation can provide the total count from the list method, you can return an instance of net.hedtech.restfulapi.PagedResultList.  In this case, the controller will obtain the total count from the PagedResultList, and will not invoke the count method.  The plugin contains a default implementation based on an ArrayList, net.hedtech.restfulapi.PagedResultArrayList.
 
-###show method
+### show method
+
 The show method will be passed the request parameters object directly.
 It must return an object.  This object will be rendered as a resource representation via the configured marshallers for the resource.  For example, show may simply return a domain instance.
 
-###create method
+### create method
+
 The create method is passed a content Map extracted from the request as well as the Grails params Map.  (The 'content' map is generated by the Extractor registered for the resource and format.)
 The create method is responsible for using the map to create a new instance of the resource.  For domain services, it is recommended that the extractor produce a map that will work with data binding, e.g., the create method is passed a content Map containing the extracted content as well as the Grails params Map. It can create a new object as:
 
@@ -433,7 +468,8 @@ The create method is responsible for using the map to create a new instance of t
 
 The create method must return an object representing the resource that was created.  This object will be rendered as a resource representation via the configured marshallers for the resource.
 
-###update method
+### update method
+
 The update method is passed the a content Map extracted from the request, and the Grails params Map.  (The 'content' map is generated by the Extractor registered for the resource and format.)
 
 The update method is responsible for using the map to update an instance of the resource.  The id of the resource will be contained in the params Map, per the UrlMappings.
@@ -458,7 +494,8 @@ If you do not want the controller to enforce this, you can override it on a per-
 
 The update method will then be responsible for ensuring that any id value in the content matches the id extracted from the url.
 
-###delete method
+### delete method
+
 The delete method is passed an optional content Map representing the content extracted from the request (if any), and the Grails params map.  For example, a resource representation may be included as part of a delete request to convey optimistic locking information if deemed appropriate.  The id of the resource will be contained in the params Map, per the UrlMappings.
 
 The delete method returns void.
@@ -489,7 +526,8 @@ If you do not want the controller to enforce this, you can override it on a per-
 
 The delete method will then be responsible for ensuring that any id value in the content matches the id extracted from the url.
 
-##<a id="service-layer-adapter"></a>Adapting an Existing Service
+## <a id="service-layer-adapter"></a>Adapting an Existing Service
+
 To support services that have a contract different than the service contract described above, one or more 'RestfulServiceAdapter' implementations may be registered in the Spring application context. (Please see the [src/groovy/net/hedtech/restfulapi/RestfulServiceAdapter](https://raw.github.com/restfulapi/restful-api/master/src/groovy/net/hedtech/restfulapi/RestfulServiceAdapter.groovy) interface.)
 
 A single shared adapter may be configured separately using a bean name of 'restfulServiceAdapter' as in the following example:
@@ -535,7 +573,6 @@ In the DSL you could then define
 
 See [specifying a service adapter](#specifying-service-adapter).
 
-
 The controller chooses an adapter to use as follows:
 
 * If serviceAdapterName is defined on the resource, then a bean with that name is used.  If the bean is missing, it is treated as a a misconfigured resource, and a 404 is returned.
@@ -544,7 +581,8 @@ The controller chooses an adapter to use as follows:
 
 Configuring a service adapter within Spring is only required when delegating to services whose contract differs from that expected by this plugin.
 
-##<a id="filter-list"></a>Filtering
+## <a id="filter-list"></a>Filtering
+
 As a convenience, the plugin provides a Filter class that includes a factory method (extractFilters) that may be used to create a list of Filter instances from the query parameters.  The URL query parameters that may be used with this class must be in the format:
 
 ```
@@ -580,7 +618,8 @@ new Date(Long.valueOf(filterValue))
 
 Otherwise, the HQLBuilder will attempt to parse it as a subset of ISO 8601.  For example "2013-10-29T15:35:00Z"
 
-##Query-with-POST
+## Query-with-POST
+
 If a /qapi url mapping has been defined to support querying with POST, the controller will attempt to parse the body of a POST to a resource using the qapi prefix by using the pseudo-resource name 'query-filters'.  In order for this to work, add a 'query-filters' resource to the restfulApiConfig:
 
     // This pseudo resource is used when issuing a query using a POST. Such a POST is made
@@ -619,10 +658,11 @@ Or in xml, using the declarative extractor as defined above:
 
 You can, of course, assign custom extractors to the query-filters representation.  Any such extractor must return a map where the keys are valid parameter names for the filtering support.
 
-##Supplemental data/affordances/HATEOS
+## Supplemental data/affordances/HATEOS
+
 Since the plugin does not use an envelope in the message body, any affordances must be present in the resource representations themselves.
 
-The exact method of support is still being researched.  Current thinking is that supplemental data will be provided to the marshallers via meta-programming on the instance returned from a service method.  For example, consider a 'Thing' service, which needs to provide supplemental data on an object by computing a sha1 hash of several fields:
+Supplemental data may be provided to the marshallers via meta-programming on the instance returned from a service method.  For example, consider a 'Thing' service, which needs to provide supplemental data on an object by computing a sha1 hash of several fields:
 
 `MessageDigest digest = MessageDigest.getInstance("SHA1")
 digest.update("code:${thing.getCode()}".getBytes("UTF-8"))
@@ -630,9 +670,10 @@ digest.update("description${thing.getDescription()}".getBytes("UTF-8"))
 def properties = [sha1:new BigInteger(1,digest.digest()).toString(16).padLeft(40,'0')]
 thing.metaClass.getSupplementalRestProperties << {-> properties }`
 
-Note that the getSupplementalRestProperties method is being added only to the single object instance, not the entire class.  A marshaller can check to see whether the instance it is marshalling supports the method, and if so, extract data from it to generate affordances.
+Note that the getSupplementalRestProperties method is added only to the single object instance, not the entire class.  A marshaller can check to see whether the instance it is marshalling supports the method, and if so, extract data from it to generate affordances.
 
-##Exception handling
+## Exception handling
+
 When an exception is encountered while servicing a request, the controller will delegate to an instance of net.hedtech.restfulapi.ExceptionHandler that is responsible for generating an error response.
 
 The handler selection process is similar to how a Grails converter selects a marshaller for an object instance.  ExceptionHandler instances may be registered with the controller, along with a priority.  Each ExceptionHandler has a supports method that returns true or false depending on whether the handler can produce a response for a given Throwable instance.
@@ -655,10 +696,12 @@ Finally, the controller registers a default exception handler that takes care of
 The controller uses negative priorities for all of the handlers it registers, so any application registered handlers at the default level (0) or higher are consulted first.
 
 
-###Customizing Exception Handling
+### Customizing Exception Handling
+
 You can customize exception handling in two ways.  You can create (or use metaprogramming on existing classes) exceptions that meet the duck typing requirements for an [ApplicationException](#application-exception), or you can register custom handlers.  In general, registering custom handlers is a cleaner approach, as it isolates the details of how to map application and framework exceptions to RESTful responses in your api configuration.
 
 To create an exception handler, implement the net.hedtech.restfulapi.ExceptionHandler interface.  For example:
+
 ```groovy
 package my.app.exceptionhandlers
 
@@ -776,7 +819,8 @@ restApiConfig = {
 Even though the controller automatically registers a default handler at the same priority, the custom one will be consulted first, because all handlers registered via configuration are added after the controller's.
 
 
-###<a id="application-exception"></a>ApplicationException
+### <a id="application-exception"></a>ApplicationException
+
 The controller automatically registers an exception handler for 'application exceptions'.  This allows applications using the plugin to customize how exceptions generate error responses directly in the exception itself.  In general, it recommended to implement and register custom exception handlers instead, to eliminate direct coupling between application exception hierarchies and the api layer.
 
 An ApplicationException is not determined by inheritance; instead duck typing is used.  The controller registers an exception handler that supports any exception that responds to 'getHttpStatusCode' (it has a method getHttStatusCode()) and has a property named 'returnMap' that is an instance of Closure.  The handler extracts data from it as follow:
@@ -789,7 +833,8 @@ An ApplicationException is not determined by inheritance; instead duck typing is
 
 This definition of ApplicationException allows any application to customize error handling without extending or overriding any controller methods.  However, the implementation of any application exceptions must take responsibility for conforming to the Ellucian REST strategy.  For example, if an application exception represents a validation exception, it needs to return a 400 status code, and should also return an 'X-Status-Reason:Validation failed' header.
 
-##Configuring resources
+## Configuring resources
+
 The overall processing of a request proceeds as follows:
 
 * The plugin is responsible for content negotiation, parsing the Accept and Content-Type headers
@@ -800,24 +845,26 @@ The overall processing of a request proceeds as follows:
 * The controller renders the response along with appropriate associated headers and status code.
 * If at any point, an exception is thrown, it is rendered according to the rules in Exception handling (see above).
 
-##<a id="configuration"></a>Configuration
+## <a id="configuration"></a>Configuration
+
 The restful-api plugin configuration allows configuration of custom HTTP header names, 'paging' query parameter names, and resource representation marshallers and extractors. The custom header names and paging query parameter names need not be configured unless you want to override the defaults.
 
 Following is an example configuration of HTTP custom header names and paging query parameter names:
 
 ```groovy
 restfulApi.header.totalCount  = 'X-example-totalCount'
-restfulApi.header.pageOffset  = 'X-example-pageOffset'
-restfulApi.header.pageMaxSize = 'X-example-pageMaxSize'
-restfulApi.header.message     = 'X-example-message'
+restfulApi.header.pageOffset  = 'X-example-pageOffset'  // DEPRECATED
+restfulApi.header.pageMaxSize = 'X-example-pageMaxSize' // DEPRECATED
+restfulApi.header.message     = 'X-example-Status-Reason'     
 restfulApi.header.mediaType   = 'X-example-Media-Type'
 ```
+
 ```groovy
-restfulApi.page.max    = 'pageSize'
-restfulApi.page.offset = 'page'
+restfulApi.page.max    = 'limit'  // default is 'max'
+restfulApi.page.offset = 'offset' // default is 'offset'
 ```
 
-The restful-api plugin supports use of the 'X-Request-ID' Header, which is an emerging best practice as it helps correlate log files. Ideally, this header will be set by middleware (e.g., a router), but if it is not a UUID will be generated and used to populate this Header in the response. This value is also captured as a request attribute for use during the request handling (e.g., in your service). While 'X-Request-ID' appears to be an emerging 'standard', the header used for this purpose is configurable.
+The restful-api plugin supports use of the 'X-Request-ID' Header, which is a best practice as it helps correlate log files. Ideally, this header will be set by middleware (e.g., a router), but if it is not a UUID will be generated and used to populate this Header in the response. This value is also captured as a request attribute for use during the request handling (e.g., in your service).
 
 ```
 // while configurable, 'X-Request-ID' seems to be the emerging standard
@@ -892,7 +939,8 @@ Consider another example in which we are supporting versioned json representatio
 
 This configuration exposes 2 resources, 'colleges' and 'students'.  The 'colleges' resource support two versioned representations, while the 'students' resource only has one.  Note that the custom media types are re-used across the resources.
 
-###<a id="whitelisting"></a>Whitelisting vs dynamic exposure of resources
+### <a id="whitelisting"></a>Whitelisting vs dynamic exposure of resources
+
 The plugin allows you to explicitly whitelist resources to be exposed - an appropriate error response code will be thrown for resources not listed.  You can also dynamically expose resources, in which case any resource name that maps by convention to a service can be serviced.
 
 To dynamically expose services, you specify an anyResource block:
@@ -945,7 +993,8 @@ If you define an anyResource block, and then expose one or more resources explic
 
 In this configuration, 'things' does not have a json representation.  The configuration in an anyResource block only applies to a resource that is not explicitly listed.
 
-###Default representations
+### Default representations
+
 You can also assign multiple media types to the same representation.  The most common use for this is to have a media type such as 'application/json' represent a particular version as a default.  For example:
 
     restfulApiConfig = {
@@ -975,7 +1024,8 @@ You can also assign multiple media types to the same representation.  The most c
 
 Both 'application/vnd.hedtech.v1+json' and 'application/json' identify the same representation.  As new versions are added, the 'application/json' can be moved to them, so that a client that always wants the latest/default representation can obtain it with 'application/json'.
 
-###<a id="media-type-range"></a>Media Type Range
+### <a id="media-type-range"></a>Media Type Range
+
 By default, an Accept-Header value of '\*/\*' is mapped to the first media type in the first representation for a resource.  For example:
 
     restApiConfig = {
@@ -1033,7 +1083,8 @@ Support for '*/*' in the Accept Header is generally of use for APIs having repre
 
 Note that if you specify a value for anyMediaType that is not assigned to a representation for that resource, the controller will throw a validation exception during initialization.
 
-###Overriding Content-Type on responses
+### Overriding Content-Type on responses
+
 Sucessful responses will have a Content-Type header of 'appliction/json', 'application/xml', or 'text/plain', depending on whether the media type for the representation used ends in 'json', 'xml', or neither.  You can explicitly control the Content-Type header by specifying contentType on the representation:
 
     restfulApiConfig = {
@@ -1056,8 +1107,8 @@ In this case, we are using a custom media type that does not end in json or xml,
 
 Note that this feature is intended for use mainly with formats other than xml or json (e.g., text/calendar).  For json or xml representations, it is strongly recommended that you use a media type ending with 'json' or 'xml' so the controller can automatically select the appropriate Content-Type header.
 
+### Marshaller groups
 
-###Marshaller groups
 It is likely that you will have marshallers that you will want to re-use across multiple resources/representations; for example, a common marshaller for objects like dates, addresses, etc.  You can configure a collection of marshallers as a marshaller group:
 
     restfulApiConfig = {
@@ -1110,7 +1161,8 @@ This configuration defines a reusable group of marshallers named 'defaultJSON' c
         }
     }
 
-###Default marshaller groups
+### Default marshaller groups
+
 If you have marshallers that you want to be used automatically for all representations (e.g., a format for dates), you can define them in a marshaller group named 'json' or 'xml'.  Any marshallers defined in the 'json' group will automatically be added to the beginning of the marshaller list for all representations using the 'json' marshalling framework.  Similarly, all marshallers defined in an 'xml' group will be added to all representations using the 'xml' marshalling framework.  For example:
 
     restfulApiConfig = {
@@ -1157,7 +1209,8 @@ Will cause as Date fields in a student to be rendered using the "yyyy-MM-dd'T'HH
 
 The default marshaller groups also apply to the anyResource block.
 
-###Ordering
+### Ordering
+
 Configuration elements are applied in the order in which they are encountered.  This means that ordering in the configuration is signficant.  For example:
 
     restfulApiConfig = {
@@ -1181,7 +1234,8 @@ Configuration elements are applied in the order in which they are encountered.  
 
 Will result in an exception, as the first reference to the 'student' marshaller group occurs before the group is defined.
 
-###Overriding the service used for a resource.
+### Overriding the service used for a resource
+
 By default, the name of the service to use is derived from the name of the resource.  You can override the name of the service bean to use for the resource with the 'serviceName' property when configuring a resource.  For example:
 
     restfulApiConfig = {
@@ -1206,7 +1260,8 @@ By default, the name of the service to use is derived from the name of the resou
 
 Will cause the list, show, create, update, and delete methods for the resource 'students' to be delegated to the bean registered under the name 'studentFacadeService' instead of 'studentService'.
 
-###<a id="specifying-service-adapter"></a>Specifying a service adapter.
+### <a id="specifying-service-adapter"></a>Specifying a service adapter
+
 You can specify, on a per-resource basis a service adapter to use.  First, ensure you have a valid [adapter](#service-layer-adapter) registered as a spring bean, then specify the name of the bean in the configuration.  For example:
 
     restfulApiConfig = {
@@ -1230,8 +1285,8 @@ You can specify, on a per-resource basis a service adapter to use.  First, ensur
 
 At runtime, the controller will use the bean registered under the name 'studentServiceAdapter' to adapt requests for the studentService.
 
+### Limiting methods for a resource
 
-###Limiting methods for a resource
 By default, any configured resource supports 'list', 'show', 'create', 'update', and 'delete' methods.  You can customize which methods are exposed by specifying a subset of the 5 methods as an array assigned to the methods property of a resource.
 
 For example, to expose students as a read-only resource that just supports list and show:
@@ -1259,19 +1314,22 @@ If a request for an unsupported method is received, the plugin will respond with
 
 Note that if you are using the grails-cors plugin to support CORS functionality, the OPTIONS method will return results that are inconsistent with the methods actually supported.  That is, an OPTIONS request to an api url will always return that all methods are supported, even if the configuration restricts the methods for a given resource.  This may be addressed in a contribution to a future release of the CORS plugin.
 
-##Marshalling and extracting objects
+## Marshalling and extracting objects
+
 In order to service a request, the controller needs to be able to process a resource representation contained in the body of request, and marshal an object (or list of objects) returned by a service into the appropriate resource representation.
 
 The plugin achieves this by leveraging marshalling frameworks, and extractors.  By default, it uses the grails JSON and XML converters, but this can be overridden to use other frameworks (JAXB, XMLBeans, google-gson, etc).
 
 The plugin will automatically use the grails json converters for any media type ending in 'json', and the grails xml converters for any media type ending in 'xml'.  To explicitly set the marshalling framework for a representation, see [Configuring the marshalling framework](#configure-marshalling-framework).
 
-###Using grails converters
+### Using grails converters
+
 To fully take advantage of marshalling, you should understand how the grails converters for JSON and xml work.  The plugin takes advantage of named converter configurations.  Each resource/representation in the configuration using grails converters for marshalling results in a new named converter configuration for JSON or XML.  When marshalling an object, the restful-api controller will use that named configuration to marshall the object.  It does this by asking each marshaller in the named configuration (marshallers with higher priority first) if the marshaller supports the object.  This means that the marshallers registered for a resource/representation are used only for that representation, and is what allows the plugin to support different representations for the same resource.
 
 However, you should be aware that these named configurations will fallback to the default converter configurations provided by grails (e.g., marshallers for Collections) if they cannot locate a marshaller within the named config.
 
-##<a id="declarative-marshalling"></a>Declarative Marshalling of Domain classes to JSON
+## <a id="declarative-marshalling"></a>Declarative Marshalling of Domain classes to JSON
+
 The plugin contains a BasicDomainClassMarshaller and a DeclarativeDomainClassMarshaller, designed to simplify marshalling of grails domain objects to a json representation.
 The BasicDomainClassMarshaller will marshall persistent fields (except for some excluded ones, such as 'password'), and contains a number of protected methods which can be overridden in subclasses to customize marshalling behavior.  For example, additional fields can be added to the representation to support affordances.
 
@@ -1293,7 +1351,8 @@ The closure specifies how to configure the marshaller.  Specifying no informatio
 
 The best way to describe the use of the marshaller is by examples.
 
-###Limiting the marshaller to a class (and it's subclasses)
+### Limiting the marshaller to a class (and it's subclasses)
+
 By default, a declarative domain marshaller will support any object whose class is a grails domain class.  If you are including or excluding fields however, it is likely that you want an instance of the marshaller for a particular class (or subclasses).  You can control this with the supports option:
 
     resource 'things' config {
@@ -1310,7 +1369,8 @@ By default, a declarative domain marshaller will support any object whose class 
 
 This will register a declarative domain marshaller that will support the Thing class, and any subclasses of Thing.  Note that it is your responsibility to ensure that Thing is a grails domain class - if it is not, you should register a different type of marshaller for it.
 
-###Excluding specific fields from a representation
+### Excluding specific fields from a representation
+
 By default, the json domain marshaller will ignore any non-persistent fields and any field named 'lastModified', 'lastModifiedBy', 'dataOrigin', 'createdBy', or 'password'.  You can exclude additional fields with the excludedFields block:
 
     resource 'things' config {
@@ -1330,7 +1390,8 @@ By default, the json domain marshaller will ignore any non-persistent fields and
 
 This will marshall all fields in Thing except for the default excluded ones and the 'description' and 'manufactureDate' fields.
 
-###Renaming fields
+### Renaming fields
+
 By default, when a field is marshalled, its name in the representation is identical to its name in the class.  You can override this behavior by specifying a substitute name for a field:
 
      resource 'things' config {
@@ -1348,7 +1409,8 @@ By default, when a field is marshalled, its name in the representation is identi
 
 This will marshall all fields in Thing, but the value of the 'code' field will be marshalled to 'productCode', and the value of the 'description' field will be marshalled to 'desc'.
 
-###Including only specified fields.
+### Including only specified fields
+
 There are times when you want to include only certain fields in a representation such as producing a 'lightweight' representation for a list, or when versioning representations.  You can do so with the includedFields block:
 
     resource 'things' config {
@@ -1409,7 +1471,8 @@ For example
 
 Now if the Thing class does not have a persistent field 'description', the marshaller will throw an exception.
 
-#Marshalling only non-null fields.
+# Marshalling only non-null fields
+
 There may be times when a representation should only include a field if it has a non-null value.
 
 For a representation, you can specify that any null fields should not be marshalled with the marshallsNullFields setting:
@@ -1448,12 +1511,14 @@ Whether or not to marshall a null field can also be specified on a per-field bas
 
 All fields of Thing will be marshalled, but if description is null, it will be omitted.
 
-###Representing associations
+### Representing associations
+
 By default, the declarative marshaller renders the objects in any assocation as 'short objects'.  The default rendering of a 'short object' is a JSON object containing a single '_link' property having a value of '/resource/id' where resource is the pluralized resource name of the associated object (as derived by convention), and id is the id of the object.  So, for example, if the Thing class had a field called customer  holding a reference to an instance of class Customer with id 15, the customer field would render as :
 
     customer:{"_link":"/customers/15"}
 
-###Representing associations where conventions cannot be used.
+### Representing associations where conventions cannot be used
+
 What happens when you are adding restful APIs to a legacy system, where domain class names do not represent singularized versions of the resource name?  For example, consider a class Thing with a field customer that is a 1-1 association to an instance of the LegacyCustomer class.
 
 We have decided that LegacyCustomer will be exposed as the 'customers' resource, but when the declarative marshaller marshalls the customer class as a short object, we will get:
@@ -1494,7 +1559,8 @@ However, if you declare the same field multiple times, the final declaration is 
 will result in the 'customer' field being output with the default name ('customer') and the default resource name.  That is, the second "field 'customer'" declaration completely replaces the first one; they are not merged.
 
 
-###Customizing short-object behavior.
+### Customizing short-object behavior
+
 You can override how a declarative json marshaller renders short-objects by specifying a closure that generates the content.  The marshaller will
 automatically pass the closure a Map containing the following keys:
 
@@ -1546,7 +1612,8 @@ For example, if you wanted the short-object representation to contain a "link" f
 
 Note that since the map contains the grails applicatin context, you can also look up and delegate to services to generate content for the short-object representation, etc.
 
-###Changing short-object representations globally.
+### Changing short-object representations globally
+
 Obviously, you don't want to copy the short object closure to every representation - in general, you would want consistent short object rendering for all resources.
 
 You can define the short object closure once, and re-use it for all declarative json marshallers with a domain marshaller template.  Templates must be defined before their use, but then any jsdon domain marshaller declaration can inherit them.
@@ -1593,7 +1660,8 @@ You can define the short object closure once, and re-use it for all declarative 
 
 Now we have defined the short-object behavior in one location, and have multiple resource representations re-using it.  We will cover marshaller templates in more detail in a later section.
 
-###Deep marshalling associations
+### Deep marshalling associations
+
 The declarative marshallers can be instructed to deep marshall associations; that is, instead of marshalling an association as a short-object reference, the associated object or collection is passed along to another marshaller that supports its class.  Deep marshalling can be set as the default on a declarative marshaller with the deepMarshallsAssociations setting:
 
     resource 'things' config {
@@ -1632,7 +1700,8 @@ Assuming both parts and subPart represent associated objects, the parts field wi
 
 The 'deep' setting can be used anywhere a field can be defined; however, it has no effect on fields that do not represent associations on a domain object.
 
-###Adding additional fields
+### Adding additional fields
+
 In general, it is necessary to add non-persistent fields to the representation.  The most common requirement is to add affordances, such as an _href attribute referring to the resource, or supplemental data not present as persistent fields.
 
 The declarative domain marshaller allows any number of closures to be added to marshall additional content.  For example, let's say we want to add affordances to all of our json representations.  We will define a marshaller template containing the closure for the affordance, then add it to the marshallers:
@@ -1787,7 +1856,8 @@ However, it is recommended to keep (resuable) field code, such as for supplement
 
 This allows specific behavior to be re-used as needed. For example, the 'things' representation will contain both affordances and supplemental data, while the 'customers' representation only has affordances added.
 
-###Controlling whether id and version information is included.
+### Controlling whether id and version information is included
+
 By default the declarative domain marshaller will automatically add 'id' and 'version' fields for the object id and (optimistic lock) version values.  If they should not be included in a representation, you can turn them off:
 
     resource 'customers' config {
@@ -1803,7 +1873,8 @@ By default the declarative domain marshaller will automatically add 'id' and 've
         }
     }
 
-###Full list of configuration elements for a json domain marshaller
+### Full list of configuration elements for a json domain marshaller
+
 The configuration block for the marshaller can contain the following in any order:
 
     inherits = <array of json marshaller template names>
@@ -1874,12 +1945,14 @@ is the same as
             field 'baz'
         }
 
-###Domain marshaller templates
+### Domain marshaller templates
+
 JSON domain marshaller templates are configuration blocks that do not directly create a marshaller.  The 'config' block accepts any configuration that the jsonDomainMarshaller block does (including the inherits option).  When a jsonDomainMarshaller directive contains an 'inherits' element, the templates referenced will be merged with the configuration for the marshaller in a depth-first manner.  Elements that represent collections or maps are merged together (later templates overriding previous ones, if there is a conflict), with the configuration in the jsonDomainMarshaller block itself overriding any previous values.
 
 In general, templates are useful for defining affordances and short-object behavior that need to be applied across many representations.
 
-###Template inheritance order.
+### Template inheritance order
+
 When a json domain marshaller declaration includes an inherits directive, then the configuration of each template is merged with the declaration itself in depth-first order.  For example, consider the use of nested configuration:
 
     jsonDomainMarshallerTemplates {
@@ -1914,13 +1987,15 @@ When a json domain marshaller declaration includes an inherits directive, then t
 
 The domain marshaller will be configured with the results of merging the configuration blocks in the following order: 'one', 'two', 'three', 'four' and the contents of the jsonDomainMarshaller block itself.
 
-###Configuration merging
+### Configuration merging
+
 The order in which configurations are merged is significant.  When two configurations, first and second are merged, boolean values, or single valued options that are set in the second config override the first.  Collection or map values are combined.
 
-##Declarative Marshalling of Beans to JSON
+## Declarative Marshalling of Beans to JSON
+
 The plugin contains a BeanMarshaller and a DeclarativeBeanMarshaller, designed to simplify marshalling of beans to a json representation.  The functioning of the marshallers is similar to the domain class marshallers, but operate against bean instances, intead of domain objects.  (Of course, where a domain object can be treated as a bean, the bean marshallers can also be used.)  The options these marshallers support are very similar to those of the domain marshallers, except that the bean marshallers do not have support for recognizing object associations.
 
-The BeanMarshaller will marshall properties, and public non-static/non-transient fields of a bean.  The properties 'class', 'metaClass', and 'pasword' are automatically excluded from being marshalled.
+The BeanMarshaller will marshall properties, and public non-static/non-transient fields of a bean.  The properties 'class', 'metaClass', and 'password' are automatically excluded from being marshalled.
 
 Use of the BeanMarshaller requires new subclasses to be created to customize marshalling behavior.  Marshalling of beans can be customized without resorting to writing custom marshallers with the DeclarativeBeanMarshaller.
 
@@ -1940,7 +2015,8 @@ The closure specifies how to configure the marshaller.  Specifying no informatio
 
 The best way to describe the use of the marshaller is by examples.
 
-###Limiting the marshaller to a class (and it's subclasses)
+### Limiting the marshaller to a class (and it's subclasses)
+
 By default, a declarative bean marshaller will support any object that is an instance of GroovyObject.  If you are including or excluding fields however, it is likely that you want an instance of the marshaller for a particular class (or subclasses).  You can control this with the supports option:
 
     resource 'things' config {
@@ -1957,7 +2033,8 @@ By default, a declarative bean marshaller will support any object that is an ins
 
 This will register a declarative bean marshaller that will support the Thing class, and any subclasses of Thing.  Note that it is your responsibility to ensure that Thing can be treated as a bean - if it is not, you should register a different type of marshaller for it.
 
-###Excluding specific fields from a representation
+### Excluding specific fields from a representation
+
 By default, the json bean marshaller marshals all properties, and any public non-static, non-transient field.  You can exclude additional fields or properties with the excludedFields block:
 
     resource 'things' config {
@@ -1977,7 +2054,8 @@ By default, the json bean marshaller marshals all properties, and any public non
 
 This will marshall all fields in Thing except for the default excluded ones and the 'description' and 'manufactureDate' fields.
 
-###Renaming fields
+### Renaming fields
+
 By default, when a field is marshalled, its name in the representation is identical to its name in the class.  You can override this behavior by specifying a substitute name for a field:
 
      resource 'things' config {
@@ -1995,7 +2073,8 @@ By default, when a field is marshalled, its name in the representation is identi
 
 This will marshall all fields in Thing, but the value of the 'code' field will be marshalled to 'productCode', and the value of the 'description' field will be marshalled to 'desc'.
 
-###Including only specified fields.
+### Including only specified fields
+
 There are times when you want to include only certain fields in a representation such as producing a 'lightweight' representation for a list, or when versioning representations.  You can do so with the includedFields block:
 
     resource 'things' config {
@@ -2056,7 +2135,8 @@ For example
 
 Now if the Thing class does not have a field or property 'description', the marshaller will throw an exception.
 
-#Marshalling only non-null fields.
+# Marshalling only non-null fields
+
 There may be times when a representation should only include a field if it has a non-null value.
 
 For a representation, you can specify that any null fields should not be marshalled with the marshallsNullFields setting:
@@ -2095,7 +2175,8 @@ Whether or not to marshall a null field can also be specified on a per-field bas
 
 All fields of Thing will be marshalled, but if description is null, it will be omitted.
 
-###Adding additional fields
+### Adding additional fields
+
 You can add additional fields not directly present in a bean to its marshalled representation.
 
 The declarative bean marshaller allows any number of closures to be added to marshall additional content.  For example, let's say we want to add affordances to all of our json representations.  We will define a marshaller template containing the closure for the affordance, then add it to the marshallers:
@@ -2163,7 +2244,8 @@ For example:
         }
     }
 
-###Full list of configuration elements for a json bean marshaller
+### Full list of configuration elements for a json bean marshaller
+
 The configuration block for the marshaller can contain the following in any order:
 
     inherits = <array of json bean marshaller template names>
@@ -2235,12 +2317,14 @@ Is equivalent to
 
 The last definition of a field in any context is what is used.
 
-###Bean marshaller templates
+### Bean marshaller templates
+
 JSON bean marshaller templates are configuration blocks that do not directly create a marshaller.  The 'config' block accepts any configuration that the jsonBeanMarshaller block does (including the inherits option).  When a jsonBeanMarshaller directive contains an 'inherits' element, the templates referenced will be merged with the configuration for the marshaller in a depth-first manner.  Elements that represent collections or maps are merged together (later templates overriding previous ones, if there is a conflict), with the configuration in the jsonBeanMarshaller block itself overriding any previous values.
 
 In general, templates are useful for defining affordances and other behavior that need to be applied across many representations.
 
-###Template inheritance order.
+### Template inheritance order
+
 When a json bean marshaller declaration includes an inherits directive, then the configuration of each template is merged with the declaration itself in depth-first order.  For example, consider the use of nested configuration:
 
     jsonBeanMarshallerTemplates {
@@ -2273,10 +2357,12 @@ When a json bean marshaller declaration includes an inherits directive, then the
 
 The domain marshaller will be configured with the results of merging the configuration blocks in the following order: 'one', 'two', 'three', 'four' and the contents of the jsonBeanMarshaller block itself.
 
-###Configuration merging
+### Configuration merging
+
 The order in which configurations are merged is significant.  When two configurations, first and second are merged, boolean values, or single valued options that are set in the second config override the first.  Collection or map values are combined.
 
-##Marshalling enumerations
+## Marshalling enumerations
+
 Marshalling an enum value with the default grails behavior will result in a json object containing an enumType and name field.
 
 For example, a simple bean with a name field and a field that holds and enum value would yield:
@@ -2317,7 +2403,8 @@ For the same bean as above, this would yield:
 
 
 
-##Extracting content
+## Extracting content
+
 Create, update and (optionally) delete operations will have a request body which ultimately needs to be parsed and acted upon by the service layer.  The plugin provides a number of ways to interact with this data.
 
 For any create, update, or delete operation, the controller will identify an _extractor_ instance.  An extractor is responsible for taking the incoming content and converting it to a map that will ultimately be passed on to the service.  An extractor must implement exactly one of 3 interfaces:
@@ -2332,12 +2419,14 @@ For extractors that implement JSONExtractor, the controller will parse a org.cod
 
 In cases where you want to bypass grails converters entirely and use a different framework, such as JAXB, google-gson, etc, an extractor implementing RequestExtractor can be used.  A RequestExtractor is passed the HttpServletRequest directly.  For example, such an extractor could place the request body into the map to be passed on to the service where a non-grails framework could be used to bind the body to business objects.
 
-##Declarative extraction of JSON content
+## Declarative extraction of JSON content
+
 If JSON content needs to be manipulated before being bound to domain objects, POGOs, etc, it is possible to do so declaratively.  Any incoming JSON content will be a single object containing other JSON objects or JSON arrays.  This ability is not intended to deal with type coercion or data binding, but to provide a simple way to rename keys, provide default values, or convert 'short object' representations back into plain IDs.  It functions as a counterpart to the declarative json marshalling support.
 
 The best way to describe the use of declarative extraction is by examples.
 
-###Renaming keys
+### Renaming keys
+
 Consider a JSON object for a purchase order:
 
     {
@@ -2404,7 +2493,8 @@ When specifying paths, alway do so in terms of the incoming JSON.  The extractor
 
 Will work correctly.
 
-###Parsing dates.
+### Parsing dates
+
 You can specify paths that should be parsed into java.util.Date instances:
 
     resource 'purchase-orders' config {
@@ -2449,7 +2539,8 @@ If you want to allow the SimpleDateFormatter to use lenient parsing, where heuri
 
 Note that both the dateFormats and lenientDates settings apply the same to all properties identified as dates in a jsonExtractor.
 
-###Providing default values.
+### Providing default values
+
 As your system evolves, you may introduce new, required fields to domain objects.  If you are using versioned APIs, the new field cannot be added to existing representation(s) without breaking them, so when a caller uses one of these representations, it will be necessary to add a default value.  This can, of course, be done at the service layer, but only if the service layer can provide an appropriate default - it is more likely that the service will treat the missing value as a validation exception.  The declarative extractor can be configured to provide a default value for any missing key.
 
     resource 'purchase-orders' config {
@@ -2465,7 +2556,8 @@ This will create an extractor that will added the key/value pair 'orderType'/'st
 
 As with renaming keys, if any part of the property path traverses a JSON array, the defaultValue rule will apply to all members of the collection that are JSON objects.
 
-###Treating a value as a short-object representation
+### Treating a value as a short-object representation
+
 The declarative domain class marshalling renders associations as 'short-objects' by default.  When consuming the same representation, it may be desirable to have the short object representations converted back to plain IDs, or some other format conducive to data binding.  This can be accomplished by declaring the field to be a short object representation.
 
         resource 'purchase-orders' config {
@@ -2567,7 +2659,8 @@ Which would result in the map:
 
 Note that the closure must be able to handle single short-object references, collections of them, or maps of them.  In general, if you are overriding the short-object behavior, you would want to override it for all representations.  This is possible by using templates; see below for more details on how to do so.
 
-###Flattening the final map
+### Flattening the final map
+
 If you intend to use the orginal grails data binding (that used the Spring data binder) prior to Grails 2.3 to bind the output of a declarative extractor to grails domain objects or POGOs, then you may need to flatten parts of the map that represent sub-objects.  This is because the data binding is designed to work with parameters submitted from web forms, so when dealing with nested objects, it expects key names to describe the associations, rather than nested maps.  For example it expects
 
     ['orderID':12345, 'customer.name':'Smith']
@@ -2647,12 +2740,14 @@ This is because when using the index and dot notation for grails data binding, g
 
 In other words, representations that deep-render associated objects, and use grails-data binding by flattening the objects, require the consumer of the API to worry about ordering within collections when performing an update.  For this reason, it is recommended that representations either use short-objects (i.e, representations only control the association of objects, but do not allow properties of sub-objects to be manipulated in the same API call), or the backing services should implement their own data binding strategies rather than rely on grails indexed data binding.  For example, the service could iterate through an array of associated objects on an update, retrieve them by ID instead of index position, and then bind the sub-map to them directly.
 
-###<a id="json-extractor-templates"></a>JSON extractor templates
+### <a id="json-extractor-templates"></a>JSON extractor templates
+
 JSON extractor templates are configuration blocks that do not directly create an extractor.  The 'config' block accepts any configuration that the jsonExractor block does (including the inherits option).  When a jsonExractor directive contains an 'inherits' element, the templates referenced will be merged with the configuration for the extractor in a depth-first manner.  Elements that represent collections or maps are merged together (later templates overriding previous ones, if there is a conflict), with the configuration in the jsonDomainMarshaller block itself overriding any previous values.
 
 In general, json domain templates are useful for overriding short-object handling, or defining rules that apply to properties present in all incoming JSON objects.
 
-###Template inheritance order.
+### Template inheritance order
+
 When a json extractor declaration includes an inherits directive, then the configuration of each template is merged with the declaration itself in depth-first order.  For example, consider the use of nested configuration:
 
     jsonExtractorTemplates {
@@ -2682,10 +2777,12 @@ When a json extractor declaration includes an inherits directive, then the confi
 
 The extractor will be configured with the results of merging the configuration blocks in the following order: 'one', 'two', 'three', 'four' and the contents of the jsonExractor block itself.
 
-###Configuration merging
+### Configuration merging
+
 The order in which configurations are merged is significant.  When two configurations, first and second are merged, boolean values, or single valued options that are set in the second config override the first.  Collection or map values are combined.
 
-##Declarative Marshalling of Domain classes to XML
+## Declarative Marshalling of Domain classes to XML
+
 The plugin supports marshalling of domain classes to XML with the net.hedtech.restfulapi.marshallers.xml.BasicDomainClassMarshaller and net.hedtech.restfulapi.marshallers.xml.DeclarativeDomainClassMarshaller.
 
 The BasicDomainClassMarshaller exposes methods which can be overridden to define what fields to include, etc.  It functions similarly to the json marshalling, but produces xml output instead.  The DeclarativeDomainClassMarshaller supports the configuration DSL.
@@ -2764,7 +2861,8 @@ An instance of Person having two addresses, and multiple notes for two employees
         </employeeNotes>
     </person>
 
-###Configuring declarative XML marshalling
+### Configuring declarative XML marshalling
+
 Anywhere you can define a marshaller, you can define a declarative xml marshaller with
 
     xmlDomainMarshaller {
@@ -2777,7 +2875,8 @@ With options specified in the closure.  The xml domain marshaller supports a sup
 
 block, just as you can for JSON domain marshallers.  The only differences are in the maps passed to short object and additional fields closures - see the sections on additional fields and customzing short object behavior for xml for more details.
 
-###Customizing element name for XML marshalling
+### Customizing element name for XML marshalling
+
 By default, the declarative marshaller for xml will use the classname of the instance being rendered to choose a name for the element.  For example, a Person class will get rendered as a
 
     <person>
@@ -2795,7 +2894,8 @@ A Person instance would have an xml representation
 
 using that configuration.
 
-###Customizing short-object behavior for XML marshalling
+### Customizing short-object behavior for XML marshalling
+
 You can override how a declarative xml marshaller renders short-objects by specifying a closure that generates the content.  The marshaller will automatically pass the closure a Map containing the following keys:
 
         grailsApplication
@@ -2861,7 +2961,8 @@ Which in terms of the format is an object/map with 3 key/value pairs.  Notice it
 
     {"link":"/customers/123", "resource":"customers", "id":"123"}
 
-###Adding additional fields for XML marshalling
+### Adding additional fields for XML marshalling
+
 The declarative domain marshaller allows any number of closures to be added to marshall additional content.  For example, let's say we want to add affordances to all of the xml representations.  Define a marshaller template containing the closure for the affordance, then add it to the marshallers:
 
     xmlDomainMarshallerTemplates {
@@ -2916,7 +3017,8 @@ where
 
 All the options for additional fields that apply to json marshalling also apply to xml marshalling.  The only difference is the closure will be passed an instance of the XML converter, instead of JSON, and care must be taken that additional fields must be added in such a way as to conform to the declarative xml format if the representation is intended to be extracted declaratively.
 
-##Declarative Marshalling of Beans to XML
+## Declarative Marshalling of Beans to XML
+
 The plugin contains net.hedtech.restfulapi.marshallers.xml.BeanMarshaller and net.hedtech.restfulapi.marshallers.xml.DeclarativeBeanMarshaller, which are counterparts to their json versions.
 
 Anywhere you can add a marshaller (in a marshaller group or representation), you can configure and add an xml declarative bean marshaller with
@@ -2929,7 +3031,8 @@ As with json marshallers, you can define templates with re-usable configuration:
 
     xmlBeanMarshallerTemplates {}
 
-###Customizing element name for XML marshalling
+### Customizing element name for XML marshalling
+
 By default, the declarative marshaller for xml will use the classname of the instance being rendered to choose a name for the element.  For example, a Person class will get rendered as a
 
     <person>
@@ -2947,7 +3050,8 @@ A Person instance would have an xml representation
 
 using that configuration.
 
-###Adding additional fields for XML marshalling
+### Adding additional fields for XML marshalling
+
 You can add additional fields not directly present in a bean to its marshalled representation.
 
 The declarative xml bean marshaller allows any number of closures to be added to marshall additional content.  For example, let's say we want to add affordances to all of our xml representations.  We will define a marshaller template containing the closure for the affordance, then add it to the marshallers:
@@ -3002,7 +3106,8 @@ Note that resourceId may not be present in the map. The marshaller attempts to p
 
 If none of the above conditions apply, then resourceId will not be passed in the map.
 
-##Marshalling enumerations to XML
+## Marshalling enumerations to XML
+
 Marshalling an enum value with the default grails behavior will result in an xml element containing an enumType attribute with the value as the text of the element.
 
 For example:
@@ -3039,7 +3144,8 @@ Rendering the same bean, this would instead yield:
 </simpleBeanWithEnum>
 ```
 
-##Declarative extraction of XML content
+## Declarative extraction of XML content
+
 Just as with json, you can declaratively configure how to extract content from xml.  Anywhere you can define an extractor, you can declaratively define one with
 
     xmlExtractor {}
@@ -3098,7 +3204,8 @@ Then the extraction rules are applied to the map, in the same way they would be 
      ]
     ]
 
-###Cautions when using xml extraction
+### Cautions when using xml extraction
+
 While the json-xml format that the declarative extraction understands is structurally similar to json, there are some important differences.  The most obvious is that all primitive values are represented as text, whereas json content can distinguish between numbers, text, etc.  This means that maps declaratively extracted from the same content in json and xml formats are subtly different.  For example consider the same resource represented in json and json-xml format:
 
     {id:123}
@@ -3117,7 +3224,8 @@ while the xml content produces the map
 
 That is, the value of id in the first map is a number, while in the second map, it is a string - type information for primitives is lost in the json-xml format.  It is therefore the responsibility of the service layer that binds the extracted map to objects to convert/coerce values appropriately.
 
-##<a id="configure-marshalling-framework"></a>Configuring the marshalling framework.
+## <a id="configure-marshalling-framework"></a>Configuring the marshalling framework
+
 The framework to use for marshalling can be specified on a per-representation basis with the marshallerFramework attribute.  For example:
 
     restfulApiConfig = {
@@ -3146,7 +3254,8 @@ Any value other than 'none', 'json', or 'xml' is treated as the name of a bean a
 
 If a value for the marshallerFramework is not explicitly set, the controller will infer the framework from the mediaType of the representation.  A media type ending in 'json' is assumed to use the 'json' framework; a type ending in 'xml' is assumed to use 'xml'.
 
-###Marshalling Services
+### Marshalling Services
+
 Any service implementing implementing the method
 
     Object marshalObject(Object o,RepresentationConfig config)
@@ -3208,7 +3317,8 @@ This is a simple example.  In general, a marshalling service implementation woul
 
 Implementations that return bbyte[] or an InputStream can be used to support marshalling for resources that have binary representations, such as PDF.
 
-##Restricting representations to responses or requests only.
+## Restricting representations to responses or requests only
+
 You may have situations in which a resource representation is only intended to be used in a response or request, but not both.  For example, you may have a complex representation that fully renders nested objects that is appropriate to return in list and show operations, but that you don't want to have to consume for create or update operations.  You can (indirectly) control this, by controlling whether the representation has an extractor or marshalling framework defined.
 
 To prevent a representation from being used in a create, update, or delete operation, do not specify an extractor instance (or set it to null):
@@ -3241,10 +3351,12 @@ To prevent a representation from being returned as the response to any request, 
 
 Any request requiring the representation will receive a 406 status code.
 
-##Logging
+## Logging
+
 Errors encountered while servicing a request are logged at error level to the log target 'RestfulApiController_messageLog'.  This is so errors occuring from the requests (which will typically be errors caused by invalid input, etc) can be separated from errors in the controller.
 
-##<a id="api-testing"></a>Testing an API
+## <a id="api-testing"></a>Testing an API
+
 The plugin contains the class net.hedtech.restfulapi.spock.RestSpecification which may be extended to write functional spock tests.  Spock is a testing and specification framework that is very expressive.  It is strongly recommended that you use spock to test your APIs.
 
 The RestSpecification class contains a number of convenience methods for making calls to Restful APIs as part of the functional test phase, such as get and post methods that take closures in which you can define headers, body content, etc.
@@ -3275,15 +3387,15 @@ For example
             "An AA thing" == json[0].description
 
             // assert localization of the message
-            "List of thing resources" == responseHeader('X-hedtech-message')
+            "List of thing resources" == responseHeader('X-Status-Reason')
 
-            //check pagination headers
-            "2" == responseHeader('X-hedtech-totalCount')
-            null != responseHeader('X-hedtech-pageOffset')
-            null != responseHeader('X-hedtech-pageMaxSize')
+            "2" == responseHeader('X-Total-Count')
             json[0]._href?.contains('things')
             null == json[0].numParts
             null == json[0].sha1
+
+            // See RestfulApiControllerFunctionalSpec.groovy for an example
+            // of testing the pagination links contained in the Link Header.
         }
     }
 
@@ -3291,7 +3403,8 @@ Clone the plugin's git repo and look at the tests under test-restful-api for mor
 
 The RestSpecification can also print out the details of the request/response for each test, including the headers.  To enable this, pass "-DRestSpecification.display=true --echoOut" when running the test.
 
-##Cross-Origin Resource Sharing
+## Cross-Origin Resource Sharing
+
 User agents typically apply same-origin restrictions to network requests; this prevents a client-side Web application from invoking APIs provided by the plugin from a different origin.
 
 Applications using the RESTFul API plugin can optionally use the [grails-cors](http://grails.org/plugin/cors) plugin to allow cross-origin requests (via XMLHttpRequest).
@@ -3305,12 +3418,12 @@ In order for a client to fully access the api, you will need to configure the co
 
     cors.url.pattern = '/api/*'
     cors.allow.origin.regex='.*'
-    cors.expose.headers='content-type,X-hedtech-totalCount,X-hedtech-pageOffset,X-hedtech-pageMaxSize,X-hedtech-message,X-hedtech-Media-Type'
+    cors.expose.headers='content-type,X-Total-Count,X-Status-Reason,X-Media-Type'
 
 Note that at present, the cors plugin can produce responses to OPTIONS requests that are inconsistent with the restful plugin.  The cors plugin returns that all HTTP methods are supported by any url that matches cors.url.pattern; in reality, only some of the urls matched by the pattern will map to actual resources; and for those resources, the methods supported may be restricted.  In those cases, an OPTIONS request to a a given url may return that all methods are supported, while actually using one of those methods returns a 405.  We may make a future contribution to the cors plugin to eliminate this inconsistency.
 
-###JSON-P
-The plugin does not support JSON-P.
+### JSON-P
 
+The plugin does not support JSON-P.
 
 

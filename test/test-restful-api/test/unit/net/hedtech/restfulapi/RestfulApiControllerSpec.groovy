@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * Copyright 2013 Ellucian Company L.P. and its affiliates.
+ * Copyright 2013-2015 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -202,7 +202,7 @@ class RestfulApiControllerSpec extends Specification {
     }
 
     @Unroll
-    def "Unsupported media type in Content-Type header returns 415"(String controllerMethod, String httpMethod, String id, String serviceMethod, def serviceReturn ) {
+    def "Unsupported media type in Content-Type header returns 415"(String controllerMethod, String httpMethod, String id ) {
         setup:
          config.restfulApiConfig = {
             resource 'things' config {
@@ -235,10 +235,10 @@ class RestfulApiControllerSpec extends Specification {
         0 * _._
 
         where:
-        controllerMethod | httpMethod | id   | serviceMethod | serviceReturn
-        'create'         | 'POST'     | null | 'create'      | 'foo'
-        'update'         | 'PUT'      | '1'  | 'update'      | 'foo'
-        'delete'         | 'DELETE'   | '1'  | 'delete'      | null
+        controllerMethod | httpMethod | id
+        'create'         | 'POST'     | null
+        'update'         | 'PUT'      | '1'
+        'delete'         | 'DELETE'   | '1'
     }
 
     @Unroll

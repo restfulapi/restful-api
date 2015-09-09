@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * Copyright 2013 Ellucian Company L.P. and its affiliates.
+ * Copyright 2013-2015 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -456,7 +456,8 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
     }
 
     @Unroll
-    def "Test list paging with json response"( int max, int offset, int numReturned ) {
+    def "Test list paging with json response"( int max, int offset, int numReturned,
+                                               String first, String prev, String next, String last ) {
         setup:
         def totalNumber = 95
         createManyThings(totalNumber)
@@ -476,16 +477,26 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         // assert localization of the message
         "List of thing resources" == responseHeader('X-hedtech-message')
 
-        //check pagination headers
+        // Note the totalCount header name used below is no longer the 'default' name.
+        // It is only used because the test-app config.groovy explicitly specifies it.
+        // Also note the pageOffset and pageMaxSize headers are deprecated in favor
+        // of the Link header (which is also tested below).
+        //
         totalNumber == responseHeader('X-hedtech-totalCount').toInteger()
         offset      == responseHeader('X-hedtech-pageOffset').toInteger()
         max         == responseHeader('X-hedtech-pageMaxSize').toInteger()
 
+        def links = LinkHeaderUtils.parse(responseHeader('Link'))
+        first == links['first']
+        prev  == links['prev']
+        next  == links['next']
+        last  == links['last']
+
         where:
-        max | offset | numReturned
-        10  | 0      | 10
-        10  | 10     | 10
-        10  | 90     | 5
+        max | offset | numReturned | first                       | prev                        | next                         | last
+        10  | 0      | 10          | null                        | null                        | '/things?offset=10&limit=10' | '/things?offset=90&limit=10'
+        10  | 10     | 10          | '/things?offset=0&limit=10' | '/things?offset=0&limit=10' | '/things?offset=20&limit=10' | '/things?offset=90&limit=10'
+        10  | 90     | 5           | '/things?offset=0&limit=5'  | '/things?offset=85&limit=5' | '/things?offset=95&limit=5'  | '/things?offset=95&limit=5'
     }
 
     def "Test list with matching Etag results in 304"() {

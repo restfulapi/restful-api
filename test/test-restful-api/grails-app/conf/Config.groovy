@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * Copyright 2013 Ellucian Company L.P. and its affiliates.
+ * Copyright 2013-2015 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -151,11 +151,11 @@ cors.expose.headers     ='content-type,X-hedtech-totalCount,X-hedtech-pageOffset
 // These do not need to be configured (hence they are commented out) unless you
 // want to override the naming. (The 'built-in' names are shown below.)
 //
-//restfulApi.header.totalCount  = 'X-hedtech-totalCount'
+restfulApi.header.totalCount  = 'X-hedtech-totalCount'
 //restfulApi.header.pageOffset  = 'X-hedtech-pageOffset'
 //restfulApi.header.pageMaxSize = 'X-hedtech-pageMaxSize'
-//restfulApi.header.message     = 'X-hedtech-message'
-//restfulApi.header.mediaType   = 'X-hedtech-Media-Type'
+restfulApi.header.message     = 'X-hedtech-message'
+restfulApi.header.mediaType   = 'X-hedtech-Media-Type'
 
 //restfulApi.header.requestId   = 'X-Request-ID'
 
