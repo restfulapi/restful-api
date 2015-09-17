@@ -20,7 +20,10 @@ import java.security.*
 
 import static java.util.UUID.randomUUID
 
+import org.slf4j.*
+import groovy.util.logging.Slf4j
 
+@Slf4j
 class EtagGenerator {
 
     /**

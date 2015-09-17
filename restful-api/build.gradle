@@ -1,3 +1,4 @@
+
 buildscript {
     ext {
         grailsVersion = project.grailsVersion
@@ -62,7 +63,7 @@ dependencies {
 
     testCompile "org.grails:grails-plugin-testing"
 
-    compile "org.grails.plugins:cache-headers:2.0.0-SNAPSHOT"
+    runtime "org.grails.plugins:cache-headers:2.0.0-SNAPSHOT"
     compile "org.spockframework:spock-core:1.0-groovy-2.4"
 
     console "org.grails:grails-console"

@@ -52,15 +52,17 @@ class RestfulApiGrailsPlugin {
 
     def license = "APACHE"
 
+    def loadAfter = ['cache-headers']
+
 
 // ----------------------------------------------------------------------------
 
     def doWithApplicationContext = { applicationContext ->
         // Initialize the Restful API controller (so it will register JSON and XML marshallers)
-        //
         def artefact = application.getArtefactByLogicalPropertyName("Controller", "restfulApi")
         def restfulApiController = applicationContext.getBean(artefact.clazz.name)
-        restfulApiController.init()
+        def grailsApplication = applicationContext.getBean('grailsApplication')
+        restfulApiController.init(applicationContext.grailsApplication)
     }
 }
 

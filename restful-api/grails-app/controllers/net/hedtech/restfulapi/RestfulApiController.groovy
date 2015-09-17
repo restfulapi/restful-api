@@ -125,6 +125,12 @@ class RestfulApiController {
     // in logging.
     def beforeInterceptor = [action: this.&setRequestIdAttribute, except: 'init']
 
+    // As of Grails 3, the grailsApplication is acquired from Web Traits,
+    // which require an active request to be bound to the thread.
+    // To achieve initialization, we need to pass in the grailsApplication
+    // and store it here for convenience
+    def grailsApplicationFromInit
+
     /**
      * Initializes the controller by registering the configured marshallers.
      **/
@@ -132,7 +138,11 @@ class RestfulApiController {
     //       -- it does *not* work for 'run-app' or 'test-app functional:'.
     //       'init()' is invoked explicitly from RestfulApiGrailsPlugin.
     // @PostConstruct
-    void init() {
+    void init(def grailsApplication) {
+        if (grailsApplication == null) {
+            throw new RuntimeException("Cannot initialize RestfulApiController without a reference to grailsApplication")
+        }
+        grailsApplicationFromInit = grailsApplication
         initExceptionHandlers()
 
         log.trace 'Initializing RestfulApiController...'
@@ -146,14 +156,12 @@ class RestfulApiController {
 
         pageMax    = getPagingConfiguration('max', 'max')
         pageOffset = getPagingConfiguration('offset', 'offset')
-
         JSON.createNamedConfig('restapi-error:json') { }
         XML.createNamedConfig('restapi-error:xml') { }
-
-        if (!(grailsApplication.config.restfulApiConfig instanceof Closure)) {
+        if (!(grailsApplicationFromInit.config.restfulApiConfig instanceof Closure)) {
             log.warn( "No restfulApiConfig defined in configuration.  No resources will be exposed.")
         } else {
-            restConfig = RestConfig.parse( grailsApplication, grailsApplication.config.restfulApiConfig )
+            restConfig = RestConfig.parse( grailsApplicationFromInit, grailsApplicationFromInit.config.restfulApiConfig )
             restConfig.validate()
 
             restConfig.resources.values().each() { resource ->
@@ -215,6 +223,8 @@ class RestfulApiController {
 
         log.trace 'Done initializing RestfulApiController...'
     }
+
+
 
 
 // ---------------------------------- ACTIONS ---------------------------------
@@ -816,13 +826,13 @@ class RestfulApiController {
 
 
     private String getHeaderName(name, defaultString) {
-        def value = grailsApplication.config.restfulApi.header."${name}"
+        def value = grailsApplicationFromInit.config.restfulApi.header."${name}"
         (value instanceof String) ? value : defaultString
     }
 
 
     private String getPagingConfiguration(name, defaultString) {
-        def value = grailsApplication.config.restfulApi.page."${name}"
+        def value = grailsApplicationFromInit.config.restfulApi.page."${name}"
         (value instanceof String) ? value : defaultString
     }
 
