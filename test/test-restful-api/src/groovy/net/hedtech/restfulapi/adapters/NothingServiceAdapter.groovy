@@ -1,5 +1,5 @@
 /* ***************************************************************************
- * Copyright 2013 Ellucian Company L.P. and its affiliates.
+ * Copyright 2013-2015 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,6 +43,10 @@ class NothingServiceAdapter implements RestfulServiceAdapter {
 
     def update(def service, Map content, Map params) throws Throwable {
         service.update(id,content,params)
+    }
+
+    def patch(def service, Map patches, Map params) throws Throwable {
+        service.patch(id,patches,params)
     }
 
     void delete(def service, Map content, Map params) throws Throwable {

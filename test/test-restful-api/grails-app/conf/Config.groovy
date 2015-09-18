@@ -228,6 +228,18 @@ restfulApiConfig = {
 
     resource 'things' config {
         representation {
+            mediaTypes = ['application/json-patch+json']
+            // HTTP PATCH is supported only when the request representation contains a
+            // 'patchSupport' setting with a value of 'controller' or 'service'.
+            // The restful-api controller currently can ONLY handle a JSON Patch, so
+            // only representations having the 'application/json-patch+json' should be
+            // configured with 'controller'. If 'patchSupport' is desired for other
+            // representations, 'service' must be configured. Note this is configurable
+            // in case you want to also implement JSON Patch support within your service.
+            patchSupport = 'controller'
+            extractor = new net.hedtech.restfulapi.extractors.json.JSONPatchExtractor()
+        }
+        representation {
             mediaTypes = ["application/json"]
             marshallerFramework = 'json'
             marshallers {

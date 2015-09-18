@@ -21,6 +21,7 @@ class RepresentationConfig {
     String marshallerFramework
     String contentType
     def jsonArrayPrefix
+    def patchSupport
     def marshallers = []
     def extractor
 

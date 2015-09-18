@@ -1179,6 +1179,39 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         2 == json.parts.size()
     }
 
+    // TODO: PENDING upgrade of Spring, specifically to attain PATCH support
+    //       within org.springframework.http.HttpMethod
+    @Ignore
+    def "Test patching a thing with a JSON Patch"() {
+        setup:
+        def id = createThing('AA')
+
+        when:
+        patch( "$localBase/api/things/$id" ) {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/json'
+            body {
+                """
+                {
+                    "op":    "replace",
+                    "path":  "/description",
+                    "value": "patched description"
+                }
+                """
+            }
+        }
+
+        then:
+        200 == response.status
+
+        // assert localization of the message
+        "thing resource patched" == responseHeader('X-hedtech-message')
+
+        def json = JSON.parse response.text
+        null != json.id
+        "patched description" == json.description
+    }
+
     void "Test that optimistic lock returns 409 status"() {
         setup:
         def id = createThing('AA')

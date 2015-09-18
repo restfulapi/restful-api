@@ -82,17 +82,20 @@ class RestfulApiController {
     // The default adapter simply passes through the method invocations to the service.
     //
     private RestfulServiceAdapter defaultServiceAdapter =
-        [ list:   { def service, Map params                      -> service.list(params) },
-          count:  { def service, Map params                      -> service.count(params) },
-          show:   { def service, Map params                      -> service.show(params) },
-          create: { def service, Map content, Map params         -> service.create(content, params) },
+        [ list:   { def service, Map params              -> service.list(params) },
+          count:  { def service, Map params              -> service.count(params) },
+          show:   { def service, Map params              -> service.show(params) },
+          create: { def service, Map content, Map params -> service.create(content, params) },
           update: { def service, Map content, Map params -> service.update(content, params) },
+          patch:  { def service, Map patches, Map params -> service.patch(patches, params) },
           delete: { def service, Map content, Map params -> service.delete(content, params) }
         ] as RestfulServiceAdapter
 
     private ExtractorAdapter extractorAdapter = new DefaultExtractorAdapter()
 
-    private HandlerRegistry<Throwable,ExceptionHandler> handlerConfig = new DefaultHandlerRegistry<Throwable,ExceptionHandler>()
+    private HandlerRegistry<Throwable,ExceptionHandler> handlerConfig =
+        new DefaultHandlerRegistry<Throwable,ExceptionHandler>()
+
     def localizingClosure = { mapToLocalize -> this.message( mapToLocalize ) }
     private Localizer localizer = new Localizer(localizingClosure)
 
@@ -297,6 +300,7 @@ class RestfulApiController {
     // GET /api/pluralizedResourceName/id
     //
     public def show() {
+
         log.trace "show() invoked for ${params.pluralizedResourceName}/${params.id} - request_id=${request.request_id}"
         try {
             checkMethod( Methods.SHOW )
@@ -336,6 +340,7 @@ class RestfulApiController {
     // POST /api/pluralizedResourceName
     //
     public def create() {
+
         log.trace "create() invoked for ${params.pluralizedResourceName} - request_id=${request.request_id}"
         def result
 
@@ -356,9 +361,10 @@ class RestfulApiController {
     }
 
 
-    // PUT/PATCH /api/pluralizedResourceName/id
+    // PUT /api/pluralizedResourceName/id
     //
     public def update() {
+
         log.trace "update() invoked for ${params.pluralizedResourceName}/${params.id} - request_id=${request.request_id}"
         def result
 
@@ -367,12 +373,67 @@ class RestfulApiController {
             def content = parseRequestContent( request )
             checkId(content)
             getResponseRepresentation()
+
             result = getServiceAdapter().update( getService(), content, params )
             response.setStatus( 200 )
             renderSuccessResponse( new ResponseHolder( data: result ),
                                    'default.rest.updated.message' )
         }
         catch (e) {
+            logMessageError(e)
+            renderErrorResponse(e)
+        }
+    }
+
+
+    // PATCH /api/pluralizedResourceName/id
+    //
+    // Requires a resource to be configured with an appropriate representation.
+    // If using JSON Patch, the proper media type for a JSON Patch is:
+    //    'application/json-patch+json')
+    //
+    // Support is provided for applying a JSON Patch prior to invoking a normal
+    // 'update' on the configured service. Note 'move' is not (currently) supported.
+    // If you need more advanced support than what is available here, or if you need
+    // to support PATCH for XML payloads, you may configure the resource to delegate
+    // to a 'patch' method on your service.
+    //
+    // Also note there is no custom 'extractor' support to adjust JSON Pointers
+    // contained within the patch, so if you have a custom extractor for POST and PUT,
+    // the JSON patch must reflect the 'end target' of that extraction.
+    //
+    public def patch() {
+
+        log.trace "patch() invoked for ${params.pluralizedResourceName}/${params.id} - request_id=${request.request_id}"
+        try {
+            def result
+            def patchSupport = getRequestRepresentation().patchSupport
+
+            checkMethod( Methods.PATCH )
+            getResponseRepresentation()
+
+            Map patches = parseRequestContent( request )
+
+            switch(patchSupport) {
+                case 'controller':
+                    def currentState = getServiceAdapter().show( getService(), params )
+                    // parseRequestContent returns [ patch:[...array_of_patches...]] when
+                    // the representation is JSON Patch
+                    def patchedContent = JSONPatchSupport.applyPatches( patches.patch, currentState )
+                    result = getServiceAdapter().update( getService(), patchedContent, params )
+                    break
+                case 'service':
+                    result = getServiceAdapter().patch( getService(), patches, params )
+                    break
+                default:
+                    checkMethod( 'PATCH_NOT_SUPPORTED' ) // force UnsupportedMethodException
+            }
+            response.setStatus( 200 )
+            renderSuccessResponse( new ResponseHolder( data: result ),
+                                   'default.rest.patched.message' )
+        }
+        catch (e) {
+throw e
             logMessageError(e)
             renderErrorResponse(e)
         }
@@ -934,6 +995,12 @@ class RestfulApiController {
             unsupportedRequestRepresentation()
         }
         return representation
+    }
+
+
+    private boolean requestHasJsonPatchContentType() {
+        def types = mediaTypeParser.parse( request.getHeader(HttpHeaders.CONTENT_TYPE) )
+        types.size() > 0 && types[0] == 'application/json-patch+json'
     }
 
 

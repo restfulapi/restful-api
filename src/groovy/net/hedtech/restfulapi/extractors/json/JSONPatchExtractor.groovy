@@ -1,5 +1,5 @@
-/* ***************************************************************************
- * Copyright 2013-2015 Ellucian Company L.P. and its affiliates.
+/* ****************************************************************************
+ * Copyright 2015 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,20 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *****************************************************************************/
+package net.hedtech.restfulapi.extractors.json
 
-package net.hedtech.restfulapi
+import grails.converters.JSON
+
+import java.text.ParseException
+import java.text.SimpleDateFormat
 
 import net.hedtech.restfulapi.extractors.*
+import org.codehaus.groovy.grails.web.json.*
 
-import javax.servlet.http.HttpServletRequest
+class JSONPatchExtractor implements JSONArrayExtractor {
 
-interface ExtractorAdapter {
 
-    Map extract(JSONExtractor extractor, HttpServletRequest request)
+    Map extract( JSONArray jsonArray ) {
+        return [ patch: jsonArray ]
+    }
 
-    Map extract(JSONArrayExtractor extractor, HttpServletRequest request)
-
-    Map extract(XMLExtractor extractor, HttpServletRequest request)
-
-    Map extract(RequestExtractor extractor, HttpServletRequest request)
 }

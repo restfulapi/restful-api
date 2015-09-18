@@ -1,5 +1,5 @@
 /* ***************************************************************************
- * Copyright 2013 Ellucian Company L.P. and its affiliates.
+ * Copyright 2013-2015 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,22 +21,25 @@ package net.hedtech.restfulapi
  * understands.
  **/
 class Methods {
+
     static final String LIST   = 'list'
     static final String SHOW   = 'show'
     static final String CREATE = 'create'
     static final String UPDATE = 'update'
+    static final String PATCH  = 'patch'
     static final String DELETE = 'delete'
 
-    private static final allMethods = [LIST,SHOW,CREATE,UPDATE,DELETE]
+    private static final allMethods = [LIST,SHOW,CREATE,UPDATE,PATCH,DELETE]
 
     private static methodGroups = [:]
 
     private static httpMap = [
-        (Methods.LIST):'GET',
-        (Methods.SHOW):'GET',
-        (Methods.CREATE):'POST',
-        (Methods.UPDATE):'PUT',
-        (Methods.DELETE):'DELETE'
+        (Methods.LIST):   'GET',
+        (Methods.SHOW):   'GET',
+        (Methods.CREATE): 'POST',
+        (Methods.UPDATE): 'PUT',
+        (Methods.PATCH):  'PATCH',
+        (Methods.DELETE): 'DELETE'
     ]
 
     static {
@@ -54,7 +57,7 @@ class Methods {
         //disjoint sets: those that service urls with an odd number of parts
         //after the api prefix, and those with and even number.
         def odd = [LIST,CREATE]
-        def even =[SHOW,UPDATE,DELETE]
+        def even =[SHOW,UPDATE,PATCH,DELETE]
         odd.each { methodGroups.put( it, odd ) }
         even.each { methodGroups.put( it, even ) }
     }

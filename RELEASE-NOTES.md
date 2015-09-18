@@ -17,6 +17,8 @@ Note the test-app unit and functional tests currently use the 'old' names. This 
 
 * Pagination information is now returned within a [Link Header](http://www.rfc-editor.org/rfc/rfc5988.txt). Note a LinkHeaderUtils.groovy utility class has been added and may be used to generate and parse a Link header (e.g., if you want to assert this header in your own tests). Note the X-hedtech-pageOffset and X-hedtech-pageMaxSize headers are deprecated but still included in the response.
 
+* BREAKING CHANGE: The service contract now includes 'patch' to support HTTP Patch. The controller may be configured to either use this service 'patch' method or to apply a [JSON Patch](https://tools.ietf.org/html/rfc6902) itself before delegating to the service 'update' method. The JSON Patch support to apply a patch is implemented in the plugin (see JSONPatchSupport.groovy) as other implementations required too many dependencies. JSON Patch 'diff' support is not currently implemented. NOTE: Functional testing of 'patch' is currently ignored until Spring dependencies are updated with PATCH support. 
+
 # 1.0.0
 
 * BREAKING CHANGE.  The service layer contract and RestfulServiceAdapter interface have been changed so that all method signatures are consistent.  The resource id will no longer be passed as a separate parameter to the update and delete methods, as it is also available via the params map.  (Issue #8)  If you have services that expect the id to be passed explicitly, you can continue to support this behavior with use of RestfulServiceAdapter that extracts the id from the params and passes it in as a separate argument.

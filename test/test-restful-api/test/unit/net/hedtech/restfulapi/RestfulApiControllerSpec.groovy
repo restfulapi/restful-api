@@ -30,6 +30,7 @@ import net.hedtech.restfulapi.marshallers.*
 
 import org.codehaus.groovy.grails.web.converters.exceptions.ConverterException
 import org.codehaus.groovy.grails.web.converters.marshaller.ObjectMarshaller
+import org.codehaus.groovy.grails.web.json.JSONArray
 import org.codehaus.groovy.grails.web.json.JSONObject
 
 import spock.lang.*
@@ -63,7 +64,6 @@ class RestfulApiControllerSpec extends Specification {
         //mock the appropriate service method, expect 0 invocations
         def mock = Mock(ThingService)
         controller.metaClass.getService = {-> mock}
-
         request.addHeader( 'Accept', 'application/xml' )
         //incoming format always json, so no errors
         request.addHeader( 'Content-Type', 'application/json' )
@@ -2052,7 +2052,6 @@ class RestfulApiControllerSpec extends Specification {
         mockCacheHeaders()
 
         request.addHeader( 'Accept', 'application/json' )
-        //incoming format always json, so no errors
         request.addHeader( 'Content-Type', 'application/json' )
         params.pluralizedResourceName = 'things'
 
@@ -2095,7 +2094,6 @@ class RestfulApiControllerSpec extends Specification {
         mockCacheHeaders()
 
         request.addHeader( 'Accept', 'application/json' )
-        //incoming format always json, so no errors
         request.addHeader( 'Content-Type', 'application/json' )
         params.pluralizedResourceName = 'things'
 
@@ -2109,6 +2107,102 @@ class RestfulApiControllerSpec extends Specification {
         '2'   == response.getHeaderValue( 'X-hedtech-totalCount' )
     }
 
+
+    def "Test PATCH when supported by service"() {
+        setup:
+         config.restfulApiConfig = {
+            resource 'things' config {
+                representation {
+                    patchSupport = 'service'
+                    mediaTypes = ['application/json-patch+json']
+                    extractor = new net.hedtech.restfulapi.extractors.json.JSONPatchExtractor()
+                }
+                representation {
+                    mediaTypes = ['application/json']
+                    marshallers {
+                        jsonBeanMarshaller {}
+                    }
+                }
+            }
+        }
+        controller.init()
+
+        def mock = Mock(ThingService)
+        mock.show(_) >> {
+            ["code":"pt", "description":"created thing"]
+        }
+        mock.patch(_,_) >> {
+            ["code":"pt", "description":"patched thing"]
+        }
+        controller.metaClass.getService = {-> mock}
+
+        mockCacheHeaders()
+
+        request.method = 'PATCH'
+        request.setContent( new JSONArray( [["op":"replace","path":"/code","value":"pp"],
+                                            ["op":"replace","path":"/description","value":"patched thing"]] )
+                                           .toString().getBytes())
+        request.addHeader( 'Accept', 'application/json' )
+        request.addHeader( 'Content-Type', 'application/json-patch+json' )
+        params.pluralizedResourceName = 'things'
+
+        when:
+        controller.patch()
+        def json = JSON.parse response.text
+        "patched thing" == json.description
+
+        then:
+        200   == response.status
+    }
+
+
+    def "Test PATCH when supported by the controller"() {
+        // See JSONPatchSupportSpec for tests of applying patches
+        setup:
+         config.restfulApiConfig = {
+            resource 'things' config {
+                representation {
+                    patchSupport = 'controller'
+                    mediaTypes = ['application/json-patch+json']
+                    extractor = new net.hedtech.restfulapi.extractors.json.JSONPatchExtractor()
+                }
+                representation {
+                    mediaTypes = ['application/json']
+                    marshallers {
+                        jsonBeanMarshaller {}
+                    }
+                }
+            }
+        }
+        controller.init()
+
+        def mock = Mock(ThingService)
+        mock.show(_) >> {
+            ["code":"pt", "description":"created thing"]
+        }
+        mock.update(_,_) >> {
+            ["code":"pt", "description":"patched thing"]
+        }
+        controller.metaClass.getService = {-> mock}
+
+        mockCacheHeaders()
+
+        request.method = 'PATCH'
+        def replaceOp = new JSONObject( ["op":"replace","path":"/description","value":"patched thing" ])
+        def jarray = new JSONArray( [ replaceOp ] ).toString()
+        request.setContent( jarray.getBytes())
+        request.addHeader( 'Accept', 'application/json' )
+        request.addHeader( 'Content-Type', 'application/json-patch+json' )
+        params.pluralizedResourceName = 'things'
+
+        when:
+        controller.patch()
+        def json = JSON.parse response.text
+        "patched thing" == json.description
+
+        then:
+        200   == response.status
+    }
 
     private void mockCacheHeaders() {
         def cacheHeadersService = new CacheHeadersService()
@@ -2195,6 +2289,10 @@ class RestfulApiControllerSpec extends Specification {
 
         def update(def service, Map content, Map params) throws Throwable {
             service.update(content,params)
+        }
+
+        def patch(def service, Map patches, Map params) throws Throwable {
+            service.patch(patches,params)
         }
 
         void delete(def service, Map content, Map params) throws Throwable {

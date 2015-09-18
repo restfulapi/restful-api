@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * Copyright 2013 Ellucian Company L.P. and its affiliates.
+ * Copyright 2013-2015 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -140,6 +140,16 @@ class ThingService {
         }
         supplementThing( result )
         result
+    }
+
+
+    def patch( Map patches, Map params ) {
+
+        log.trace "ThingService.patch invoked"
+        checkForExceptionRequest()
+
+        // 'patch' is not implemented; unit test mocks of this method
+        throw new RuntimeException('Not Implemented')
     }
 
 

@@ -1,5 +1,5 @@
 /* ***************************************************************************
- * Copyright 2013 Ellucian Company L.P. and its affiliates.
+ * Copyright 2013-2015 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,8 @@ interface RestfulServiceAdapter {
     def create(def service, Map content, Map params) throws Throwable
 
     def update(def service, Map content, Map params) throws Throwable
+
+    def patch(def service, Map patches, Map params) throws Throwable
 
     void delete(def service, Map content, Map params) throws Throwable
 

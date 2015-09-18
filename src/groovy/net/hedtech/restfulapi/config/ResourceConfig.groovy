@@ -23,7 +23,7 @@ class ResourceConfig {
     String name
     String serviceName
     String serviceAdapterName
-    def methods = [ 'list', 'show', 'create', 'update', 'delete' ]
+    def methods = [ 'list', 'show', 'create', 'update', 'patch', 'delete' ]
     //use a LinkedHashMap because we want to preserve
     //the order in which representations are added
     def representations = new LinkedHashMap()
@@ -81,10 +81,13 @@ class ResourceConfig {
                throw new AmbiguousRepresentationException( resourceName:name, mediaType:mediaType )
             }
             RepresentationConfig config = new RepresentationConfig(
-                mediaType:mediaType, marshallerFramework:delegate.marshallerFramework,
+                mediaType:mediaType,
+                marshallerFramework:delegate.marshallerFramework,
                 contentType:delegate.contentType,
                 jsonArrayPrefix:delegate.jsonArrayPrefix,
-                marshallers:delegate.marshallers, extractor:delegate.extractor )
+                patchSupport:delegate.patchSupport,
+                marshallers:delegate.marshallers,
+                extractor:delegate.extractor )
 
             //if we are using the json or xml marshalling framework, check
             //if we have default marshallers that should be automatically used

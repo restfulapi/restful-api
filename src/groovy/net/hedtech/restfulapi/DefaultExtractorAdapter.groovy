@@ -1,5 +1,5 @@
 /* ***************************************************************************
- * Copyright 2013 Ellucian Company L.P. and its affiliates.
+ * Copyright 2013-2015 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *****************************************************************************/
-
 package net.hedtech.restfulapi
 
 import net.hedtech.restfulapi.extractors.*
@@ -23,6 +22,10 @@ import javax.servlet.http.HttpServletRequest
 class DefaultExtractorAdapter implements ExtractorAdapter {
 
     Map extract(JSONExtractor extractor, HttpServletRequest request) {
+        extractor.extract(request.JSON)
+    }
+
+    Map extract(JSONArrayExtractor extractor, HttpServletRequest request) {
         extractor.extract(request.JSON)
     }
 

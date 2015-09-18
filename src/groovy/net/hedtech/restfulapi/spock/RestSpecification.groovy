@@ -53,10 +53,20 @@ abstract class RestSpecification extends Specification {
      * Issues a PUT request and returns the response in the most appropriate type
      *
      * @param url The URL
-     * @param customizer The clouser customizer
+     * @param customizer The customizer
      */
     def put(url, Closure customizer = null) {
         doRequestInternal(url,customizer, HttpMethod.PUT)
+    }
+
+    /**
+     * Issues a PATCH request and returns the response in the most appropriate type
+     *
+     * @param url The URL
+     * @param customizer The customizer
+     */
+    def patch(url, Closure customizer = null) {
+        doRequestInternal(url,customizer, HttpMethod.PATCH)
     }
 
     /**
