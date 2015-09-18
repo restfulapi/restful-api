@@ -666,13 +666,13 @@ class DeclarativeDomainClassMarshallerSpec extends Specification {
         def json = JSON.parse content
 
         then:
-        [:]             == json.contributors
-        [:]             == json.simpleMap
-        []              == json.simpleArray
-        []              == json.parts
-        'AA'            == json.code
-        false           == json.isLarge
-        JSONObject.NULL == json.description
+        [:]   == json.contributors
+        [:]   == json.simpleMap
+        []    == json.simpleArray
+        []    == json.parts
+        'AA'  == json.code
+        false == json.isLarge
+        null  == json.description
         !json.containsKey('embeddedPart')
         !json.containsKey('owner')
         json.containsKey('description')
@@ -695,14 +695,14 @@ class DeclarativeDomainClassMarshallerSpec extends Specification {
         def json = JSON.parse content
 
         then:
-        [:]             == json.contributors
-        [:]             == json.simpleMap
-        []              == json.simpleArray
-        []              == json.parts
-        'AA'            == json.code
-        false           == json.isLarge
-        JSONObject.NULL == json.embeddedPart
-        JSONObject.NULL == json.owner
+        [:]   == json.contributors
+        [:]   == json.simpleMap
+        []    == json.simpleArray
+        []    == json.parts
+        'AA'  == json.code
+        false == json.isLarge
+        null  == json.embeddedPart
+        null  == json.owner
         json.containsKey('embeddedPart')
         json.containsKey('owner')
         !json.containsKey('description')
