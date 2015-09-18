@@ -19,7 +19,7 @@ package net.hedtech.restfulapp.config
 import grails.test.mixin.*
 import grails.test.mixin.support.*
 
-import net.hedtech.restfulapi.*
+import net.hedtech.restfulapp.*
 import net.hedtech.restfulapi.config.*
 import net.hedtech.restfulapp.beans.*
 import net.hedtech.restfulapi.extractors.configuration.*

@@ -53,8 +53,8 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException
  **/
 class BasicDomainClassMarshaller implements ObjectMarshaller<JSON> {
 
-    protected static final Log log //=
-        //LogFactory.getLog(BasicDomainClassMarshaller.class)
+    protected static final Log log =
+        LogFactory.getLog(BasicDomainClassMarshaller.class)
 
     GrailsApplication app
     //allow proxy handler to be explicitly set
