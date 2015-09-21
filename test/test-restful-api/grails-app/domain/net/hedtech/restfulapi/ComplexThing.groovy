@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * Copyright 2013 Ellucian Company L.P. and its affiliates.
+ * Copyright 2013-2015 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,6 @@ class ComplexThing implements Serializable {
     // We'll include database 'Transient' properties
     // (which are not (always) supported by DomainClassMarshaller)
     @Transient boolean      xlarge = false
-    @Transient List<String> listOfStuff = ['Apple']
 
     // BigDecimal is used often within Banner XE domains
     BigDecimal size

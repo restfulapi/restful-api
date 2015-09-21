@@ -22,6 +22,7 @@ class RepresentationDelegate {
     String contentType
     def jsonArrayPrefix
     def patchSupport
+    String patchAppliesTo
     def marshallers = []
     def extractor
 

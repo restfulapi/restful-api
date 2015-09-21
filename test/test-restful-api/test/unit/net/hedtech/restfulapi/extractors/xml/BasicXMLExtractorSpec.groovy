@@ -30,6 +30,10 @@ import net.hedtech.restfulapi.extractors.ShortObjectExtractionException
 @TestMixin([GrailsUnitTestMixin])
 class BasicXMLExtractorSpec extends Specification {
 
+    def cleanup(){
+        GroovySystem.metaClassRegistry.removeMetaClass BasicXMLExtractor
+    }
+
     def "Test rename paths"() {
         setup:
         BasicXMLExtractor.metaClass.getRenamePaths << {

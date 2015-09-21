@@ -1,5 +1,5 @@
 /* ***************************************************************************
- * Copyright 2013 Ellucian Company L.P. and its affiliates.
+ * Copyright 2013-2015 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -86,6 +86,7 @@ class ResourceConfig {
                 contentType:delegate.contentType,
                 jsonArrayPrefix:delegate.jsonArrayPrefix,
                 patchSupport:delegate.patchSupport,
+                patchAppliesTo:delegate.patchAppliesTo,
                 marshallers:delegate.marshallers,
                 extractor:delegate.extractor )
 

@@ -1,5 +1,5 @@
 /* ***************************************************************************
- * Copyright 2013 Ellucian Company L.P. and its affiliates.
+ * Copyright 2013-2015 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -115,6 +115,8 @@ abstract class RestSpecification extends Specification {
         RestTemplate restTemplate = new RestTemplate()
         if (requestCustomizer.getRequestFactory() != null) {
             restTemplate.setRequestFactory( requestCustomizer.getRequestFactory() )
+        } else if (customizer.requestFactory) {
+            restTemplate.setRequestFactory( customizer.requestFactory )
         }
 
         Class responseType = requestCustomizer.responseType != null ? requestCustomizer.responseType : String

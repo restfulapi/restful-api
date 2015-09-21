@@ -27,12 +27,16 @@ import java.util.zip.*
 import net.hedtech.restfulapi.extractors.configuration.*
 import net.hedtech.restfulapi.spock.*
 
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory
+
 import spock.lang.*
 
 
 class RestfulApiControllerFunctionalSpec extends RestSpecification {
 
     static final String localBase = "http://127.0.0.1:8080/test-restful-api"
+
+    def requestFactory = new  HttpComponentsClientHttpRequestFactory()
 
     def setup() {
         deleteThings()
@@ -164,7 +168,7 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         post("$localBase/qapi/things") {
             headers['Content-Type'] = 'application/json'
             headers['Accept']       = 'application/json'
-                body {
+            body {
                 // akin to ?filter[0][field]=code&filter[0][operator]=eq&filter[0][value]=BB&max=1
                 """
                 {
@@ -1091,7 +1095,6 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         def json = JSON.parse response.text
         1 == json.errors.size()
         "general" == json.errors[0].type
-        null != json.errors[0].errorMessage
     }
 
     def "Test updating when the resource is not recognized"() {
@@ -1179,24 +1182,22 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         2 == json.parts.size()
     }
 
-    // TODO: PENDING upgrade of Spring, specifically to attain PATCH support
-    //       within org.springframework.http.HttpMethod
-    @Ignore
     def "Test patching a thing with a JSON Patch"() {
         setup:
         def id = createThing('AA')
 
         when:
         patch( "$localBase/api/things/$id" ) {
-            headers['Content-Type'] = 'application/json'
+            headers['Content-Type'] = 'application/json-patch+json'
             headers['Accept']       = 'application/json'
+            requestFactory = new HttpComponentsClientHttpRequestFactory()
             body {
                 """
-                {
+                [{
                     "op":    "replace",
                     "path":  "/description",
                     "value": "patched description"
-                }
+                }]
                 """
             }
         }

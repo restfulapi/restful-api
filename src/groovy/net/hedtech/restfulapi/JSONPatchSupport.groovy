@@ -24,8 +24,8 @@ class JSONPatchSupport {
 
     /**
      * Applies a JSON Patch to the currentState of a resource.
-     * @param  patches the patches to apply in order
-     * @param  currentState the current state of a resource
+     * @param  patches the List of patches to apply in order
+     * @param  currentState a Map representing the current state of a resource
      */
     static
     public def applyPatches( List patches, Map currentState ) {
@@ -60,10 +60,10 @@ class JSONPatchSupport {
     static
     private def add( Map currentState, List pathList, def value ) {
 
-        def obj = deepCopy(currentState)
+        def obj = deepCopy( currentState )
 
         if (pathList?.size() == 1) {
-            if (exists(obj, pathList)) {
+            if (exists( obj, pathList )) {
                 def prop = getProp(obj, pathList)
                 if (isArray(prop)) {
                     prop << value
@@ -77,9 +77,8 @@ class JSONPatchSupport {
                return obj
             }
         } else {
-            def propExists = exists(obj, pathList)
             def prop = getProp(obj, pathList)
-            if (propExists) {
+            if (prop) {
                 if (isArray(prop)) {
                     // if the path is to an array, we'll just add the value to it
                     prop << value
@@ -100,7 +99,12 @@ class JSONPatchSupport {
 
     static
     private def move( Map currentState, List fromPathList, List toPathList ) {
-        throw new RuntimeException('Not implemented') // and probably won't be...
+
+        def obj = deepCopy( currentState )
+
+        def value = getProp( obj, fromPathList )
+        obj = remove( obj, fromPathList )
+        return add( obj, toPathList, value )
     }
 
 
@@ -152,7 +156,7 @@ class JSONPatchSupport {
 
 
     static
-    private boolean exists( Map obj, List pathList) {
+    private boolean exists( def obj, List pathList) {
         switch (pathList?.size()) {
             case 0:
                 return true; // an 'empty' path for our purposes always exists
@@ -191,7 +195,7 @@ class JSONPatchSupport {
         out.writeObject( obj )
         out.flush()
         def byteIn = new ByteArrayInputStream( byteOut.toByteArray() )
-        def inStream = new ObjectInputStream( byteIn )
+        def inStream = new ThreadContextObjectInputStream( byteIn )
         return inStream.readObject()
     }
 
@@ -199,5 +203,19 @@ class JSONPatchSupport {
     static
     private getProp( def object, List pathList ) {
         pathList.inject object, { obj, prop -> obj[prop] }
+    }
+}
+
+class ThreadContextObjectInputStream extends ObjectInputStream {
+
+    ThreadContextObjectInputStream( ByteArrayInputStream bais ) {
+        super( bais )
+    }
+
+    @Override
+    protected Class<?> resolveClass(ObjectStreamClass desc)
+    throws IOException, ClassNotFoundException {
+
+        Class.forName( desc.getName(), true, Thread.currentThread().contextClassLoader )
     }
 }

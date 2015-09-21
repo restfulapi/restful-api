@@ -1,5 +1,5 @@
 /* ***************************************************************************
- * Copyright 2013 Ellucian Company L.P. and its affiliates.
+ * Copyright 2013-2015 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -664,13 +664,13 @@ class DeclarativeDomainClassMarshallerSpec extends Specification {
         def json = JSON.parse content
 
         then:
-        [:]             == json.contributors
-        [:]             == json.simpleMap
-        []              == json.simpleArray
-        []              == json.parts
-        'AA'            == json.code
-        false           == json.isLarge
-        JSONObject.NULL == json.description
+        [:]   == json.contributors
+        [:]   == json.simpleMap
+        []    == json.simpleArray
+        []    == json.parts
+        'AA'  == json.code
+        false == json.isLarge
+        null  == json.description
         !json.containsKey('embeddedPart')
         !json.containsKey('owner')
         json.containsKey('description')
@@ -693,14 +693,14 @@ class DeclarativeDomainClassMarshallerSpec extends Specification {
         def json = JSON.parse content
 
         then:
-        [:]             == json.contributors
-        [:]             == json.simpleMap
-        []              == json.simpleArray
-        []              == json.parts
-        'AA'            == json.code
-        false           == json.isLarge
-        JSONObject.NULL == json.embeddedPart
-        JSONObject.NULL == json.owner
+        [:]    == json.contributors
+        [:]    == json.simpleMap
+        []     == json.simpleArray
+        []     == json.parts
+        'AA'   == json.code
+        false  == json.isLarge
+        null   == json.embeddedPart
+        null   == json.owner
         json.containsKey('embeddedPart')
         json.containsKey('owner')
         !json.containsKey('description')

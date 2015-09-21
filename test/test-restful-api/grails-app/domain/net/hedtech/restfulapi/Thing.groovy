@@ -30,7 +30,7 @@ class Thing implements Serializable {
 
 
     public String toString() {
-        "Thing[id=$id, code=$code, description=$description, parts=${parts}]"
+        "Thing[id=$id, code=$code, description=$description, dateManufactured=$dateManufactured, parts=${parts}]"
     }
 
 

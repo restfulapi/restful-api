@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * Copyright 2013 Ellucian Company L.P. and its affiliates.
+ * Copyright 2013-2015 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 
 package net.hedtech.restfulapi.query
 
-import grails.plugin.spock.IntegrationSpec
+import grails.test.spock.IntegrationSpec
 
 import groovy.sql.Sql
 

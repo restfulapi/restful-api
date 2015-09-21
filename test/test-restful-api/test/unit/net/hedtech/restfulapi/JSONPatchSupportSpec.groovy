@@ -329,6 +329,39 @@ class JSONPatchSupportSpec extends Specification {
         assert 10 < currentState.size() // and that the original object wasn't mutated
     }
 
+    // NOTE: 'move' cannot currently handle all changes to an object structure. See the last
+    // two commented out tests that attempt to re-order an array and to move a
+    // map within an array to be the value of another element in that array. Consequently,
+    // 'move' is not yet supported per documentation. When time permits, the implementation
+    // will be expanded (or replaced by a more robust implementation).
+    @Unroll
+    def 'Test ability to apply individual \'move\' operations'( patch, assertion ) {
+        setup:
+        def currentState = cleanState()
+
+        when:
+        def patchedState = JSONPatchSupport.applyPatches( patch, currentState )
+
+        then:
+        assert assertion(patchedState)
+
+        where:
+        patch                                                       | assertion
+        [[ "op": "move", "from": "/foo/0", "path": "/foo/1"  ]]     | {o -> o.foo[1] == 'bar'}
+        [[ "op": "move", "from": "/foo",  "path": "/goo" ]]         | {o -> exists(o, 'goo', ["bar", "baz"])}
+        [[ "op": "move", "from": "/a~1b", "path": "/a~1c" ]]        | {o -> exists(o, 'a/c', '1')}
+        [[ "op": "move", "from": "/c%d",      "path": "/c%e" ]]     | {o -> exists(o, 'c%e', '2')}
+        [[ "op": "move", "from": "/e^f",      "path": "/e^g" ]]     | {o -> exists(o, 'e^g', '3')}
+        [[ "op": "move", "from": "/g|h",      "path": "/g|i" ]]     | {o -> exists(o, 'g|i', '4')}
+        [[ "op": "move", "from": "/i\\j",      "path": "/i\\k" ]]   | {o -> exists(o, 'i\\k', '5')}
+        [[ "op": "move", "from": "/k\"l",      "path": "/k\"m" ]]   | {o -> exists(o, 'k\"m', '6')}
+        [[ "op": "move", "from": "/m~0n",      "path": "/m~0p" ]]   | {o -> exists(o, 'm~p', '8')}
+        [[ "op": "move", "from": "/complex/nested/propA", "path": "/complex/nested/propC"  ]] | {o -> println "propC "; println "xxx"; o.complex.nested.propC == 'propA-value'}
+        [[ "op": "move", "from": "/complex/nested/propB/nested2", "path": "/complex/nested/propB/nested3" ]] | {o -> println "nested3"; println "xxx"; o.complex.nested.propB.nested3 == 'nested-again-2-value'}
+//        [[ "op": "move", "from": "/complex/array/1", "path": "/complex/array/0"  ]] | {o -> o.complex.array[0] == 'second'}
+//        [[ "op": "move", "from": "/complex/array/2/thirdProp", "path": "/complex/array/1/thirdProp" ]] | {o -> o.complex.array[1].thirdProp == 'thirdVal'}
+    }
+
 
     def 'Test ability to perform multiple operations'() {
         // Uses the same patches as previous test, just all together in one document
@@ -389,11 +422,24 @@ class JSONPatchSupportSpec extends Specification {
 
 
     private boolean exists( obj, expectedKey, expectedValue ) {
+
         boolean result = false
-        obj.each { k, v ->
-            if (k == expectedKey && v == expectedValue) result = true
-        };
+        obj.collect { k, v ->
+
+            if (k == expectedKey && v == expectedValue) {
+                result = true
+            }
+            else if (k == expectedKey && isArray(v) && isArray(expectedValue) && (v.size() == expectedValue.size())) {
+                if (v as Set == expectedValue as Set) result = true
+            }
+        }
         return result;
     }
+
+
+    private boolean isArray( obj ) {
+        obj != null && (obj.getClass().isArray() || obj instanceof List)
+    }
+
 
 }

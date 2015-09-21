@@ -18,6 +18,7 @@ package net.hedtech.restfulapi
 import grails.converters.JSON
 import grails.converters.XML
 
+import java.lang.reflect.UndeclaredThrowableException
 import java.security.*
 
 import static java.util.UUID.randomUUID
@@ -407,33 +408,30 @@ class RestfulApiController {
         log.trace "patch() invoked for ${params.pluralizedResourceName}/${params.id} - request_id=${request.request_id}"
         try {
             def result
-            def patchSupport = getRequestRepresentation().patchSupport
+            def patchSupport   = getRequestRepresentation().patchSupport
 
             checkMethod( Methods.PATCH )
             getResponseRepresentation()
 
+            // parseRequestContent should return [ patch:[...array_of_patches...]]
             Map patches = parseRequestContent( request )
 
             switch(patchSupport) {
                 case 'controller':
-                    def currentState = getServiceAdapter().show( getService(), params )
-                    // parseRequestContent returns [ patch:[...array_of_patches...]] when
-                    // the representation is JSON Patch
-                    def patchedContent = JSONPatchSupport.applyPatches( patches.patch, currentState )
+                    def patchedContent = applyJsonPatch( patches )
                     result = getServiceAdapter().update( getService(), patchedContent, params )
                     break
                 case 'service':
                     result = getServiceAdapter().patch( getService(), patches, params )
                     break
                 default:
-                    checkMethod( 'PATCH_NOT_SUPPORTED' ) // force UnsupportedMethodException
+                    throw new RuntimeException("Bad configuration - patchSupport neither 'controller' or 'service'")
             }
             response.setStatus( 200 )
             renderSuccessResponse( new ResponseHolder( data: result ),
                                    'default.rest.patched.message' )
         }
         catch (e) {
-throw e
             logMessageError(e)
             renderErrorResponse(e)
         }
@@ -466,6 +464,40 @@ throw e
 // ---------------------------- Helper Methods -------------------------------
 
 
+    protected Map applyJsonPatch( Map patches ) {
+
+        // A JSON Patch is used to patch a representation known to the client.
+        // We will require all JSON Patch requests for a particular resource
+        // to be patches to a particular representation. The 'patchAppliesTo'
+        // configuration will identify the custom media type associated to a
+        // representation that is being patched by this request, and we'll use
+        // that to get the configured representation configuration.
+        //
+        def patchAppliesToMediaType = getRequestRepresentation().patchAppliesTo
+        def acceptedTypes = mediaTypeParser.parse( patchAppliesToMediaType )
+        def referencedRepresentationConfig =
+            getRepresentation( params.pluralizedResourceName, acceptedTypes )
+
+        // Now we'll prepare the JSON representation to be patched, by
+        // retrieving the current state, marshalling that to the configured
+        // representation, and then extract it back from that representation
+        // to construct a Map based upon that representation with which we can
+        // apply the patch.
+        //
+        def currentState = getServiceAdapter().show( getService(), params )
+
+        def jsonStringRepresentation =
+            generateResponseContent( referencedRepresentationConfig, currentState )
+
+        def jsonRepresentation = JSON.parse( jsonStringRepresentation )
+        Map currentStateMap = parseContent( jsonRepresentation, patchAppliesToMediaType )
+
+        // parseRequestContent returns [ patch:[...array_of_patches...]] when
+        // the representation is JSON Patch
+        JSONPatchSupport.applyPatches( patches.patch, currentStateMap )
+
+    }
+
     /**
      * Renders a successful response using the supplied map and msg resource code.
      * A message property with a value translated from the message resource code
@@ -487,7 +519,15 @@ throw e
      * @param e the exception to render an error response for
      **/
     protected void renderErrorResponse( Throwable e ) {
-        ResponseHolder responseHolder = createErrorResponse(e)
+
+        ResponseHolder responseHolder
+        if (e instanceof UndeclaredThrowableException) {
+            responseHolder = createErrorResponse(e.cause)
+        }
+        else {
+            responseHolder = createErrorResponse(e)
+        }
+
         if (request.request_id) responseHolder.addHeader(requestIdHeader, request.request_id)
         //The versioning applies to resource representations, not to
         //errors.  In fact, it can't, as the error may be that an unrecognized format
@@ -729,6 +769,25 @@ throw e
             unsupportedRequestRepresentation()
         }
         getExtractorAdapter().extract(extractor, request)
+    }
+
+
+    /**
+     * Parses the content from the request.
+     * Returns a map representing the properties of content.
+     * @param request the request containing the content
+     **/
+    protected Map parseContent( jsonRepresentation,
+                                mediaType,
+                                String resourceName = params.pluralizedResourceName ) {
+
+        Extractor extractor =
+            ExtractorConfigurationHolder.getExtractor( resourceName, mediaType )
+
+        if (!extractor) {
+            unsupportedRequestRepresentation() // may not be best exception...
+        }
+        extractor.extract( jsonRepresentation )
     }
 
 

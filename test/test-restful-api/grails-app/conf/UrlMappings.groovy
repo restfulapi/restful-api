@@ -28,7 +28,7 @@ class UrlMappings {
         // Place URL mappings to specific controllers BEFORE this mapping.
         //
         "/api/$pluralizedResourceName/$id"(controller:'restfulApi') {
-            action = [GET: "show", PUT: "update", DELETE: "delete"]
+            action = [GET: "show", PUT: "update", PATCH: "patch", DELETE: "delete"]
             parseRequest = false
             constraints {
                 // to constrain the id to numeric, uncomment the following:
@@ -44,7 +44,7 @@ class UrlMappings {
         // additional nested resource requirements.
         //
         "/api/$parentPluralizedResourceName/$parentId/$pluralizedResourceName/$id"(controller:'restfulApi') {
-            action = [GET: "show", PUT: "update", DELETE: "delete"]
+            action = [GET: "show", PUT: "update", PATCH: "patch", DELETE: "delete"]
             parseRequest = false
         }
 
@@ -63,7 +63,7 @@ class UrlMappings {
         // We'll also add a couple tenant-based URIs...
         //
         "/$tenant/api/$pluralizedResourceName/$id"(controller:'restfulApi') {
-            action = [GET: "show", PUT: "update", DELETE: "delete"]
+            action = [GET: "show", PUT: "update", PATCH: "patch", DELETE: "delete"]
             parseRequest = false
         }
 

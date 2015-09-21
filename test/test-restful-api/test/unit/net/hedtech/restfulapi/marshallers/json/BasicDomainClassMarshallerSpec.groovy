@@ -1,5 +1,5 @@
 /* ***************************************************************************
- * Copyright 2013 Ellucian Company L.P. and its affiliates.
+ * Copyright 2013-2015 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -302,8 +302,8 @@ class BasicDomainClassMarshallerSpec extends Specification {
         def json = JSON.parse content
 
         then:
-        null            == thing.parts
-        JSONObject.NULL == json.parts
+        null == thing.parts
+        null == json.parts
     }
 
     def "Test that null Map association field is marshalled as null"() {
@@ -319,8 +319,8 @@ class BasicDomainClassMarshallerSpec extends Specification {
         def json = JSON.parse content
 
         then:
-        null            == thing.contributors
-        JSONObject.NULL == json.contributors
+        null == thing.contributors
+        null == json.contributors
     }
 
     def "Test that null one-to-one association field is marshalled as null"() {
@@ -336,8 +336,8 @@ class BasicDomainClassMarshallerSpec extends Specification {
         def json = JSON.parse content
 
         then:
-        null            == thing.subPart
-        JSONObject.NULL == json.subPart
+        null == thing.subPart
+        null == json.subPart
     }
 
     def "Test that null many-to-one association field is marshalled as null"() {
@@ -353,8 +353,8 @@ class BasicDomainClassMarshallerSpec extends Specification {
         def json = JSON.parse content
 
         then:
-        null            == thing.owner
-        JSONObject.NULL == json.owner
+        null == thing.owner
+        null == json.owner
     }
 
     def "Test that null embedded association field is marshalled as null"() {
@@ -370,8 +370,8 @@ class BasicDomainClassMarshallerSpec extends Specification {
         def json = JSON.parse content
 
         then:
-        null            == thing.embeddedPart
-        JSONObject.NULL == json.embeddedPart
+        null == thing.embeddedPart
+        null == json.embeddedPart
     }
 
    def "Test that null Collection association field is deep marshalled as null"() {
@@ -389,8 +389,8 @@ class BasicDomainClassMarshallerSpec extends Specification {
         def json = JSON.parse content
 
         then:
-        null            == thing.parts
-        JSONObject.NULL == json.parts
+        null == thing.parts
+        null == json.parts
     }
 
     def "Test that null Map association field is deep marshalled as null"() {
@@ -407,8 +407,8 @@ class BasicDomainClassMarshallerSpec extends Specification {
         def json = JSON.parse content
 
         then:
-        null            == thing.contributors
-        JSONObject.NULL == json.contributors
+        null == thing.contributors
+        null == json.contributors
     }
 
     def "Test that null one-to-one association field is deep marshalled as null"() {
@@ -425,8 +425,8 @@ class BasicDomainClassMarshallerSpec extends Specification {
         def json = JSON.parse content
 
         then:
-        null            == thing.subPart
-        JSONObject.NULL == json.subPart
+        null == thing.subPart
+        null == json.subPart
     }
 
     def "Test that null many-to-one association field is deep marshalled as null"() {
@@ -443,8 +443,8 @@ class BasicDomainClassMarshallerSpec extends Specification {
         def json = JSON.parse content
 
         then:
-        null            == thing.owner
-        JSONObject.NULL == json.owner
+        null == thing.owner
+        null == json.owner
     }
 
 

@@ -1,5 +1,5 @@
 /* ***************************************************************************
- * Copyright 2013 Ellucian Company L.P. and its affiliates.
+ * Copyright 2013-2015 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -478,10 +478,10 @@ class DeclarativeBeanMarshallerSpec extends Specification {
         def content = render(bean)
         def json = JSON.parse content
         then:
-        'foo'           == json.property
-        'bar'           == json.publicField
-        JSONObject.NULL == json.listProperty
-        JSONObject.NULL == json.listField
+        'foo' == json.property
+        'bar' == json.publicField
+        null  == json.listProperty
+        null  == json.listField
         !json.containsKey('property2')
         !json.containsKey('publicField2')
 
@@ -503,10 +503,10 @@ class DeclarativeBeanMarshallerSpec extends Specification {
         def json = JSON.parse content
 
         then:
-        'foo'           == json.property
-        'bar'           == json.publicField
-        JSONObject.NULL == json.property2
-        JSONObject.NULL == json.publicField2
+        'foo' == json.property
+        'bar' == json.publicField
+        null  == json.property2
+        null  == json.publicField2
         !json.containsKey('listProperty')
         !json.containsKey('listField')
 

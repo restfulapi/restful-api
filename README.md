@@ -251,8 +251,33 @@ The rest of this document goes into details of how to configure the plugin to su
 ## Testing the Plugin
 
 The plugin contains a test application that uses Spock to test the plugin. To run all tests from the plugin's root directory run:
+
 ```bash
 grails clean && (cd test/test-restful-api && grails clean && grails test-app)
+```
+
+### Running the test application
+
+In addition to executing tests, you may run the test application (test/test-restful-api) and interact with it via curl or other HTTP client. 
+
+To seed some 'things' when starting the test application, run:
+
+```bash
+(cd test/test-restful-api && grails -DseedThings=true run-app)
+```
+
+Once running, you can issue requests. Here we'll 'post' a new thing, and then 'patch' that thing.
+
+```bash
+curl -H "Content-Type: application/json" -X POST -d '{"code":"Q9","description":"xyz"}' http://localhost:8080/test-restful-api/api/things
+
+{"class":"net.hedtech.restfulapi.Thing","id":677,"code":"Q9","dataOrigin":null,"dateManufactured":null,"description":"xyz","isLarge":false,"lastModifiedBy":null,"lastUpdated":"2015-11-04T20:42:45-0500","parts":[],"weight":100}
+```
+
+```bash
+curl -H "Content-Type: application/json-patch+json" -X PATCH -d '[{"op":"replace","path":"/description", "value":"patchedDescription"}]' http://localhost:8080/test-restful-api/api/things/677
+
+{"class":"net.hedtech.restfulapi.Thing","id":677,"code":"Q9","dataOrigin":null,"dateManufactured":null,"description":"patchedDescription","isLarge":false,"lastModifiedBy":null,"lastUpdated":"2015-11-04T20:42:59-0500","parts":[],"weight":100}
 ```
 
 ## Details
@@ -376,7 +401,6 @@ This prefix may be used to protect against [CSRF](https://www.owasp.org/index.ph
 
 Common prefixes include 'while(1);' and 'for(;;);'.  A configured prefix is only used when returning a JSON Array and is ignored in all other situations.  Following is an example configuration used to protect an 'internal' representation.  The client will need to strip off the prefix before parsing the JSON.
 
-```
     representation {
         mediaTypes = ["application/vnd.hedtech.internal.v0+json"]
         jsonArrayPrefix = 'while(1);'
@@ -388,7 +412,6 @@ Common prefixes include 'while(1);' and 'for(;;);'.  A configured prefix is only
         }
         jsonExtractor {}
     }
-```
 
 Note that if jsonArrayPrefix is set, it only applies to representations being marshalled with the 'json' framework.  Marshalling via the 'xml' framework, or custom marshalling services is not affected.  If you are marshalling to json via a custom service (by setting the value of marshallerFramework to the name of a bean), you must honor the value of the jsonArrayPrefix in your service yourself (the call to the service will provide the representation configuration.)
 
@@ -509,22 +532,41 @@ Regardless of whether you implement patch within your service or rely on the con
 
 ```groovy
 resource 'things' config {
+    // other representations not shown...
     representation {
+
+        // Note  we must use a specific custom media type for JSON Patch.
+        //
         mediaTypes = ['application/json-patch+json']
-        // HTTP PATCH is supported only when the request representation contains a 'patchSupport' setting with a value of 'controller' or 
+        
+        // HTTP PATCH is supported only when the request representation
+        // contains a 'patchSupport' setting with a value of 'controller' or 
         // 'service'. The restful-api controller currently can ONLY handle a
         // JSON Patch, so only representations having the 
         // 'application/json-patch+json' should be configured with
-        // 'controller'. If 'patchSupport' is desired for other
-        // representations, 'service' must be configured. 
-        // Note this is configurable in case you want to also implement 
-        // JSON Patch support within your service.
+        // 'controller'. If HTTP PATCH is used for other 'patch'
+        // representations, patchSupport must be set to 'service'. 
+        //
         patchSupport = 'service'  // ['service', 'controller']
+        
+        // Note if patchSupport was set to 'controller' instead, an additional 
+        // configuration item would be needed: 'patchAppliesTo'.  This is
+        // shown and discussed within the 'JSON Patch' of the README.
+        //
+        // Since in our example we have configured patchSupport to be 
+        // 'service', the 'patchAppliesTo' configuration item is commented
+        // out here.
+        // 
+        // patchAppliesTo = 'application/json' 
+        
+        // Lastly, note the below configuration of an extractor specific 
+        // to JSON Patch.
+        //
         extractor = new net.hedtech.restfulapi.extractors.json.JSONPatchExtractor()
     }
 ```
 
-Since the media type configured above is 'application/json-patch+json', the patchSupport property could have been set to 'controller' so that patch does not have to be implemented within the service. Also see the [JSON Patch](#json-patch) section below.
+Since the media type configured above is 'application/json-patch+json', the patchSupport property could have been set to 'controller' so that patch does not have to be implemented within the service. The example above includes comments regarding additional configuration needed when the controller is configured to apply a JSON Patch. Also please see the [JSON Patch](#json-patch) section below.
 
 ### delete method
 
@@ -623,17 +665,33 @@ The following configures the controller to apply a [JSON Patch](https://tools.ie
 
 ```groovy
 resource 'things' config {
+    // other representations not shown... 
     representation {
+        // Note that we use a specific custom media type for JSON Patch.
+        //
         mediaTypes = ['application/json-patch+json']
-        // HTTP PATCH is supported only when the request representation contains a 'patchSupport' setting with a value of 'controller' or 
+        //
+        // HTTP PATCH is supported only when the request representation
+        // contains a 'patchSupport' setting with a value of 'controller' or 
         // 'service'. The restful-api controller currently can ONLY handle a
         // JSON Patch, so only representations having the 
-        // 'application/json-patch+json' should be configured with
-        // 'controller'. If 'patchSupport' is desired for other
-        // representations, 'service' must be configured. 
-        // Note this is configurable in case you want to also implement 
-        // JSON Patch support within your service.
+        // 'application/json-patch+json' should be configured with patchSupport
+        // set to 'controller'.  
+        //
         patchSupport = 'controller'  // ['service', 'controller']
+        //
+        // Since patchSupport is set to 'controller', we need an additional 
+        // configuration item: 'patchAppliesTo'.  This is used to identify,
+        // via a custom media type, the representation that is affected
+        // by a JSON Patch request. Only one representation may 
+        // be configured. A JSON Patch formed by a client must be in terms
+        // of a known representation, hence this configuration.
+        // 
+        patchAppliesTo = 'application/json' 
+        //
+        // Lastly, note the below configuration of an extractor specific 
+        // to JSON Patch.
+        //
         extractor = new net.hedtech.restfulapi.extractors.json.JSONPatchExtractor()
     }
 ```

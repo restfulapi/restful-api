@@ -132,8 +132,8 @@ class ThingService {
             def thing = Thing.get(params.id)
 
             checkOptimisticLock( thing, content )
-
             thing.properties = content
+            thing.clearErrors()
             thing.save(failOnError:true)
             result = thing
             result.parts //force lazy loading
@@ -165,7 +165,7 @@ class ThingService {
     public def checkOptimisticLock( domainObject, content ) {
 
         if (domainObject.hasProperty( 'version' )) {
-            if (!content?.version) {
+            if (!content?.containsKey('version')) {
                 domainObject.errors.reject( 'version', "net.hedtech.restfulapi.Thing.missingVersion")
                 throw new ValidationException( "Missing version field", domainObject.errors )
             }

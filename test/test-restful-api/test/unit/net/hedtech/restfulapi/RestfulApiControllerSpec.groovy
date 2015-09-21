@@ -2156,13 +2156,14 @@ class RestfulApiControllerSpec extends Specification {
     }
 
 
-    def "Test PATCH when supported by the controller"() {
+    def "Test PATCH when JSON Patch is handled by the controller"() {
         // See JSONPatchSupportSpec for tests of applying patches
         setup:
          config.restfulApiConfig = {
             resource 'things' config {
                 representation {
                     patchSupport = 'controller'
+                    patchAppliesTo = 'application/json'
                     mediaTypes = ['application/json-patch+json']
                     extractor = new net.hedtech.restfulapi.extractors.json.JSONPatchExtractor()
                 }
@@ -2171,6 +2172,7 @@ class RestfulApiControllerSpec extends Specification {
                     marshallers {
                         jsonBeanMarshaller {}
                     }
+                    extractor = new DefaultJSONExtractor()
                 }
             }
         }
@@ -2202,6 +2204,100 @@ class RestfulApiControllerSpec extends Specification {
 
         then:
         200   == response.status
+    }
+
+
+    def "Test PATCH when 'patchAppliesTo' references an unknown representation"() {
+        // See JSONPatchSupportSpec for tests of applying patches
+        setup:
+         config.restfulApiConfig = {
+            resource 'things' config {
+                representation {
+                    patchSupport = 'controller'
+                    patchAppliesTo = 'application/just-try-to-find-me'
+                    mediaTypes = ['application/json-patch+json']
+                    extractor = new net.hedtech.restfulapi.extractors.json.JSONPatchExtractor()
+                }
+                representation {
+                    mediaTypes = ['application/json']
+                    marshallers {
+                        jsonBeanMarshaller {}
+                    }
+                    extractor = new DefaultJSONExtractor()
+                }
+            }
+        }
+        controller.init()
+
+        def mock = Mock(ThingService)
+        mock.show(_) >> {
+            ["code":"pt", "description":"created thing"]
+        }
+        mock.update(_,_) >> {
+            ["code":"pt", "description":"patched thing"]
+        }
+        controller.metaClass.getService = {-> mock}
+
+        mockCacheHeaders()
+
+        request.method = 'PATCH'
+        def replaceOp = new JSONObject( ["op":"replace","path":"/description","value":"patched thing" ])
+        def jarray = new JSONArray( [ replaceOp ] ).toString()
+        request.setContent( jarray.getBytes())
+        request.addHeader( 'Accept', 'application/json' )
+        request.addHeader( 'Content-Type', 'application/json-patch+json' )
+        params.pluralizedResourceName = 'things'
+
+        when:
+        controller.patch()
+        then:
+        500   == response.status
+    }
+
+    def "Test PATCH when 'patchSupport' is omitted from the configuration"() {
+        // See JSONPatchSupportSpec for tests of applying patches
+        setup:
+         config.restfulApiConfig = {
+            resource 'things' config {
+                representation {
+                    patchAppliesTo = 'application/just-try-to-find-me'
+                    mediaTypes = ['application/json-patch+json']
+                    extractor = new net.hedtech.restfulapi.extractors.json.JSONPatchExtractor()
+                }
+                representation {
+                    mediaTypes = ['application/json']
+                    marshallers {
+                        jsonBeanMarshaller {}
+                    }
+                    extractor = new DefaultJSONExtractor()
+                }
+            }
+        }
+        controller.init()
+
+        def mock = Mock(ThingService)
+        mock.show(_) >> {
+            ["code":"pt", "description":"created thing"]
+        }
+        mock.update(_,_) >> {
+            ["code":"pt", "description":"patched thing"]
+        }
+        controller.metaClass.getService = {-> mock}
+
+        mockCacheHeaders()
+
+        request.method = 'PATCH'
+        def replaceOp = new JSONObject( ["op":"replace","path":"/description","value":"patched thing" ])
+        def jarray = new JSONArray( [ replaceOp ] ).toString()
+        request.setContent( jarray.getBytes())
+        request.addHeader( 'Accept', 'application/json' )
+        request.addHeader( 'Content-Type', 'application/json-patch+json' )
+        params.pluralizedResourceName = 'things'
+
+        when:
+        controller.patch()
+        then:
+        500   == response.status
     }
 
     private void mockCacheHeaders() {

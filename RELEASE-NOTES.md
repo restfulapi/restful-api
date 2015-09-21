@@ -1,6 +1,10 @@
 
 # 2.0.0
 
+* BREAKING CHANGE. Established a dependency of Grails 2.5.2 and above. This is to allow use of HTTP PATCH. Consequently, the project is no longer compatible with previous Grails releases. The 1.x.x releases of this plugin will no longer be actively updated. 
+
+* BREAKING_CHANGE: A 'general' error (one handled by the DefaultExceptionHandler) no longer includes the errorMessage. This is logged, but no longer included in the response to the client. 
+
 * BREAKING CHANGE. Custom headers have been renamed as shown below. Note the old names may still be used by configuring these headers within the Config.groovy file.
 
 Old name                | New name

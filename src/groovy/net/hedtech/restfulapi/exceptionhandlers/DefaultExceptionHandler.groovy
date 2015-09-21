@@ -36,12 +36,11 @@ class DefaultExceptionHandler implements ExceptionHandler {
                 code: "default.rest.general.errors.message",
                 args: [ context.pluralizedResourceName ]),
             content: [
-                errors: [
-                    [
-                        type: "general",
-                        errorMessage: e.message
-                    ]
-                ]
+                 errors: [
+                     [
+                         type: "general"
+                     ]
+                 ]
             ]
         )
     }

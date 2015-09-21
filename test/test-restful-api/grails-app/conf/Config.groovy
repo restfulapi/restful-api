@@ -97,6 +97,8 @@ log4j = {
     error  'org.codehaus.groovy.grails.web.mapping.filter'  // URL mapping
     error  'org.codehaus.groovy.grails.web.mapping'         // URL mapping
 
+    error  'org.codehaus.groovy.grails.orm.hibernate.cfg'
+
     error  'org.codehaus.groovy.grails.commons',            // core / classloading
            'org.codehaus.groovy.grails.plugins',            // plugins
            'org.codehaus.groovy.grails.orm.hibernate',      // hibernate integration
@@ -199,14 +201,14 @@ restfulApiConfig = {
         //marshallers included in all json representations
         group 'json' marshallers {
             marshaller {
-                instance = new org.codehaus.groovy.grails.web.converters.marshaller.ClosureOjectMarshaller<grails.converters.JSON>(
+                instance = new org.codehaus.groovy.grails.web.converters.marshaller.ClosureObjectMarshaller<grails.converters.JSON>(
                         java.util.Date, {return it?.format("yyyy-MM-dd'T'HH:mm:ssZ")})
             }
         }
 
         group 'json-date-closure' marshallers {
             marshaller {
-                instance = new org.codehaus.groovy.grails.web.converters.marshaller.ClosureOjectMarshaller<grails.converters.JSON>(
+                instance = new org.codehaus.groovy.grails.web.converters.marshaller.ClosureObjectMarshaller<grails.converters.JSON>(
                     java.util.Date, {return "customized-date:" + it?.format("yyyy-MM-dd'T'HH:mm:ssZ")})
             }
         }
@@ -217,30 +219,44 @@ restfulApiConfig = {
     // so the request is routed to the 'list' method (versus the normal 'create' method).
     resource 'query-filters' config {
         representation {
-            mediaTypes = ["application/json"]
+            mediaTypes = ['application/json']
             jsonExtractor {}
         }
         representation {
-            mediaTypes = ["application/xml"]
+            mediaTypes = ['application/xml']
             xmlExtractor {}
         }
     }
 
     resource 'things' config {
         representation {
+            // When supporting JSON Patch, we must use the custom media type specific
+            // to JSON Patch, as configured here:
+            //
             mediaTypes = ['application/json-patch+json']
+
             // HTTP PATCH is supported only when the request representation contains a
             // 'patchSupport' setting with a value of 'controller' or 'service'.
             // The restful-api controller currently can ONLY handle a JSON Patch, so
             // only representations having the 'application/json-patch+json' should be
             // configured with 'controller'. If 'patchSupport' is desired for other
-            // representations, 'service' must be configured. Note this is configurable
-            // in case you want to also implement JSON Patch support within your service.
+            // 'patch' representations, patchSupport must be set to 'service'.
             patchSupport = 'controller'
+
+            // Since a JSON Patch must patch a representation known to the client
+            // who formed the JSON Patch, we need to configure what representation
+            // is affected by the patch.  We can only configure a single representation,
+            // by specifying a custom media type. The referenced representation must be
+            // configured, and must have both a marshaller and extractor configured.
+            //
+            patchAppliesTo = 'application/json'
+
+            // To support JSON Patch, we will configure a special extractor
+            //
             extractor = new net.hedtech.restfulapi.extractors.json.JSONPatchExtractor()
         }
         representation {
-            mediaTypes = ["application/json"]
+            mediaTypes = ['application/json']
             marshallerFramework = 'json'
             marshallers {
                 jsonDomainMarshaller {
@@ -250,7 +266,7 @@ restfulApiConfig = {
             jsonExtractor {}
         }
         representation {
-            mediaTypes = ["application/vnd.hedtech.internal.v0+json"]
+            mediaTypes = ['application/vnd.hedtech.internal.v0+json']
             jsonArrayPrefix = 'while(1);'
             marshallerFramework = 'json'
             marshallers {
@@ -261,7 +277,7 @@ restfulApiConfig = {
             jsonExtractor {}
         }
         representation {
-            mediaTypes = ["application/xml"]
+            mediaTypes = ['application/xml']
             marshallers {
                 xmlDomainMarshaller {
                     inherits = ['xmlDomainAffordance']
@@ -393,7 +409,7 @@ restfulApiConfig = {
 
     resource 'thing-wrappers' config {
         representation {
-            mediaTypes = ["application/json"]
+            mediaTypes = ['application/json']
             marshallers {
                 jsonDomainMarshaller {
                     priority = 100
@@ -405,7 +421,7 @@ restfulApiConfig = {
 
     resource 'complex-things' config {
         representation {
-            mediaTypes = ["application/json"]
+            mediaTypes = ['application/json']
             marshallers {
                 jsonDomainMarshaller {
                     priority = 100
@@ -417,14 +433,14 @@ restfulApiConfig = {
 
     resource 'part-of-things' config {
         representation {
-            mediaTypes = ["application/json"]
+            mediaTypes = ['application/json']
             marshallers {
                 jsonDomainMarshaller {
                     inherits = ['jsonDomainAffordance']
                 }
             }
             jsonExtractor {
-                property 'thing' shortObject true flatObject true
+                property 'thing' shortObject true flatObject false
             }
         }
     }
@@ -436,7 +452,7 @@ restfulApiConfig = {
     resource 'thingamabobs' config {
         serviceName = 'thingService'
         representation {
-            mediaTypes = ["application/json"]
+            mediaTypes = ['application/json']
             marshallers {
                 jsonDomainMarshaller {
                     priority = 100
@@ -453,7 +469,7 @@ restfulApiConfig = {
         serviceName = 'thingService'
         methods = ['show','create','update']
         representation {
-            mediaTypes = ["application/json"]
+            mediaTypes = ['application/json']
             marshallers {
                 jsonDomainMarshaller {
                     priority = 100
@@ -471,7 +487,7 @@ restfulApiConfig = {
     resource 'special-things' config {
         serviceName = 'thingService'
         representation {
-            mediaTypes = ["application/json"]
+            mediaTypes = ['application/json']
             marshallers {
                 jsonDomainMarshaller {
                     inherits = ['jsonDomainAffordance']
@@ -488,7 +504,7 @@ restfulApiConfig = {
     resource 'closure-things' config {
         serviceName = 'thingService'
         representation {
-            mediaTypes = ["application/json"]
+            mediaTypes = ['application/json']
             marshallers {
                 jsonDomainMarshaller {
                     inherits = ['jsonDomainAffordance']
@@ -503,7 +519,7 @@ restfulApiConfig = {
 
     resource 'groovy-thing-wrappers' config {
         representation {
-            mediaTypes = ["application/json"]
+            mediaTypes = ['application/json']
             serviceName = 'thingWrapperService'
             marshallers {
                 jsonDomainMarshaller {
@@ -543,7 +559,7 @@ restfulApiConfig = {
     resource 'parents' config {
         methods = ['show']
         representation {
-            mediaTypes = ["application/json"]
+            mediaTypes = ['application/json']
             marshallers {
                 jsonDomainMarshaller {
                     priority = 100
@@ -553,7 +569,7 @@ restfulApiConfig = {
             jsonExtractor {}
         }
         representation {
-            mediaTypes = ["application/xml"]
+            mediaTypes = ['application/xml']
             marshallers {
                 xmlDomainMarshaller {
                     priority = 100

@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * Copyright 2013 Ellucian Company L.P. and its affiliates.
+ * Copyright 2013-2015 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ grails.project.source.level     = 1.6
 
 grails.plugin.location.'restful-api' = "../.."
 
+grails.project.dependency.resolver = "maven"
 grails.project.dependency.resolution = {
 
     inherits 'global'
@@ -40,29 +41,26 @@ grails.project.dependency.resolution = {
     }
 
     dependencies {
-        test "org.spockframework:spock-grails-support:0.7-groovy-2.0"
+        test 'org.springframework:spring-expression:4.1.4.RELEASE'
+        test 'org.springframework:spring-aop:4.1.4.RELEASE'
+
+        test 'org.apache.httpcomponents:httpclient:4.4.1'
 
         // Dependency for CORS testing. see http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6996110
-        test 'org.apache.httpcomponents:httpclient:4.3.3'
+        test 'org.hamcrest:hamcrest-all:1.3'
     }
 
     plugins {
-        compile ':cache:1.1.6'
         compile ':inflector:0.2'
         compile ':cache-headers:1.1.7'
 
-        runtime ":hibernate:$grailsVersion"
+        runtime ":hibernate4:4.3.10"
         runtime ":jquery:1.11.1"
         runtime ":resources:1.2.8"
         runtime ":cors:1.1.0"
 
-        test(":spock:0.7") {
-          exclude "spock-grails-support"
-        }
-
         test ":funky-spock:0.2.1"
 
-        build ":tomcat:$grailsVersion"
+        build ":tomcat:7.0.55.3"
     }
 }
-
