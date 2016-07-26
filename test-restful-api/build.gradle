@@ -27,6 +27,7 @@ apply plugin: 'idea'
 apply plugin: "org.grails.grails-web"
 apply plugin: "org.grails.grails-gsp"
 
+
 ext {
     grailsVersion = project.grailsVersion
     gradleWrapperVersion = project.gradleWrapperVersion
@@ -40,6 +41,9 @@ assets {
 repositories {
     mavenLocal()
     maven { url "https://repo.grails.org/grails/core" }
+    maven {
+        url  "http://dl.bintray.com/dodysw/plugins"
+    }
 }
 
 dependencyManagement {
@@ -67,7 +71,10 @@ dependencies {
     testCompile "org.grails:grails-plugin-testing"
     testCompile "org.grails.plugins:geb"
 
-    runtime "org.grails.plugins:cache-headers:2.0.0-SNAPSHOT"
+
+    //compile files('https://bintray.com/dodysw/plugins/download_file?file_path=org%2Fgrails%2Fplugins%2Fcache-headers%2F1.1.9%2Fcache-headers-1.1.9-sources.jar')
+    //runtime project(":cache-headers")
+    compile "org.grails.plugins:cache-headers:1.1.9"
     compile project(':restful-api')
 
     // Note: It is recommended to update to a more robust driver (Chrome, Firefox etc.)
