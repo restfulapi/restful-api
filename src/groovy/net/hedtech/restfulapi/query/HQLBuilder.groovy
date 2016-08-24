@@ -112,6 +112,7 @@ class HQLBuilder {
                 else {
                     if (it.isNumeric()) namedParameters."${it.field}" = "${it.value}".toLong()
                     else if (it.isDate()) namedParameters."${it.field}" = parseDate( params, it )
+                    else if (it.isBoolean()) namedParameters."${it.field}" = "${it.value}".toBoolean()
                     else  namedParameters."${it.field}" = "${it.value}"
 
                     whereFragment += "${firstAlias}.${it.field} "

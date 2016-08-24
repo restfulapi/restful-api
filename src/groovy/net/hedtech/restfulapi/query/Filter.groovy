@@ -52,7 +52,8 @@ class Filter {
     private static List NUMERIC_TYPES       = ['num', 'number']
     private static List STRING_TYPES        = ['string']
     private static List DATE_TYPES          = ['date']
-    private static List SUPPORTED_TYPES     = STRING_TYPES + NUMERIC_TYPES + DATE_TYPES
+    private static List BOOL_TYPES          = ['bool', 'boolean']
+    private static List SUPPORTED_TYPES     = STRING_TYPES + NUMERIC_TYPES + DATE_TYPES + BOOL_TYPES
 
     protected static final Log log = LogFactory.getLog(Filter.class)
 
@@ -81,6 +82,7 @@ class Filter {
 
     public boolean isNumeric() { NUMERIC_TYPES.contains(type) }
     public boolean isDate()    { DATE_TYPES.contains(type) }
+    public boolean isBoolean() { BOOL_TYPES.contains(type) }
 
     public String toString() {
         "Filter[field=$field,operator=$operator,value=$value,type=${persistentProperty?.type},isAssociation=$isAssociation,isMany=$isMany]"
