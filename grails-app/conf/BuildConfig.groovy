@@ -22,6 +22,8 @@ grails.project.dependency.resolution = {
     repositories {
         grailsCentral()
         mavenCentral()
+        mavenRepo "http://repo.grails.org/grails/core"
+        mavenRepo "http://repo.grails.org/grails/plugins"
     }
     dependencies {
         // specify dependencies here under either 'build', 'compile', 'runtime', 'test' or 'provided' scopes eg.
@@ -32,7 +34,7 @@ grails.project.dependency.resolution = {
         build(":release:2.2.1") {
             export = false
         }
-        compile(":inflector:0.2",
-                ":cache-headers:1.1.7")
+        compile("org.grails.plugins:inflector:0.2",
+                "org.grails.plugins:cache-headers:1.1.7")
     }
 }

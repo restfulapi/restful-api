@@ -37,6 +37,8 @@ grails.project.dependency.resolution = {
         mavenLocal()
         mavenCentral()
 
+        mavenRepo "http://repo.grails.org/grails/core"
+        mavenRepo "http://repo.grails.org/grails/plugins"
     }
 
     dependencies {
@@ -48,8 +50,8 @@ grails.project.dependency.resolution = {
 
     plugins {
         compile ':cache:1.1.6'
-        compile ':inflector:0.2'
-        compile ':cache-headers:1.1.7'
+        compile 'org.grails.plugins:inflector:0.2'
+        compile 'org.grails.plugins:cache-headers:1.1.7'
 
         runtime ":hibernate:$grailsVersion"
         runtime ":jquery:1.11.1"
