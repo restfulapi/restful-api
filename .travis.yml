@@ -5,7 +5,7 @@ branches:
   only:
     - copy-headers
 before_script:
-  - chmod +x grailsw
+  - chmod +x grailsw test/test-restful-api/grailsw
 script: ./grailsw clean
   && ./grailsw refresh-dependencies
   && ./grailsw compile
