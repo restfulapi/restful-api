@@ -1,3 +1,6 @@
+#1.0.1
+* Add feature for copying specific response headers to allow older headers to be deprecated.
+
 #1.0.0
 * BREAKING CHANGE.  The service layer contract and RestfulServiceAdapter interface have been changed so that all method signatures are consistent.  The resource id will no longer be passed as a separate parameter to the update and delete methods, as it is also available via the params map.  (Issue #8)  If you have services that expect the id to be passed explicitly, you can continue to support this behavior with use of RestfulServiceAdapter that extracts the id from the params and passes it in as a separate argument.
 * BREAKING CHANGE.  The JSON and XML extractors will no longer parse dates in a lenient fashion by default (Issue #17).  In previous releases, a date such as '1999-99-99' would have sucessfully parsed (lenient parsing by default).  In 1.0.0, it will throw an exception, resulting in a 400 response.  You can retain the lenient behavior if necessary by setting lenientDates = true on the extractor.  See "Parsing Dates" in the README for details.

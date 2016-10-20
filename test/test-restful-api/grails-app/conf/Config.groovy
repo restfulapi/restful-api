@@ -171,6 +171,20 @@ cors.expose.headers     ='content-type,X-hedtech-totalCount,X-hedtech-pageOffset
 
 
 // ******************************************************************************
+//             RESTful API deprecated response headers
+// ******************************************************************************
+// In the deprecatedHeaderMap:
+//  - key is the current header
+//  - value is a previous header that is now deprecated
+//  - value may also be a list of deprecated headers if there is more than one
+//
+restfulApi.deprecatedHeaderMap = [
+        'X-hedtech-Media-Type': 'X-Media-Type-old',
+        'X-hedtech-totalCount': ['X-Total-Count-old1', 'X-Total-Count-old2']
+]
+
+
+// ******************************************************************************
 //                       RESTful API Endpoint Configuration
 // ******************************************************************************
 //

@@ -488,6 +488,56 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         10  | 90     | 5
     }
 
+    def "Test list with deprecated headers"() {
+        setup:
+        def totalNumber = 5
+        createManyThings(totalNumber)
+
+        when:"list with application/json accept"
+        get("$localBase/api/things") {
+            headers['Content-Type'] = 'application/json'
+            headers['Accept']       = 'application/json'
+        }
+
+        then:
+        200 == response.status
+        'application/json' == response.contentType
+
+        // check current headers
+        'application/json' == responseHeader('X-hedtech-Media-Type')
+        totalNumber == responseHeader('X-hedtech-totalCount').toInteger()
+
+        // check deprecated headers
+        responseHeader('X-Media-Type-old') == responseHeader('X-hedtech-Media-Type')
+        responseHeader('X-Total-Count-old1') == responseHeader('X-hedtech-totalCount')
+        responseHeader('X-Total-Count-old2') == responseHeader('X-hedtech-totalCount')
+    }
+
+    def "Test show with deprecated headers"() {
+        setup:
+        def id = createThing('AA')
+        createThing('BB')
+
+        when:
+        get( "$localBase/api/things/$id" ) {
+            headers['Content-Type']  = 'application/json'
+            headers['Accept']        = 'application/json'
+        }
+
+        then:
+        200 == response.status
+        'application/json' == response.contentType
+
+        // check current headers
+        'application/json' == responseHeader('X-hedtech-Media-Type')
+        null == responseHeader('X-hedtech-totalCount')
+
+        // check deprecated headers
+        responseHeader('X-Media-Type-old') == responseHeader('X-hedtech-Media-Type')
+        responseHeader('X-Total-Count-old1') == responseHeader('X-hedtech-totalCount')
+        responseHeader('X-Total-Count-old2') == responseHeader('X-hedtech-totalCount')
+    }
+
     def "Test list with matching Etag results in 304"() {
         setup:
         createThing('AA')

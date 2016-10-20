@@ -112,6 +112,9 @@ class RestfulApiController {
     String pageMax
     String pageOffset
 
+    // Map of deprecated response headers
+    Map deprecatedHeaderMap
+
     private Class pagedResultListClazz
 
     // Sets a 'request_id' attribute on the request. If an 'X-Request-ID'
@@ -146,6 +149,8 @@ class RestfulApiController {
 
         pageMax    = getPagingConfiguration('max', 'max')
         pageOffset = getPagingConfiguration('offset', 'offset')
+
+        deprecatedHeaderMap = getDeprecatedHeaderMap()
 
         JSON.createNamedConfig('restapi-error:json') { }
         XML.createNamedConfig('restapi-error:xml') { }
@@ -449,14 +454,19 @@ class RestfulApiController {
             break
         }
 
+        if (responseHolder.message) {
+            responseHolder.addHeader( messageHeader, responseHolder.message )
+        }
+
+        // Add any deprecated response headers to the response holder
+        applyDeprecatedHeaderMap(responseHolder.headers, deprecatedHeaderMap)
+
         responseHolder.headers.each { header ->
             header.value.each() { val ->
                 response.addHeader( header.key, val )
             }
         }
-        if (responseHolder.message) {
-            response.addHeader( messageHeader, responseHolder.message )
-        }
+
         render(text: content ? content : "", contentType: contentType )
     }
 
@@ -581,15 +591,20 @@ class RestfulApiController {
         }
 
         if (content != null) {
-            response.addHeader( mediaTypeHeader, representation.mediaType )
+            responseHolder.addHeader( mediaTypeHeader, representation.mediaType )
         }
+
+        if (responseHolder.message) {
+            responseHolder.addHeader( messageHeader, responseHolder.message )
+        }
+
+        // Add any deprecated response headers to the response holder
+        applyDeprecatedHeaderMap(responseHolder.headers, deprecatedHeaderMap)
+
         responseHolder.headers.each { header ->
             header.value.each() { val ->
                 response.addHeader( header.key, val )
             }
-        }
-        if (responseHolder.message) {
-            response.addHeader( messageHeader, responseHolder.message )
         }
 
         if (content != null) {
@@ -824,6 +839,28 @@ class RestfulApiController {
     private String getPagingConfiguration(name, defaultString) {
         def value = grailsApplication.config.restfulApi.page."${name}"
         (value instanceof String) ? value : defaultString
+    }
+
+
+    private Map getDeprecatedHeaderMap() {
+        def value = grailsApplication.config.restfulApi.deprecatedHeaderMap
+        (value instanceof Map) ? value : [:]
+    }
+
+
+    private void applyDeprecatedHeaderMap(headers, deprecatedHeaderMap) {
+        deprecatedHeaderMap?.each { entry ->
+            def value = headers[entry.key]
+            if (value) {
+                if (entry.value instanceof List) {
+                    entry.value.each { item ->
+                        headers[item] = value
+                    }
+                } else {
+                    headers[entry.value] = value
+                }
+            }
+        }
     }
 
 
