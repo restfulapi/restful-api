@@ -1,0 +1,15 @@
+language: groovy
+jdk:
+  - oraclejdk7
+branches:
+  only:
+    - copy-headers
+before_script:
+  - chmod +x grailsw
+script: ./grailsw clean
+  && ./grailsw refresh-dependencies
+  && ./grailsw compile
+  && cd test/test-restful-api
+  && ./grailsw clean
+  && ./grailsw compile
+  && ./grailsw test-app
