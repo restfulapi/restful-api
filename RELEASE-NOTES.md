@@ -1,4 +1,4 @@
-#1.0.1
+#1.1.0
 * Add feature for copying specific response headers to allow older headers to be deprecated.
 
 #1.0.0
