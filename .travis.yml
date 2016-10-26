@@ -10,12 +10,4 @@ before_script:
 - chmod +x grailsw test/test-restful-api/grailsw
 script: "./grailsw clean && ./grailsw refresh-dependencies && ./grailsw compile &&
   cd test/test-restful-api && ./grailsw clean && ./grailsw refresh-dependencies &&
-  ./grailsw compile && ./grailsw test-app && cd ../.. && ./grailsw package-plugin"
-deploy:
-  provider: releases
-  api_key:
-    secure: AG3DTA475hrPhrQwKYSyX3xdpgAbh6DDIVlbUlLJZVFcgSvmiad96guYkAFQKWUf8BPLIXCf7e945za7lJ3JVQFhuc05jMS4UU6mVyiSpp+2xKnJxmioI150VH3Tv1eq3PtW54gmqtTQ9R0uUUCTvKwqLxnxrD2JrrYNs4acVp4=
-  file: grails-restful-api-$TRAVIS_TAG.zip
-  skip_cleanup: true
-  on:
-    tags: true
+  ./grailsw compile && ./grailsw test-app"
