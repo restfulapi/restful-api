@@ -459,7 +459,7 @@ class RestfulApiController {
         }
 
         // Add any deprecated response headers to the response holder
-        applyDeprecatedHeaderMap(responseHolder.headers, deprecatedHeaderMap)
+        applyDeprecatedHeaderMap(responseHolder.headers)
 
         responseHolder.headers.each { header ->
             header.value.each() { val ->
@@ -599,7 +599,7 @@ class RestfulApiController {
         }
 
         // Add any deprecated response headers to the response holder
-        applyDeprecatedHeaderMap(responseHolder.headers, deprecatedHeaderMap)
+        applyDeprecatedHeaderMap(responseHolder.headers)
 
         responseHolder.headers.each { header ->
             header.value.each() { val ->
@@ -848,7 +848,7 @@ class RestfulApiController {
     }
 
 
-    private void applyDeprecatedHeaderMap(headers, deprecatedHeaderMap) {
+    private void applyDeprecatedHeaderMap(headers) {
         deprecatedHeaderMap?.each { entry ->
             def value = headers[entry.key]
             if (value) {
