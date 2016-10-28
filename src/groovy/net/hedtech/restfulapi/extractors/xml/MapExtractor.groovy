@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * Copyright 2013 Ellucian Company L.P. and its affiliates.
+ * Copyright 2013-2016 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,10 @@
  *****************************************************************************/
 package net.hedtech.restfulapi.extractors.xml
 
-import org.codehaus.groovy.grails.web.json.JSONObject
-import org.codehaus.groovy.grails.web.json.JSONArray
-
 import groovy.util.slurpersupport.GPathResult
 
+import net.hedtech.restfulapi.ContentFilterHolder
+import net.hedtech.restfulapi.extractors.ProtectedFieldException
 import net.hedtech.restfulapi.extractors.XMLExtractor
 
 /**
@@ -28,7 +27,24 @@ import net.hedtech.restfulapi.extractors.XMLExtractor
 class MapExtractor implements XMLExtractor {
 
     Map extract(GPathResult xml) {
-        return extractInternal(xml)
+        def content = extractInternal(xml)
+        if (content) {
+            def contentFilterHolder = ContentFilterHolder.get()
+            if (contentFilterHolder) {
+                def result = contentFilterHolder.contentFilter.applyFilter(
+                        contentFilterHolder.resourceName,
+                        content,
+                        contentFilterHolder.contentType)
+                if (result.isPartial) {
+                    if (contentFilterHolder.filterAllowPartialRequest) {
+                        content = result.content
+                    } else {
+                        throw new ProtectedFieldException(contentFilterHolder.resourceName)
+                    }
+                }
+            }
+        }
+        return content
     }
 
     protected def extractInternal(GPathResult xml) {

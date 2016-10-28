@@ -1,5 +1,5 @@
 /* ***************************************************************************
- * Copyright 2013 Ellucian Company L.P. and its affiliates.
+ * Copyright 2013-2016 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -106,14 +106,21 @@ class RestfulApiController {
     String pageOffsetHeader
     String messageHeader
     String mediaTypeHeader
+    String contentRestrictedHeader
     String requestIdHeader
 
     // Paging query parameter names (configured within Config.groovy)
     String pageMax
     String pageOffset
 
-    // Map of deprecated response headers
+    // Map of deprecated response headers (optionally configured within Config.groovy)
     Map deprecatedHeaderMap
+
+    // Content filter configuration (optionally configured within Config.groovy)
+    //  - set filterAllowPartialRequest=true to allow partial request content
+    //  - set filterBypassCreateRequest=true to bypass filtering of create request content
+    boolean filterAllowPartialRequest
+    boolean filterBypassCreateRequest
 
     private Class pagedResultListClazz
 
@@ -145,12 +152,16 @@ class RestfulApiController {
         pageOffsetHeader = getHeaderName('pageOffset', 'X-hedtech-pageOffset')
         messageHeader    = getHeaderName('message', 'X-hedtech-message')
         mediaTypeHeader  = getHeaderName('mediaType', 'X-hedtech-Media-Type')
+        contentRestrictedHeader = getHeaderName('contentRestricted', 'X-hedtech-Content-Restricted')
         requestIdHeader  = getHeaderName('requestId', 'X-Request-ID')
 
         pageMax    = getPagingConfiguration('max', 'max')
         pageOffset = getPagingConfiguration('offset', 'offset')
 
         deprecatedHeaderMap = getDeprecatedHeaderMap()
+
+        filterAllowPartialRequest = getContentFilterConfiguration('filterAllowPartialRequest', false)
+        filterBypassCreateRequest = getContentFilterConfiguration('filterBypassCreateRequest', false)
 
         JSON.createNamedConfig('restapi-error:json') { }
         XML.createNamedConfig('restapi-error:xml') { }
@@ -238,7 +249,7 @@ class RestfulApiController {
             def logger = log            // ditto
 
             if (request.method == "POST") {
-                def queryCriteria = parseRequestContent( request, 'query-filters' )
+                def queryCriteria = parseRequestContent( request, 'query-filters', Methods.LIST )
                 updatePagingQueryParams( queryCriteria ) // We'll ensure params uses expected Grails naming
                 requestParams << queryCriteria
             }
@@ -338,7 +349,7 @@ class RestfulApiController {
 
         try {
             checkMethod( Methods.CREATE )
-            def content = parseRequestContent( request )
+            def content = parseRequestContent( request, params.pluralizedResourceName, Methods.CREATE )
             log.trace "Extracted content $content"
             getResponseRepresentation()
             result = getServiceAdapter().create( getService(), content, params )
@@ -361,7 +372,7 @@ class RestfulApiController {
 
         try {
             checkMethod( Methods.UPDATE )
-            def content = parseRequestContent( request )
+            def content = parseRequestContent( request, params.pluralizedResourceName, Methods.UPDATE )
             checkId(content)
             getResponseRepresentation()
             result = getServiceAdapter().update( getService(), content, params )
@@ -385,7 +396,7 @@ class RestfulApiController {
             def content = [:]
             ResourceConfig config = getResourceConfig()
             if (config.bodyExtractedOnDelete) {
-                content = parseRequestContent( request )
+                content = parseRequestContent( request, params.pluralizedResourceName, Methods.DELETE )
             }
             checkId(content)
             getServiceAdapter().delete( getService(), content, params )
@@ -608,6 +619,18 @@ class RestfulApiController {
         }
 
         if (content != null) {
+
+            // optional: perform filtering of response content
+            def delegateToService = getServiceAdapter()
+            if (delegateToService instanceof ContentFilter) {
+                log.trace "Delegate filtering of response content to $delegateToService"
+                def result = delegateToService.applyFilter(params.pluralizedResourceName, content, contentType)
+                if (result.isPartial) {
+                    content = result.content
+                    response.addHeader( contentRestrictedHeader, 'partial' )
+                }
+            }
+
             if (content instanceof byte[]) {
                 response.setContentType(contentType)
                 response.setContentLength(content.length)
@@ -665,7 +688,7 @@ class RestfulApiController {
      * Returns a map representing the properties of content.
      * @param request the request containing the content
      **/
-    protected Map parseRequestContent( request, String resource = params.pluralizedResourceName ) {
+    protected Map parseRequestContent( request, String resource, String method ) {
 
         ResourceConfig resourceConfig = getResourceConfig( resource )
         def representation = getRequestRepresentation( resource )
@@ -674,7 +697,34 @@ class RestfulApiController {
         if (!extractor) {
             unsupportedRequestRepresentation()
         }
-        getExtractorAdapter().extract(extractor, request)
+
+        def extractorAdapter = getExtractorAdapter()
+
+        // optional: perform filtering of request content, except for these cases:
+        //  - qapi requests (a form of query using the content body in place of params)
+        //  - delete method which only requires the key of a resource
+        //  - create requests if configured to bypass
+        if (!(resource == 'query-filters' ||
+                method == Methods.DELETE ||
+                (method == Methods.CREATE && filterBypassCreateRequest))) {
+            def delegateToService = getServiceAdapter()
+            if (delegateToService instanceof ContentFilter) {
+                log.trace "Delegate filtering of request content to $delegateToService"
+                try {
+                    ContentFilterHolder.set([
+                            contentFilter: delegateToService,
+                            resourceName: resource,
+                            contentType: representation.mediaType,
+                            filterAllowPartialRequest: filterAllowPartialRequest
+                    ])
+                    return extractorAdapter.extract(extractor, request)
+                } finally {
+                    ContentFilterHolder.clear()
+                }
+            }
+        }
+
+        return extractorAdapter.extract(extractor, request)
     }
 
 
@@ -861,6 +911,12 @@ class RestfulApiController {
                 }
             }
         }
+    }
+
+
+    private boolean getContentFilterConfiguration(name, defaultBoolean) {
+        def value = grailsApplication.config.restfulApi.contentFilter."${name}"
+        (value instanceof Boolean) ? value : defaultBoolean
     }
 
 
