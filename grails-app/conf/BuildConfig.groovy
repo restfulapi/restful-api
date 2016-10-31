@@ -18,13 +18,12 @@ grails.project.work.dir = 'target'
 
 grails.project.dependency.resolution = {
     inherits 'global'
-    log "warn" // log level of Ivy resolver, either 'error', 'warn', 'info', 'debug' or 'verbose'
+    log "warn"
     repositories {
         grailsCentral()
         mavenCentral()
     }
     dependencies {
-        // specify dependencies here under either 'build', 'compile', 'runtime', 'test' or 'provided' scopes eg.
         test "org.spockframework:spock-grails-support:0.7-groovy-2.0"
     }
 

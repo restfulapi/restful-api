@@ -26,11 +26,6 @@ class RestfulApiGrailsPlugin {
 
     def version = "1.0.0"
     def grailsVersion = "2.2.0 > *"
-    def pluginExcludes = [
-        "grails-app/views/**",
-        "web-app/**"
-    ]
-
     def title = "RESTful API Plugin"
     def author = "Charles Hardt, Shane Riddell"
     def authorEmail = "shane_riddell@icloud.com"
@@ -63,4 +58,3 @@ class RestfulApiGrailsPlugin {
         restfulApiController.init()
     }
 }
-

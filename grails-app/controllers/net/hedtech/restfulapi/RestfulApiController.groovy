@@ -97,7 +97,7 @@ class RestfulApiController {
     private ExtractorAdapter extractorAdapter = new DefaultExtractorAdapter()
 
     private HandlerRegistry<Throwable,ExceptionHandler> handlerConfig = new DefaultHandlerRegistry<Throwable,ExceptionHandler>()
-    def localizingClosure = { mapToLocalize -> this.message( mapToLocalize ) }
+    private localizingClosure = { mapToLocalize -> this.message( mapToLocalize ) }
     private Localizer localizer = new Localizer(localizingClosure)
 
     // Custom headers (may be configured within Config.groovy)
@@ -222,7 +222,7 @@ class RestfulApiController {
 
     // GET /api/pluralizedResourceName
     //
-    public def list() {
+    def list() {
 
         log.trace "list invoked for ${params.pluralizedResourceName} - request_id=${request.request_id}"
         try {
@@ -288,7 +288,7 @@ class RestfulApiController {
 
     // GET /api/pluralizedResourceName/id
     //
-    public def show() {
+    def show() {
         log.trace "show() invoked for ${params.pluralizedResourceName}/${params.id} - request_id=${request.request_id}"
         try {
             checkMethod( Methods.SHOW )
@@ -327,7 +327,7 @@ class RestfulApiController {
 
     // POST /api/pluralizedResourceName
     //
-    public def create() {
+    def create() {
         log.trace "create() invoked for ${params.pluralizedResourceName} - request_id=${request.request_id}"
         def result
 
@@ -350,7 +350,7 @@ class RestfulApiController {
 
     // PUT/PATCH /api/pluralizedResourceName/id
     //
-    public def update() {
+    def update() {
         log.trace "update() invoked for ${params.pluralizedResourceName}/${params.id} - request_id=${request.request_id}"
         def result
 
@@ -373,7 +373,7 @@ class RestfulApiController {
 
     // DELETE /api/pluralizedResourceName/id
     //
-    public def delete() {
+    def delete() {
         log.trace "delete() invoked for ${params.pluralizedResourceName}/${params.id} - request_id=${request.request_id}"
         try {
             checkMethod( Methods.DELETE )
