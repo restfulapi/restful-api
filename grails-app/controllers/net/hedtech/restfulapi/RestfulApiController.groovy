@@ -621,13 +621,15 @@ class RestfulApiController {
         if (content != null) {
 
             // optional: perform filtering of response content
-            def delegateToService = getServiceAdapter()
-            if (delegateToService instanceof ContentFilter) {
-                log.trace "Delegate filtering of response content to $delegateToService"
-                def result = delegateToService.applyFilter(params.pluralizedResourceName, content, contentType)
-                if (result.isPartial) {
-                    content = result.content
-                    response.addHeader( contentRestrictedHeader, 'partial' )
+            if (isFilterableContent(content, contentType)) {
+                def delegateToService = getServiceAdapter()
+                if (delegateToService instanceof ContentFilter) {
+                    log.trace "Delegate filtering of response content to $delegateToService"
+                    def result = delegateToService.applyFilter(params.pluralizedResourceName, content, contentType)
+                    if (result.isPartial) {
+                        content = result.content
+                        response.addHeader( contentRestrictedHeader, 'partial' )
+                    }
                 }
             }
 
@@ -657,6 +659,13 @@ class RestfulApiController {
         } else {
             render(text:"", contentType:'text/plain')
         }
+    }
+
+
+    protected boolean isFilterableContent( def content, def contentType ) {
+        return (content && content instanceof String &&
+                    (contentType == "application/json" ||
+                     contentType == "application/xml"))
     }
 
 
