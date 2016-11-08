@@ -18,16 +18,16 @@ package net.hedtech.restfulapi
 
 
 /**
- * Retrieves list of fields or field patterns to be filtered from request
- * and response content. The list is retreived based on the resource name.
+ * Retrieves list of field patterns to be filtered from request and
+ * response content. The list is retreived based on the resource name.
  * Please see README.md for a full explanation.
  **/
 interface ContentFilterFields {
 
 
     /**
-     * Retrieve list of fields or field patterns to be filtered from content.
+     * Retrieve list of field patterns to be filtered from content.
      **/
-    public List retrieveFields(String resourceName)
+    public List retrieveFieldPatterns(String resourceName)
 
 }

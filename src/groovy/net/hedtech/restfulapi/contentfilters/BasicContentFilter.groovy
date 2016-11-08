@@ -40,7 +40,7 @@ class BasicContentFilter implements ContentFilter {
      *
      * Content is usually either a JSON object or an XML document. It may
      * also be the string representation of one of those objects. The form
-     * of the filitered content will be the same as the original content.
+     * of the filtered content will be the same as the original content.
      **/
     def ContentFilterResult applyFilter(String resourceName, def content, String contentType) {
         def startTime = new Date()
@@ -53,14 +53,14 @@ class BasicContentFilter implements ContentFilter {
             return result
         }
 
-        // retrieve list of fields to be filtered; simply return with
-        // the original content if there are no fields to be filtered
-        List fields = restContentFilterFields.retrieveFields(resourceName)
-        if (!fields) {
-            log.debug("Returning without filtering as no fields have been specified")
+        // retrieve list of field patterns to be filtered; simply return with
+        // the original content if there are no field patterns to be filtered
+        List fieldPatterns = restContentFilterFields.retrieveFieldPatterns(resourceName)
+        if (!fieldPatterns) {
+            log.debug("Returning without filtering as no field patterns have been specified")
             return result
         }
-        log.debug("Fields to be filtered=$fields")
+        log.debug("Field patterns to be filtered=$fieldPatterns")
 
         // remove fields from the content; construct a JSON or XML object
         // for ease of filtering from the corresponding String representation
@@ -70,14 +70,14 @@ class BasicContentFilter implements ContentFilter {
             switch(contentType) {
                 case "application/json":
                     def structuredContent = new JsonSlurper().parseText(content)
-                    result.isPartial = removeFields(fields, structuredContent)
+                    result.isPartial = removeFields(fieldPatterns, structuredContent)
                     if (result.isPartial) {
                         result.content = new JsonBuilder(structuredContent).toString()
                     }
                     break
                 case "application/xml":
                     def structuredContent = new XmlParser().parseText(content)
-                    result.isPartial = removeFields(fields, structuredContent)
+                    result.isPartial = removeFields(fieldPatterns, structuredContent)
                     if (result.isPartial) {
                         result.content = XmlUtil.serialize(structuredContent)
                     }
@@ -88,7 +88,7 @@ class BasicContentFilter implements ContentFilter {
             }
         } else {
             log.debug("Filtering $contentType content")
-            result.isPartial = removeFields(fields, content)
+            result.isPartial = removeFields(fieldPatterns, content)
         }
         log.debug("Filter applied and isPartial=${result.isPartial}")
 
@@ -250,7 +250,7 @@ class BasicContentFilter implements ContentFilter {
                 if (item == null ||
                         (item instanceof Map && isEmptyMap(item)) ||
                         (item instanceof Node && isEmptyNode(item))) {
-                    log.trace("Removing empty list item for ${entry.key}")
+                    log.trace("Removing empty list item")
                     true
                 }
             }

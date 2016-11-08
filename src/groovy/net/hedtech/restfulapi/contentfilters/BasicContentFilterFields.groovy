@@ -28,29 +28,31 @@ class BasicContentFilterFields implements ContentFilterFields {
     // must inject grailsApplication into this bean
     def grailsApplication
 
-    // define field list map in config file using resource name as the map key
-    Map contentFilterFieldsMap
+    // define resource name and the list of field patterns
+    // for that resource as a map in the config file
+    Map contentFilterFieldPatternsMap
 
 
     /**
-     * Retrieve list of fields or field patterns to be filtered from content.
+     * Retrieve list of field patterns to be filtered from content.
      **/
-    public List retrieveFields(String resourceName) {
-        log.debug("Retrieving fields for resource=$resourceName")
-        List fields = (getContentFilterFieldsMap()?.get(resourceName) ?: [])
-        log.debug("Returning fields=$fields")
-        return fields
+    public List retrieveFieldPatterns(String resourceName) {
+        log.debug("Retrieving field patterns for resource=$resourceName")
+        List fieldPatterns = (getContentFilterFieldPatternsMap()?.get(resourceName) ?: [])
+        fieldPatterns = fieldPatterns.unique().sort()
+        log.debug("Returning field patterns=$fieldPatterns")
+        return fieldPatterns
     }
 
 
     /**
-     * Get the content filter fields map from the configuration.
+     * Get the content filter field patterns map from the configuration.
      **/
-    private Map getContentFilterFieldsMap() {
-        if (contentFilterFieldsMap == null) {
-            def value = grailsApplication?.config.restfulApi.contentFilter.fieldsMap
-            contentFilterFieldsMap = ((value instanceof Map) ? value : [:])
+    private Map getContentFilterFieldPatternsMap() {
+        if (contentFilterFieldPatternsMap == null) {
+            def value = grailsApplication?.config.restfulApi.contentFilter.fieldPatternsMap
+            contentFilterFieldPatternsMap = ((value instanceof Map) ? value : [:])
         }
-        return contentFilterFieldsMap
+        return contentFilterFieldPatternsMap
     }
 }
