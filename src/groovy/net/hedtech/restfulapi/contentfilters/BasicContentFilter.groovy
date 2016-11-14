@@ -43,6 +43,7 @@ class BasicContentFilter implements ContentFilter {
      * of the filtered content will be the same as the original content.
      **/
     def ContentFilterResult applyFilter(String resourceName, def content, String contentType) {
+        assert restContentFilterFields != null
         def startTime = new Date()
 
         // initialize the result; return immediately if there is no content
