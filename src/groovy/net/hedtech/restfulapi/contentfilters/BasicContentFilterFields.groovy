@@ -37,6 +37,7 @@ class BasicContentFilterFields implements ContentFilterFields {
      * Retrieve list of field patterns to be filtered from content.
      **/
     public List retrieveFieldPatterns(String resourceName) {
+        assert grailsApplication != null
         log.debug("Retrieving field patterns for resource=$resourceName")
         def resourceValue = getContentFilterFieldPatternsMap()?.get(resourceName)
         List fieldPatterns = ((resourceValue instanceof List) ? resourceValue : (resourceValue != null ? [resourceValue] : []))
@@ -51,7 +52,7 @@ class BasicContentFilterFields implements ContentFilterFields {
      **/
     private Map getContentFilterFieldPatternsMap() {
         if (contentFilterFieldPatternsMap == null) {
-            def value = grailsApplication?.config?.restfulApi?.contentFilter?.fieldPatternsMap
+            def value = grailsApplication.config?.restfulApi?.contentFilter?.fieldPatternsMap
             contentFilterFieldPatternsMap = ((value instanceof Map) ? value : [:])
         }
         return contentFilterFieldPatternsMap

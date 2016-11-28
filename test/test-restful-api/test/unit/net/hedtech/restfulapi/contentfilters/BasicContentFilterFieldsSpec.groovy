@@ -168,21 +168,4 @@ class BasicContentFilterFieldsSpec extends Specification {
         1 == fieldPatterns.size()
         "name" == fieldPatterns.get(0)
     }
-
-    def "Test missing grailsApplication injection"() {
-        setup:
-        restContentFilterFields.grailsApplication = null
-        grailsApplication.config.restfulApi.contentFilter.fieldPatternsMap =
-                [
-                        "my-resource": ["name", "code", "desc"]
-                ]
-
-        when:
-        List fieldPatterns = restContentFilterFields.retrieveFieldPatterns("my-resource")
-
-        then:
-        null != fieldPatterns
-        true == fieldPatterns instanceof List
-        0 == fieldPatterns.size()
-    }
 }

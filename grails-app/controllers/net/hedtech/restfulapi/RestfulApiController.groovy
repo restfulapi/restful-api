@@ -116,9 +116,15 @@ class RestfulApiController {
     // Map of deprecated response headers (optionally configured within Config.groovy)
     Map deprecatedHeaderMap
 
-    // Content filter configuration (optionally configured within Config.groovy)
+    // Method filter configuration (optionally configured within resources.groovy)
+    //  - restMethodFilter is configured as a spring bean resource in resources.groovy
+    MethodFilter restMethodFilter
+
+    // Content filter configuration (optionally configured within resources.groovy and Config.groovy)
+    //  - restContentFilter is configured as a spring bean resource in resources.groovy
     //  - set filterAllowPartialRequest=true to allow partial request content
     //  - set filterBypassCreateRequest=true to bypass filtering of create request content
+    ContentFilter restContentFilter
     boolean filterAllowPartialRequest
     boolean filterBypassCreateRequest
 
@@ -228,6 +234,17 @@ class RestfulApiController {
             //not using hibernate support
         }
 
+        // register method filter
+        restMethodFilter = getSpringBean('restMethodFilter')
+        if (restMethodFilter) {
+            log.trace "Registered restMethodFilter spring bean"
+        }
+
+        // register content filter
+        restContentFilter = getSpringBean('restContentFilter')
+        if (restContentFilter) {
+            log.trace "Registered restContentFilter spring bean"
+        }
 
         log.trace 'Done initializing RestfulApiController...'
     }
@@ -239,8 +256,8 @@ class RestfulApiController {
     // GET /api/pluralizedResourceName
     //
     public def list() {
-
         log.trace "list invoked for ${params.pluralizedResourceName} - request_id=${request.request_id}"
+
         try {
             checkMethod( Methods.LIST )
             def responseRepresentation = getResponseRepresentation() // adds representation attribute to request
@@ -306,6 +323,7 @@ class RestfulApiController {
     //
     public def show() {
         log.trace "show() invoked for ${params.pluralizedResourceName}/${params.id} - request_id=${request.request_id}"
+
         try {
             checkMethod( Methods.SHOW )
             def responseRepresentation = getResponseRepresentation()
@@ -391,6 +409,7 @@ class RestfulApiController {
     //
     public def delete() {
         log.trace "delete() invoked for ${params.pluralizedResourceName}/${params.id} - request_id=${request.request_id}"
+
         try {
             checkMethod( Methods.DELETE )
             def content = [:]
@@ -621,15 +640,12 @@ class RestfulApiController {
         if (content != null) {
 
             // optional: perform filtering of response content
-            if (isFilterableContent(content, contentType)) {
-                def delegateToService = getServiceAdapter()
-                if (delegateToService instanceof ContentFilter) {
-                    log.trace "Delegate filtering of response content to $delegateToService"
-                    def result = delegateToService.applyFilter(params.pluralizedResourceName, content, contentType)
-                    if (result.isPartial) {
-                        content = result.content
-                        response.addHeader( contentRestrictedHeader, 'partial' )
-                    }
+            if (restContentFilter && isFilterableContent(content, contentType)) {
+                log.trace("Filtering content for resource=$params.pluralizedResourceName with contentType=$contentType")
+                def result = restContentFilter.applyFilter(params.pluralizedResourceName, content, contentType)
+                if (result.isPartial) {
+                    content = result.content
+                    response.addHeader( contentRestrictedHeader, 'partial' )
                 }
             }
 
@@ -716,12 +732,11 @@ class RestfulApiController {
         if (!(resource == 'query-filters' ||
                 method == Methods.DELETE ||
                 (method == Methods.CREATE && filterBypassCreateRequest))) {
-            def delegateToService = getServiceAdapter()
-            if (delegateToService instanceof ContentFilter) {
-                log.trace "Delegate filtering of request content to $delegateToService"
+            if (restContentFilter) {
+                log.trace("Filtering content for resource=$resource with contentType=$representation.mediaType")
                 try {
                     ContentFilterHolder.set([
-                            contentFilter: delegateToService,
+                            contentFilter: restContentFilter,
                             resourceName: resource,
                             contentType: representation.mediaType,
                             filterAllowPartialRequest: filterAllowPartialRequest
@@ -872,6 +887,9 @@ class RestfulApiController {
         if (!resource.allowsMethod( method ) ) {
             def allowed = resource.getMethods().intersect( Methods.getMethodGroup( method ) )
             throw new UnsupportedMethodException( supportedMethods:allowed )
+        }
+        if (restMethodFilter?.isMethodNotAllowed( params.pluralizedResourceName, method )) {
+            throw new UnsupportedMethodException()
         }
     }
 
