@@ -128,6 +128,9 @@ class RestfulApiController {
     boolean filterAllowPartialRequest
     boolean filterBypassCreateRequest
 
+    // Force all marshallers to remove null fields (optionally configured within Config.groovy)
+    boolean marshallersRemoveNullFields
+
     private Class pagedResultListClazz
 
     // Sets a 'request_id' attribute on the request. If an 'X-Request-ID'
@@ -169,6 +172,8 @@ class RestfulApiController {
         filterAllowPartialRequest = getContentFilterConfiguration('filterAllowPartialRequest', false)
         filterBypassCreateRequest = getContentFilterConfiguration('filterBypassCreateRequest', false)
 
+        marshallersRemoveNullFields = getMarshallersConfiguration('removeNullFields', false)
+
         JSON.createNamedConfig('restapi-error:json') { }
         XML.createNamedConfig('restapi-error:xml') { }
 
@@ -188,6 +193,9 @@ class RestfulApiController {
                                 representation.marshallers.each() {
                                     log.info "    ...registering json marshaller ${it.instance}"
                                     json.registerObjectMarshaller(it.instance,it.priority)
+                                    if (marshallersRemoveNullFields && it.instance.hasProperty("marshallNullFields")) {
+                                        it.instance.marshallNullFields = false
+                                    }
                                 }
                             }
                         break
@@ -197,6 +205,9 @@ class RestfulApiController {
                                 representation.marshallers.each() {
                                     log.info "    ...registering xml marshaller ${it.instance}"
                                     xml.registerObjectMarshaller(it.instance,it.priority)
+                                    if (marshallersRemoveNullFields && it.instance.hasProperty("marshallNullFields")) {
+                                        it.instance.marshallNullFields = false
+                                    }
                                 }
                             }
                         break
@@ -943,6 +954,12 @@ class RestfulApiController {
 
     private boolean getContentFilterConfiguration(name, defaultBoolean) {
         def value = grailsApplication.config.restfulApi.contentFilter."${name}"
+        (value instanceof Boolean) ? value : defaultBoolean
+    }
+
+
+    private boolean getMarshallersConfiguration(name, defaultBoolean) {
+        def value = grailsApplication.config.restfulApi.marshallers."${name}"
         (value instanceof Boolean) ? value : defaultBoolean
     }
 
