@@ -268,7 +268,7 @@ class BasicContentFilter implements ContentFilter {
      **/
     def boolean removeFieldsFromNode(List fields, Node content) {
         def isModified = false
-        log.trace("Examining node with ${content.children().size()} children")
+        log.trace("Examining node ${content.name()} with ${content.children().size()} children")
 
         // remove fields from each child in the node
         fields.each { field ->
@@ -304,7 +304,9 @@ class BasicContentFilter implements ContentFilter {
                     if (equalsKey && equalsValue) {
                         def removeNodes = []
                         content.children().each { child ->
-                            if (child.name() == equalsKey && child.text() == equalsValue) {
+                            if (!(child instanceof String) &&
+                                    child.name() == equalsKey &&
+                                    child.text() == equalsValue) {
                                 removeNodes.add(child)
                                 log.trace("Removed matching field")
                                 isModified = true
@@ -324,21 +326,29 @@ class BasicContentFilter implements ContentFilter {
                 }
 
                 // remove fields from nested content
-                def removeNodes = []
                 content.children().each { child ->
                     if (child.name() == firstLevel) {
                         log.trace("Examining match on nested content for $firstLevel")
-                        if (removeFields([levels.tail().join('.')], child)) {
+                        def nestedFields = [levels.tail().join('.')]
+                        if (removeFieldsFromNode(nestedFields, child)) {
                             isModified = true
-                            if (isRemoveIfModified) {
-                                removeNodes.add(child)
-                                log.trace("Complete node for nested match is removed")
+                        } else {
+                            // try removing fields from children list in case this child is a nested list
+                            if (removeFieldsFromList(nestedFields, child.children())) {
+                                isModified = true
                             }
                         }
                     }
                 }
-                removeNodes.each { child ->
-                    content.remove(child)
+                if (isModified && isRemoveIfModified) {
+                    def removeNodes = []
+                    content.children().each { child ->
+                        removeNodes.add(child)
+                    }
+                    removeNodes.each { child ->
+                        content.remove(child)
+                    }
+                    log.trace("Complete node for nested node match is removed")
                 }
             }
         }
