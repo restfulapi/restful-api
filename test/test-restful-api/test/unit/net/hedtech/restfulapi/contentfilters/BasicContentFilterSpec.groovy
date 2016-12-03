@@ -1902,6 +1902,85 @@ class BasicContentFilterSpec extends Specification {
         compareResults(xmlObjectResult, IS_PARTIAL, convertTextToXmlObject(filteredXmlText), APPLICATION_XML)
     }
 
+    def "Test list using mixed filter with one top-level equality change removing whole list entry"() {
+        setup:
+        grailsApplication.config.restfulApi.contentFilter.fieldPatternsMap =
+                [
+                        "my-resource": ["details.@code==E"]
+                ]
+
+        def jsonText = """
+[{ "code": "201410",
+  "description": "Fall 2013",
+  "details": [{"code": "S", "description": "Standard Semester"},
+             {"code": "E", "description": "Extra Semester"}],
+  "status": "Active"
+}]"""
+        def xmlText = """
+<list>
+    <object>
+        <code>201410</code>
+        <description>Fall 2013</description>
+        <details>
+            <detail>
+                <code>S</code>
+                <description>Standard Semester</description>
+            </detail>
+            <detail>
+                <code>E</code>
+                <description>Extra Semester</description>
+            </detail>
+        </details>
+        <status>Active</status>
+    </object>
+</list>"""
+
+        def filteredJsonText = """
+[{ "code": "201410",
+  "description": "Fall 2013",
+  "details": [{"code": "S", "description": "Standard Semester"}],
+  "status": "Active"
+}]"""
+        def filteredXmlText = """
+<list>
+    <object>
+        <code>201410</code>
+        <description>Fall 2013</description>
+        <details>
+            <detail>
+                <code>S</code>
+                <description>Standard Semester</description>
+            </detail>
+        </details>
+        <status>Active</status>
+    </object>
+</list>"""
+
+        when:
+        ContentFilterResult jsonTextResult = restContentFilter.applyFilter(
+                "my-resource",
+                jsonText,
+                APPLICATION_JSON)
+        ContentFilterResult jsonObjectResult = restContentFilter.applyFilter(
+                "my-resource",
+                convertTextToJsonObject(jsonText),
+                APPLICATION_JSON)
+        ContentFilterResult xmlTextResult = restContentFilter.applyFilter(
+                "my-resource",
+                xmlText,
+                APPLICATION_XML)
+        ContentFilterResult xmlObjectResult = restContentFilter.applyFilter(
+                "my-resource",
+                convertTextToXmlObject(xmlText),
+                APPLICATION_XML)
+
+        then:
+        compareResults(jsonTextResult, IS_PARTIAL, filteredJsonText, APPLICATION_JSON)
+        compareResults(jsonObjectResult, IS_PARTIAL, convertTextToJsonObject(filteredJsonText), APPLICATION_JSON)
+        compareResults(xmlTextResult, IS_PARTIAL, filteredXmlText, APPLICATION_XML)
+        compareResults(xmlObjectResult, IS_PARTIAL, convertTextToXmlObject(filteredXmlText), APPLICATION_XML)
+    }
+
 // PRIVATE METHODS START HERE
 
     def convertTextToJsonObject(String jsonText) {

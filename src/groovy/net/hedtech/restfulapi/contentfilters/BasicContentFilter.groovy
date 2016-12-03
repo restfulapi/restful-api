@@ -159,6 +159,15 @@ class BasicContentFilter implements ContentFilter {
             def levels = field.tokenize('.')
             def firstLevel = levels[0]
             log.trace("Field levels=${levels.size()} with first level=$firstLevel")
+
+            // test if complete map is to be removed if modified
+            def isRemoveIfModified = firstLevel.startsWith('@')
+            if (isRemoveIfModified) {
+                firstLevel = firstLevel.substring(1)
+                log.trace("Will remove complete map if nested match is removed")
+            }
+
+            // test for top-level; else we have nested levels
             if (levels.size() == 1) {
 
                 // test if field is to be removed
@@ -189,24 +198,20 @@ class BasicContentFilter implements ContentFilter {
                 }
             } else {
 
-                // test if complete map is to be removed if modified
-                def isRemoveIfModified = firstLevel.startsWith('@')
-                if (isRemoveIfModified) {
-                    firstLevel = firstLevel.substring(1)
-                }
-
                 // remove fields from nested content
                 def nestedContent = content.get(firstLevel)
                 if (nestedContent) {
                     log.trace("Examining match on nested content for $firstLevel")
                     if (removeFields([levels.tail().join('.')], nestedContent)) {
                         isModified = true
-                        if (isRemoveIfModified) {
-                            content.clear()
-                            log.trace("Complete map for nested match is removed")
-                        }
                     }
                 }
+            }
+
+            // test if complete map is to be removed if modified
+            if (isRemoveIfModified && isModified) {
+                content.clear()
+                log.trace("Complete map for nested match is removed")
             }
         }
 
@@ -275,6 +280,14 @@ class BasicContentFilter implements ContentFilter {
             def levels = field.tokenize('.')
             def firstLevel = levels[0]
             log.trace("Field levels=${levels.size()} with first level=$firstLevel")
+
+            // test if complete node is to be removed if modified
+            def isRemoveIfModified = firstLevel.startsWith('@')
+            if (isRemoveIfModified) {
+                firstLevel = firstLevel.substring(1)
+            }
+
+            // test for top-level; else we have nested levels
             if (levels.size() == 1) {
 
                 // test if field is to be removed
@@ -319,12 +332,6 @@ class BasicContentFilter implements ContentFilter {
                 }
             } else {
 
-                // test if complete node is to be removed if modified
-                def isRemoveIfModified = firstLevel.startsWith('@')
-                if (isRemoveIfModified) {
-                    firstLevel = firstLevel.substring(1)
-                }
-
                 // remove fields from nested content
                 content.children().each { child ->
                     if (child.name() == firstLevel) {
@@ -340,16 +347,18 @@ class BasicContentFilter implements ContentFilter {
                         }
                     }
                 }
-                if (isModified && isRemoveIfModified) {
-                    def removeNodes = []
-                    content.children().each { child ->
-                        removeNodes.add(child)
-                    }
-                    removeNodes.each { child ->
-                        content.remove(child)
-                    }
-                    log.trace("Complete node for nested node match is removed")
+            }
+
+            // test if complete map is to be removed if modified
+            if (isRemoveIfModified && isModified) {
+                def removeNodes = []
+                content.children().each { child ->
+                    removeNodes.add(child)
                 }
+                removeNodes.each { child ->
+                    content.remove(child)
+                }
+                log.trace("Complete node for nested node match is removed")
             }
         }
 
