@@ -116,10 +116,6 @@ class RestfulApiController {
     // Map of deprecated response headers (optionally configured within Config.groovy)
     Map deprecatedHeaderMap
 
-    // Method filter configuration (optionally configured within resources.groovy)
-    //  - restMethodFilter is configured as a spring bean resource in resources.groovy
-    MethodFilter restMethodFilter
-
     // Content filter configuration (optionally configured within resources.groovy and Config.groovy)
     //  - restContentFilter is configured as a spring bean resource in resources.groovy
     //  - set filterAllowPartialRequest=true to allow partial request content
@@ -243,12 +239,6 @@ class RestfulApiController {
             pagedResultListClazz = Class.forName('grails.orm.PagedResultList')
         } catch (ClassNotFoundException) {
             //not using hibernate support
-        }
-
-        // register method filter
-        restMethodFilter = getSpringBean('restMethodFilter')
-        if (restMethodFilter) {
-            log.trace "Registered restMethodFilter spring bean"
         }
 
         // register content filter
@@ -898,9 +888,6 @@ class RestfulApiController {
         if (!resource.allowsMethod( method ) ) {
             def allowed = resource.getMethods().intersect( Methods.getMethodGroup( method ) )
             throw new UnsupportedMethodException( supportedMethods:allowed )
-        }
-        if (restMethodFilter?.isMethodNotAllowed( params.pluralizedResourceName, method )) {
-            throw new UnsupportedMethodException()
         }
     }
 
