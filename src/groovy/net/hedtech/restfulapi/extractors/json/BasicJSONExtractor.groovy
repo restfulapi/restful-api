@@ -97,12 +97,13 @@ class BasicJSONExtractor implements JSONExtractor {
         if (map) {
             def contentFilterHolder = ContentFilterHolder.get()
             if (contentFilterHolder) {
-                def result = contentFilterHolder.contentFilter.applyFilter(
+                def contentFilter = contentFilterHolder.contentFilter
+                def result = contentFilter.applyFilter(
                         contentFilterHolder.resourceName,
                         map,
                         contentFilterHolder.contentType)
                 if (result.isPartial) {
-                    if (contentFilterHolder.filterAllowPartialRequest) {
+                    if (contentFilter.allowPartialRequest) {
                         map = result.content
                     } else {
                         throw new ProtectedFieldException(contentFilterHolder.resourceName)

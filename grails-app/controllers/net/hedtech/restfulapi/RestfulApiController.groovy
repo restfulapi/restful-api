@@ -116,13 +116,9 @@ class RestfulApiController {
     // Map of deprecated response headers (optionally configured within Config.groovy)
     Map deprecatedHeaderMap
 
-    // Content filter configuration (optionally configured within resources.groovy and Config.groovy)
+    // Content filter configuration (optionally configured within resources.groovy)
     //  - restContentFilter is configured as a spring bean resource in resources.groovy
-    //  - set filterAllowPartialRequest=true to allow partial request content
-    //  - set filterBypassCreateRequest=true to bypass filtering of create request content
     ContentFilter restContentFilter
-    boolean filterAllowPartialRequest
-    boolean filterBypassCreateRequest
 
     // Force all marshallers to remove null fields (optionally configured within Config.groovy)
     boolean marshallersRemoveNullFields
@@ -164,9 +160,6 @@ class RestfulApiController {
         pageOffset = getPagingConfiguration('offset', 'offset')
 
         deprecatedHeaderMap = getDeprecatedHeaderMap()
-
-        filterAllowPartialRequest = getContentFilterConfiguration('filterAllowPartialRequest', false)
-        filterBypassCreateRequest = getContentFilterConfiguration('filterBypassCreateRequest', false)
 
         marshallersRemoveNullFields = getMarshallersConfiguration('removeNullFields', false)
 
@@ -730,22 +723,19 @@ class RestfulApiController {
         //  - qapi requests (a form of query using the content body in place of params)
         //  - delete method which only requires the key of a resource
         //  - create requests if configured to bypass
-        if (!(resource == 'query-filters' ||
-                method == Methods.DELETE ||
-                (method == Methods.CREATE && filterBypassCreateRequest))) {
-            if (restContentFilter) {
-                log.trace("Filtering content for resource=$resource with contentType=$representation.mediaType")
-                try {
-                    ContentFilterHolder.set([
-                            contentFilter: restContentFilter,
-                            resourceName: resource,
-                            contentType: representation.mediaType,
-                            filterAllowPartialRequest: filterAllowPartialRequest
-                    ])
-                    return extractorAdapter.extract(extractor, request)
-                } finally {
-                    ContentFilterHolder.clear()
-                }
+        if (restContentFilter && !(resource == 'query-filters' ||
+                                   method == Methods.DELETE ||
+                                   (method == Methods.CREATE && restContentFilter.bypassCreateRequest))) {
+            log.trace("Filtering content for resource=$resource with contentType=$representation.mediaType")
+            try {
+                ContentFilterHolder.set([
+                        contentFilter: restContentFilter,
+                        resourceName: resource,
+                        contentType: representation.mediaType
+                ])
+                return extractorAdapter.extract(extractor, request)
+            } finally {
+                ContentFilterHolder.clear()
             }
         }
 
@@ -936,12 +926,6 @@ class RestfulApiController {
                 }
             }
         }
-    }
-
-
-    private boolean getContentFilterConfiguration(name, defaultBoolean) {
-        def value = grailsApplication.config.restfulApi.contentFilter."${name}"
-        (value instanceof Boolean) ? value : defaultBoolean
     }
 
 

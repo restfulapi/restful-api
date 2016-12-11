@@ -30,12 +30,13 @@ class DefaultJSONExtractor implements JSONExtractor {
         if (content) {
             def contentFilterHolder = ContentFilterHolder.get()
             if (contentFilterHolder) {
-                def result = contentFilterHolder.contentFilter.applyFilter(
+                def contentFilter = contentFilterHolder.contentFilter
+                def result = contentFilter.applyFilter(
                         contentFilterHolder.resourceName,
                         content,
                         contentFilterHolder.contentType)
                 if (result.isPartial) {
-                    if (contentFilterHolder.filterAllowPartialRequest) {
+                    if (contentFilter.allowPartialRequest) {
                         content = result.content
                     } else {
                         throw new ProtectedFieldException(contentFilterHolder.resourceName)

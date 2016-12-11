@@ -24,6 +24,13 @@ package net.hedtech.restfulapi
 interface ContentFilter {
 
 
+    // Content filter configuration
+    //  - set allowPartialRequest=true to allow partial request content
+    //  - set bypassCreateRequest=true to bypass filtering of create request content
+    boolean allowPartialRequest = false
+    boolean bypassCreateRequest = false
+
+
     /**
      * Apply filter to content.
      **/
