@@ -1434,7 +1434,7 @@ For example
 
 Now if the Thing class does not have a persistent field 'description', the marshaller will throw an exception.
 
-#Marshalling only non-null fields.
+###Marshalling only non-null fields.
 There may be times when a representation should only include a field if it has a non-null value.
 
 For a representation, you can specify that any null fields should not be marshalled with the marshallsNullFields setting:
@@ -1472,6 +1472,8 @@ Whether or not to marshall a null field can also be specified on a per-field bas
     }
 
 All fields of Thing will be marshalled, but if description is null, it will be omitted.
+
+You can also force marshallers to remove null fields without having to specify it for each marshaller. Setting restfulApi.marshallers.removeNullFields=true in Config.groovy will set the marshallNullFields property to false for all JSON and XML marshallers.  
 
 ###Representing associations
 By default, the declarative marshaller renders the objects in any assocation as 'short objects'.  The default rendering of a 'short object' is a JSON object containing a single '_link' property having a value of '/resource/id' where resource is the pluralized resource name of the associated object (as derived by convention), and id is the id of the object.  So, for example, if the Thing class had a field called customer  holding a reference to an instance of class Customer with id 15, the customer field would render as :
@@ -2081,7 +2083,7 @@ For example
 
 Now if the Thing class does not have a field or property 'description', the marshaller will throw an exception.
 
-#Marshalling only non-null fields.
+###Marshalling only non-null fields.
 There may be times when a representation should only include a field if it has a non-null value.
 
 For a representation, you can specify that any null fields should not be marshalled with the marshallsNullFields setting:
@@ -2119,6 +2121,8 @@ Whether or not to marshall a null field can also be specified on a per-field bas
     }
 
 All fields of Thing will be marshalled, but if description is null, it will be omitted.
+
+You can also force marshallers to remove null fields without having to specify it for each marshaller. Setting restfulApi.marshallers.removeNullFields=true in Config.groovy will set the marshallNullFields property to false for all JSON and XML marshallers.  
 
 ###Adding additional fields
 You can add additional fields not directly present in a bean to its marshalled representation.
@@ -3265,6 +3269,15 @@ To prevent a representation from being returned as the response to any request, 
     }
 
 Any request requiring the representation will receive a 406 status code.
+
+##Content filtering of JSON/XML requests and responses
+Filtering of JSON/XML request and response content is available. This would typically be done in conjunction
+with a RestfulServiceAdapter that provides user authentication. With content filtering, you can remove fields
+from the JSON or XML content based on the particular user that is issuing the request.
+
+Content filtering is configured in the Spring application context using a restContentFilter bean.
+
+See [adapter](#service-layer-adapter) for more information on the RestfulServiceAdapter.  
 
 ##Logging
 Errors encountered while servicing a request are logged at error level to the log target 'RestfulApiController_messageLog'.  This is so errors occuring from the requests (which will typically be errors caused by invalid input, etc) can be separated from errors in the controller.

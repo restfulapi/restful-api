@@ -1,3 +1,7 @@
+#1.2.0
+* Add feature that can force marshallers to remove null fields without having to specify it for each marshaller.
+* Add feature that can perform content filtering of JSON/XML request and response content.
+
 #1.1.0
 * Add feature for copying specific response headers to allow older headers to be deprecated.
 
