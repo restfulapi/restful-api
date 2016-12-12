@@ -112,7 +112,7 @@ class BasicContentFilter implements ContentFilter {
     /**
      * Remove fields from the content.
      *
-     * Fields is a list a field names that are to be rmeoved from
+     * Fields is a list a field names that are to be removed from
      * the content. If content is a list, each field is applied to
      * all items in the list. If content is a map, the field name
      * to be removed may be represented in dot-notation to indicate
