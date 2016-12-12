@@ -1,5 +1,5 @@
 /* ***************************************************************************
- * Copyright 2013 Ellucian Company L.P. and its affiliates.
+ * Copyright 2013-2016 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -106,14 +106,22 @@ class RestfulApiController {
     String pageOffsetHeader
     String messageHeader
     String mediaTypeHeader
+    String contentRestrictedHeader
     String requestIdHeader
 
     // Paging query parameter names (configured within Config.groovy)
     String pageMax
     String pageOffset
 
-    // Map of deprecated response headers
+    // Map of deprecated response headers (optionally configured within Config.groovy)
     Map deprecatedHeaderMap
+
+    // Content filter configuration (optionally configured within resources.groovy)
+    //  - restContentFilter is configured as a spring bean resource in resources.groovy
+    ContentFilter restContentFilter
+
+    // Force all marshallers to remove null fields (optionally configured within Config.groovy)
+    boolean marshallersRemoveNullFields
 
     private Class pagedResultListClazz
 
@@ -145,12 +153,15 @@ class RestfulApiController {
         pageOffsetHeader = getHeaderName('pageOffset', 'X-hedtech-pageOffset')
         messageHeader    = getHeaderName('message', 'X-hedtech-message')
         mediaTypeHeader  = getHeaderName('mediaType', 'X-hedtech-Media-Type')
+        contentRestrictedHeader = getHeaderName('contentRestricted', 'X-hedtech-Content-Restricted')
         requestIdHeader  = getHeaderName('requestId', 'X-Request-ID')
 
         pageMax    = getPagingConfiguration('max', 'max')
         pageOffset = getPagingConfiguration('offset', 'offset')
 
         deprecatedHeaderMap = getDeprecatedHeaderMap()
+
+        marshallersRemoveNullFields = getMarshallersConfiguration('removeNullFields', false)
 
         JSON.createNamedConfig('restapi-error:json') { }
         XML.createNamedConfig('restapi-error:xml') { }
@@ -171,6 +182,9 @@ class RestfulApiController {
                                 representation.marshallers.each() {
                                     log.info "    ...registering json marshaller ${it.instance}"
                                     json.registerObjectMarshaller(it.instance,it.priority)
+                                    if (marshallersRemoveNullFields && it.instance.hasProperty("marshallNullFields")) {
+                                        it.instance.marshallNullFields = false
+                                    }
                                 }
                             }
                         break
@@ -180,6 +194,9 @@ class RestfulApiController {
                                 representation.marshallers.each() {
                                     log.info "    ...registering xml marshaller ${it.instance}"
                                     xml.registerObjectMarshaller(it.instance,it.priority)
+                                    if (marshallersRemoveNullFields && it.instance.hasProperty("marshallNullFields")) {
+                                        it.instance.marshallNullFields = false
+                                    }
                                 }
                             }
                         break
@@ -217,6 +234,11 @@ class RestfulApiController {
             //not using hibernate support
         }
 
+        // register content filter
+        restContentFilter = getSpringBean('restContentFilter')
+        if (restContentFilter) {
+            log.trace "Registered restContentFilter spring bean"
+        }
 
         log.trace 'Done initializing RestfulApiController...'
     }
@@ -228,8 +250,8 @@ class RestfulApiController {
     // GET /api/pluralizedResourceName
     //
     public def list() {
-
         log.trace "list invoked for ${params.pluralizedResourceName} - request_id=${request.request_id}"
+
         try {
             checkMethod( Methods.LIST )
             def responseRepresentation = getResponseRepresentation() // adds representation attribute to request
@@ -238,7 +260,7 @@ class RestfulApiController {
             def logger = log            // ditto
 
             if (request.method == "POST") {
-                def queryCriteria = parseRequestContent( request, 'query-filters' )
+                def queryCriteria = parseRequestContent( request, 'query-filters', Methods.LIST )
                 updatePagingQueryParams( queryCriteria ) // We'll ensure params uses expected Grails naming
                 requestParams << queryCriteria
             }
@@ -295,6 +317,7 @@ class RestfulApiController {
     //
     public def show() {
         log.trace "show() invoked for ${params.pluralizedResourceName}/${params.id} - request_id=${request.request_id}"
+
         try {
             checkMethod( Methods.SHOW )
             def responseRepresentation = getResponseRepresentation()
@@ -338,7 +361,7 @@ class RestfulApiController {
 
         try {
             checkMethod( Methods.CREATE )
-            def content = parseRequestContent( request )
+            def content = parseRequestContent( request, params.pluralizedResourceName, Methods.CREATE )
             log.trace "Extracted content $content"
             getResponseRepresentation()
             result = getServiceAdapter().create( getService(), content, params )
@@ -361,7 +384,7 @@ class RestfulApiController {
 
         try {
             checkMethod( Methods.UPDATE )
-            def content = parseRequestContent( request )
+            def content = parseRequestContent( request, params.pluralizedResourceName, Methods.UPDATE )
             checkId(content)
             getResponseRepresentation()
             result = getServiceAdapter().update( getService(), content, params )
@@ -380,12 +403,13 @@ class RestfulApiController {
     //
     public def delete() {
         log.trace "delete() invoked for ${params.pluralizedResourceName}/${params.id} - request_id=${request.request_id}"
+
         try {
             checkMethod( Methods.DELETE )
             def content = [:]
             ResourceConfig config = getResourceConfig()
             if (config.bodyExtractedOnDelete) {
-                content = parseRequestContent( request )
+                content = parseRequestContent( request, params.pluralizedResourceName, Methods.DELETE )
             }
             checkId(content)
             getServiceAdapter().delete( getService(), content, params )
@@ -608,6 +632,17 @@ class RestfulApiController {
         }
 
         if (content != null) {
+
+            // optional: perform filtering of response content
+            if (restContentFilter && isFilterableContent(content, contentType)) {
+                log.trace("Filtering content for resource=$params.pluralizedResourceName with contentType=$contentType")
+                def result = restContentFilter.applyFilter(params.pluralizedResourceName, content, contentType)
+                if (result.isPartial) {
+                    content = result.content
+                    response.addHeader( contentRestrictedHeader, 'partial' )
+                }
+            }
+
             if (content instanceof byte[]) {
                 response.setContentType(contentType)
                 response.setContentLength(content.length)
@@ -634,6 +669,13 @@ class RestfulApiController {
         } else {
             render(text:"", contentType:'text/plain')
         }
+    }
+
+
+    protected boolean isFilterableContent( def content, def contentType ) {
+        return (content && content instanceof String &&
+                    (contentType == "application/json" ||
+                     contentType == "application/xml"))
     }
 
 
@@ -665,7 +707,7 @@ class RestfulApiController {
      * Returns a map representing the properties of content.
      * @param request the request containing the content
      **/
-    protected Map parseRequestContent( request, String resource = params.pluralizedResourceName ) {
+    protected Map parseRequestContent( request, String resource, String method ) {
 
         ResourceConfig resourceConfig = getResourceConfig( resource )
         def representation = getRequestRepresentation( resource )
@@ -674,7 +716,30 @@ class RestfulApiController {
         if (!extractor) {
             unsupportedRequestRepresentation()
         }
-        getExtractorAdapter().extract(extractor, request)
+
+        def extractorAdapter = getExtractorAdapter()
+
+        // optional: perform filtering of request content, except for these cases:
+        //  - qapi requests (a form of query using the content body in place of params)
+        //  - delete method which only requires the key of a resource
+        //  - create requests if configured to bypass
+        if (restContentFilter && !(resource == 'query-filters' ||
+                                   method == Methods.DELETE ||
+                                   (method == Methods.CREATE && restContentFilter.bypassCreateRequest))) {
+            log.trace("Filtering content for resource=$resource with contentType=$representation.mediaType")
+            try {
+                ContentFilterHolder.set([
+                        contentFilter: restContentFilter,
+                        resourceName: resource,
+                        contentType: representation.mediaType
+                ])
+                return extractorAdapter.extract(extractor, request)
+            } finally {
+                ContentFilterHolder.clear()
+            }
+        }
+
+        return extractorAdapter.extract(extractor, request)
     }
 
 
@@ -861,6 +926,12 @@ class RestfulApiController {
                 }
             }
         }
+    }
+
+
+    private boolean getMarshallersConfiguration(name, defaultBoolean) {
+        def value = grailsApplication.config.restfulApi.marshallers."${name}"
+        (value instanceof Boolean) ? value : defaultBoolean
     }
 
 

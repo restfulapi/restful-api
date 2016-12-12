@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * Copyright 2013 Ellucian Company L.P. and its affiliates.
+ * Copyright 2013-2016 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package net.hedtech.restfulapi.extractors.json
 import java.text.ParseException
 import java.text.SimpleDateFormat
 
+import net.hedtech.restfulapi.ContentFilterHolder
 import net.hedtech.restfulapi.extractors.*
 import org.codehaus.groovy.grails.web.json.*
 
@@ -93,6 +94,23 @@ class BasicJSONExtractor implements JSONExtractor {
 
     Map extract(JSONObject content) {
         Map map = unwrap(content)
+        if (map) {
+            def contentFilterHolder = ContentFilterHolder.get()
+            if (contentFilterHolder) {
+                def contentFilter = contentFilterHolder.contentFilter
+                def result = contentFilter.applyFilter(
+                        contentFilterHolder.resourceName,
+                        map,
+                        contentFilterHolder.contentType)
+                if (result.isPartial) {
+                    if (contentFilter.allowPartialRequest) {
+                        map = result.content
+                    } else {
+                        throw new ProtectedFieldException(contentFilterHolder.resourceName)
+                    }
+                }
+            }
+        }
         getTransformer().transform(map)
     }
 
