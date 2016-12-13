@@ -723,9 +723,11 @@ class RestfulApiController {
         //  - qapi requests (a form of query using the content body in place of params)
         //  - delete method which only requires the key of a resource
         //  - create requests if configured to bypass
+        //  - update requests if configured to bypass
         if (restContentFilter && !(resource == 'query-filters' ||
                                    method == Methods.DELETE ||
-                                   (method == Methods.CREATE && restContentFilter.bypassCreateRequest))) {
+                                   (method == Methods.CREATE && restContentFilter.bypassCreateRequest) ||
+                                   (method == Methods.UPDATE && restContentFilter.bypassUpdateRequest))) {
             log.trace("Filtering content for resource=$resource with contentType=$representation.mediaType")
             try {
                 ContentFilterHolder.set([
