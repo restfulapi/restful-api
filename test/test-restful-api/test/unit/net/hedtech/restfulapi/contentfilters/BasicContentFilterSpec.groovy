@@ -1981,6 +1981,166 @@ class BasicContentFilterSpec extends Specification {
         compareResults(xmlObjectResult, IS_PARTIAL, convertTextToXmlObject(filteredXmlText), APPLICATION_XML)
     }
 
+    def "Test preservation of existing null elements"() {
+        setup:
+        grailsApplication.config.restfulApi.contentFilter.fieldPatternsMap =
+                [
+                        "my-resource": ["status", "details.code", "details.description"]
+                ]
+
+        def jsonText = """
+[{ "code": "201410",
+  "description": "Fall 2013",
+  "details": [{"code": "S", "description": "Standard Semester", "language": null,},
+             {"code": "E", "description": "Extra Semester"}],
+  "language": null,
+  "status": "Active"
+},
+{ "code": "201510",
+  "description": "Fall 2014",
+  "details": [{"code": "S", "description": "Standard Semester", "language": "English"},
+             {"code": "E", "description": "Extra Semester"}],
+  "language": "English",
+  "status": "Inactive"
+},
+{ "code": "201610",
+  "description": "Fall 2015",
+  "details": [{"code": "S", "description": "Standard Semester", "language": null,},
+             {"code": "E", "description": "Extra Semester"}],
+  "language": null,
+  "status": "Active"
+}]"""
+        def xmlText = """
+<list>
+    <object>
+        <code>201410</code>
+        <description>Fall 2013</description>
+        <details>
+            <detail>
+                <code>S</code>
+                <description>Standard Semester</description>
+                <language nil="true"/>
+            </detail>
+            <detail>
+                <code>E</code>
+                <description>Extra Semester</description>
+            </detail>
+        </details>
+        <language nil="true"/>
+        <status>Active</status>
+    </object>
+    <object>
+        <code>201510</code>
+        <description>Fall 2014</description>
+        <details>
+            <detail>
+                <code>S</code>
+                <description>Standard Semester</description>
+                <language>English</language>
+            </detail>
+            <detail>
+                <code>E</code>
+                <description>Extra Semester</description>
+            </detail>
+        </details>
+        <status>Inactive</status>
+        <language>English</language>
+    </object>
+    <object>
+        <code>201610</code>
+        <description>Fall 2015</description>
+        <details>
+            <detail>
+                <code>S</code>
+                <description>Standard Semester</description>
+                <language nil="true"/>
+            </detail>
+            <detail>
+                <code>E</code>
+                <description>Extra Semester</description>
+            </detail>
+        </details>
+        <language null="true"/>
+        <status>Active</status>
+    </object>
+</list>"""
+
+        def filteredJsonText = """
+[{ "code": "201410",
+  "description": "Fall 2013",
+  "details": [{"language": null}],
+  "language": null
+},
+{ "code": "201510",
+  "description": "Fall 2014",
+  "details": [{"language": "English"}],
+  "language": "English"
+},
+{ "code": "201610",
+  "description": "Fall 2015",
+  "details": [{"language": null}],
+  "language": null
+}
+]"""
+        def filteredXmlText = """
+<list>
+    <object>
+        <code>201410</code>
+        <description>Fall 2013</description>
+        <details>
+            <detail>
+                <language nil="true"/>
+            </detail>
+        </details>
+        <language nil="true"/>
+    </object>
+    <object>
+        <code>201510</code>
+        <description>Fall 2014</description>
+        <details>
+            <detail>
+                <language>English</language>
+            </detail>
+        </details>
+        <language>English</language>
+    </object>
+    <object>
+        <code>201610</code>
+        <description>Fall 2015</description>
+        <details>
+            <detail>
+                <language nil="true"/>
+            </detail>
+        </details>
+        <language null="true"/>
+    </object>
+</list>"""
+
+        when:
+        ContentFilterResult jsonTextResult = restContentFilter.applyFilter(
+                "my-resource",
+                jsonText,
+                APPLICATION_JSON)
+        ContentFilterResult jsonObjectResult = restContentFilter.applyFilter(
+                "my-resource",
+                convertTextToJsonObject(jsonText),
+                APPLICATION_JSON)
+        ContentFilterResult xmlTextResult = restContentFilter.applyFilter(
+                "my-resource",
+                xmlText,
+                APPLICATION_XML)
+        ContentFilterResult xmlObjectResult = restContentFilter.applyFilter(
+                "my-resource",
+                convertTextToXmlObject(xmlText),
+                APPLICATION_XML)
+
+        then:
+        compareResults(jsonTextResult, IS_PARTIAL, filteredJsonText, APPLICATION_JSON)
+        compareResults(jsonObjectResult, IS_PARTIAL, convertTextToJsonObject(filteredJsonText), APPLICATION_JSON)
+        compareResults(xmlTextResult, IS_PARTIAL, filteredXmlText, APPLICATION_XML)
+        compareResults(xmlObjectResult, IS_PARTIAL, convertTextToXmlObject(filteredXmlText), APPLICATION_XML)
+    }
+
 // PRIVATE METHODS START HERE
 
     def convertTextToJsonObject(String jsonText) {

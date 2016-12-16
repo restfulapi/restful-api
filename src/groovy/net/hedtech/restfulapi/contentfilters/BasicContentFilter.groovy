@@ -154,6 +154,19 @@ class BasicContentFilter implements ContentFilter {
         def isModified = false
         log.trace("Examining map with ${content.size()} entries")
 
+        // find all fields that are null before filtering
+        def nullFields = []
+        content.each { entry ->
+            def value = entry.value
+            if (value == null ||
+                    (value instanceof Map && isEmptyMap(value)) ||
+                    (value instanceof List && isEmptyList(value))) {
+                def key = entry.key
+                log.trace("Null value will be preserved for $key")
+                nullFields.add(key)
+            }
+        }
+
         // remove fields from each entry in the map
         fields.each { field ->
             def levels = field.tokenize('.')
@@ -223,8 +236,10 @@ class BasicContentFilter implements ContentFilter {
                     if (value == null ||
                             (value instanceof Map && isEmptyMap(value)) ||
                             (value instanceof List && isEmptyList(value))) {
-                        log.trace("Removing empty map entry for ${entry.key}")
-                        iterator.remove()
+                        if (!nullFields.contains(entry.key)) {
+                            log.trace("Removing empty map entry for ${entry.key}")
+                            iterator.remove()
+                        }
                     }
                 }
             }
@@ -274,6 +289,16 @@ class BasicContentFilter implements ContentFilter {
     def boolean removeFieldsFromNode(List fields, Node content) {
         def isModified = false
         log.trace("Examining node ${content.name()} with ${content.children().size()} children")
+
+        // find all fields that are null before filtering
+        def nullFields = []
+        content.each { child ->
+            if (child instanceof Node && isEmptyNode(child)) {
+                def name = child.name()
+                log.trace("Null value will be preserved for $name")
+                nullFields.add(name)
+            }
+        }
 
         // remove fields from each child in the node
         fields.each { field ->
@@ -366,9 +391,12 @@ class BasicContentFilter implements ContentFilter {
         if (isModified) {
             content.iterator().with { iterator ->
                 iterator.each { child ->
-                    if (isEmptyNode(child)) {
-                        log.trace("Removing empty child node with name=${child.name()}")
-                        iterator.remove()
+                    if (child instanceof Node && isEmptyNode(child)) {
+                        def name = child.name()
+                        if (!nullFields.contains(name)) {
+                            log.trace("Removing empty child node with name=$name")
+                            iterator.remove()
+                        }
                     }
                 }
             }
@@ -404,6 +432,7 @@ class BasicContentFilter implements ContentFilter {
                 node.children().size() == 0 &&
                 (node.attributes().size() == 0 ||
                         (node.attributes().size() == 1 &&
-                         node.attributes().get("null") == "true")))
+                                (node.attributes().get("nill") == "true" ||
+                                 node.attributes().get("null") == "true"))))
     }
 }
