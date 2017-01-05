@@ -1475,6 +1475,8 @@ All fields of Thing will be marshalled, but if description is null, it will be o
 
 You can also force marshallers to remove null fields without having to specify it for each marshaller. Setting restfulApi.marshallers.removeNullFields=true in Config.groovy will set the marshallNullFields property to false for all JSON and XML marshallers.  
 
+When removing null fields, you can also force marshallers to remove empty collections. To remove empty collections, set restfulApi.marshallers.removeEmptyCollections=true in Config.groovy. Empty collections are only removed if the collection is not configured to marshall nulls.
+
 ###Representing associations
 By default, the declarative marshaller renders the objects in any assocation as 'short objects'.  The default rendering of a 'short object' is a JSON object containing a single '_link' property having a value of '/resource/id' where resource is the pluralized resource name of the associated object (as derived by convention), and id is the id of the object.  So, for example, if the Thing class had a field called customer  holding a reference to an instance of class Customer with id 15, the customer field would render as :
 
@@ -2123,6 +2125,8 @@ Whether or not to marshall a null field can also be specified on a per-field bas
 All fields of Thing will be marshalled, but if description is null, it will be omitted.
 
 You can also force marshallers to remove null fields without having to specify it for each marshaller. Setting restfulApi.marshallers.removeNullFields=true in Config.groovy will set the marshallNullFields property to false for all JSON and XML marshallers.  
+
+When removing null fields, you can also force marshallers to remove empty collections. To remove empty collections, set restfulApi.marshallers.removeEmptyCollections=true in Config.groovy. Empty collections are only removed if the collection is not configured to marshall nulls.
 
 ###Adding additional fields
 You can add additional fields not directly present in a bean to its marshalled representation.

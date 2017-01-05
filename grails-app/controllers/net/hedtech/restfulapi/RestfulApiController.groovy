@@ -120,8 +120,9 @@ class RestfulApiController {
     //  - restContentFilter is configured as a spring bean resource in resources.groovy
     ContentFilter restContentFilter
 
-    // Force all marshallers to remove null fields (optionally configured within Config.groovy)
+    // Force all marshallers to remove null fields and empty collections (optionally configured within Config.groovy)
     boolean marshallersRemoveNullFields
+    boolean marshallersRemoveEmptyCollections
 
     private Class pagedResultListClazz
 
@@ -162,6 +163,7 @@ class RestfulApiController {
         deprecatedHeaderMap = getDeprecatedHeaderMap()
 
         marshallersRemoveNullFields = getMarshallersConfiguration('removeNullFields', false)
+        marshallersRemoveEmptyCollections = getMarshallersConfiguration('removeEmptyCollections', false)
 
         JSON.createNamedConfig('restapi-error:json') { }
         XML.createNamedConfig('restapi-error:xml') { }
@@ -185,6 +187,9 @@ class RestfulApiController {
                                     if (marshallersRemoveNullFields && it.instance.hasProperty("marshallNullFields")) {
                                         it.instance.marshallNullFields = false
                                     }
+                                    if (marshallersRemoveEmptyCollections && it.instance.hasProperty("marshallEmptyCollections")) {
+                                        it.instance.marshallEmptyCollections = false
+                                    }
                                 }
                             }
                         break
@@ -196,6 +201,9 @@ class RestfulApiController {
                                     xml.registerObjectMarshaller(it.instance,it.priority)
                                     if (marshallersRemoveNullFields && it.instance.hasProperty("marshallNullFields")) {
                                         it.instance.marshallNullFields = false
+                                    }
+                                    if (marshallersRemoveEmptyCollections && it.instance.hasProperty("marshallEmptyCollections")) {
+                                        it.instance.marshallEmptyCollections = false
                                     }
                                 }
                             }

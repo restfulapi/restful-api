@@ -51,6 +51,7 @@ class DeclarativeBeanMarshaller extends BeanMarshaller {
     def marshalledNullFields = [:]
     //default behavior on whether to marshall null fields.
     def marshallNullFields = true
+    def marshallEmptyCollections = true
 
     @Override
     public boolean supports(Object object) {
@@ -100,6 +101,9 @@ class DeclarativeBeanMarshaller extends BeanMarshaller {
 
         if (ignoreNull) {
             Object val = beanWrapper.getPropertyValue(property.getName())
+            if (!marshallEmptyCollections && val instanceof Collection && val.size() == 0) {
+                return false
+            }
             return val != null
         } else {
             return true
@@ -119,6 +123,9 @@ class DeclarativeBeanMarshaller extends BeanMarshaller {
 
         if (ignoreNull) {
             Object val = field.get(value)
+            if (!marshallEmptyCollections && val instanceof Collection && val.size() == 0) {
+                return false
+            }
             return val != null
         } else {
             return true

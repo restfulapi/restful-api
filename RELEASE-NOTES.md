@@ -1,5 +1,6 @@
 #1.2.0
 * Add feature that can force marshallers to remove null fields without having to specify it for each marshaller.
+* Add feature that can force marshallers to remove empty collections (only when the marshaller is also configured to remove null fields)
 * Add feature that can perform content filtering of JSON/XML request and response content.
 
 #1.1.0
