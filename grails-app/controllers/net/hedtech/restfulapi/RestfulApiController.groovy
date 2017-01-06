@@ -736,12 +736,13 @@ class RestfulApiController {
                                    method == Methods.DELETE ||
                                    (method == Methods.CREATE && restContentFilter.bypassCreateRequest) ||
                                    (method == Methods.UPDATE && restContentFilter.bypassUpdateRequest))) {
-            log.trace("Filtering content for resource=$resource with contentType=$representation.mediaType")
+            def contentType = selectContentTypeForResponse( representation )
+            log.trace("Filtering content for resource=$resource with contentType=$contentType")
             try {
                 ContentFilterHolder.set([
                         contentFilter: restContentFilter,
                         resourceName: resource,
-                        contentType: representation.mediaType
+                        contentType: contentType
                 ])
                 return extractorAdapter.extract(extractor, request)
             } finally {
