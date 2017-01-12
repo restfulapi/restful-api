@@ -29,7 +29,7 @@ interface ContentFilter {
     //  - set bypassCreateRequest=true to bypass filtering of create request content
     //  - set bypassUpdateRequest=true to bypass filtering of update request content
     boolean allowPartialRequest = false
-    boolean bypassCreateRequest = false
+    boolean bypassCreateRequest = true
     boolean bypassUpdateRequest = false
 
 

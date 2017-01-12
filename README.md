@@ -3279,9 +3279,98 @@ Filtering of JSON/XML request and response content is available. This would typi
 with a RestfulServiceAdapter that provides user authentication. With content filtering, you can remove fields
 from the JSON or XML content based on the particular user that is issuing the request.
 
-Content filtering is configured in the Spring application context using a restContentFilter bean.
-
 See [adapter](#service-layer-adapter) for more information on the RestfulServiceAdapter.  
+
+Content filtering is configured in the Spring application context using a restContentFilter bean. An example basic
+content filter class is provided as BasicContentFilter. Since the restful-api plugin does not natively support
+authenticated users, a BasicContentFilterFields class is also provided to supply the field patterns from an
+optional restfulApi.contentFilter.fieldPatternsMap property. You can extend or replace the BasicContentFilter
+and BasicContentFilterFields classes with whatever logic suites your functional business needs. 
+
+###Description of the BasicContentFilter algorithm
+The BasicContentFilter algorithm (restContentFilter) requires a list of field patterns to be returned from the
+BasicContentFilterFields (restContentFilterFields) or some other configured class. The field patterns determine
+what fields in the content get removed. If the content being filtered is a list, the field patterns are applied
+to all entries in the list.
+
+The field pattern can be an individually named top-level field to be removed from the content. Examples: 'grade', 'gender'
+
+For removing a field nested within another field, use a dotted notation. Example: 'credentials.value'
+
+You can conditionally remove a field using field==value notation. Example: 'credentials.type==ssn'; Note
+this will only remove the filed identified as type, not any other associated field in that credentials entry.
+
+You can remove an entire list entry if anything in that entry is modified by prefacing the entries first nested element
+with an '@' character. Examples: 'addresses.@type.addressType==billing', 'credentials.@type==ssn'; Note this will remove
+the complete type entry that has the value of ssn.
+
+If an element, a map, or a list becomes null or empty as a result of applying the field patterns, that entire element,
+map, or list will be automatically removed. Elements that were already null before the content is filtered will remain
+a null element, as the content filtering algorithm preserves existing null elements.
+
+The BasicContentFilter only affects JSON and XML content. All other content passes through without filtering. The JSON
+and XML can be represented as either native JSON objects (which are implemented as a Map), an XML Node, or their equivalent
+String representations.
+
+###Determining where to apply the filter for requests
+The content filter is always applied to the results of an HTTP GET (list or show request) operation. However, request
+params for HTTP GET /qapi requests are not currently subject to filtering.
+
+HTTP POST operations (create requests) are not filtered. They are allowed to pass through as-is. The rationale is
+that the request is for the creation of an entity for which the creator has all the necessary data. Unlike an HTTP GET
+or HTTP PUT operation, the requestor initiating the create 'owns' all the data at the time of creation. However, once
+the data is created, subsequent HTTP GET operations will return filtered data as 'ownership' was given to the creating
+system once the data is created.
+
+This behavior can be overridden by changing, or extending the BasicContentFilter and setting bypassCreateRequest=false
+to activate filtering of create requests.
+
+If the request content for an HTTP PUT operation (update request) is filtered in any way, the update request will be
+rejected with an HTTP response code of 400 (Bad Request). The error message will state "Cannot access protected field
+in the xxxxxx resource". This rejection is to ensure that fields that are filtered are not inadvertently set to null in
+the updating system, and that entries filtered from a list are not inadvertently removed on an update.
+
+This behavior can be overridden by changing, or extending the BasicContentFilter and setting bypassUpdateRequest=true
+to bypass filtering of update requests.
+
+For both HTTP POST and HTTP PUT operations, you can also override the rejection of filtered content, by
+setting allowPartialRequest=true. This setting is only applicable for the HTTP POST and HTTP PUT operations
+where the bypass settings mentioned above are set to false.
+
+HTTP DELETE operations (delete requests) are not subject to filtering as the only data needed in the request are key fields.
+
+###Identifying when content has been filtered
+When content has been filtered, the following header will be set in the response: X-hedtech-Content-Restricted: partial
+
+Like all other HTTP headers, the X-hedtech-Content-Restricted header name may be customized.
+
+###Description of the BasicContentFilterFields configuration
+The BasicContentFilterFields class is configured using a map defined by the restfulApi.contentFilter.fieldPatternsMap
+property. That property is a map, where the key is the pluralized resource name. The value for the map entry is the
+list of field patterns associated with that resource.
+
+The BasicContentFilterFields class is just an example. It is expected that it will be replaced by a class that can
+determine the authenticated user, and look-up the resource field patterns that have been defined for that user.
+
+###Configuring the Spring application context
+Example of configuring the Spring application context for the supplied 'basic' classes:
+
+    beans = {
+
+        // rest content filter
+        restContentFilter(BasicContentFilter) {
+            restContentFilterFields = { BasicContentFilterFields filterFields ->
+                grailsApplication = ref("grailsApplication")
+            }
+        }
+    
+        . . . . . .
+
+    }
+
+The above example uses the supplied BasicContentFilter for the filtering algorithm, and the
+supplied BasicContentFilterFields to retrieve the field patterns that are input to the filtering
+algorithm. It is expected that the 'basic' classes that are supplied will be extended or replaced as needed. 
 
 ##Logging
 Errors encountered while servicing a request are logged at error level to the log target 'RestfulApiController_messageLog'.  This is so errors occuring from the requests (which will typically be errors caused by invalid input, etc) can be separated from errors in the controller.
