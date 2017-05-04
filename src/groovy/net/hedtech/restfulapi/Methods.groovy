@@ -1,5 +1,5 @@
 /* ***************************************************************************
- * Copyright 2013 Ellucian Company L.P. and its affiliates.
+ * Copyright 2013-2017 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,14 +29,21 @@ class Methods {
 
     private static final allMethods = [LIST,SHOW,CREATE,UPDATE,DELETE]
 
+    static final String HTTP_GET    = 'GET'
+    static final String HTTP_POST   = 'POST'
+    static final String HTTP_PUT    = 'PUT'
+    static final String HTTP_DELETE = 'DELETE'
+
+    private static final allHttpMethods = [HTTP_GET,HTTP_POST,HTTP_PUT,HTTP_DELETE]
+
     private static methodGroups = [:]
 
     private static httpMap = [
-        (Methods.LIST):'GET',
-        (Methods.SHOW):'GET',
-        (Methods.CREATE):'POST',
-        (Methods.UPDATE):'PUT',
-        (Methods.DELETE):'DELETE'
+        (Methods.LIST):HTTP_GET,
+        (Methods.SHOW):HTTP_GET,
+        (Methods.CREATE):HTTP_POST,
+        (Methods.UPDATE):HTTP_PUT,
+        (Methods.DELETE):HTTP_DELETE
     ]
 
     static {
@@ -61,6 +68,10 @@ class Methods {
 
     static def getAllMethods() {
         return allMethods
+    }
+
+    static def getAllHttpMethods() {
+        return allHttpMethods
     }
 
     /**

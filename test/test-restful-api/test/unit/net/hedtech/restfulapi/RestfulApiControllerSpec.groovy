@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * Copyright 2013 Ellucian Company L.P. and its affiliates.
+ * Copyright 2013-2017 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -2107,6 +2107,118 @@ class RestfulApiControllerSpec extends Specification {
         0*mock.count(_) >> {}
         200   == response.status
         '2'   == response.getHeaderValue( 'X-hedtech-totalCount' )
+    }
+
+    def "Test initialization of ResourceDetailList bean"() {
+        setup:
+        defineBeans {
+            resourceDetailList(ResourceDetailList)
+        }
+        ResourceDetailList resourceDetailList = applicationContext.getBean('resourceDetailList')
+        config.restfulApiConfig =
+            {
+                resource 'things' config {
+                    methods = ['list','show','create','update','delete']
+                    unsupportedMediaTypeMethods = ['application/vnd.hedtech.v0+json': ['create','update','delete'],
+                                                   'application/vnd.hedtech.v1+json': ['delete']]
+                    representation {
+                        marshallers {
+                            mediaTypes = ['application/vnd.hedtech.v0+json',
+                                          'application/vnd.hedtech.v1+json',
+                                          'application/vnd.hedtech.v2+json']
+                            jsonBeanMarshaller {}
+                        }
+                        jsonExtractor {}
+                    }
+                }
+            }
+
+        when:
+        controller.init()
+
+        then:
+        null != resourceDetailList
+        null != resourceDetailList.resourceDetails
+        1 == resourceDetailList.resourceDetails.size()
+        def resourceDetail = resourceDetailList.resourceDetails.get(0)
+        'things' == resourceDetail.name
+        ['list','show','create','update','delete'] == resourceDetail.methods
+        ['application/vnd.hedtech.v0+json',
+         'application/vnd.hedtech.v1+json',
+         'application/vnd.hedtech.v2+json'] == resourceDetail.mediaTypes
+        ['application/vnd.hedtech.v0+json': ['create','update','delete'],
+         'application/vnd.hedtech.v1+json': ['delete']] == resourceDetail.unsupportedMediaTypeMethods
+    }
+
+    @Unroll
+    def "Unsupported media type method returns 405"(String controllerMethod, String acceptMediaType, String contentMediaType, boolean shouldFail, boolean bodyDelete, def allowHeader ) {
+        setup:
+        config.restfulApiConfig =
+                {
+                    resource 'things' config {
+                        methods = ['list', 'show', 'create', 'update', 'delete']
+                        unsupportedMediaTypeMethods = ['application/vnd.hedtech.v0+json': ['create', 'update', 'delete'],
+                                                       'application/vnd.hedtech.v1+json': ['list', 'show']]
+                        representation {
+                            mediaTypes = ['application/vnd.hedtech.v0+json',
+                                          'application/vnd.hedtech.v1+json',
+                                          'application/json']
+                            marshallerFramework = 'custom'
+                            jsonExtractor {}
+                        }
+                        bodyExtractedOnDelete = bodyDelete
+                    }
+                }
+        controller.init()
+
+        //mock the appropriate service method, but expect no method calls
+        //(since the request cannot be understood, the service should not be contacted)
+        def marshallerService = Mock(MarshallingService)
+        def mock = Mock(ThingService)
+        mock.list(_) >> {[]}
+        mock.count(_) >> {0}
+        mock.show(_) >> {'string'}
+        mock.create(_,_) >> {'string'}
+        mock.update(_,_) >> {'string'}
+        mock.delete(_,_) >> {}
+        controller.metaClass.getService = {-> mock}
+        controller.metaClass.getMarshallingService = {String name -> marshallerService}
+        mockCacheHeaders()
+
+        params.pluralizedResourceName = 'things'
+        params.id = 1
+
+        when:
+        request.addHeader('Accept', acceptMediaType)
+        request.addHeader('Content-Type', contentMediaType)
+        controller."$controllerMethod"()
+
+        then:
+        (shouldFail ? 405 : (controllerMethod == 'create' ? 201 : 200)) == response.status
+        0 == response.getContentLength()
+        allowHeader.size() == response.headers( 'Allow' ).size()
+        allowHeader as Set == response.headers( 'Allow') as Set
+
+        where:
+        controllerMethod | acceptMediaType                   | contentMediaType                  | shouldFail | bodyDelete | allowHeader
+        'list'           | 'application/json'                | 'application/json'                | false      | false      | []
+        'list'           | 'application/vnd.hedtech.v0+json' | 'application/json'                | false      | false      | []
+        'list'           | 'application/vnd.hedtech.v1+json' | 'application/json'                | true       | false      | ["POST"]
+        'show'           | 'application/json'                | 'application/json'                | false      | false      | []
+        'show'           | 'application/vnd.hedtech.v0+json' | 'application/json'                | false      | false      | []
+        'show'           | 'application/vnd.hedtech.v1+json' | 'application/json'                | true       | false      | ["PUT","DELETE"]
+        'create'         | 'application/json'                | 'application/json'                | false      | false      | []
+        'create'         | 'application/json'                | 'application/vnd.hedtech.v0+json' | true       | false      | ["GET"]
+        'create'         | 'application/json'                | 'application/vnd.hedtech.v1+json' | false      | false      | []
+        'update'         | 'application/json'                | 'application/json'                | false      | false      | []
+        'update'         | 'application/json'                | 'application/vnd.hedtech.v0+json' | true       | false      | ["GET"]
+        'update'         | 'application/json'                | 'application/vnd.hedtech.v1+json' | false      | false      | []
+        'delete'         | 'application/json'                | 'application/json'                | false      | false      | []
+        'delete'         | 'application/json'                | 'application/vnd.hedtech.v0+json' | true       | false      | ["GET"]
+        'delete'         | 'application/json'                | 'application/vnd.hedtech.v1+json' | false      | false      | []
+        'delete'         | 'application/json'                | 'application/json'                | false      | true       | []
+        'delete'         | 'application/json'                | 'application/vnd.hedtech.v0+json' | true       | true       | ["GET"]
+        'delete'         | 'application/json'                | 'application/vnd.hedtech.v1+json' | false      | true       | []
     }
 
 

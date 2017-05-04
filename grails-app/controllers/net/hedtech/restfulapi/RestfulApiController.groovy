@@ -1,5 +1,5 @@
 /* ***************************************************************************
- * Copyright 2013-2016 Ellucian Company L.P. and its affiliates.
+ * Copyright 2013-2017 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -174,8 +174,23 @@ class RestfulApiController {
             restConfig = RestConfig.parse( grailsApplication, grailsApplication.config.restfulApiConfig )
             restConfig.validate()
 
+            // Resource detail list (for reporting and discovery)
+            ResourceDetailList resourceDetailList = getSpringBean('resourceDetailList')
+
             restConfig.resources.values().each() { resource ->
+                ResourceDetail resourceDetail = new ResourceDetail()
+                if (resourceDetailList) {
+                    resourceDetailList.resourceDetails.add(resourceDetail)
+                }
+                resourceDetail.name = resource.name
+                resource.methods.each() { method ->
+                    resourceDetail.methods.add(method)
+                }
+                resource.unsupportedMediaTypeMethods.each() { entry ->
+                    resourceDetail.unsupportedMediaTypeMethods.put(entry.key, entry.value)
+                }
                 resource.representations.values().each() { representation ->
+                    resourceDetail.mediaTypes.add(representation.mediaType)
                     def framework = representation.resolveMarshallerFramework()
                     switch(framework) {
                         case ~/json/:
@@ -263,6 +278,7 @@ class RestfulApiController {
         try {
             checkMethod( Methods.LIST )
             def responseRepresentation = getResponseRepresentation() // adds representation attribute to request
+            checkMediaTypeMethod( responseRepresentation.mediaType, Methods.LIST )
 
             def requestParams = params  // accessible from within withCacheHeaders
             def logger = log            // ditto
@@ -329,6 +345,7 @@ class RestfulApiController {
         try {
             checkMethod( Methods.SHOW )
             def responseRepresentation = getResponseRepresentation()
+            checkMediaTypeMethod( responseRepresentation.mediaType, Methods.SHOW )
 
             def requestParams = params  // accessible from within withCacheHeaders
             def logger = log            // ditto
@@ -418,6 +435,11 @@ class RestfulApiController {
             ResourceConfig config = getResourceConfig()
             if (config.bodyExtractedOnDelete) {
                 content = parseRequestContent( request, params.pluralizedResourceName, Methods.DELETE )
+            } else {
+                def types = mediaTypeParser.parse( request.getHeader(HttpHeaders.CONTENT_TYPE) )
+                types.each { type ->
+                    checkMediaTypeMethod( type.name, Methods.DELETE )
+                }
             }
             checkId(content)
             getServiceAdapter().delete( getService(), content, params )
@@ -720,6 +742,8 @@ class RestfulApiController {
         ResourceConfig resourceConfig = getResourceConfig( resource )
         def representation = getRequestRepresentation( resource )
 
+        checkMediaTypeMethod( representation.mediaType, method )
+
         Extractor extractor = ExtractorConfigurationHolder.getExtractor( resourceConfig.name, representation.mediaType )
         if (!extractor) {
             unsupportedRequestRepresentation()
@@ -888,6 +912,17 @@ class RestfulApiController {
         }
         if (!resource.allowsMethod( method ) ) {
             def allowed = resource.getMethods().intersect( Methods.getMethodGroup( method ) )
+            throw new UnsupportedMethodException( supportedMethods:allowed )
+        }
+    }
+
+    protected void checkMediaTypeMethod( String mediaType, String method ) {
+        def resource = getResourceConfig()
+        if (!resource) {
+            throw new UnsupportedResourceException( params.pluralizedResourceName )
+        }
+        if (!resource.allowsMediaTypeMethod( mediaType, method ) ) {
+            def allowed = resource.getMethods().intersect( Methods.getMethodGroup( method ) ) - resource.getUnsupportedMediaTypeMethods().get(mediaType)
             throw new UnsupportedMethodException( supportedMethods:allowed )
         }
     }

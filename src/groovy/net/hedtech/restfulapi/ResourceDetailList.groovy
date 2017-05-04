@@ -1,5 +1,5 @@
 /* ***************************************************************************
- * Copyright 2013-2017 Ellucian Company L.P. and its affiliates.
+ * Copyright 2017 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,16 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *****************************************************************************/
-package net.hedtech.restfulapi.config
+
+package net.hedtech.restfulapi
 
 /**
- * Exception thrown when a resource references an unknown method.
+ * Resource detail list (for reporting and discovery) - initialized by restfulApiController.
  **/
-class UnknownMethodException extends RuntimeException {
-    String resourceName
-    String methodName
+class ResourceDetailList {
 
-    String getMessage() {
-        "Resource $resourceName references unknown method $methodName"
-    }
+    List<ResourceDetail> resourceDetails = []
+
 }

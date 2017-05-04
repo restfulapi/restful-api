@@ -1,3 +1,7 @@
+#1.3.0
+* Implement support for reporting and discovery of all resources configured for the restful-api
+* Implement capability to restrict HTTP methods based on media type
+
 #1.2.0
 * Add feature that can force marshallers to remove null fields without having to specify it for each marshaller.
 * Add feature that can force marshallers to remove empty collections (only when the marshaller is also configured to remove null fields)

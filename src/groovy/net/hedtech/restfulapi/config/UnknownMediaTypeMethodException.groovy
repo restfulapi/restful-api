@@ -1,5 +1,5 @@
 /* ***************************************************************************
- * Copyright 2013-2017 Ellucian Company L.P. and its affiliates.
+ * Copyright 2017 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,14 @@
 package net.hedtech.restfulapi.config
 
 /**
- * Exception thrown when a resource references an unknown method.
+ * Exception thrown when a resource references an unknown method for a media type.
  **/
-class UnknownMethodException extends RuntimeException {
+class UnknownMediaTypeMethodException extends RuntimeException {
     String resourceName
+    String mediaType
     String methodName
 
     String getMessage() {
-        "Resource $resourceName references unknown method $methodName"
+        "Resource $resourceName references unknown method $methodName for media type $mediaType"
     }
 }

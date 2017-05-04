@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * Copyright 2013 Ellucian Company L.P. and its affiliates.
+ * Copyright 2013-2017 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1196,5 +1196,195 @@ class RestConfigSpec extends Specification {
         then:
         true == config.resources['things'].bodyExtractedOnDelete
         false  == config.resources['foos'].bodyExtractedOnDelete
-    }    
+    }
+
+    def "Test unsupported media type methods"() {
+        setup:
+        def src =
+                {
+                    resource 'things' config {
+                        methods = ['list','show','create','update','delete']
+                        unsupportedMediaTypeMethods = ['application/vnd.hedtech.v0+json': ['create','update','delete'],
+                                                       'application/vnd.hedtech.v1+json': ['delete']]
+                        representation {
+                            mediaTypes = ['application/vnd.hedtech.v0+json',
+                                          'application/vnd.hedtech.v1+json',
+                                          'application/vnd.hedtech.v2+json']
+                            marshallers {
+                                marshaller {
+                                    instance = 'a'
+                                    priority = 5
+                                }
+                                marshaller {
+                                    instance = 'b'
+                                    priority = 6
+                                }
+                            }
+                            extractor = 'net.hedtech.DynamicJsonExtractor'
+                        }
+                    }
+
+                }
+
+        when:
+        def config = RestConfig.parse( grailsApplication, src )
+        config.validate()
+
+        then:
+        ['list','show','create','update','delete'] == config.getResource( 'things' ).getMethods()
+        ['create','update','delete'] == config.getResource( 'things' ).getUnsupportedMediaTypeMethods().get( 'application/vnd.hedtech.v0+json' )
+        ['delete'] == config.getResource( 'things' ).getUnsupportedMediaTypeMethods().get( 'application/vnd.hedtech.v1+json' )
+        null == config.getResource( 'things' ).getUnsupportedMediaTypeMethods().get( 'application/vnd.hedtech.v2+json' )
+    }
+
+    def "Test unsupported media type methods invalid method name"() {
+        setup:
+        def src =
+                {
+                    resource 'things' config {
+                        methods = ['list','show','create','update','delete']
+                        unsupportedMediaTypeMethods = ['application/vnd.hedtech.v0+json': ['create','update','delete'],
+                                                       'application/vnd.hedtech.v1+json': ['foo']]
+                        representation {
+                            mediaTypes = ['application/vnd.hedtech.v0+json',
+                                          'application/vnd.hedtech.v1+json',
+                                          'application/vnd.hedtech.v2+json']
+                            marshallers {
+                                marshaller {
+                                    instance = 'a'
+                                    priority = 5
+                                }
+                                marshaller {
+                                    instance = 'b'
+                                    priority = 6
+                                }
+                            }
+                            extractor = 'net.hedtech.DynamicJsonExtractor'
+                        }
+                    }
+
+                }
+
+        when:
+        def config = RestConfig.parse( grailsApplication, src )
+        config.validate()
+
+        then:
+        def e = thrown(UnknownMediaTypeMethodException)
+        'things' == e.resourceName
+        'application/vnd.hedtech.v1+json' == e.mediaType
+        'foo' == e.methodName
+    }
+
+    def "Test exception when unsupported media type methods on resource is not a map"() {
+        setup:
+        def src =
+                {
+                    resource 'things' config {
+                        methods = ['list','show','create','update','delete']
+                        unsupportedMediaTypeMethods = 'application/vnd.hedtech.v1+json'
+                        representation {
+                            mediaTypes = ['application/vnd.hedtech.v0+json',
+                                          'application/vnd.hedtech.v1+json',
+                                          'application/vnd.hedtech.v2+json']
+                            marshallers {
+                                marshaller {
+                                    instance = 'a'
+                                    priority = 5
+                                }
+                                marshaller {
+                                    instance = 'b'
+                                    priority = 6
+                                }
+                            }
+                            extractor = 'net.hedtech.DynamicJsonExtractor'
+                        }
+                    }
+
+                }
+
+        when:
+        def config = RestConfig.parse( grailsApplication, src )
+        config.validate()
+
+        then:
+        def e = thrown(UnsupportedMediaTypeMethodsNotMapException)
+        'things' == e.resourceName
+    }
+
+    def "Test exception when unsupported media type methods on resource is not a map of collection"() {
+        setup:
+        def src =
+                {
+                    resource 'things' config {
+                        methods = ['list','show','create','update','delete']
+                        unsupportedMediaTypeMethods = ['application/vnd.hedtech.v1+json': 'foo']
+                        representation {
+                            mediaTypes = ['application/vnd.hedtech.v0+json',
+                                          'application/vnd.hedtech.v1+json',
+                                          'application/vnd.hedtech.v2+json']
+                            marshallers {
+                                marshaller {
+                                    instance = 'a'
+                                    priority = 5
+                                }
+                                marshaller {
+                                    instance = 'b'
+                                    priority = 6
+                                }
+                            }
+                            extractor = 'net.hedtech.DynamicJsonExtractor'
+                        }
+                    }
+
+                }
+
+        when:
+        def config = RestConfig.parse( grailsApplication, src )
+        config.validate()
+
+        then:
+        def e = thrown(UnsupportedMediaTypeMethodsMapValueNotCollectionException)
+        'things' == e.resourceName
+        'application/vnd.hedtech.v1+json' == e.mediaType
+    }
+
+    def "Test unsupported media type methods unknown media type"() {
+        setup:
+        def src =
+                {
+                    resource 'things' config {
+                        methods = ['list','show','create','update','delete']
+                        unsupportedMediaTypeMethods = ['application/vnd.hedtech.v0+json': ['create','update','delete'],
+                                                       'application/vnd.hedtech.v0.5+json': ['create','update','delete'],
+                                                       'application/vnd.hedtech.v1+json': ['delete']]
+                        representation {
+                            mediaTypes = ['application/vnd.hedtech.v0+json',
+                                          'application/vnd.hedtech.v1+json',
+                                          'application/vnd.hedtech.v2+json']
+                            marshallers {
+                                marshaller {
+                                    instance = 'a'
+                                    priority = 5
+                                }
+                                marshaller {
+                                    instance = 'b'
+                                    priority = 6
+                                }
+                            }
+                            extractor = 'net.hedtech.DynamicJsonExtractor'
+                        }
+                    }
+
+                }
+
+        when:
+        def config = RestConfig.parse( grailsApplication, src )
+        config.validate()
+
+        then:
+        def e = thrown(UnsupportedMediaTypeMethodsUnknownMediaTypeException)
+        'things' == e.resourceName
+        'application/vnd.hedtech.v0.5+json' == e.mediaType
+    }
 }

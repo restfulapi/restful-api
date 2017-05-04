@@ -1284,6 +1284,29 @@ If a request for an unsupported method is received, the plugin will respond with
 
 Note that if you are using the grails-cors plugin to support CORS functionality, the OPTIONS method will return results that are inconsistent with the methods actually supported.  That is, an OPTIONS request to an api url will always return that all methods are supported, even if the configuration restricts the methods for a given resource.  This may be addressed in a contribution to a future release of the CORS plugin.
 
+###Limiting methods for a resource by media type
+You can further restrict the set of allowed methods by media type. The list and show methods will check the media type specified in the Accept header. The create, update, and delete methods, as well as any qapi calls, will check the media type specified in the Content-Type header.
+
+Given the following example of a configured resource:
+
+        resource 'students' config {
+            methods = ['list','show','create','update','delete']
+            unsupportedMediaTypeMethods = ['application/vnd.hedtech.v0+json': ['create', 'update', 'delete'],
+                                           'application/vnd.hedtech.v1+json': ['delete']]
+            representation {
+                mediaTypes = ['application/vnd.hedtech.v0+json',
+                              'application/vnd.hedtech.v1+json',
+                              'application/json']
+                marshallers {
+                    marshallerGroup 'student'
+                }
+            }
+        }
+
+If a request for an unsupported method for a specific media type is received, the plugin will respond with a 405 status code and an Allow header specifying the HTTP methods the url supports.
+
+The above example will return a 405 for 'create', 'update', 'delete' methods when the media type is 'application/vnd.hedtech.v0+json', and return a 405 for just 'delete' methods when the media type is 'application/vnd.hedtech.v1+json'. All methods are allowed for a media type of 'application/json'.
+
 ##Marshalling and extracting objects
 In order to service a request, the controller needs to be able to process a resource representation contained in the body of request, and marshal an object (or list of objects) returned by a service into the appropriate resource representation.
 
@@ -3371,6 +3394,19 @@ Example of configuring the Spring application context for the supplied 'basic' c
 The above example uses the supplied BasicContentFilter for the filtering algorithm, and the
 supplied BasicContentFilterFields to retrieve the field patterns that are input to the filtering
 algorithm. It is expected that the 'basic' classes that are supplied will be extended or replaced as needed. 
+
+##Reporting and discovery of all configured resources
+The RestfulApiController exposes selected information about all resources that have been configured through an optional ResourceDetailList. Simply configure the Spring application context for the supplied ResourceDetailList class as a bean named resourceDetailList:
+
+    import net.hedtech.restfulapi.ResourceDetailList
+    beans = {
+    
+        . . . . . .
+
+        // Resource detail list (for reporting and discovery) - initialized by restfulApiController
+        resourceDetailList(ResourceDetailList)
+
+    }
 
 ##Logging
 Errors encountered while servicing a request are logged at error level to the log target 'RestfulApiController_messageLog'.  This is so errors occuring from the requests (which will typically be errors caused by invalid input, etc) can be separated from errors in the controller.

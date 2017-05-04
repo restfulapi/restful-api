@@ -1,5 +1,5 @@
 /* ***************************************************************************
- * Copyright 2013 Ellucian Company L.P. and its affiliates.
+ * Copyright 2013-2017 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ class ResourceConfig {
     String serviceName
     String serviceAdapterName
     def methods = [ 'list', 'show', 'create', 'update', 'delete' ]
+    def unsupportedMediaTypeMethods = [:]
     //use a LinkedHashMap because we want to preserve
     //the order in which representations are added
     def representations = new LinkedHashMap()
@@ -53,6 +54,11 @@ class ResourceConfig {
         return this
     }
 
+    ResourceConfig setUnsupportedMediaTypeMethods( def unsupportedMediaTypeMethods ) {
+        this.unsupportedMediaTypeMethods = unsupportedMediaTypeMethods
+        return this
+    }
+
     ResourceConfig setIdMatchEnforced(boolean b) {
         this.idMatchEnforced = b
         return this
@@ -69,6 +75,14 @@ class ResourceConfig {
 
     def getMethods() {
         return this.methods
+    }
+
+    boolean allowsMediaTypeMethod( String mediaType, String method ) {
+        !this.unsupportedMediaTypeMethods.get(mediaType)?.contains( method )
+    }
+
+    def getUnsupportedMediaTypeMethods() {
+        return this.unsupportedMediaTypeMethods
     }
 
     ResourceConfig representation(Closure c) {
@@ -144,6 +158,24 @@ class ResourceConfig {
             methods.each {
                 if (!(Methods.getAllMethods().contains( it ))) {
                     throw new UnknownMethodException( resourceName:name, methodName: it )
+                }
+            }
+        }
+        if (!(unsupportedMediaTypeMethods instanceof Map)) {
+            throw new UnsupportedMediaTypeMethodsNotMapException( resourceName: name )
+        }
+        if (unsupportedMediaTypeMethods != null) {
+            unsupportedMediaTypeMethods.each { itEntry ->
+                if (representations.get(itEntry.key) == null) {
+                    throw new UnsupportedMediaTypeMethodsUnknownMediaTypeException( resourceName: name, mediaType: itEntry.key )
+                }
+                if (!(itEntry.value instanceof Collection)) {
+                    throw new UnsupportedMediaTypeMethodsMapValueNotCollectionException( resourceName: name, mediaType: itEntry.key )
+                }
+                itEntry.value.each {
+                    if (!(Methods.getAllMethods().contains( it ))) {
+                        throw new UnknownMediaTypeMethodException( resourceName:name, mediaType:itEntry.key, methodName: it )
+                    }
                 }
             }
         }

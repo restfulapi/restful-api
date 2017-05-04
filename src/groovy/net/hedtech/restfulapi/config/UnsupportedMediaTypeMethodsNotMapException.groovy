@@ -1,5 +1,5 @@
 /* ***************************************************************************
- * Copyright 2013-2017 Ellucian Company L.P. and its affiliates.
+ * Copyright 2017 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,13 @@
 package net.hedtech.restfulapi.config
 
 /**
- * Exception thrown when a resource references an unknown method.
+ * Exception thrown when the unsupportedMediaTypeMethods defined for
+ * resource is not a map.
  **/
-class UnknownMethodException extends RuntimeException {
+class UnsupportedMediaTypeMethodsNotMapException extends RuntimeException {
     String resourceName
-    String methodName
 
     String getMessage() {
-        "Resource $resourceName references unknown method $methodName"
+        "Resource $resourceName unsupportedMediaTypeMethods does not define a map"
     }
 }
