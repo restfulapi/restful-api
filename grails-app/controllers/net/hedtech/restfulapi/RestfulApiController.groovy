@@ -234,6 +234,11 @@ class RestfulApiController {
                 }
             }
 
+            // sort the resource detail list by resource name
+            if (resourceDetailList) {
+                resourceDetailList.resourceDetails.sort { a, b -> a.name <=> b.name }
+            }
+
             restConfig.exceptionHandlers.each { config ->
                 log.info "registering exception handler class " + config.instance.getClass().getName() + " at priority " + config.priority
                 handlerConfig.add(config.instance, config.priority)
