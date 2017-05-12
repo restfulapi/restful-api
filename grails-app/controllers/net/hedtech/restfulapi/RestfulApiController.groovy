@@ -189,6 +189,9 @@ class RestfulApiController {
                 resource.unsupportedMediaTypeMethods.each() { entry ->
                     resourceDetail.unsupportedMediaTypeMethods.put(entry.key, entry.value)
                 }
+                resource.resourceMetadata.each() { entry ->
+                    resourceDetail.resourceMetadata.put(entry.key, entry.value)
+                }
                 resource.representations.values().each() { representation ->
                     resourceDetail.mediaTypes.add(representation.mediaType)
                     def framework = representation.resolveMarshallerFramework()

@@ -3408,6 +3408,14 @@ The RestfulApiController exposes selected information about all resources that h
 
     }
 
+Metadata can also be defined for any resource to specify information about the resource that is unrelated to the core functioning of the RESTful API. Metadata is defined as a Map. The following is an example:
+
+    restfulApiConfig = {
+        resource 'things' config {
+            resourceMetadata = [title: "My Things", authoritative: true]
+        }
+    }
+
 ##Logging
 Errors encountered while servicing a request are logged at error level to the log target 'RestfulApiController_messageLog'.  This is so errors occuring from the requests (which will typically be errors caused by invalid input, etc) can be separated from errors in the controller.
 

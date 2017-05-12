@@ -1387,4 +1387,76 @@ class RestConfigSpec extends Specification {
         'things' == e.resourceName
         'application/vnd.hedtech.v0.5+json' == e.mediaType
     }
+
+    def "Test resource metadata"() {
+        setup:
+        def src =
+                {
+                    resource 'things' config {
+                        resourceMetadata = [title: "My Things", authoritative: true]
+                        methods = ['list','show','create','update','delete']
+                        representation {
+                            mediaTypes = ['application/vnd.hedtech.v0+json',
+                                          'application/vnd.hedtech.v1+json',
+                                          'application/vnd.hedtech.v2+json']
+                            marshallers {
+                                marshaller {
+                                    instance = 'a'
+                                    priority = 5
+                                }
+                                marshaller {
+                                    instance = 'b'
+                                    priority = 6
+                                }
+                            }
+                            extractor = 'net.hedtech.DynamicJsonExtractor'
+                        }
+                    }
+
+                }
+
+        when:
+        def config = RestConfig.parse( grailsApplication, src )
+        config.validate()
+
+        then:
+        "My Things" == config.getResource( 'things' ).getResourceMetadata().get( 'title' )
+        true == config.getResource( 'things' ).getResourceMetadata().get( 'authoritative' )
+    }
+
+    def "Test exception when resource metadata is not a map"() {
+        setup:
+        def src =
+                {
+                    resource 'things' config {
+                        resourceMetadata = "My Things"
+                        methods = ['list','show','create','update','delete']
+                        representation {
+                            mediaTypes = ['application/vnd.hedtech.v0+json',
+                                          'application/vnd.hedtech.v1+json',
+                                          'application/vnd.hedtech.v2+json']
+                            marshallers {
+                                marshaller {
+                                    instance = 'a'
+                                    priority = 5
+                                }
+                                marshaller {
+                                    instance = 'b'
+                                    priority = 6
+                                }
+                            }
+                            extractor = 'net.hedtech.DynamicJsonExtractor'
+                        }
+                    }
+
+                }
+
+        when:
+        def config = RestConfig.parse( grailsApplication, src )
+        config.validate()
+
+        then:
+        def e = thrown(ResourceMetadataNotMapException)
+        'things' == e.resourceName
+    }
 }

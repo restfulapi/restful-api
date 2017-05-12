@@ -2118,6 +2118,7 @@ class RestfulApiControllerSpec extends Specification {
         config.restfulApiConfig =
             {
                 resource 'things' config {
+                    resourceMetadata = [title: "My Things", authoritative: true]
                     methods = ['list','show','create','update','delete']
                     unsupportedMediaTypeMethods = ['application/vnd.hedtech.v0+json': ['create','update','delete'],
                                                    'application/vnd.hedtech.v1+json': ['delete']]
@@ -2148,6 +2149,7 @@ class RestfulApiControllerSpec extends Specification {
          'application/vnd.hedtech.v2+json'] == resourceDetail.mediaTypes
         ['application/vnd.hedtech.v0+json': ['create','update','delete'],
          'application/vnd.hedtech.v1+json': ['delete']] == resourceDetail.unsupportedMediaTypeMethods
+        [title: "My Things", authoritative: true] == resourceDetail.resourceMetadata
     }
 
     @Unroll

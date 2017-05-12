@@ -25,6 +25,7 @@ class ResourceConfig {
     String serviceAdapterName
     def methods = [ 'list', 'show', 'create', 'update', 'delete' ]
     def unsupportedMediaTypeMethods = [:]
+    def resourceMetadata = [:]
     //use a LinkedHashMap because we want to preserve
     //the order in which representations are added
     def representations = new LinkedHashMap()
@@ -59,6 +60,11 @@ class ResourceConfig {
         return this
     }
 
+    ResourceConfig setResourceMetadata( def resourceMetadata ) {
+        this.resourceMetadata = resourceMetadata
+        return this
+    }
+
     ResourceConfig setIdMatchEnforced(boolean b) {
         this.idMatchEnforced = b
         return this
@@ -83,6 +89,10 @@ class ResourceConfig {
 
     def getUnsupportedMediaTypeMethods() {
         return this.unsupportedMediaTypeMethods
+    }
+
+    def getResourceMetadata() {
+        return this.resourceMetadata
     }
 
     ResourceConfig representation(Closure c) {
@@ -163,6 +173,9 @@ class ResourceConfig {
         }
         if (!(unsupportedMediaTypeMethods instanceof Map)) {
             throw new UnsupportedMediaTypeMethodsNotMapException( resourceName: name )
+        }
+        if (!(resourceMetadata instanceof Map)) {
+            throw new ResourceMetadataNotMapException( resourceName: name )
         }
         if (unsupportedMediaTypeMethods != null) {
             unsupportedMediaTypeMethods.each { itEntry ->

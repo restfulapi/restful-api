@@ -13,18 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *****************************************************************************/
-
-package net.hedtech.restfulapi
+package net.hedtech.restfulapi.config
 
 /**
- * Resource detail (for reporting and discovery) - initialized by restfulApiController.
+ * Exception thrown when the resourceMetadata defined for
+ * resource is not a map.
  **/
-class ResourceDetail {
+class ResourceMetadataNotMapException extends RuntimeException {
+    String resourceName
 
-    String name
-    List<String> methods = []
-    List<String> mediaTypes = []
-    Map unsupportedMediaTypeMethods = [:]
-    Map resourceMetadata = [:]
-
+    String getMessage() {
+        "Resource $resourceName resourceMetadata does not define a map"
+    }
 }

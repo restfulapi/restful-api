@@ -1,5 +1,5 @@
 #1.3.0
-* Implement support for reporting and discovery of all resources configured for the restful-api
+* Implement support for reporting and discovery of all resources configured for the restful-api (with optional metadata)
 * Implement capability to restrict HTTP methods based on media type
 
 #1.2.0
