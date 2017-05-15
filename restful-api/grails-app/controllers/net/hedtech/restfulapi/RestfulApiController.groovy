@@ -18,6 +18,7 @@ package net.hedtech.restfulapi
 
 import grails.converters.JSON
 import grails.converters.XML
+import grails.plugins.cacheheaders.CacheHeadersTrait
 
 import java.security.*
 
@@ -267,9 +268,21 @@ class RestfulApiController {
                 count = delegateToService.count(service, requestParams)
             }
 
+            logger.error("*************************************")
+            logger.error("*************************************")
+            logger.error("*************************************")
+            logger.error("*************************************")
+            logger.error("totalCountHeader $totalCountHeader")
+            logger.error("pageOffsetHeader $pageOffsetHeader")
+            logger.error("pageMaxHeader $pageMaxHeader")
+
             // Need to create etagValue outside of 'etag' block:
             // http://jira.grails.org/browse/GPCACHEHEADERS-14
             String etagValue = etagGenerator.shaFor( result, count, responseRepresentation.mediaType )
+
+            String  tch = totalCountHeader,
+                    poh = pageOffsetHeader,
+                    pmh = pageMaxHeader
 
             withCacheHeaders {
                 etag {
@@ -281,9 +294,9 @@ class RestfulApiController {
                 generate {
                     ResponseHolder holder = new ResponseHolder()
                     holder.data = result
-                    holder.addHeader(totalCountHeader, count)
-                    holder.addHeader(pageOffsetHeader, requestParams.offset ? requestParams?.offset : 0)
-                    holder.addHeader(pageMaxHeader, requestParams.max ? requestParams?.max : result.size())
+                    holder.addHeader(tch, count)
+                    holder.addHeader(poh, requestParams.offset ? requestParams?.offset : 0)
+                    holder.addHeader(pmh, requestParams.max ? requestParams?.max : result.size())
                     renderSuccessResponse( holder, 'default.rest.list.message' )
                 }
             }
@@ -418,7 +431,12 @@ class RestfulApiController {
      protected void renderSuccessResponse(ResponseHolder holder, String msgResourceCode) {
         String localizedName = localize(Inflector.singularize(params.pluralizedResourceName))
         holder.message = message( code: msgResourceCode, args: [ localizedName ] )
-        if (request.request_id) holder.addHeader(requestIdHeader, request.request_id)
+         println("!!!!!!!!!!!!!!!!!!!!!11")
+         println(localizedName)
+         println(holder.message)
+        if (request.request_id) {
+            holder.addHeader(requestIdHeader, request.request_id)
+        }
         renderResponse( holder )
     }
 

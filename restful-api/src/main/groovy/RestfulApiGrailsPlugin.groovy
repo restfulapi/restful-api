@@ -16,14 +16,14 @@
 package grails.plugins.restfulapi
 
 import grails.converters.JSON
-
+import grails.plugins.Plugin
 import net.hedtech.restfulapi.*
 import net.hedtech.restfulapi.marshallers.json.*
 
 import org.grails.web.converters.configuration.ConvertersConfigurationHolder as CCH
 import org.grails.web.converters.configuration.DefaultConverterConfiguration as DCC
 
-class RestfulApiGrailsPlugin {
+class RestfulApiGrailsPlugin extends Plugin {
 
     def grailsVersion = "3.0.7 > *"
     def pluginExcludes = [

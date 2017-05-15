@@ -61,11 +61,12 @@ dependencies {
     provided "org.grails:grails-dependencies"
     provided 'javax.servlet:javax.servlet-api:3.1.0'
 
-    testCompile "org.grails:grails-plugin-testing"
+    compile "org.grails:grails-plugin-testing"
+    compile "org.grails.plugins:geb:1.0.2"
 
     //runtime "org.grails.plugins:cache-headers:2.0.0-SNAPSHOT"
     compile "org.spockframework:spock-core:1.0-groovy-2.4"
-
+    compile "org.grails.plugins:cache-headers:3.0.0-SNAPSHOT"
     console "org.grails:grails-console"
 }
 

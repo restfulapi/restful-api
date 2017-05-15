@@ -16,21 +16,11 @@
 
 package net.hedtech.restfulapi.spock
 
-import geb.spock.*
-
-import java.net.URI
-
-import grails.test.mixin.*
+import geb.spock.GebSpec
 import grails.test.mixin.integration.Integration
-import spock.lang.*
-
-import org.codehaus.groovy.runtime.InvokerHelper
-
 import org.springframework.http.HttpMethod
-import org.springframework.http.ResponseEntity
 import org.springframework.web.client.HttpStatusCodeException
 import org.springframework.web.client.RestTemplate
-
 
 /*
   Attribution:
@@ -39,8 +29,8 @@ import org.springframework.web.client.RestTemplate
   Based on the functional-test plugin by Marc Palmer.
   See <a href="http://grails.org/plugin/functional-test"/>
 */
-@Integration
-abstract class RestSpecification extends GebSpec {
+
+trait RestSpecificationTrait {
 
     def response
 
@@ -100,7 +90,7 @@ abstract class RestSpecification extends GebSpec {
     }
 
 
-    protected doRequestInternal(String url, Closure customizer, HttpMethod method) {
+    def doRequestInternal(String url, Closure customizer, HttpMethod method) {
 
         def requestCustomizer = new RequestCustomizer()
         if (customizer != null) {
@@ -141,15 +131,15 @@ abstract class RestSpecification extends GebSpec {
         }
     }
 
-    protected boolean isDisplay() {
+    def boolean isDisplay() {
         return System.getProperties().getProperty("RestSpecification.display")
     }
 
-    protected PrintStream getDisplayStream() {
+    def PrintStream getDisplayStream() {
         System.out
     }
 
-    protected getUtils() {
+    def getUtils() {
         if (null == utils) {
             utils = new RestSpecUtils(getDisplayStream())
         }

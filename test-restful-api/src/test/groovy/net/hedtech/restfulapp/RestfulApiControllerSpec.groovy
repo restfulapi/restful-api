@@ -41,10 +41,16 @@ import grails.test.runtime.FreshRuntime
 import grails.core.GrailsApplication
 import org.grails.spring.beans.factory.InstanceFactoryBean
 
+import grails.test.mixin.support.GrailsUnitTestMixin
+
+@TestMixin(GrailsUnitTestMixin)
 @FreshRuntime
 @TestFor(RestfulApiController)
 class RestfulApiControllerSpec extends Specification {
-
+    def doWithSpring = {
+//        thingService(ThingService)
+        cacheHeadersService(CacheHeadersService)
+    }
 
     def setup() {
         ExtractorConfigurationHolder.clear()
@@ -55,7 +61,7 @@ class RestfulApiControllerSpec extends Specification {
     }
 
     @Unroll
-    def "Test unsupported media type in Accept header returns 406"(String controllerMethod, String httpMethod, String id, String serviceMethod, def serviceReturn ) {
+    def "Test unsupported media type in Accept header returns 406 for #controllerMethod"(String controllerMethod, String httpMethod, String id, String serviceMethod, def serviceReturn ) {
         setup:
         //use default extractor for any methods with a request body
          config.restfulApiConfig = {
@@ -96,7 +102,7 @@ class RestfulApiControllerSpec extends Specification {
     }
 
     @Unroll
-    def "Test media type without marshaller framework returns 406"(String controllerMethod, String httpMethod, String id, String serviceMethod, def serviceReturn ) {
+    def "Test media type without marshaller framework returns 406 for #controllerMethod"(String controllerMethod, String httpMethod, String id, String serviceMethod, def serviceReturn ) {
         setup:
         //use default extractor for any methods with a request body
          config.restfulApiConfig = {
@@ -210,7 +216,7 @@ class RestfulApiControllerSpec extends Specification {
     }
 
     @Unroll
-    def "Unsupported media type in Content-Type header returns 415"(String controllerMethod, String httpMethod, String id, String serviceMethod, def serviceReturn ) {
+    def "Unsupported media type in Content-Type header returns 415 for #controllerMethod"(String controllerMethod, String httpMethod, String id, String serviceMethod, def serviceReturn ) {
         setup:
          config.restfulApiConfig = {
             resource 'things' config {
@@ -250,7 +256,7 @@ class RestfulApiControllerSpec extends Specification {
     }
 
     @Unroll
-    def "Media type in Content-Type header without extractor returns 415"(String controllerMethod, String httpMethod, String mediaType, String id, def serviceReturn, def body ) {
+    def "Media type in Content-Type header without extractor returns 415 for #controllerMethod"(String controllerMethod, String httpMethod, String mediaType, String id, def serviceReturn, def body ) {
         setup:
         config.restfulApiConfig = {
             resource 'things' config {
@@ -300,7 +306,7 @@ class RestfulApiControllerSpec extends Specification {
     }
 
     @Unroll
-    def "Media type without extractor in Content-Type header for list and show is ignored"(String controllerMethod, String httpMethod, String id, String serviceMethod, def serviceReturn ) {
+    def "Media type without extractor in Content-Type header for #controllerMethod is ignored"(String controllerMethod, String httpMethod, String id, String serviceMethod, def serviceReturn ) {
         setup:
         config.restfulApiConfig = {
             resource 'things' config {
@@ -329,11 +335,11 @@ class RestfulApiControllerSpec extends Specification {
 
         // Since both our show and list methods use a closure from the cache-headers
         // plugin, we need to mock that closure
-        def cacheHeadersService = new CacheHeadersService()
+        def cacheHeadersService = grailsApplication.mainContext.getBean('cacheHeadersService')
         Closure withCacheHeadersClosure = { Closure c ->
-            c.delegate = controller
-            c.resolveStrategy = Closure.DELEGATE_ONLY
-            cacheHeadersService.withCacheHeaders( c.delegate, c )
+            //c.delegate = controller
+            //c.resolveStrategy = Closure.DELEGATE_ONLY
+            cacheHeadersService.withCacheHeaders( controller, c )
         }
         controller.metaClass.withCacheHeaders = withCacheHeadersClosure
 
@@ -352,7 +358,7 @@ class RestfulApiControllerSpec extends Specification {
         'show'           | 'GET'      | '1'  | 'show'        | [foo:'foo']
     }
 
-    def "Test that mismatch between id in url and resource representation returns 400"(def controllerMethod, def httpMethod, def id, def body) {
+    def "Test that mismatch between id in url and resource representation returns 400 for #controllerMethod"(def controllerMethod, def httpMethod, def id, def body) {
         setup:
         //use default extractor for any methods with a request body
          config.restfulApiConfig = {
@@ -392,7 +398,7 @@ class RestfulApiControllerSpec extends Specification {
         'delete'         | 'DELETE'   | '1'  | '{id:"2"}'
     }
 
-    def "Test that mismatch between type for id in url and resource representation does not cause failure"(def controllerMethod, def httpMethod, def id, def body, def serviceMethod) {
+    def "Test that mismatch between type for id in url and resource representation does not cause failure for #controllerMethod"(def controllerMethod, def httpMethod, def id, def body, def serviceMethod) {
         setup:
         //use default extractor for any methods with a request body
          config.restfulApiConfig = {
@@ -436,7 +442,7 @@ class RestfulApiControllerSpec extends Specification {
         'delete'         | 'DELETE'   | '1'  | '{id:"1"}' | 'delete'
     }
 
-    def "Test overriding enforcement of content id matching"(def controllerMethod, def httpMethod, def id, def body, def serviceMethod) {
+    def "Test overriding enforcement of content id matching for #controllerMethod"(def controllerMethod, def httpMethod, def id, def body, def serviceMethod) {
         setup:
         //use default extractor for any methods with a request body
          config.restfulApiConfig = {
@@ -524,7 +530,7 @@ class RestfulApiControllerSpec extends Specification {
     }
 
     @Unroll
-    def "Unsupported method returns 405"(String controllerMethod, def allowedMethods, def allowHeader ) {
+    def "Unsupported method returns 405  for #controllerMethod"(String controllerMethod, def allowedMethods, def allowHeader ) {
         setup:
         config.restfulApiConfig = {
             resource 'things' config {
@@ -786,7 +792,7 @@ class RestfulApiControllerSpec extends Specification {
     }
 
     @Unroll
-    def "Test anyResource support"() {
+    def "Test anyResource support  for #controllerMethod"() {
         setup:
         //use default extractor for any methods with a request body
          config.restfulApiConfig = {
@@ -836,7 +842,7 @@ class RestfulApiControllerSpec extends Specification {
     }
 
     @Unroll
-    def "Test support for 'request ID'"() {
+    def "Test support for 'request ID' for #controllerMethod"() {
         setup:
          if (headerName) config.restfulApi.header.requestId = "$headerName" as String
          config.restfulApiConfig = {
@@ -888,7 +894,7 @@ class RestfulApiControllerSpec extends Specification {
 
 
     @Unroll
-    def "Test delegation to JSONExtractor"() {
+    def "Test delegation to JSONExtractor  for #controllerMethod"() {
         setup:
         def theExtractor = Mock(JSONExtractor)
         //use default extractor for any methods with a request body
@@ -930,7 +936,7 @@ class RestfulApiControllerSpec extends Specification {
     }
 
     @Unroll
-    def "Test delegation to XMLExtractor"() {
+    def "Test delegation to XMLExtractor for #controllerMethod"() {
         setup:
         def theExtractor = Mock(XMLExtractor)
         //use default extractor for any methods with a request body
@@ -973,7 +979,7 @@ class RestfulApiControllerSpec extends Specification {
     }
 
     @Unroll
-    def "Test delegation to RequestExtractor"() {
+    def "Test delegation to RequestExtractor for #controllerMethod"() {
         setup:
         def theExtractor = Mock(RequestExtractor)
         //use default extractor for any methods with a request body
@@ -1015,7 +1021,7 @@ class RestfulApiControllerSpec extends Specification {
     }
 
     @Unroll
-    def "Test custom marshaller that returns string"() {
+    def "Test custom marshaller that returns string for #controllerMethod"() {
         setup:
         def marshallerService = Mock(MarshallingService)
         config.restfulApiConfig = {
@@ -1064,7 +1070,7 @@ class RestfulApiControllerSpec extends Specification {
     }
 
     @Unroll
-    def "Test custom marshaller that returns byte[]"() {
+    def "Test custom marshaller that returns byte[]  for #controllerMethod"() {
         setup:
         def marshallerService = Mock(MarshallingService)
         config.restfulApiConfig = {
@@ -1117,7 +1123,7 @@ class RestfulApiControllerSpec extends Specification {
     }
 
     @Unroll
-    def "Test custom marshaller that returns InputStream"() {
+    def "Test custom marshaller that returns InputStream  for #controllerMethod"() {
         setup:
         def marshallerService = Mock(MarshallingService)
         config.restfulApiConfig = {
@@ -1168,7 +1174,7 @@ class RestfulApiControllerSpec extends Specification {
     }
 
     @Unroll
-    def "Test custom marshaller that returns StreamWrapper"() {
+    def "Test custom marshaller that returns StreamWrapper for #controllerMethod"() {
         setup:
         def marshallerService = Mock(MarshallingService)
         config.restfulApiConfig = {
@@ -1222,7 +1228,7 @@ class RestfulApiControllerSpec extends Specification {
 
 
     @Unroll
-    def "Test using json marshaller framework returns application/json Content-Type header"() {
+    def "Test using json marshaller framework returns application/json Content-Type header for #controllerMethod"() {
         setup:
         config.restfulApiConfig = {
             resource 'things' config {
@@ -1268,7 +1274,7 @@ class RestfulApiControllerSpec extends Specification {
     }
 
     @Unroll
-    def "Test using xml media type returns application/xml Content-Type header"() {
+    def "Test using xml media type returns application/xml Content-Type header for #controllerMethod"() {
         setup:
         config.restfulApiConfig = {
             resource 'things' config {
@@ -1314,7 +1320,7 @@ class RestfulApiControllerSpec extends Specification {
     }
 
     @Unroll
-    def "Test using json media type with custom marshaller returns application/json Content-Type header"() {
+    def "Test using json media type with custom marshaller returns application/json Content-Type header for #controllerMethod"() {
         setup:
         config.restfulApiConfig = {
             resource 'things' config {
@@ -1360,7 +1366,7 @@ class RestfulApiControllerSpec extends Specification {
     }
 
     @Unroll
-    def "Test using xml media type with custom marshaller returns application/xml Content-Type header"() {
+    def "Test using xml media type with custom marshaller returns application/xml Content-Type header for #controllerMethod"() {
         setup:
         config.restfulApiConfig = {
             resource 'things' config {
@@ -1406,7 +1412,7 @@ class RestfulApiControllerSpec extends Specification {
     }
 
     @Unroll
-    def "Test specifying content type for json media overrides convention"() {
+    def "Test specifying content type for json media overrides convention for #controllerMethod"() {
         setup:
         config.restfulApiConfig = {
             resource 'things' config {
@@ -1454,7 +1460,7 @@ class RestfulApiControllerSpec extends Specification {
     }
 
     @Unroll
-    def "Test specifying content type for xml media overrides convention"() {
+    def "Test specifying content type for xml media overrides convention for #controllerMethod"() {
         setup:
         config.restfulApiConfig = {
             resource 'things' config {
@@ -1502,7 +1508,7 @@ class RestfulApiControllerSpec extends Specification {
     }
 
     @Unroll
-    def "Test specifying content type for json media overrides convention for custom marshaller"() {
+    def "Test specifying content type for json media overrides convention for custom marshaller for #controllerMethod"() {
         setup:
         config.restfulApiConfig = {
             resource 'things' config {
@@ -1549,7 +1555,7 @@ class RestfulApiControllerSpec extends Specification {
     }
 
     @Unroll
-    def "Test specifying content type for xml media overrides convention for custom marshaller"() {
+    def "Test specifying content type for xml media overrides convention for custom marshaller for #controllerMethod"() {
         setup:
         config.restfulApiConfig = {
             resource 'things' config {
@@ -1596,7 +1602,7 @@ class RestfulApiControllerSpec extends Specification {
     }
 
     @Unroll
-    def "Test using */* without explicit anyMediaType mapping returns correct Content-Type"() {
+    def "Test using */* without explicit anyMediaType mapping returns correct Content-Type for #controllerMethod"() {
         setup:
         config.restfulApiConfig = {
             resource 'things' config {
@@ -1648,7 +1654,7 @@ class RestfulApiControllerSpec extends Specification {
     }
 
     @Unroll
-    def "Test using */* with explicit anyMediaType mapping returns correct Content-Type"() {
+    def "Test using */* with explicit anyMediaType mapping returns correct Content-Type for #controllerMethod"() {
         setup:
         config.restfulApiConfig = {
             resource 'things' config {
@@ -1701,7 +1707,7 @@ class RestfulApiControllerSpec extends Specification {
     }
 
     @Unroll
-    def "Test non json/xml media types can be used for extraction"() {
+    def "Test non json/xml media types can be used for extraction for #controllerMethod"() {
         setup:
         def theExtractor = Mock(RequestExtractor)
         //use default extractor for any methods with a request body
@@ -1748,7 +1754,7 @@ class RestfulApiControllerSpec extends Specification {
     }
 
     @Unroll
-    def "Test non json/xml media types can be used for marshalling"() {
+    def "Test non json/xml media types can be used for marshalling for #controllerMethod"() {
         setup:
         def theExtractor = Mock(RequestExtractor)
         theExtractor.extract(_) >> { ['foo':'bar']}
@@ -1800,7 +1806,7 @@ class RestfulApiControllerSpec extends Specification {
     }
 
     @Unroll
-    def "Test media type is returned as content-type for non-json/non-xml types"() {
+    def "Test media type is returned as content-type for non-json/non-xml types for #controllerMethod"() {
         setup:
         def theExtractor = Mock(RequestExtractor)
         theExtractor.extract(_) >> { ['foo':'bar']}
@@ -1853,7 +1859,7 @@ class RestfulApiControllerSpec extends Specification {
     }
 
     @Unroll
-    def "Test missing service returns 404"() {
+    def "Test missing service returns 404 for #controllerMethod"() {
         setup:
         //use default extractor for any methods with a request body
          config.restfulApiConfig = {
@@ -1894,7 +1900,7 @@ class RestfulApiControllerSpec extends Specification {
     }
 
     @Unroll
-    def "Test missing service adapter returns 404"() {
+    def "Test missing service adapter returns 404 for #controllerMethod"() {
         setup:
          config.restfulApiConfig = {
             resource 'things' config {
@@ -2121,13 +2127,10 @@ class RestfulApiControllerSpec extends Specification {
 
 
     private void mockCacheHeaders() {
-        def cacheHeadersService = new CacheHeadersService()
-        Closure withCacheHeadersClosure = { Closure c ->
-            c.delegate = controller
-            c.resolveStrategy = Closure.DELEGATE_ONLY
-            cacheHeadersService.withCacheHeaders( c.delegate, c )
+        def cacheHeadersService = grailsApplication.mainContext.getBean('cacheHeadersService')
+        controller.metaClass.withCacheHeaders = { Closure c ->
+            cacheHeadersService.withCacheHeaders( controller, c )
         }
-        controller.metaClass.withCacheHeaders = withCacheHeadersClosure
     }
 
     static class DummyJSONMarshaller implements ObjectMarshaller<JSON> {
