@@ -18,13 +18,6 @@ package net.hedtech.restfulapi
 
 import grails.converters.JSON
 import grails.converters.XML
-import grails.plugins.cacheheaders.CacheHeadersTrait
-
-import java.security.*
-
-import static java.util.UUID.randomUUID
-
-import javax.annotation.PostConstruct
 
 import net.hedtech.restfulapi.marshallers.StreamWrapper
 
@@ -34,28 +27,12 @@ import net.hedtech.restfulapi.exceptionhandlers.*
 
 import net.hedtech.restfulapi.extractors.*
 import net.hedtech.restfulapi.extractors.configuration.*
-
-import org.grails.web.json.JSONArray
-import org.grails.web.json.JSONElement
-import org.grails.web.json.JSONObject
-
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Qualifier
-import org.springframework.beans.factory.InitializingBean
-import org.springframework.dao.OptimisticLockingFailureException
-
-import org.grails.web.converters.configuration.ConvertersConfigurationHolder
-import org.grails.web.converters.configuration.ConverterConfiguration
-import org.grails.web.converters.configuration.DefaultConverterConfiguration
-import org.grails.web.converters.marshaller.ObjectMarshaller
-import org.grails.web.converters.Converter
-import org.grails.web.converters.configuration.ChainedConverterConfiguration
 import org.grails.web.converters.exceptions.ConverterException
 
 import grails.web.http.HttpHeaders
 
-import org.grails.web.util.GrailsApplicationAttributes
 import org.apache.commons.logging.LogFactory
+
 
 /**
  * A Restful API controller.
@@ -100,6 +77,7 @@ class RestfulApiController {
     private HandlerRegistry<Throwable,ExceptionHandler> handlerConfig = new DefaultHandlerRegistry<Throwable,ExceptionHandler>()
     def localizingClosure = { mapToLocalize -> this.message( mapToLocalize ) }
     private Localizer localizer = new Localizer(localizingClosure)
+    def messageSource
 
     // Custom headers (may be configured within Config.groovy)
     String totalCountHeader
@@ -114,17 +92,6 @@ class RestfulApiController {
     String pageOffset
 
     private Class pagedResultListClazz
-
-    // Sets a 'request_id' attribute on the request. If an 'X-Request-ID'
-    // Header exists (or other configured header serving this purpose),
-    // the attribute will be set to that header's value.
-    // Otherwise, a UUID will be generated.
-    // Preferrably the value will be set by middleware, such as a router.
-    // and provided as a Header. Regardless of who sets the value, it will
-    // be included in the response as an 'X-Request-ID' Header.
-    // This is intended to facilitate troubleshooting and to be included
-    // in logging.
-    def beforeInterceptor = [action: this.&setRequestIdAttribute, except: 'init']
 
     // As of Grails 3, the grailsApplication is acquired from Web Traits,
     // which require an active request to be bound to the thread.
@@ -267,14 +234,6 @@ class RestfulApiController {
             } else {
                 count = delegateToService.count(service, requestParams)
             }
-
-            logger.error("*************************************")
-            logger.error("*************************************")
-            logger.error("*************************************")
-            logger.error("*************************************")
-            logger.error("totalCountHeader $totalCountHeader")
-            logger.error("pageOffsetHeader $pageOffsetHeader")
-            logger.error("pageMaxHeader $pageMaxHeader")
 
             // Need to create etagValue outside of 'etag' block:
             // http://jira.grails.org/browse/GPCACHEHEADERS-14
@@ -430,10 +389,7 @@ class RestfulApiController {
      **/
      protected void renderSuccessResponse(ResponseHolder holder, String msgResourceCode) {
         String localizedName = localize(Inflector.singularize(params.pluralizedResourceName))
-        holder.message = message( code: msgResourceCode, args: [ localizedName ] )
-         println("!!!!!!!!!!!!!!!!!!!!!11")
-         println(localizedName)
-         println(holder.message)
+        holder.message = messageSource.getMessage( msgResourceCode, [ localizedName ] as Object[], Locale.US )
         if (request.request_id) {
             holder.addHeader(requestIdHeader, request.request_id)
         }
@@ -852,17 +808,6 @@ class RestfulApiController {
     private String getPagingConfiguration(name, defaultString) {
         def value = grailsApplicationFromInit.config.restfulApi.page."${name}"
         (value instanceof String) ? value : defaultString
-    }
-
-
-    private setRequestIdAttribute() {
-        // we'll set an attribute that may be used for logging
-        if (request.getHeader(requestIdHeader)) {
-            request.request_id = request.getHeader(requestIdHeader)
-        }
-        else {
-            request.request_id = randomUUID()
-        }
     }
 
 

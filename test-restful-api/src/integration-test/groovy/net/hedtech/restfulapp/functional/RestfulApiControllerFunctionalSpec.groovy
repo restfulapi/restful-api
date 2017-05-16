@@ -38,7 +38,7 @@ import spock.lang.*
 @Integration
 class RestfulApiControllerFunctionalSpec extends GebSpec implements RestSpecificationTrait {
 
-    static final String localBase = "http://localhost:8080/test-restful-api"
+    static final String localBase = "http://localhost:8080"
 
     def setup() {
         deleteThings()

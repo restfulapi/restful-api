@@ -16,8 +16,6 @@
 
 package net.hedtech.restfulapi.spock
 
-import geb.spock.GebSpec
-import grails.test.mixin.integration.Integration
 import org.springframework.http.HttpMethod
 import org.springframework.web.client.HttpStatusCodeException
 import org.springframework.web.client.RestTemplate
@@ -41,7 +39,7 @@ trait RestSpecificationTrait {
      * @param url The URL
      * @param url The closure customizer used to customize request attributes
      */
-    def get(url, Closure customizer = null) {
+    def get(url, Closure customizer) {
         doRequestInternal(url,customizer, HttpMethod.GET)
     }
 
@@ -51,7 +49,7 @@ trait RestSpecificationTrait {
      * @param url The URL
      * @param customizer The clouser customizer
      */
-    def put(url, Closure customizer = null) {
+    def put(url, Closure customizer) {
         doRequestInternal(url,customizer, HttpMethod.PUT)
     }
 
@@ -60,7 +58,7 @@ trait RestSpecificationTrait {
      * @param url The URL
      * @param customizer (optional) The closure customizer
      */
-    def post(url, Closure customizer = null) {
+    def post(url, Closure customizer) {
         doRequestInternal(url,customizer, HttpMethod.POST)
     }
 
@@ -69,7 +67,7 @@ trait RestSpecificationTrait {
      * @param url The URL
      * @param customizer (optional) The closure customizer
      */
-    def delete(url, Closure customizer = null) {
+    def delete(url, Closure customizer) {
         doRequestInternal(url,customizer, HttpMethod.DELETE)
     }
 
@@ -110,17 +108,9 @@ trait RestSpecificationTrait {
             if (isDisplay()) {
                 getUtils().dumpRequestInfo(url,method,entity)
             }
-            println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
-            println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
-            println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
-            println(url)
-            println(method)
-            println(entity)
-            println(responseType)
             response = restTemplate.exchange(
                 url, method, entity, responseType
             )
-            println(response)
             response = new RestResponse( responseEntity:response )
         }
         catch (HttpStatusCodeException e) {
