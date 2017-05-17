@@ -18,20 +18,19 @@ package net.hedtech.restfulapi
 
 import grails.converters.JSON
 import grails.converters.XML
+import grails.web.http.HttpHeaders
+import org.grails.web.converters.exceptions.ConverterException
 
 import net.hedtech.restfulapi.marshallers.StreamWrapper
-
 import net.hedtech.restfulapi.config.*
-
 import net.hedtech.restfulapi.exceptionhandlers.*
 
 import net.hedtech.restfulapi.extractors.*
 import net.hedtech.restfulapi.extractors.configuration.*
-import org.grails.web.converters.exceptions.ConverterException
-
-import grails.web.http.HttpHeaders
 
 import org.apache.commons.logging.LogFactory
+
+import java.lang.reflect.UndeclaredThrowableException
 
 
 /**
@@ -267,7 +266,6 @@ class RestfulApiController {
         catch (e) {
             logMessageError(e)
             renderErrorResponse(e)
-            return
         }
     }
 
@@ -406,6 +404,10 @@ class RestfulApiController {
      * @param e the exception to render an error response for
      **/
     protected void renderErrorResponse( Throwable e ) {
+
+        // unwraps undeclared exception for rendering error message
+        if (e instanceof UndeclaredThrowableException) e = e.getUndeclaredThrowable()
+
         ResponseHolder responseHolder = createErrorResponse(e)
         if (request.request_id) responseHolder.addHeader(requestIdHeader, request.request_id)
         //The versioning applies to resource representations, not to

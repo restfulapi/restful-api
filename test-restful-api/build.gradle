@@ -94,11 +94,11 @@ tasks.withType(Test) {
 
         // default logging
         events "passed", "failed", "skipped"
-        displayGranularity 2
+        displayGranularity 3
 
         // verbose logging "-i"
         info {
-            events "failed", "standardOut", "standardError"
+            events "passed", "failed", "skipped", "standardOut", "standardError"
             displayGranularity = 2
         }
     }
