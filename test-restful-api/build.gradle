@@ -87,3 +87,19 @@ dependencies {
 task wrapper(type: Wrapper) {
     gradleVersion = gradleWrapperVersion
 }
+
+// gradle test or gradle integrationTest
+tasks.withType(Test) {
+    testLogging {
+
+        // default logging
+        events "passed", "failed", "skipped"
+        displayGranularity 2
+
+        // verbose logging "-i"
+        info {
+            events "failed", "standardOut", "standardError"
+            displayGranularity = 2
+        }
+    }
+}

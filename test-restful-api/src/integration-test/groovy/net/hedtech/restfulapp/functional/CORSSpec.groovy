@@ -36,7 +36,7 @@ import spock.lang.*
 @Integration
 class CORSSpec extends GebSpec implements RestSpecificationTrait {
 
-    static final String localBase = "http://localhost:8080/test-restful-api"
+    static final String localBase = "http://localhost:8080"
 
     def setup() {
         deleteThings()
@@ -47,7 +47,7 @@ class CORSSpec extends GebSpec implements RestSpecificationTrait {
     }
 
     @Unroll
-    def "Test CORS headers on all operations"(def method, boolean id, def status, def data) {
+    def "Test CORS headers on #method with id: #id"(def method, boolean id, def status, def data) {
         setup:
         def aaID = createThing('AA')
         createThing('BB')

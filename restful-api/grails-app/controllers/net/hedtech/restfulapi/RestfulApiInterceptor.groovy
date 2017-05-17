@@ -2,15 +2,12 @@ package net.hedtech.restfulapi
 
 import grails.artefact.Interceptor
 
-import static java.util.UUID.randomUUID
-
-
 class RestfulApiInterceptor implements Interceptor {
 
-    def requestIdHeader = "X-Request-ID"
+    def headerNameService
 
     RestfulApiInterceptor() {
-        //matchAll().excludes(controller:"restfulApi", action:"init")
+       match(controller: "restfulApi", action: "*").except(action:"init")
     }
 
     /**
@@ -19,14 +16,17 @@ class RestfulApiInterceptor implements Interceptor {
      * @return Whether the action should continue and execute
      */
     boolean before() {
-        // we'll set an attribute that may be used for logging
-        if (request.getHeader(requestIdHeader)) {
-            request.request_id = request.getHeader(requestIdHeader)
-        }
-        else {
-            request.request_id = randomUUID()
-        }
-        request.request_id
+
+        // COR headers
+        header( "Access-Control-Allow-Origin", "http://localhost:8080" )
+        header( "Access-Control-Allow-Credentials", "true" )
+        header( "Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE" )
+        header( "Access-Control-Max-Age", "3600" )
+        header( 'Access-Control-Expose-Headers', true )
+
+        // request id setup
+        String requestIdHeader = headerNameService.getHeaderName('requestId', 'X-Request-ID')
+        headerNameService.setRequestIdAttribute(request, requestIdHeader)
     }
 
     /**

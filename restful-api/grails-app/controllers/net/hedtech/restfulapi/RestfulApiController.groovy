@@ -79,6 +79,8 @@ class RestfulApiController {
     private Localizer localizer = new Localizer(localizingClosure)
     def messageSource
 
+    def headerNameService
+
     // Custom headers (may be configured within Config.groovy)
     String totalCountHeader
     String pageMaxHeader
@@ -115,12 +117,14 @@ class RestfulApiController {
 
         log.trace 'Initializing RestfulApiController...'
 
-        totalCountHeader = getHeaderName('totalCount', 'X-hedtech-totalCount')
-        pageMaxHeader    = getHeaderName('pageMaxSize', 'X-hedtech-pageMaxSize')
-        pageOffsetHeader = getHeaderName('pageOffset', 'X-hedtech-pageOffset')
-        messageHeader    = getHeaderName('message', 'X-hedtech-message')
-        mediaTypeHeader  = getHeaderName('mediaType', 'X-hedtech-Media-Type')
-        requestIdHeader  = getHeaderName('requestId', 'X-Request-ID')
+        headerNameService.setupHeaderNameService(grailsApplication)
+
+        totalCountHeader = headerNameService.getHeaderName('totalCount', 'X-hedtech-totalCount')
+        pageMaxHeader    = headerNameService.getHeaderName('pageMaxSize', 'X-hedtech-pageMaxSize')
+        pageOffsetHeader = headerNameService.getHeaderName('pageOffset', 'X-hedtech-pageOffset')
+        messageHeader    = headerNameService.getHeaderName('message', 'X-hedtech-message')
+        mediaTypeHeader  = headerNameService.getHeaderName('mediaType', 'X-hedtech-Media-Type')
+        requestIdHeader  = headerNameService.getHeaderName('requestId', 'X-Request-ID')
 
         pageMax    = getPagingConfiguration('max', 'max')
         pageOffset = getPagingConfiguration('offset', 'offset')
@@ -475,7 +479,8 @@ class RestfulApiController {
             log.error( "Caught exception attemping to prepare an error response: ${t.message}", t )
             responseHolder.data = null
 
-            responseHolder.message = message( code: 'default.rest.unexpected.exception.messages' )
+            responseHolder.message = messageSource.getMessage( 'default.rest.unexpected.exception.messages', [] as Object[], Locale.US )
+
             this.response.setStatus( 500 )
         }
         return responseHolder
@@ -799,12 +804,6 @@ class RestfulApiController {
     }
 
 
-    private String getHeaderName(name, defaultString) {
-        def value = grailsApplicationFromInit.config.restfulApi.header."${name}"
-        (value instanceof String) ? value : defaultString
-    }
-
-
     private String getPagingConfiguration(name, defaultString) {
         def value = grailsApplicationFromInit.config.restfulApi.page."${name}"
         (value instanceof String) ? value : defaultString
@@ -820,7 +819,7 @@ class RestfulApiController {
 
 
     private String localize(String name) {
-        message( code: "${name}.label", default: "$name" )
+        messageSource.getMessage( "${name}.label", [] as Object[], "$name", Locale.US )
     }
 
 

@@ -34,7 +34,7 @@ import org.grails.web.converters.exceptions.ConverterException
 import org.grails.web.converters.marshaller.ObjectMarshaller
 import org.grails.web.json.JSONObject
 import grails.plugins.cacheheaders.*
-
+import org.springframework.context.support.StaticMessageSource
 import spock.lang.*
 
 import grails.test.runtime.FreshRuntime
@@ -47,13 +47,21 @@ import grails.test.mixin.support.GrailsUnitTestMixin
 @FreshRuntime
 @TestFor(RestfulApiController)
 class RestfulApiControllerSpec extends Specification {
+
+    @Shared
+    def messageSource = new StaticMessageSource()
+
     def doWithSpring = {
-//        thingService(ThingService)
         cacheHeadersService(CacheHeadersService)
+        headerNameService(HeaderNameService)
     }
 
     def setup() {
         ExtractorConfigurationHolder.clear()
+        Locale locale1 = new Locale("es_US")
+        messageSource.useCodeAsDefaultMessage = true
+        messageSource.addMessage "default.rest.list.message", locale1, "Aprobado"
+        controller.messageSource = messageSource
     }
 
     def cleanup() {
@@ -856,6 +864,9 @@ class RestfulApiControllerSpec extends Specification {
                 }
             }
         }
+
+        def mockHeaderNameService = new HeaderNameService()
+        controller.headerNameService = mockHeaderNameService
         controller.init(grailsApplication)
 
         //mock the appropriate service method, expect exactly 1 invocation
@@ -871,7 +882,7 @@ class RestfulApiControllerSpec extends Specification {
         if (id != null) params.id = id
 
         when:
-        controller.setRequestIdAttribute()
+        mockHeaderNameService.setRequestIdAttribute(request, headerName)
         controller."$controllerMethod"()
         def headerNameUsed = headerName ?: "X-Request-ID"
 
