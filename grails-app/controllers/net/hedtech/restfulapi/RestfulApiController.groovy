@@ -116,6 +116,10 @@ class RestfulApiController {
     // Map of deprecated response headers (optionally configured within Config.groovy)
     Map deprecatedHeaderMap
 
+    // Content extensions (optionally configured within resources.groovy)
+    //  - restContentExtensions is configured as a spring bean resource in resources.groovy
+    ContentExtensions restContentExtensions
+
     // Content filter configuration (optionally configured within resources.groovy)
     //  - restContentFilter is configured as a spring bean resource in resources.groovy
     ContentFilter restContentFilter
@@ -671,6 +675,15 @@ class RestfulApiController {
 
         if (content != null) {
 
+            // optional: perform content extension post representation
+            if (restContentExtensions && isExtensibleContent(content, contentType)) {
+                log.trace("Extending content for resource=$params.pluralizedResourceName with contentType=$contentType")
+                def result = restContentExtensions.applyExtensions(params.pluralizedResourceName, request, params, content)
+                if (result.wasExtended) {
+                    content = result.content
+                }
+            }
+
             // optional: perform filtering of response content
             if (restContentFilter && isFilterableContent(content, contentType)) {
                 log.trace("Filtering content for resource=$params.pluralizedResourceName with contentType=$contentType")
@@ -707,6 +720,12 @@ class RestfulApiController {
         } else {
             render(text:"", contentType:'text/plain')
         }
+    }
+
+
+    protected boolean isExtensibleContent( def content, def contentType ) {
+        return (content && content instanceof String &&
+                (contentType == "application/json"))
     }
 
 
