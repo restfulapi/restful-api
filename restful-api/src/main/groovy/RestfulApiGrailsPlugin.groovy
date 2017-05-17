@@ -15,13 +15,7 @@
  *****************************************************************************/
 package grails.plugins.restfulapi
 
-import grails.converters.JSON
 import grails.plugins.Plugin
-import net.hedtech.restfulapi.*
-import net.hedtech.restfulapi.marshallers.json.*
-
-import org.grails.web.converters.configuration.ConvertersConfigurationHolder as CCH
-import org.grails.web.converters.configuration.DefaultConverterConfiguration as DCC
 
 class RestfulApiGrailsPlugin extends Plugin {
 
@@ -57,12 +51,17 @@ class RestfulApiGrailsPlugin extends Plugin {
 
 // ----------------------------------------------------------------------------
 
-    def doWithApplicationContext = { applicationContext ->
-        // Initialize the Restful API controller (so it will register JSON and XML marshallers)
-        def artefact = application.getArtefactByLogicalPropertyName("Controller", "restfulApi")
+    void doWithApplicationContext() {
+        def applicationContext = getApplicationContext()
+        def artefact = applicationContext.grailsApplication.getArtefactByLogicalPropertyName("Controller", "restfulApi")
         def restfulApiController = applicationContext.getBean(artefact.clazz.name)
         def grailsApplication = applicationContext.getBean('grailsApplication')
-        restfulApiController.init(applicationContext.grailsApplication)
+        restfulApiController.init(grailsApplication)
     }
+
+    void onStartup(Map<String, Object> event) {
+        doWithApplicationContext()
+    }
+
 }
 
