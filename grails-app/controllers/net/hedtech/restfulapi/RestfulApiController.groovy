@@ -120,6 +120,9 @@ class RestfulApiController {
     //  - restContentExtensions is configured as a spring bean resource in resources.groovy
     ContentExtensions restContentExtensions
 
+    // Support for alterative headers for representation resolution
+    RepresentationResolver representationResolver
+
     // Content filter configuration (optionally configured within resources.groovy)
     //  - restContentFilter is configured as a spring bean resource in resources.groovy
     ContentFilter restContentFilter
@@ -657,7 +660,21 @@ class RestfulApiController {
         }
 
         if (content != null) {
-            responseHolder.addHeader( mediaTypeHeader, representation.mediaType )
+            // optional: perform content extension post representation
+            if (restContentExtensions && isExtensibleContent(content, contentType)) {
+                log.trace("Extending content for resource=$params.pluralizedResourceName with contentType=$contentType")
+                def result = restContentExtensions.applyExtensions(params.pluralizedResourceName, request, params, content)
+                if (result.wasExtended) {
+                    content = result.content
+
+                    String responseRepresentationHeaderName = representationResolver.getResponseHeaderName(params.pluralizedResourceName,request)
+                    responseHolder.addHeader( responseRepresentationHeaderName,result.catalogId)
+                }else{
+                    responseHolder.addHeader( mediaTypeHeader, representation.mediaType )
+                }
+            }else{
+                responseHolder.addHeader( mediaTypeHeader, representation.mediaType )
+            }
         }
 
         if (responseHolder.message) {
@@ -675,14 +692,7 @@ class RestfulApiController {
 
         if (content != null) {
 
-            // optional: perform content extension post representation
-            if (restContentExtensions && isExtensibleContent(content, contentType)) {
-                log.trace("Extending content for resource=$params.pluralizedResourceName with contentType=$contentType")
-                def result = restContentExtensions.applyExtensions(params.pluralizedResourceName, request, params, content)
-                if (result.wasExtended) {
-                    content = result.content
-                }
-            }
+
 
             // optional: perform filtering of response content
             if (restContentFilter && isFilterableContent(content, contentType)) {
@@ -1086,7 +1096,13 @@ class RestfulApiController {
     private RepresentationConfig getResponseRepresentation() {
         def representation = request.getAttribute( RESPONSE_REPRESENTATION )
         if (representation == null) {
-            def acceptedTypes = mediaTypeParser.parse( request.getHeader(HttpHeaders.ACCEPT) )
+            def responseMediaType
+            if (representationResolver){
+                responseMediaType = representationResolver.getResponseRepresentationMediaType(params.pluralizedResourceName,request)
+            }else {
+                responseMediaType = request.getHeader(HttpHeaders.ACCEPT)
+            }
+            def acceptedTypes = mediaTypeParser.parse(responseMediaType)
             representation = getRepresentation( params.pluralizedResourceName, acceptedTypes )
             if (representation == null || representation.resolveMarshallerFramework() == null) {
                 //if no representation, or the representation does not have a marshaller framework,
@@ -1100,7 +1116,13 @@ class RestfulApiController {
 
 
     private RepresentationConfig getRequestRepresentation( String resource = params.pluralizedResourceName ) {
-        def types = mediaTypeParser.parse( request.getHeader(HttpHeaders.CONTENT_TYPE) )
+        def requestMediaType
+        if (representationResolver){
+            requestMediaType = representationResolver.getRequestRepresentationMediaType(params.pluralizedResourceName,request)
+        }else{
+            requestMediaType = request.getHeader(HttpHeaders.CONTENT_TYPE)
+        }
+        def types = mediaTypeParser.parse(requestMediaType)
         def type = types.size() > 0 ? [types[0]] : []
         def representation = getRepresentation( resource, type )
         if (representation == null) {

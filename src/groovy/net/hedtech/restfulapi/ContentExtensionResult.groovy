@@ -27,5 +27,6 @@ class ContentExtensionResult {
 
     def content
     boolean wasExtended = false
+    String catalogId
 
 }
