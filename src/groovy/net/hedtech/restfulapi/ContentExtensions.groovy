@@ -18,14 +18,14 @@ package net.hedtech.restfulapi
 
 
 /**
- * An interface for extending request and response content.
+ * An interface for supporting post processing content extensions in the request and response content.
  * Please see README.md for a full explanation.
  **/
 interface ContentExtensions {
 
 
     /**
-     * Apply extension to content.
+     * Apply extensions to content.
      **/
     def ContentExtensionResult applyExtensions(String resourceName, def request, Map requestParams, def content) throws Throwable
 

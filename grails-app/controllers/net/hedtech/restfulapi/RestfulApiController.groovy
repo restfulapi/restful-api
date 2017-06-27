@@ -664,11 +664,12 @@ class RestfulApiController {
             if (restContentExtensions && isExtensibleContent(content, contentType)) {
                 log.trace("Extending content for resource=$params.pluralizedResourceName with contentType=$contentType")
                 def result = restContentExtensions.applyExtensions(params.pluralizedResourceName, request, params, content)
-                if (result.wasExtended) {
+                if (result.extensionsApplied) {
                     content = result.content
-
-                    String responseRepresentationHeaderName = representationResolver.getResponseHeaderName(params.pluralizedResourceName,request)
-                    responseHolder.addHeader( responseRepresentationHeaderName,result.catalogId)
+                    //If a response header was given, add it to the holder list
+                    if (result.extensionResponseHeaderName){
+                        responseHolder.addHeader( result.extensionResponseHeaderName,result.extensionResponseHeaderValue)
+                    }
                 }else{
                     responseHolder.addHeader( mediaTypeHeader, representation.mediaType )
                 }
@@ -691,9 +692,6 @@ class RestfulApiController {
         }
 
         if (content != null) {
-
-
-
             // optional: perform filtering of response content
             if (restContentFilter && isFilterableContent(content, contentType)) {
                 log.trace("Filtering content for resource=$params.pluralizedResourceName with contentType=$contentType")

@@ -24,9 +24,16 @@ package net.hedtech.restfulapi
  **/
 class ContentExtensionResult {
 
-
+    //The new extended content
     def content
-    boolean wasExtended = false
-    String catalogId
+
+    //Flag to summarize if the process resulted in content that was successfully extended
+    boolean extensionsApplied = false
+
+    //The name of a custom response header to add to reflect a possible new extended version of the representation
+    String extensionResponseHeaderName
+
+    //The value of the response header described above
+    String extensionResponseHeaderValue
 
 }
