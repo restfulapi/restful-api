@@ -16,21 +16,9 @@
 
 package net.hedtech.restfulapi.spock
 
-import geb.spock.*
-
-import java.net.URI
-
-import grails.test.mixin.*
-import grails.test.mixin.integration.Integration
-import spock.lang.*
-
-import org.codehaus.groovy.runtime.InvokerHelper
-
 import org.springframework.http.HttpMethod
-import org.springframework.http.ResponseEntity
 import org.springframework.web.client.HttpStatusCodeException
 import org.springframework.web.client.RestTemplate
-
 
 /*
   Attribution:
@@ -39,8 +27,8 @@ import org.springframework.web.client.RestTemplate
   Based on the functional-test plugin by Marc Palmer.
   See <a href="http://grails.org/plugin/functional-test"/>
 */
-@Integration
-abstract class RestSpecification extends GebSpec {
+
+trait RestSpecificationTrait {
 
     def response
 
@@ -51,7 +39,7 @@ abstract class RestSpecification extends GebSpec {
      * @param url The URL
      * @param url The closure customizer used to customize request attributes
      */
-    def get(url, Closure customizer = null) {
+    def get(url, Closure customizer) {
         doRequestInternal(url,customizer, HttpMethod.GET)
     }
 
@@ -61,7 +49,7 @@ abstract class RestSpecification extends GebSpec {
      * @param url The URL
      * @param customizer The clouser customizer
      */
-    def put(url, Closure customizer = null) {
+    def put(url, Closure customizer) {
         doRequestInternal(url,customizer, HttpMethod.PUT)
     }
 
@@ -70,7 +58,7 @@ abstract class RestSpecification extends GebSpec {
      * @param url The URL
      * @param customizer (optional) The closure customizer
      */
-    def post(url, Closure customizer = null) {
+    def post(url, Closure customizer) {
         doRequestInternal(url,customizer, HttpMethod.POST)
     }
 
@@ -79,7 +67,7 @@ abstract class RestSpecification extends GebSpec {
      * @param url The URL
      * @param customizer (optional) The closure customizer
      */
-    def delete(url, Closure customizer = null) {
+    def delete(url, Closure customizer) {
         doRequestInternal(url,customizer, HttpMethod.DELETE)
     }
 
@@ -100,7 +88,7 @@ abstract class RestSpecification extends GebSpec {
     }
 
 
-    protected doRequestInternal(String url, Closure customizer, HttpMethod method) {
+    def doRequestInternal(String url, Closure customizer, HttpMethod method) {
 
         def requestCustomizer = new RequestCustomizer()
         if (customizer != null) {
@@ -120,17 +108,9 @@ abstract class RestSpecification extends GebSpec {
             if (isDisplay()) {
                 getUtils().dumpRequestInfo(url,method,entity)
             }
-            println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
-            println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
-            println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
-            println(url)
-            println(method)
-            println(entity)
-            println(responseType)
             response = restTemplate.exchange(
                 url, method, entity, responseType
             )
-            println(response)
             response = new RestResponse( responseEntity:response )
         }
         catch (HttpStatusCodeException e) {
@@ -141,15 +121,15 @@ abstract class RestSpecification extends GebSpec {
         }
     }
 
-    protected boolean isDisplay() {
+    def boolean isDisplay() {
         return System.getProperties().getProperty("RestSpecification.display")
     }
 
-    protected PrintStream getDisplayStream() {
+    def PrintStream getDisplayStream() {
         System.out
     }
 
-    protected getUtils() {
+    def getUtils() {
         if (null == utils) {
             utils = new RestSpecUtils(getDisplayStream())
         }

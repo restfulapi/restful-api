@@ -14,18 +14,24 @@
  * limitations under the License.
  *****************************************************************************/
 
-package net.hedtech.restfulapp
+package net.hedtech.restfulapp.functional
 
+import geb.spock.GebSpec
+import grails.test.mixin.Mock
+import grails.test.mixin.integration.Integration
 import net.hedtech.restfulapi.spock.*
 
 import grails.converters.JSON
+import net.hedtech.restfulapp.ComplexThing
+import net.hedtech.restfulapp.Thing
+import net.hedtech.restfulapp.PartOfThing
 
 import static org.junit.Assert.*
 import org.junit.*
 
-
-class ComplexThingResourceFunctionalSpec extends RestSpecification {
-    static final String localBase = "http://127.0.0.1:8080/test-restful-api"
+@Integration
+class ComplexThingResourceFunctionalSpec extends GebSpec implements RestSpecificationTrait {
+    static final String localBase = "http://localhost:8080"
 
     def setup() {
         deleteComplexThings()

@@ -69,12 +69,11 @@ dependencies {
     runtime "org.grails.plugins:asset-pipeline"
 
     testCompile "org.grails:grails-plugin-testing"
-    testCompile "org.grails.plugins:geb"
+    testCompile "org.grails.plugins:geb:1.0.2"
 
 
     //compile files('https://bintray.com/dodysw/plugins/download_file?file_path=org%2Fgrails%2Fplugins%2Fcache-headers%2F1.1.9%2Fcache-headers-1.1.9-sources.jar')
-    //runtime project(":cache-headers")
-    compile "org.grails.plugins:cache-headers:1.1.9"
+    compile "org.grails.plugins:cache-headers:2.0.2"
     compile project(':restful-api')
 
     // Note: It is recommended to update to a more robust driver (Chrome, Firefox etc.)
@@ -85,4 +84,20 @@ dependencies {
 
 task wrapper(type: Wrapper) {
     gradleVersion = gradleWrapperVersion
+}
+
+// gradle test or gradle integrationTest
+tasks.withType(Test) {
+    testLogging {
+
+        // default logging
+        events "passed", "failed", "skipped"
+        displayGranularity 3
+
+        // verbose logging "-i"
+        info {
+            events "passed", "failed", "skipped", "standardOut", "standardError"
+            displayGranularity = 2
+        }
+    }
 }

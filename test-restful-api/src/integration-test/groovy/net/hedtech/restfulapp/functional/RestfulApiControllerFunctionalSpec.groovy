@@ -14,13 +14,19 @@
  * limitations under the License.
  *****************************************************************************/
 
-package net.hedtech.restfulapp
+package net.hedtech.restfulapp.functional
 
+import geb.spock.GebSpec
 import grails.test.mixin.*
 import grails.plugins.rest.client.*
 
 import grails.converters.JSON
 import grails.converters.XML
+import grails.test.mixin.integration.Integration
+import net.hedtech.restfulapp.PartOfThing
+import net.hedtech.restfulapp.Thing
+import net.hedtech.restfulapp.Parent
+import net.hedtech.restfulapp.Child
 
 import java.util.zip.*
 
@@ -29,10 +35,10 @@ import net.hedtech.restfulapi.spock.*
 
 import spock.lang.*
 
+@Integration
+class RestfulApiControllerFunctionalSpec extends GebSpec implements RestSpecificationTrait {
 
-class RestfulApiControllerFunctionalSpec extends RestSpecification {
-
-    static final String localBase = "http://127.0.0.1:8080/test-restful-api"
+    static final String localBase = "http://localhost:8080"
 
     def setup() {
         deleteThings()
@@ -762,7 +768,10 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
     def "Test show with model-created etag that matches results in 304"() {
         setup:
         def thingId = createThing('AA')
-        def id = Thing.get( thingId ).parts.toArray()[0].id
+        def id
+        Thing.withNewSession {
+            id = Thing.get(thingId).parts.toArray()[0].id
+        }
         get( "$localBase/api/part-of-things/$id" ) {
             headers['Content-Type']   = 'application/json'
             headers['Accept']         = 'application/json'
@@ -2028,10 +2037,13 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
 
     def "Test proxy unwrapping for json marshallers"() {
         setup:
-        Parent parent = new Parent(name:'foo')
-        parent.children = []
-        parent.children.add(new Child(name:'bar'))
-        parent.save(failOnError:true, flush:true)
+        Parent parent
+        Parent.withNewSession {
+            parent = new Parent(name: 'foo')
+            parent.children = []
+            parent.children.add(new Child(name: 'bar'))
+            parent.save(failOnError: true, flush: true)
+        }
         def id = parent.getId()
 
         when:
@@ -2047,10 +2059,13 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
 
     def "Test proxy unwrapping for xml marshallers"() {
         setup:
-        Parent parent = new Parent(name:'foo')
-        parent.children = []
-        parent.children.add(new Child(name:'bar'))
-        parent.save(failOnError:true, flush:true)
+        Parent parent
+        Parent.withNewSession {
+            parent = new Parent(name: 'foo')
+            parent.children = []
+            parent.children.add(new Child(name: 'bar'))
+            parent.save(failOnError: true, flush: true)
+        }
         def id = parent.getId()
 
         when:
