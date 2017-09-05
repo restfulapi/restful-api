@@ -48,7 +48,7 @@ The restful-api plugin is designed to facilitate exposing RESTful API endpoints 
 This plugin should be installed from the official Grails Central Plugin Repository ([http://grails.org/plugins/restful-api](http://grails.org/plugins/restful-api)) by setting the following dependency:
 
 ```
-    compile ":restful-api:1.1.0"
+    compile ":restful-api:1.4.0"
 ```
 
 _Note: It may sometimes be useful to install this plugin as a Git submodule instead (e.g., if you are actively contributing to the plugin). To add the plugin as a Git submodule under a 'plugins' directory:_
@@ -68,7 +68,7 @@ _Then add the in-place plugin definition to BuildConfig.groovy:_
 _Adding the plugin this way will use the latest commit on the master branch at the time you ran the submodule command.  If you want to use an official release instead, go to the plugin directory and checkout a specific version, e.g.:_
 
     cd plugins/restful-api.git
-    git checkout 1.1.0
+    git checkout 1.4.0
 
 _Lastly, don't forget to go back to your project root and commit the change this will make to your git submodules file._
 
@@ -3394,6 +3394,35 @@ Example of configuring the Spring application context for the supplied 'basic' c
 The above example uses the supplied BasicContentFilter for the filtering algorithm, and the
 supplied BasicContentFilterFields to retrieve the field patterns that are input to the filtering
 algorithm. It is expected that the 'basic' classes that are supplied will be extended or replaced as needed. 
+
+##Dynamically extending JSON request and response content
+The ability to dynamically extend JSON request and response content is available. This would typically be
+done in conjunction with a RestfulServiceAdapter. With content extensions, you can dynamically add additional
+fields to the JSON request and response content. Only JSON content is extensible.
+
+See [adapter](#service-layer-adapter) for more information on the RestfulServiceAdapter.  
+
+Content extensions is configured in the Spring application context using a restContentExtensions bean.
+
+###Configuring the Spring application context
+Example of configuring the Spring application context:
+
+    beans = {
+
+        // rest content extensions
+        restContentExtensions(xxxxxxxxContentExtensions) {
+            // inject any necessary services here for your xxxxxxxxContentExtensions class
+        }
+    
+        . . . . . .
+
+    }
+
+The above example references a xxxxxxxxContentExtensions class that would need to be created to apply
+the content extensions. The class you create must implement the ContentExtensions interface so that the
+controller can call the applyExtensions method.
+
+The results from calling the applyExtensions method are returned in a ContentExtensionResult object.
 
 ##Reporting and discovery of all configured resources
 The RestfulApiController exposes selected information about all resources that have been configured through an optional ResourceDetailList. Simply configure the Spring application context for the supplied ResourceDetailList class as a bean named resourceDetailList:
