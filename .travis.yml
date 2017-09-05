@@ -1,4 +1,6 @@
 language: groovy
+sudo: required
+dist: precise
 cache:
   directories:
   - $HOME/.m2
