@@ -1,5 +1,5 @@
 /* ***************************************************************************
- * Copyright 2013 Ellucian Company L.P. and its affiliates.
+ * Copyright 2013-2018 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,27 @@
 package net.hedtech.restfulapi
 
 /**
- * ArrayList based implementation of PagedResultList.
+ * ArrayList based implementation of PagedResultList. Provisions are made to
+ * allow the creation of this class omitting the total count. When there is
+ * no total count specified, TOTAL_COUNT will be omitted from the response.
  **/
 class PagedResultArrayList extends ArrayList implements PagedResultList {
 
-    private long totalCount
+    private long totalCount = 0
+    private boolean hasTotalCount = false
+
+    PagedResultArrayList(Collection c) {
+        super(c)
+    }
 
     PagedResultArrayList(Collection c, long totalCount) {
         super(c)
         this.totalCount = totalCount
+        this.hasTotalCount = true
+    }
+
+    boolean hasTotalCount() {
+        hasTotalCount
     }
 
     long getTotalCount() {

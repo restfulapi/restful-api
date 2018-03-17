@@ -1,5 +1,5 @@
 <!-- ***************************************************************************
- * Copyright 2013 Ellucian Company L.P. and its affiliates.
+ * Copyright 2013-2018 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ The restful-api plugin is designed to facilitate exposing RESTful API endpoints 
 This plugin should be installed from the official Grails Central Plugin Repository ([http://grails.org/plugins/restful-api](http://grails.org/plugins/restful-api)) by setting the following dependency:
 
 ```
-    compile ":restful-api:1.4.0"
+    compile ":restful-api:1.5.0"
 ```
 
 _Note: It may sometimes be useful to install this plugin as a Git submodule instead (e.g., if you are actively contributing to the plugin). To add the plugin as a Git submodule under a 'plugins' directory:_
@@ -68,7 +68,7 @@ _Then add the in-place plugin definition to BuildConfig.groovy:_
 _Adding the plugin this way will use the latest commit on the master branch at the time you ran the submodule command.  If you want to use an official release instead, go to the plugin directory and checkout a specific version, e.g.:_
 
     cd plugins/restful-api.git
-    git checkout 1.4.0
+    git checkout 1.5.0
 
 _Lastly, don't forget to go back to your project root and commit the change this will make to your git submodules file._
 
@@ -436,6 +436,8 @@ The count method must return the total number of intances of the resource.  It i
 It is more efficient if the list method can also return the total count.  If the list method returns an instance of grails.orm.PagedResultList, then the controller will obtain the the totalCount from the PagedResultList, and will not invoke the count method.
 
 If you are not returning an instance of grails.orm.PagedResultList, but your implementation can provide the total count from the list method, you can return an instance of net.hedtech.restfulapi.PagedResultList.  In this case, the controller will obtain the total count from the PagedResultList, and will not invoke the count method.  The plugin contains a default implementation based on an ArrayList, net.hedtech.restfulapi.PagedResultArrayList.
+
+PagedResultArrayList allows the creation of the class omitting the total count. When there is no total count specified, TOTAL_COUNT will be omitted from the response. This is typically used only when the count method is not performant, and TOTAL_COUNT is not needed by any calling application.
 
 ###show method
 The show method will be passed the request parameters object directly.

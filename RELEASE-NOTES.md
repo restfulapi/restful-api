@@ -1,3 +1,6 @@
+#1.5.0
+* Enhance PagedResultArrayList to allow the creation of the class omitting the total count. When there is no total count specified, TOTAL_COUNT will be omitted from the response. This is typically used only when the count method is not performant, and TOTAL_COUNT is not needed by any calling application.
+
 #1.4.0
 * Add feature to dynamically extend JSON request and response content.
 

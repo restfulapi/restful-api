@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * Copyright 2013-2017 Ellucian Company L.P. and its affiliates.
+ * Copyright 2013-2018 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -2064,6 +2064,43 @@ class RestfulApiControllerSpec extends Specification {
         0*mock.count(_) >> {}
         200   == response.status
         '5'   == response.getHeaderValue( 'X-hedtech-totalCount' )
+        1     == json.size()
+        'foo' == json[0].name
+    }
+
+    def "Test PagedResultListNoTotalCount"() {
+        setup:
+        //use default extractor for any methods with a request body
+        config.restfulApiConfig = {
+            resource 'things' config {
+                representation {
+                    mediaTypes = ['application/json']
+                    extractor = new DefaultJSONExtractor()
+                }
+            }
+        }
+        controller.init()
+
+        //mock the appropriate service method, expect exactly 1 invocation
+        def mock = Mock(ThingService)
+        mock.list(_) >> {return new PagedResultArrayList([[name:'foo']])}
+        controller.metaClass.getService = {-> mock}
+
+        mockCacheHeaders()
+
+        request.addHeader( 'Accept', 'application/json' )
+        //incoming format always json, so no errors
+        request.addHeader( 'Content-Type', 'application/json' )
+        params.pluralizedResourceName = 'things'
+
+        when:
+        controller.list()
+        def json = JSON.parse response.text
+
+        then:
+        0*mock.count(_) >> {}
+        200   == response.status
+        null  == response.getHeaderValue( 'X-hedtech-totalCount' )
         1     == json.size()
         'foo' == json[0].name
     }

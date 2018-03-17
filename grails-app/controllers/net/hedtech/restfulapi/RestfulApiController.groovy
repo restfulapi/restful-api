@@ -1,5 +1,5 @@
 /* ***************************************************************************
- * Copyright 2013-2017 Ellucian Company L.P. and its affiliates.
+ * Copyright 2013-2018 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -320,6 +320,11 @@ class RestfulApiController {
                 count = delegateToService.count(service, requestParams)
             }
 
+            def hasTotalCount = true
+            if (result instanceof PagedResultArrayList) {
+                hasTotalCount = result.hasTotalCount
+            }
+
             // Need to create etagValue outside of 'etag' block:
             // http://jira.grails.org/browse/GPCACHEHEADERS-14
             String etagValue = etagGenerator.shaFor( result, count, responseRepresentation.mediaType )
@@ -334,7 +339,9 @@ class RestfulApiController {
                 generate {
                     ResponseHolder holder = new ResponseHolder()
                     holder.data = result
-                    holder.addHeader(totalCountHeader, count)
+                    if (hasTotalCount) {
+                        holder.addHeader(totalCountHeader, count)
+                    }
                     holder.addHeader(pageOffsetHeader, requestParams.offset ? requestParams?.offset : 0)
                     holder.addHeader(pageMaxHeader, requestParams.max ? requestParams?.max : result.size())
                     renderSuccessResponse( holder, 'default.rest.list.message' )
