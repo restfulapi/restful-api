@@ -198,6 +198,7 @@ class RestfulApiController {
                 }
                 resource.representations.values().each() { representation ->
                     resourceDetail.mediaTypes.add(representation.mediaType)
+                    resourceDetail.representationMetadata.put(representation.mediaType, representation.representationMetadata)
                     def framework = representation.resolveMarshallerFramework()
                     switch(framework) {
                         case ~/json/:

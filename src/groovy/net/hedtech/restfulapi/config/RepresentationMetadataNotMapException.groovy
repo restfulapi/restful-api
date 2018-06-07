@@ -1,5 +1,5 @@
 /* ***************************************************************************
- * Copyright 2017-2018 Ellucian Company L.P. and its affiliates.
+ * Copyright 2018 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *****************************************************************************/
-
-package net.hedtech.restfulapi
+package net.hedtech.restfulapi.config
 
 /**
- * Resource detail (for reporting and discovery) - initialized by restfulApiController.
+ * Exception thrown when the representationMetadata defined for
+ * a representation of a resource is not a map.
  **/
-class ResourceDetail {
+class RepresentationMetadataNotMapException extends RuntimeException {
+    String resourceName
+    String mediaType
 
-    String name
-    List<String> methods = []
-    List<String> mediaTypes = []
-    Map unsupportedMediaTypeMethods = [:]
-    Map resourceMetadata = [:]
-    Map representationMetadata = [:]
-
+    String getMessage() {
+        "Resource $resourceName with representation $mediaType representationMetadata does not define a map"
+    }
 }

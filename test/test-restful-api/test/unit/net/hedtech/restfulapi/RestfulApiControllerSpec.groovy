@@ -2160,6 +2160,7 @@ class RestfulApiControllerSpec extends Specification {
                     unsupportedMediaTypeMethods = ['application/vnd.hedtech.v0+json': ['create','update','delete'],
                                                    'application/vnd.hedtech.v1+json': ['delete']]
                     representation {
+                        representationMetadata = [filters: ["filter1", "filter2"]]
                         marshallers {
                             mediaTypes = ['application/vnd.hedtech.v0+json',
                                           'application/vnd.hedtech.v1+json',
@@ -2187,6 +2188,9 @@ class RestfulApiControllerSpec extends Specification {
         ['application/vnd.hedtech.v0+json': ['create','update','delete'],
          'application/vnd.hedtech.v1+json': ['delete']] == resourceDetail.unsupportedMediaTypeMethods
         [title: "My Things", authoritative: true] == resourceDetail.resourceMetadata
+        [filters: ["filter1", "filter2"]] == resourceDetail.representationMetadata.get('application/vnd.hedtech.v0+json')
+        [filters: ["filter1", "filter2"]] == resourceDetail.representationMetadata.get('application/vnd.hedtech.v1+json')
+        [filters: ["filter1", "filter2"]] == resourceDetail.representationMetadata.get('application/vnd.hedtech.v2+json')
     }
 
     @Unroll

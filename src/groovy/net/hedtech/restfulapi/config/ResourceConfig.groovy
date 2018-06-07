@@ -1,5 +1,5 @@
 /* ***************************************************************************
- * Copyright 2013-2017 Ellucian Company L.P. and its affiliates.
+ * Copyright 2013-2018 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -104,11 +104,15 @@ class ResourceConfig {
             if (representations.get(mediaType) != null) {
                throw new AmbiguousRepresentationException( resourceName:name, mediaType:mediaType )
             }
+            if (!(delegate.representationMetadata instanceof Map)) {
+                throw new RepresentationMetadataNotMapException( resourceName: name, mediaType: mediaType )
+            }
             RepresentationConfig config = new RepresentationConfig(
                 mediaType:mediaType, marshallerFramework:delegate.marshallerFramework,
                 contentType:delegate.contentType,
                 jsonArrayPrefix:delegate.jsonArrayPrefix,
-                marshallers:delegate.marshallers, extractor:delegate.extractor )
+                marshallers:delegate.marshallers, extractor:delegate.extractor,
+                representationMetadata: delegate.representationMetadata)
 
             //if we are using the json or xml marshalling framework, check
             //if we have default marshallers that should be automatically used

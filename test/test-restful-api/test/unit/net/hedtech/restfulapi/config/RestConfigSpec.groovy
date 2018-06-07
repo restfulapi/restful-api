@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * Copyright 2013-2017 Ellucian Company L.P. and its affiliates.
+ * Copyright 2013-2018 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1458,5 +1458,81 @@ class RestConfigSpec extends Specification {
         then:
         def e = thrown(ResourceMetadataNotMapException)
         'things' == e.resourceName
+    }
+
+    def "Test representation metadata"() {
+        setup:
+        def src =
+                {
+                    resource 'things' config {
+                        methods = ['list','show','create','update','delete']
+                        representation {
+                            representationMetadata = [filters: ["filter1", "filter2"]]
+                            mediaTypes = ['application/vnd.hedtech.v0+json',
+                                          'application/vnd.hedtech.v1+json',
+                                          'application/vnd.hedtech.v2+json']
+                            marshallers {
+                                marshaller {
+                                    instance = 'a'
+                                    priority = 5
+                                }
+                                marshaller {
+                                    instance = 'b'
+                                    priority = 6
+                                }
+                            }
+                            extractor = 'net.hedtech.DynamicJsonExtractor'
+                        }
+                    }
+
+                }
+
+        when:
+        def config = RestConfig.parse( grailsApplication, src )
+        config.validate()
+
+        then:
+        def representations = config.getResource( 'things' ).representations
+        3 == representations.size()
+        [filters: ["filter1", "filter2"]] == representations.get('application/vnd.hedtech.v0+json').getRepresentationMetadata()
+        [filters: ["filter1", "filter2"]] == representations.get('application/vnd.hedtech.v1+json').getRepresentationMetadata()
+        [filters: ["filter1", "filter2"]] == representations.get('application/vnd.hedtech.v2+json').getRepresentationMetadata()
+    }
+
+    def "Test exception when representation metadata is not a map"() {
+        setup:
+        def src =
+                {
+                    resource 'things' config {
+                        methods = ['list','show','create','update','delete']
+                        representation {
+                            representationMetadata = "My Stuff"
+                            mediaTypes = ['application/vnd.hedtech.v0+json',
+                                          'application/vnd.hedtech.v1+json',
+                                          'application/vnd.hedtech.v2+json']
+                            marshallers {
+                                marshaller {
+                                    instance = 'a'
+                                    priority = 5
+                                }
+                                marshaller {
+                                    instance = 'b'
+                                    priority = 6
+                                }
+                            }
+                            extractor = 'net.hedtech.DynamicJsonExtractor'
+                        }
+                    }
+
+                }
+
+        when:
+        def config = RestConfig.parse( grailsApplication, src )
+        config.validate()
+
+        then:
+        def e = thrown(RepresentationMetadataNotMapException)
+        'things' == e.resourceName
+        'application/vnd.hedtech.v0+json' == e.mediaType
     }
 }
