@@ -81,8 +81,6 @@ class RestfulApiController {
 
     private etagGenerator = new EtagGenerator()
 
-    private static final String RESPONSE_REPRESENTATION = 'net.hedtech.restfulapi.RestfulApiController.response_representation'
-
     // The default adapter simply passes through the method invocations to the service.
     //
     private RestfulServiceAdapter defaultServiceAdapter =
@@ -128,6 +126,15 @@ class RestfulApiController {
     boolean marshallersRemoveNullFields
     boolean marshallersRemoveEmptyCollections
 
+    // API Version Parser (optionally configured within resources.groovy)
+    //  - apiVersionParser is configured as a spring bean resource in resources.groovy
+    // Setting overrideGenericMediaType=true in Config.groovy will replace generic media
+    // types with latest actual versioned media types for a representation (where available).
+    // The generic media types also need to be configured in genericMediaTypeList property.
+    ApiVersionParser apiVersionParser
+    boolean overrideGenericMediaType
+    List genericMediaTypeList
+
     private Class pagedResultListClazz
 
     // Sets a 'request_id' attribute on the request. If an 'X-Request-ID'
@@ -169,6 +176,9 @@ class RestfulApiController {
         marshallersRemoveNullFields = getMarshallersConfiguration('removeNullFields', false)
         marshallersRemoveEmptyCollections = getMarshallersConfiguration('removeEmptyCollections', false)
 
+        overrideGenericMediaType = getOverrideGenericMediaType()
+        genericMediaTypeList = getGenericMediaTypeList()
+
         JSON.createNamedConfig('restapi-error:json') { }
         XML.createNamedConfig('restapi-error:xml') { }
 
@@ -199,6 +209,22 @@ class RestfulApiController {
                 resource.representations.values().each() { representation ->
                     resourceDetail.mediaTypes.add(representation.mediaType)
                     resourceDetail.representationMetadata.put(representation.mediaType, representation.representationMetadata)
+                    if (apiVersionParser) {
+                        representation.apiVersion = apiVersionParser.parseMediaType(resource.name, representation.mediaType)
+                        if (overrideGenericMediaType) {
+                            if (representation.allMediaTypes.size() > 1 && genericMediaTypeList.contains(representation.mediaType)) {
+                                List apiVersionList = []
+                                representation.allMediaTypes.each { mediaType ->
+                                    if (!genericMediaTypeList.contains(mediaType)) {
+                                        apiVersionList.add(apiVersionParser.parseMediaType(resource.name, mediaType))
+                                    }
+                                }
+                                if (apiVersionList.size() > 0) {
+                                    representation.apiVersion = apiVersionList.sort().get(apiVersionList.size() - 1)
+                                }
+                            }
+                        }
+                    }
                     def framework = representation.resolveMarshallerFramework()
                     switch(framework) {
                         case ~/json/:
@@ -274,6 +300,12 @@ class RestfulApiController {
         restContentFilter = getSpringBean('restContentFilter')
         if (restContentFilter) {
             log.trace "Registered restContentFilter spring bean"
+        }
+
+        // register api version parser
+        apiVersionParser = getSpringBean('apiVersionParser')
+        if (apiVersionParser) {
+            log.trace "Registered apiVersionParser spring bean"
         }
 
         log.trace 'Done initializing RestfulApiController...'
@@ -665,7 +697,12 @@ class RestfulApiController {
         }
 
         if (content != null) {
-            responseHolder.addHeader( mediaTypeHeader, representation.mediaType )
+            String responseMediaType = representation.mediaType
+            String apiVersionMediaType = representation.apiVersion?.mediaType
+            if (overrideGenericMediaType && genericMediaTypeList.contains(responseMediaType)) {
+                responseMediaType = apiVersionMediaType
+            }
+            responseHolder.addHeader( mediaTypeHeader, responseMediaType )
         }
 
         if (responseHolder.message) {
@@ -1010,6 +1047,18 @@ class RestfulApiController {
     }
 
 
+    private boolean getOverrideGenericMediaType() {
+        def value = grailsApplication.config.restfulApi.overrideGenericMediaType
+        (value instanceof Boolean) ? value : false
+    }
+
+
+    private List getGenericMediaTypeList() {
+        def value = grailsApplication.config.restfulApi.genericMediaTypeList
+        (value instanceof List) ? value : []
+    }
+
+
     private boolean getMarshallersConfiguration(name, defaultBoolean) {
         def value = grailsApplication.config.restfulApi.marshallers."${name}"
         (value instanceof Boolean) ? value : defaultBoolean
@@ -1092,7 +1141,7 @@ class RestfulApiController {
 
 
     private RepresentationConfig getResponseRepresentation() {
-        def representation = request.getAttribute( RESPONSE_REPRESENTATION )
+        def representation = request.getAttribute( RepresentationRequestAttributes.RESPONSE_REPRESENTATION )
         if (representation == null) {
             def acceptedTypes = mediaTypeParser.parse( request.getHeader(HttpHeaders.ACCEPT) )
             representation = getRepresentation( params.pluralizedResourceName, acceptedTypes )
@@ -1101,18 +1150,22 @@ class RestfulApiController {
                 //then this is a representation that cannot be marshalled to.
                 unsupportedResponseRepresentation()
             }
-            request.setAttribute( RESPONSE_REPRESENTATION, representation )
+            request.setAttribute( RepresentationRequestAttributes.RESPONSE_REPRESENTATION, representation )
         }
-        representation
+        return representation
     }
 
 
     private RepresentationConfig getRequestRepresentation( String resource = params.pluralizedResourceName ) {
-        def types = mediaTypeParser.parse( request.getHeader(HttpHeaders.CONTENT_TYPE) )
-        def type = types.size() > 0 ? [types[0]] : []
-        def representation = getRepresentation( resource, type )
+        def representation = request.getAttribute( RepresentationRequestAttributes.REQUEST_REPRESENTATION )
         if (representation == null) {
-            unsupportedRequestRepresentation()
+            def types = mediaTypeParser.parse(request.getHeader(HttpHeaders.CONTENT_TYPE))
+            def type = types.size() > 0 ? [types[0]] : []
+            representation = getRepresentation(resource, type)
+            if (representation == null) {
+                unsupportedRequestRepresentation()
+            }
+            request.setAttribute( RepresentationRequestAttributes.REQUEST_REPRESENTATION, representation )
         }
         return representation
     }

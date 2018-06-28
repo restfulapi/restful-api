@@ -3426,6 +3426,45 @@ controller can call the applyExtensions method.
 
 The results from calling the applyExtensions method are returned in a ContentExtensionResult object.
 
+##Parse media types of resource representations
+Parsing of the media types of resource representations is supported. The parse produces an ApiVersion object
+that can be associated with each representation. Generic media types (ex: application/json) can then be assigned
+the highest ApiVersion from the list of media types in that same resource representation. The media type header
+in the response can then be overwritten with the highest versioned media type.
+
+The ApiVersionParser is a bean specific to a restful-api application. Defining of an ApiVersionParser implementation
+is accomplished through configuring of the Spring application context. To help get you started, BasicApiVersion and
+BasicApiVersionParser classes are provided as reference implementations. These basic classes implement the ApiVersion
+and ApiVersionParser interfaces.
+
+###Configuring the Spring application context
+Example of configuring the Spring application context for the supplied 'basic' classes:
+
+    beans = {
+
+        // Api Version Parser - initialized and used by restfulApiController
+        apiVersionParser(BasicApiVersionParser)
+    
+        . . . . . .
+
+    }
+
+The above example uses the supplied BasicApiVersionParser which returns a BasicApiVersion class as a result of
+parsing the media type for a resource. The parser supports generic media types, such as application/json, which
+has no specified version, as well as simple versions, such as v1, v2, and v3, and semantic versioning, such as
+v3.0.1, v3.1.0, and v4.0.0. The BasicApiVersionParser performs validation on the parsed version number. The BasicApiVersion
+implements the Comparable interface for sorting. It is expected that the 'basic' classes that are supplied will
+be extended or replaced as needed. 
+
+###Overwrite the media type header for generic mediatypes
+To overwrite the media type header for generic mediatypes, you must set restfulApi.overrideGenericMediaType=true
+in Config.groovy. You must also set restfulApi.genericMediaTypeList to the list of generic media types used within
+the application. The following is an example:
+
+    // Override generic media type with latest actual versioned media type for a representation (where available)
+    restfulApi.overrideGenericMediaType = true
+    restfulApi.genericMediaTypeList = ["application/json", "application/vnd.hedtech.integration+json"]
+
 ##Reporting and discovery of all configured resources
 The RestfulApiController exposes selected information about all resources that have been configured through an optional ResourceDetailList. Simply configure the Spring application context for the supplied ResourceDetailList class as a bean named resourceDetailList:
 

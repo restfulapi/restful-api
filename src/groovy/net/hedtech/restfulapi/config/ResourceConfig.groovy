@@ -112,6 +112,7 @@ class ResourceConfig {
                 contentType:delegate.contentType,
                 jsonArrayPrefix:delegate.jsonArrayPrefix,
                 marshallers:delegate.marshallers, extractor:delegate.extractor,
+                allMediaTypes: delegate.mediaTypes,
                 representationMetadata: delegate.representationMetadata)
 
             //if we are using the json or xml marshalling framework, check

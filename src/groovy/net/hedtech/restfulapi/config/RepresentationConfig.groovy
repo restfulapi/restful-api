@@ -15,6 +15,8 @@
  *****************************************************************************/
 package net.hedtech.restfulapi.config
 
+import net.hedtech.restfulapi.ApiVersion
+
 class RepresentationConfig {
 
     String mediaType
@@ -24,6 +26,8 @@ class RepresentationConfig {
     def marshallers = []
     def extractor
     def representationMetadata = [:]
+    def allMediaTypes = []
+    ApiVersion apiVersion
 
 
     /**

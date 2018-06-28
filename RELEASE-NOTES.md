@@ -1,5 +1,6 @@
 #1.6.0
 * Add support for specifying optional metadata at the representation level of a resource definition.
+* Add feature that can parse the media types of resource representations to produce an ApiVersion object that can be associated with each representation. Generic media types (ex: application/json) can then be assigned the highest ApiVersion from the list of media types in that same resource representation. The media type header in the response can then be overwritten with the highest versioned media type. The ApiVersionParser is a bean specific to a restful-api application. BasicApiVersion and BasicApiVersionParser classes are provided as reference implementations.
 
 #1.5.0
 * Enhance PagedResultArrayList to allow the creation of the class omitting the total count. When there is no total count specified, TOTAL_COUNT will be omitted from the response. This is typically used only when the count method is not performant, and TOTAL_COUNT is not needed by any calling application.
