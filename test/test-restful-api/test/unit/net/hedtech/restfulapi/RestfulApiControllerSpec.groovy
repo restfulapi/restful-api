@@ -21,6 +21,7 @@ import grails.converters.JSON
 import grails.converters.XML
 import grails.test.mixin.*
 
+import net.hedtech.restfulapi.apiversioning.BasicApiVersionParser
 import net.hedtech.restfulapi.config.*
 import net.hedtech.restfulapi.extractors.*
 import net.hedtech.restfulapi.extractors.configuration.*
@@ -2160,11 +2161,11 @@ class RestfulApiControllerSpec extends Specification {
                     unsupportedMediaTypeMethods = ['application/vnd.hedtech.v0+json': ['create','update','delete'],
                                                    'application/vnd.hedtech.v1+json': ['delete']]
                     representation {
+                        mediaTypes = ['application/vnd.hedtech.v0+json',
+                                      'application/vnd.hedtech.v1+json',
+                                      'application/vnd.hedtech.v2+json']
                         representationMetadata = [filters: ["filter1", "filter2"]]
                         marshallers {
-                            mediaTypes = ['application/vnd.hedtech.v0+json',
-                                          'application/vnd.hedtech.v1+json',
-                                          'application/vnd.hedtech.v2+json']
                             jsonBeanMarshaller {}
                         }
                         jsonExtractor {}
@@ -2264,6 +2265,131 @@ class RestfulApiControllerSpec extends Specification {
         'delete'         | 'application/json'                | 'application/vnd.hedtech.v1+json' | false      | true       | []
     }
 
+    @Unroll
+    def "Test API Versioning"() {
+        setup:
+        config.restfulApiConfig =
+                {
+                    resource 'things' config {
+                        methods = ['list', 'show', 'create', 'update', 'delete']
+                        representation {
+                            mediaTypes = ['application/vnd.hedtech.v1+json',
+                                          'application/vnd.hedtech.v2+json',
+                                          'application/vnd.hedtech+json']
+                            marshallers {
+                                jsonBeanMarshaller {}
+                            }
+                            jsonExtractor {}
+                        }
+                        representation {
+                            mediaTypes = ['application/vnd.hedtech.v3.0.0+json',
+                                          'application/vnd.hedtech.v3.1.0+json',
+                                          'application/json']
+                            marshallers {
+                                jsonBeanMarshaller {}
+                            }
+                            jsonExtractor {}
+                        }
+                        representation {
+                            mediaTypes = ['application/vnd.hedtech.custom+json']
+                            marshallers {
+                                jsonBeanMarshaller {}
+                            }
+                            jsonExtractor {}
+                        }
+                    }
+                }
+        defineBeans {
+            apiVersionParser(BasicApiVersionParser)
+        }
+        def genericMediaTypeList = ['application/json', 'application/vnd.hedtech+json', 'application/vnd.hedtech.custom+json']
+        if (override) {
+            controller.metaClass.getOverrideGenericMediaType = {-> override}
+            controller.metaClass.getGenericMediaTypeList = {-> genericMediaTypeList}
+        }
+        controller.init()
+
+        def mock = Mock(ThingService)
+        mock.list(_) >> { serviceReturn }
+        mock.count(_) >> { serviceReturn.size() }
+        mock.show(_) >> { serviceReturn }
+        mock.create(_,_) >> { serviceReturn }
+        mock.update(_,_) >> { serviceReturn }
+        mock.delete(_,_) >> {}
+        controller.metaClass.getService = {-> mock}
+        mockCacheHeaders()
+        params.pluralizedResourceName = 'things'
+        params.id = 1
+        def httpMethod = calculateHttpMethod(controllerMethod)
+
+        when:
+        request.addHeader('Accept', mediaType)
+        request.addHeader('Content-Type', mediaType)
+        request.method = httpMethod
+        controller."$controllerMethod"()
+
+        then:
+        (controllerMethod == 'create' ? 201 : 200) == response.status
+        mediaTypeHeader == response.getHeader('X-hedtech-Media-Type')
+        apiVersion == request.getAttribute(RepresentationRequestAttributes.RESPONSE_REPRESENTATION)?.apiVersion?.version
+        (httpMethod == 'GET' ? null : apiVersion) == request.getAttribute(RepresentationRequestAttributes.REQUEST_REPRESENTATION)?.apiVersion?.version
+
+        where:
+        controllerMethod | serviceReturn | override | mediaType          | apiVersion | mediaTypeHeader
+        'list'           | ['foo']       | false    | 'application/json' | null       | 'application/json'
+        'show'           | [name:'foo']  | false    | 'application/json' | null       | 'application/json'
+        'create'         | [name:'foo']  | false    | 'application/json' | null       | 'application/json'
+        'update'         | [name:'foo']  | false    | 'application/json' | null       | 'application/json'
+        'delete'         | null          | false    | 'application/json' | null       | null
+        // test override=true with generic mediaType=application/json
+        'list'           | ['foo']       | true     | 'application/json' | 'v3.1.0'   | 'application/vnd.hedtech.v3.1.0+json'
+        'show'           | [name:'foo']  | true     | 'application/json' | 'v3.1.0'   | 'application/vnd.hedtech.v3.1.0+json'
+        'create'         | [name:'foo']  | true     | 'application/json' | 'v3.1.0'   | 'application/vnd.hedtech.v3.1.0+json'
+        'update'         | [name:'foo']  | true     | 'application/json' | 'v3.1.0'   | 'application/vnd.hedtech.v3.1.0+json'
+        'delete'         | null          | true     | 'application/json' | null       | null
+        // test override=true with generic mediaType=application/vnd.hedtech+json
+        'list'           | ['foo']       | true     | 'application/vnd.hedtech+json' | 'v2'   | 'application/vnd.hedtech.v2+json'
+        'show'           | [name:'foo']  | true     | 'application/vnd.hedtech+json' | 'v2'   | 'application/vnd.hedtech.v2+json'
+        'create'         | [name:'foo']  | true     | 'application/vnd.hedtech+json' | 'v2'   | 'application/vnd.hedtech.v2+json'
+        'update'         | [name:'foo']  | true     | 'application/vnd.hedtech+json' | 'v2'   | 'application/vnd.hedtech.v2+json'
+        'delete'         | null          | true     | 'application/vnd.hedtech+json' | null   | null
+        // test override=true with generic mediaType=application/vnd.hedtech.custom+json
+        'list'           | ['foo']       | true     | 'application/vnd.hedtech.custom+json' | null   | 'application/vnd.hedtech.custom+json'
+        'show'           | [name:'foo']  | true     | 'application/vnd.hedtech.custom+json' | null   | 'application/vnd.hedtech.custom+json'
+        'create'         | [name:'foo']  | true     | 'application/vnd.hedtech.custom+json' | null   | 'application/vnd.hedtech.custom+json'
+        'update'         | [name:'foo']  | true     | 'application/vnd.hedtech.custom+json' | null   | 'application/vnd.hedtech.custom+json'
+        'delete'         | null          | true     | 'application/vnd.hedtech.custom+json' | null   | null
+        // test override=true with actual mediaType=application/vnd.hedtech.v1+json
+        'list'           | ['foo']       | true     | 'application/vnd.hedtech.v1+json' | 'v1'   | 'application/vnd.hedtech.v1+json'
+        'show'           | [name:'foo']  | true     | 'application/vnd.hedtech.v1+json' | 'v1'   | 'application/vnd.hedtech.v1+json'
+        'create'         | [name:'foo']  | true     | 'application/vnd.hedtech.v1+json' | 'v1'   | 'application/vnd.hedtech.v1+json'
+        'update'         | [name:'foo']  | true     | 'application/vnd.hedtech.v1+json' | 'v1'   | 'application/vnd.hedtech.v1+json'
+        'delete'         | null          | true     | 'application/vnd.hedtech.v1+json' | null   | null
+    }
+
+    private calculateHttpMethod(String controllerMethod) {
+        def httpMethod
+        switch (controllerMethod) {
+            case 'list':
+                httpMethod = 'GET'
+                break
+            case 'show':
+                httpMethod = 'GET'
+                break
+            case 'create':
+                httpMethod = 'POST'
+                break
+            case 'update':
+                httpMethod = 'PUT'
+                break
+            case 'delete':
+                httpMethod = 'DELETE'
+                break
+            default:
+                fail("Unable to set request.method based on controllerMethod: " + controllerMethod)
+        }
+        return httpMethod
+    }
 
     private void mockCacheHeaders() {
         def cacheHeadersService = new CacheHeadersService()

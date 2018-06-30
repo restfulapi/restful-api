@@ -699,7 +699,7 @@ class RestfulApiController {
         if (content != null) {
             String responseMediaType = representation.mediaType
             String apiVersionMediaType = representation.apiVersion?.mediaType
-            if (overrideGenericMediaType && genericMediaTypeList.contains(responseMediaType)) {
+            if (apiVersionMediaType && overrideGenericMediaType && genericMediaTypeList.contains(responseMediaType)) {
                 responseMediaType = apiVersionMediaType
             }
             responseHolder.addHeader( mediaTypeHeader, responseMediaType )
