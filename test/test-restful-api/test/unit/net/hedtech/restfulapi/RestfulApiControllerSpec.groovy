@@ -2367,6 +2367,97 @@ class RestfulApiControllerSpec extends Specification {
         'delete'         | null          | true     | 'application/vnd.hedtech.v1+json' | null   | null
     }
 
+    @Unroll
+    def "Test Override Version Range MediaType"() {
+        setup:
+        config.restfulApiConfig =
+                {
+                    resource 'things' config {
+                        methods = ['list', 'show', 'create', 'update', 'delete']
+                        representation {
+                            mediaTypes = ['application/vnd.hedtech.v6+json',
+                                          'application/vnd.hedtech.v7+json',
+                                          'application/vnd.hedtech.v7.0.0+json',
+                                          'application/vnd.hedtech.v7.1.0+json',
+                                          'application/vnd.hedtech.v7.2.0+json',
+                                          'application/vnd.hedtech.v7.2.1+json',
+                                          'application/vnd.hedtech.v8+json',
+                                          'application/vnd.hedtech.v8.0.0+json',
+                                          'application/json']
+                            marshallers {
+                                jsonBeanMarshaller {}
+                            }
+                            jsonExtractor {}
+                        }
+                    }
+                }
+        defineBeans {
+            apiVersionParser(BasicApiVersionParser)
+        }
+        if (override) {
+            controller.metaClass.getOverrideVersionRangeMediaType = {-> override}
+        }
+        controller.init()
+
+        def mock = Mock(ThingService)
+        mock.list(_) >> { serviceReturn }
+        mock.count(_) >> { serviceReturn.size() }
+        mock.show(_) >> { serviceReturn }
+        mock.create(_,_) >> { serviceReturn }
+        mock.update(_,_) >> { serviceReturn }
+        mock.delete(_,_) >> {}
+        controller.metaClass.getService = {-> mock}
+        mockCacheHeaders()
+        params.pluralizedResourceName = 'things'
+        params.id = 1
+        def httpMethod = calculateHttpMethod(controllerMethod)
+
+        when:
+        request.addHeader('Accept', mediaType)
+        request.addHeader('Content-Type', mediaType)
+        request.method = httpMethod
+        controller."$controllerMethod"()
+
+        then:
+        (controllerMethod == 'create' ? 201 : 200) == response.status
+        (overrideMediaTypeHeader ?: mediaType) == response.getHeader('X-hedtech-Media-Type')
+        apiVersion == request.getAttribute(RepresentationRequestAttributes.RESPONSE_REPRESENTATION)?.apiVersion?.version
+        (httpMethod == 'GET' ? null : apiVersion) == request.getAttribute(RepresentationRequestAttributes.REQUEST_REPRESENTATION)?.apiVersion?.version
+
+        where:
+        controllerMethod | serviceReturn | override | mediaType                             | apiVersion | overrideMediaTypeHeader
+        // test overrideVersionRangeMediaType=false
+        'list'           | ['foo']       | false    | 'application/vnd.hedtech.v6+json'     | 'v6'       | null
+        'list'           | ['foo']       | false    | 'application/vnd.hedtech.v7+json'     | 'v7'       | null
+        'list'           | ['foo']       | false    | 'application/vnd.hedtech.v7.0.0+json' | 'v7.0.0'   | null
+        'list'           | ['foo']       | false    | 'application/vnd.hedtech.v7.1.0+json' | 'v7.1.0'   | null
+        'list'           | ['foo']       | false    | 'application/vnd.hedtech.v7.2.0+json' | 'v7.2.0'   | null
+        'list'           | ['foo']       | false    | 'application/vnd.hedtech.v7.2.1+json' | 'v7.2.1'   | null
+        'list'           | ['foo']       | false    | 'application/vnd.hedtech.v8+json'     | 'v8'       | null
+        'list'           | ['foo']       | false    | 'application/vnd.hedtech.v8.0.0+json' | 'v8.0.0'   | null
+        'list'           | ['foo']       | false    | 'application/json'                    | null       | null
+        // test overrideVersionRangeMediaType=true
+        'list'           | ['foo']       | true     | 'application/vnd.hedtech.v6+json'     | 'v6'       | null
+        'list'           | ['foo']       | true     | 'application/vnd.hedtech.v7+json'     | 'v7.2.1'   | 'application/vnd.hedtech.v7.2.1+json'
+        'list'           | ['foo']       | true     | 'application/vnd.hedtech.v7.0.0+json' | 'v7.0.0'   | null
+        'list'           | ['foo']       | true     | 'application/vnd.hedtech.v7.1.0+json' | 'v7.1.0'   | null
+        'list'           | ['foo']       | true     | 'application/vnd.hedtech.v7.2.0+json' | 'v7.2.0'   | null
+        'list'           | ['foo']       | true     | 'application/vnd.hedtech.v7.2.1+json' | 'v7.2.1'   | null
+        'list'           | ['foo']       | true     | 'application/vnd.hedtech.v8+json'     | 'v8.0.0'   | 'application/vnd.hedtech.v8.0.0+json'
+        'list'           | ['foo']       | true     | 'application/vnd.hedtech.v8.0.0+json' | 'v8.0.0'   | null
+        'list'           | ['foo']       | true     | 'application/json'                    | null       | null
+        // test overrideVersionRangeMediaType=true
+        'create'         | ['foo']       | true     | 'application/vnd.hedtech.v6+json'     | 'v6'       | null
+        'create'         | ['foo']       | true     | 'application/vnd.hedtech.v7+json'     | 'v7.2.1'   | 'application/vnd.hedtech.v7.2.1+json'
+        'create'         | ['foo']       | true     | 'application/vnd.hedtech.v7.0.0+json' | 'v7.0.0'   | null
+        'create'         | ['foo']       | true     | 'application/vnd.hedtech.v7.1.0+json' | 'v7.1.0'   | null
+        'create'         | ['foo']       | true     | 'application/vnd.hedtech.v7.2.0+json' | 'v7.2.0'   | null
+        'create'         | ['foo']       | true     | 'application/vnd.hedtech.v7.2.1+json' | 'v7.2.1'   | null
+        'create'         | ['foo']       | true     | 'application/vnd.hedtech.v8+json'     | 'v8.0.0'   | 'application/vnd.hedtech.v8.0.0+json'
+        'create'         | ['foo']       | true     | 'application/vnd.hedtech.v8.0.0+json' | 'v8.0.0'   | null
+        'create'         | ['foo']       | true     | 'application/json'                    | null       | null
+    }
+
     private calculateHttpMethod(String controllerMethod) {
         def httpMethod
         switch (controllerMethod) {

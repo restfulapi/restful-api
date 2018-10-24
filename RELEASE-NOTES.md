@@ -1,3 +1,6 @@
+#1.7.0
+* Add setting overrideVersionRangeMediaType=true to allow override of a whole digit representation version number with the highest semantic version where the major version matches. This is in support of version ranges that facilitate easier caller adoption of non-breaking API changes. This feature requires an ApiVersionParser to be configured. 
+
 #1.6.0
 * Add support for specifying optional metadata at the representation level of a resource definition.
 * Add feature that can parse the media types of resource representations to produce an ApiVersion object that can be associated with each representation. Generic media types (ex: application/json) can then be assigned the highest ApiVersion from the list of media types in that same resource representation. The media type header in the response can then be overwritten with the highest versioned media type. The ApiVersionParser is a bean specific to a restful-api application. BasicApiVersion and BasicApiVersionParser classes are provided as reference implementations.

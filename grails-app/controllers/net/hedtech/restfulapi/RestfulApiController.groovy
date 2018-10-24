@@ -131,9 +131,12 @@ class RestfulApiController {
     // Setting overrideGenericMediaType=true in Config.groovy will replace generic media
     // types with latest actual versioned media types for a representation (where available).
     // The generic media types also need to be configured in genericMediaTypeList property.
+    // Setting overrideVersionRangeMediaType=true in Config.groovy will override the whole digit
+    // version number with the highest semantic version where the major version matches.
     ApiVersionParser apiVersionParser
     boolean overrideGenericMediaType
     List genericMediaTypeList
+    boolean overrideVersionRangeMediaType
 
     private Class pagedResultListClazz
 
@@ -178,6 +181,7 @@ class RestfulApiController {
 
         overrideGenericMediaType = getOverrideGenericMediaType()
         genericMediaTypeList = getGenericMediaTypeList()
+        overrideVersionRangeMediaType = getOverrideVersionRangeMediaType()
 
         JSON.createNamedConfig('restapi-error:json') { }
         XML.createNamedConfig('restapi-error:xml') { }
@@ -217,6 +221,22 @@ class RestfulApiController {
                                 representation.allMediaTypes.each { mediaType ->
                                     if (!genericMediaTypeList.contains(mediaType)) {
                                         apiVersionList.add(apiVersionParser.parseMediaType(resource.name, mediaType))
+                                    }
+                                }
+                                if (apiVersionList.size() > 0) {
+                                    representation.apiVersion = apiVersionList.sort().get(apiVersionList.size() - 1)
+                                }
+                            }
+                        }
+                        if (overrideVersionRangeMediaType && representation.apiVersion.version?.indexOf('.') == -1) {
+                            if (representation.allMediaTypes.size() > 1 && !genericMediaTypeList.contains(representation.mediaType)) {
+                                List apiVersionList = []
+                                representation.allMediaTypes.each { mediaType ->
+                                    if (!genericMediaTypeList.contains(mediaType)) {
+                                        def testApiVersion = apiVersionParser.parseMediaType(resource.name, mediaType)
+                                        if (testApiVersion.version?.startsWith(representation.apiVersion.version+".")) {
+                                            apiVersionList.add(testApiVersion)
+                                        }
                                     }
                                 }
                                 if (apiVersionList.size() > 0) {
@@ -699,8 +719,11 @@ class RestfulApiController {
         if (content != null) {
             String responseMediaType = representation.mediaType
             String apiVersionMediaType = representation.apiVersion?.mediaType
-            if (apiVersionMediaType && overrideGenericMediaType && genericMediaTypeList.contains(responseMediaType)) {
-                responseMediaType = apiVersionMediaType
+            if (apiVersionMediaType) {
+                if (overrideVersionRangeMediaType ||
+                        (overrideGenericMediaType && genericMediaTypeList.contains(responseMediaType))) {
+                    responseMediaType = apiVersionMediaType
+                }
             }
             responseHolder.addHeader( mediaTypeHeader, responseMediaType )
         }
@@ -1056,6 +1079,12 @@ class RestfulApiController {
     private List getGenericMediaTypeList() {
         def value = grailsApplication.config.restfulApi.genericMediaTypeList
         (value instanceof List) ? value : []
+    }
+
+
+    private boolean getOverrideVersionRangeMediaType() {
+        def value = grailsApplication.config.restfulApi.overrideVersionRangeMediaType
+        (value instanceof Boolean) ? value : false
     }
 
 
