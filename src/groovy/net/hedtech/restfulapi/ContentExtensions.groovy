@@ -1,5 +1,5 @@
 /* ***************************************************************************
- * Copyright 2017 Ellucian Company L.P. and its affiliates.
+ * Copyright 2017-2018 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,6 @@ interface ContentExtensions {
     /**
      * Apply extensions to content.
      **/
-    def ContentExtensionResult applyExtensions(String resourceName, def request, Map requestParams, def content) throws Throwable
+    def ContentExtensionResult applyExtensions(String resourceName, def request, Map requestParams, def content, def isQapi) throws Throwable
 
 }

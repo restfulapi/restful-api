@@ -1,5 +1,5 @@
 /* ***************************************************************************
- * Copyright 2013 Ellucian Company L.P. and its affiliates.
+ * Copyright 2013-2018 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ class ResponseHolder {
     Object data
     def headers = [:]
     def message
+    def isQapi = false
 
     void addHeader( String name, Object value ) {
         if (!headers[name]) {

@@ -397,6 +397,9 @@ class RestfulApiController {
                     }
                     holder.addHeader(pageOffsetHeader, requestParams.offset ? requestParams?.offset : 0)
                     holder.addHeader(pageMaxHeader, requestParams.max ? requestParams?.max : result.size())
+                    if (request.method == "POST") {
+                        holder.isQapi = true
+                    }
                     renderSuccessResponse( holder, 'default.rest.list.message' )
                 }
             }
@@ -745,7 +748,7 @@ class RestfulApiController {
             // optional: perform content extension post representation
             if (restContentExtensions && isExtensibleContent(content, contentType)) {
                 log.trace("Extending content for resource=$params.pluralizedResourceName with contentType=$contentType")
-                def result = restContentExtensions.applyExtensions(params.pluralizedResourceName, request, params, content)
+                def result = restContentExtensions.applyExtensions(params.pluralizedResourceName, request, params, content, responseHolder.isQapi)
                 if (result.extensionsApplied) {
                     content = result.content
                 }

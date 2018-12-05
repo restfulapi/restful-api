@@ -1,5 +1,6 @@
 #1.7.0
 * Add setting overrideVersionRangeMediaType=true to allow override of a whole digit representation version number with the highest semantic version where the major version matches. This is in support of version ranges that facilitate easier caller adoption of non-breaking API changes. This feature requires an ApiVersionParser to be configured. 
+* Correct extensibility to not execute WRITE SQL if the request is a POST /qapi request (this represents a query by post read-only request). 
 
 #1.6.0
 * Add support for specifying optional metadata at the representation level of a resource definition.
