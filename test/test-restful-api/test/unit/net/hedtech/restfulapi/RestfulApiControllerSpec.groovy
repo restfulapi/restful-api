@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * Copyright 2013-2018 Ellucian Company L.P. and its affiliates.
+ * Copyright 2013-2019 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -2368,7 +2368,7 @@ class RestfulApiControllerSpec extends Specification {
     }
 
     @Unroll
-    def "Test Override Version Range MediaType"() {
+    def "Test Use Highest Semantic Version"() {
         setup:
         config.restfulApiConfig =
                 {
@@ -2395,7 +2395,10 @@ class RestfulApiControllerSpec extends Specification {
             apiVersionParser(BasicApiVersionParser)
         }
         if (override) {
-            controller.metaClass.getOverrideVersionRangeMediaType = {-> override}
+            controller.metaClass.getUseHighestSemanticVersion = {-> override}
+        }
+        if (legacy) {
+            controller.metaClass.getUseAcceptHeaderAsMediaTypeHeader = {-> legacy}
         }
         controller.init()
 
@@ -2425,37 +2428,67 @@ class RestfulApiControllerSpec extends Specification {
         (httpMethod == 'GET' ? null : apiVersion) == request.getAttribute(RepresentationRequestAttributes.REQUEST_REPRESENTATION)?.apiVersion?.version
 
         where:
-        controllerMethod | serviceReturn | override | mediaType                             | apiVersion | overrideMediaTypeHeader
-        // test overrideVersionRangeMediaType=false
-        'list'           | ['foo']       | false    | 'application/vnd.hedtech.v6+json'     | 'v6'       | null
-        'list'           | ['foo']       | false    | 'application/vnd.hedtech.v7+json'     | 'v7'       | null
-        'list'           | ['foo']       | false    | 'application/vnd.hedtech.v7.0.0+json' | 'v7.0.0'   | null
-        'list'           | ['foo']       | false    | 'application/vnd.hedtech.v7.1.0+json' | 'v7.1.0'   | null
-        'list'           | ['foo']       | false    | 'application/vnd.hedtech.v7.2.0+json' | 'v7.2.0'   | null
-        'list'           | ['foo']       | false    | 'application/vnd.hedtech.v7.2.1+json' | 'v7.2.1'   | null
-        'list'           | ['foo']       | false    | 'application/vnd.hedtech.v8+json'     | 'v8'       | null
-        'list'           | ['foo']       | false    | 'application/vnd.hedtech.v8.0.0+json' | 'v8.0.0'   | null
-        'list'           | ['foo']       | false    | 'application/json'                    | null       | null
-        // test overrideVersionRangeMediaType=true
-        'list'           | ['foo']       | true     | 'application/vnd.hedtech.v6+json'     | 'v6'       | null
-        'list'           | ['foo']       | true     | 'application/vnd.hedtech.v7+json'     | 'v7.2.1'   | 'application/vnd.hedtech.v7.2.1+json'
-        'list'           | ['foo']       | true     | 'application/vnd.hedtech.v7.0.0+json' | 'v7.0.0'   | null
-        'list'           | ['foo']       | true     | 'application/vnd.hedtech.v7.1.0+json' | 'v7.1.0'   | null
-        'list'           | ['foo']       | true     | 'application/vnd.hedtech.v7.2.0+json' | 'v7.2.0'   | null
-        'list'           | ['foo']       | true     | 'application/vnd.hedtech.v7.2.1+json' | 'v7.2.1'   | null
-        'list'           | ['foo']       | true     | 'application/vnd.hedtech.v8+json'     | 'v8.0.0'   | 'application/vnd.hedtech.v8.0.0+json'
-        'list'           | ['foo']       | true     | 'application/vnd.hedtech.v8.0.0+json' | 'v8.0.0'   | null
-        'list'           | ['foo']       | true     | 'application/json'                    | null       | null
-        // test overrideVersionRangeMediaType=true
-        'create'         | ['foo']       | true     | 'application/vnd.hedtech.v6+json'     | 'v6'       | null
-        'create'         | ['foo']       | true     | 'application/vnd.hedtech.v7+json'     | 'v7.2.1'   | 'application/vnd.hedtech.v7.2.1+json'
-        'create'         | ['foo']       | true     | 'application/vnd.hedtech.v7.0.0+json' | 'v7.0.0'   | null
-        'create'         | ['foo']       | true     | 'application/vnd.hedtech.v7.1.0+json' | 'v7.1.0'   | null
-        'create'         | ['foo']       | true     | 'application/vnd.hedtech.v7.2.0+json' | 'v7.2.0'   | null
-        'create'         | ['foo']       | true     | 'application/vnd.hedtech.v7.2.1+json' | 'v7.2.1'   | null
-        'create'         | ['foo']       | true     | 'application/vnd.hedtech.v8+json'     | 'v8.0.0'   | 'application/vnd.hedtech.v8.0.0+json'
-        'create'         | ['foo']       | true     | 'application/vnd.hedtech.v8.0.0+json' | 'v8.0.0'   | null
-        'create'         | ['foo']       | true     | 'application/json'                    | null       | null
+        controllerMethod | serviceReturn | override | legacy | mediaType                             | apiVersion | overrideMediaTypeHeader
+        // test useHighestSemanticVersion=false and useAcceptHeaderAsMediaTypeHeader=false
+        'list'           | ['foo']       | false    | false  | 'application/vnd.hedtech.v6+json'     | 'v6'       | null
+        'list'           | ['foo']       | false    | false  | 'application/vnd.hedtech.v7+json'     | 'v7'       | null
+        'list'           | ['foo']       | false    | false  | 'application/vnd.hedtech.v7.0.0+json' | 'v7.0.0'   | null
+        'list'           | ['foo']       | false    | false  | 'application/vnd.hedtech.v7.1.0+json' | 'v7.1.0'   | null
+        'list'           | ['foo']       | false    | false  | 'application/vnd.hedtech.v7.2.0+json' | 'v7.2.0'   | null
+        'list'           | ['foo']       | false    | false  | 'application/vnd.hedtech.v7.2.1+json' | 'v7.2.1'   | null
+        'list'           | ['foo']       | false    | false  | 'application/vnd.hedtech.v8+json'     | 'v8'       | null
+        'list'           | ['foo']       | false    | false  | 'application/vnd.hedtech.v8.0.0+json' | 'v8.0.0'   | null
+        'list'           | ['foo']       | false    | false  | 'application/json'                    | null       | null
+        // test useHighestSemanticVersion=true and useAcceptHeaderAsMediaTypeHeader=false
+        'list'           | ['foo']       | true     | false  | 'application/vnd.hedtech.v6+json'     | 'v6'       | null
+        'list'           | ['foo']       | true     | false  | 'application/vnd.hedtech.v7+json'     | 'v7.2.1'   | 'application/vnd.hedtech.v7.2.1+json'
+        'list'           | ['foo']       | true     | false  | 'application/vnd.hedtech.v7.0.0+json' | 'v7.2.1'   | 'application/vnd.hedtech.v7.2.1+json'
+        'list'           | ['foo']       | true     | false  | 'application/vnd.hedtech.v7.1.0+json' | 'v7.2.1'   | 'application/vnd.hedtech.v7.2.1+json'
+        'list'           | ['foo']       | true     | false  | 'application/vnd.hedtech.v7.2.0+json' | 'v7.2.1'   | 'application/vnd.hedtech.v7.2.1+json'
+        'list'           | ['foo']       | true     | false  | 'application/vnd.hedtech.v7.2.1+json' | 'v7.2.1'   | null
+        'list'           | ['foo']       | true     | false  | 'application/vnd.hedtech.v8+json'     | 'v8.0.0'   | 'application/vnd.hedtech.v8.0.0+json'
+        'list'           | ['foo']       | true     | false  | 'application/vnd.hedtech.v8.0.0+json' | 'v8.0.0'   | null
+        'list'           | ['foo']       | true     | false  | 'application/json'                    | null       | null
+        // test useHighestSemanticVersion=true and useAcceptHeaderAsMediaTypeHeader=false
+        'create'         | ['foo']       | true     | false  | 'application/vnd.hedtech.v6+json'     | 'v6'       | null
+        'create'         | ['foo']       | true     | false  | 'application/vnd.hedtech.v7+json'     | 'v7.2.1'   | 'application/vnd.hedtech.v7.2.1+json'
+        'create'         | ['foo']       | true     | false  | 'application/vnd.hedtech.v7.0.0+json' | 'v7.2.1'   | 'application/vnd.hedtech.v7.2.1+json'
+        'create'         | ['foo']       | true     | false  | 'application/vnd.hedtech.v7.1.0+json' | 'v7.2.1'   | 'application/vnd.hedtech.v7.2.1+json'
+        'create'         | ['foo']       | true     | false  | 'application/vnd.hedtech.v7.2.0+json' | 'v7.2.1'   | 'application/vnd.hedtech.v7.2.1+json'
+        'create'         | ['foo']       | true     | false  | 'application/vnd.hedtech.v7.2.1+json' | 'v7.2.1'   | null
+        'create'         | ['foo']       | true     | false  | 'application/vnd.hedtech.v8+json'     | 'v8.0.0'   | 'application/vnd.hedtech.v8.0.0+json'
+        'create'         | ['foo']       | true     | false  | 'application/vnd.hedtech.v8.0.0+json' | 'v8.0.0'   | null
+        'create'         | ['foo']       | true     | false  | 'application/json'                    | null       | null
+        // test useHighestSemanticVersion=false and useAcceptHeaderAsMediaTypeHeader=true
+        'list'           | ['foo']       | false    | true   | 'application/vnd.hedtech.v6+json'     | 'v6'       | null
+        'list'           | ['foo']       | false    | true   | 'application/vnd.hedtech.v7+json'     | 'v7'       | null
+        'list'           | ['foo']       | false    | true   | 'application/vnd.hedtech.v7.0.0+json' | 'v7.0.0'   | null
+        'list'           | ['foo']       | false    | true   | 'application/vnd.hedtech.v7.1.0+json' | 'v7.1.0'   | null
+        'list'           | ['foo']       | false    | true   | 'application/vnd.hedtech.v7.2.0+json' | 'v7.2.0'   | null
+        'list'           | ['foo']       | false    | true   | 'application/vnd.hedtech.v7.2.1+json' | 'v7.2.1'   | null
+        'list'           | ['foo']       | false    | true   | 'application/vnd.hedtech.v8+json'     | 'v8'       | null
+        'list'           | ['foo']       | false    | true   | 'application/vnd.hedtech.v8.0.0+json' | 'v8.0.0'   | null
+        'list'           | ['foo']       | false    | true   | 'application/json'                    | null       | null
+        // test useHighestSemanticVersion=true and useAcceptHeaderAsMediaTypeHeader=true
+        'list'           | ['foo']       | true     | true   | 'application/vnd.hedtech.v6+json'     | 'v6'       | null
+        'list'           | ['foo']       | true     | true   | 'application/vnd.hedtech.v7+json'     | 'v7.2.1'   | null
+        'list'           | ['foo']       | true     | true   | 'application/vnd.hedtech.v7.0.0+json' | 'v7.2.1'   | null
+        'list'           | ['foo']       | true     | true   | 'application/vnd.hedtech.v7.1.0+json' | 'v7.2.1'   | null
+        'list'           | ['foo']       | true     | true   | 'application/vnd.hedtech.v7.2.0+json' | 'v7.2.1'   | null
+        'list'           | ['foo']       | true     | true   | 'application/vnd.hedtech.v7.2.1+json' | 'v7.2.1'   | null
+        'list'           | ['foo']       | true     | true   | 'application/vnd.hedtech.v8+json'     | 'v8.0.0'   | null
+        'list'           | ['foo']       | true     | true   | 'application/vnd.hedtech.v8.0.0+json' | 'v8.0.0'   | null
+        'list'           | ['foo']       | true     | true   | 'application/json'                    | null       | null
+        // test useHighestSemanticVersion=true and useAcceptHeaderAsMediaTypeHeader=true
+        'create'         | ['foo']       | true     | true   | 'application/vnd.hedtech.v6+json'     | 'v6'       | null
+        'create'         | ['foo']       | true     | true   | 'application/vnd.hedtech.v7+json'     | 'v7.2.1'   | null
+        'create'         | ['foo']       | true     | true   | 'application/vnd.hedtech.v7.0.0+json' | 'v7.2.1'   | null
+        'create'         | ['foo']       | true     | true   | 'application/vnd.hedtech.v7.1.0+json' | 'v7.2.1'   | null
+        'create'         | ['foo']       | true     | true   | 'application/vnd.hedtech.v7.2.0+json' | 'v7.2.1'   | null
+        'create'         | ['foo']       | true     | true   | 'application/vnd.hedtech.v7.2.1+json' | 'v7.2.1'   | null
+        'create'         | ['foo']       | true     | true   | 'application/vnd.hedtech.v8+json'     | 'v8.0.0'   | null
+        'create'         | ['foo']       | true     | true   | 'application/vnd.hedtech.v8.0.0+json' | 'v8.0.0'   | null
+        'create'         | ['foo']       | true     | true   | 'application/json'                    | null       | null
     }
 
     private calculateHttpMethod(String controllerMethod) {

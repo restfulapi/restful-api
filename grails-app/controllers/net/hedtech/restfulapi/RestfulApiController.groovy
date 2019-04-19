@@ -1,5 +1,5 @@
 /* ***************************************************************************
- * Copyright 2013-2018 Ellucian Company L.P. and its affiliates.
+ * Copyright 2013-2019 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -131,12 +131,16 @@ class RestfulApiController {
     // Setting overrideGenericMediaType=true in Config.groovy will replace generic media
     // types with latest actual versioned media types for a representation (where available).
     // The generic media types also need to be configured in genericMediaTypeList property.
-    // Setting overrideVersionRangeMediaType=true in Config.groovy will override the whole digit
-    // version number with the highest semantic version where the major version matches.
+    // Setting useHighestSemanticVersion=true in Config.groovy will dynamically replace all
+    // versioned media types with the highest semantic version where the major version matches.
+    // Setting useAcceptHeaderAsMediaTypeHeader=true in Config.groovy will return
+    // the Accept request header as the X-Media-Type response header for some clients to
+    // delay transitioning to full semantic versioning of the X-Media-Type response header.
     ApiVersionParser apiVersionParser
     boolean overrideGenericMediaType
     List genericMediaTypeList
-    boolean overrideVersionRangeMediaType
+    boolean useHighestSemanticVersion
+    boolean useAcceptHeaderAsMediaTypeHeader
 
     private Class pagedResultListClazz
 
@@ -181,7 +185,8 @@ class RestfulApiController {
 
         overrideGenericMediaType = getOverrideGenericMediaType()
         genericMediaTypeList = getGenericMediaTypeList()
-        overrideVersionRangeMediaType = getOverrideVersionRangeMediaType()
+        useHighestSemanticVersion = getUseHighestSemanticVersion()
+        useAcceptHeaderAsMediaTypeHeader = getUseAcceptHeaderAsMediaTypeHeader()
 
         JSON.createNamedConfig('restapi-error:json') { }
         XML.createNamedConfig('restapi-error:xml') { }
@@ -228,13 +233,13 @@ class RestfulApiController {
                                 }
                             }
                         }
-                        if (overrideVersionRangeMediaType && representation.apiVersion.version?.indexOf('.') == -1) {
+                        if (useHighestSemanticVersion && representation.apiVersion.version) {
                             if (representation.allMediaTypes.size() > 1 && !genericMediaTypeList.contains(representation.mediaType)) {
                                 List apiVersionList = []
                                 representation.allMediaTypes.each { mediaType ->
                                     if (!genericMediaTypeList.contains(mediaType)) {
                                         def testApiVersion = apiVersionParser.parseMediaType(resource.name, mediaType)
-                                        if (testApiVersion.version?.startsWith(representation.apiVersion.version+".")) {
+                                        if (testApiVersion.majorVersion == representation.apiVersion.majorVersion) {
                                             apiVersionList.add(testApiVersion)
                                         }
                                     }
@@ -723,7 +728,7 @@ class RestfulApiController {
             String responseMediaType = representation.mediaType
             String apiVersionMediaType = representation.apiVersion?.mediaType
             if (apiVersionMediaType) {
-                if (overrideVersionRangeMediaType ||
+                if ((useHighestSemanticVersion && !useAcceptHeaderAsMediaTypeHeader) ||
                         (overrideGenericMediaType && genericMediaTypeList.contains(responseMediaType))) {
                     responseMediaType = apiVersionMediaType
                 }
@@ -1085,8 +1090,14 @@ class RestfulApiController {
     }
 
 
-    private boolean getOverrideVersionRangeMediaType() {
-        def value = grailsApplication.config.restfulApi.overrideVersionRangeMediaType
+    private boolean getUseHighestSemanticVersion() {
+        def value = grailsApplication.config.restfulApi.useHighestSemanticVersion
+        (value instanceof Boolean) ? value : false
+    }
+
+
+    private boolean getUseAcceptHeaderAsMediaTypeHeader() {
+        def value = grailsApplication.config.restfulApi.useAcceptHeaderAsMediaTypeHeader
         (value instanceof Boolean) ? value : false
     }
 

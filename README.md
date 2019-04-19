@@ -1,5 +1,5 @@
 <!-- ***************************************************************************
- * Copyright 2013-2018 Ellucian Company L.P. and its affiliates.
+ * Copyright 2013-2019 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ The restful-api plugin is designed to facilitate exposing RESTful API endpoints 
 This plugin should be installed from the official Grails Central Plugin Repository ([http://grails.org/plugins/restful-api](http://grails.org/plugins/restful-api)) by setting the following dependency:
 
 ```
-    compile ":restful-api:1.7.0"
+    compile ":restful-api:1.8.0"
 ```
 
 _Note: It may sometimes be useful to install this plugin as a Git submodule instead (e.g., if you are actively contributing to the plugin). To add the plugin as a Git submodule under a 'plugins' directory:_
@@ -68,7 +68,7 @@ _Then add the in-place plugin definition to BuildConfig.groovy:_
 _Adding the plugin this way will use the latest commit on the master branch at the time you ran the submodule command.  If you want to use an official release instead, go to the plugin directory and checkout a specific version, e.g.:_
 
     cd plugins/restful-api.git
-    git checkout 1.7.0
+    git checkout 1.8.0
 
 _Lastly, don't forget to go back to your project root and commit the change this will make to your git submodules file._
 
@@ -3465,14 +3465,14 @@ the application. The following is an example:
     restfulApi.overrideGenericMediaType = true
     restfulApi.genericMediaTypeList = ["application/json", "application/vnd.hedtech.integration+json"]
 
-###Override version range media type for semantic versions
-To override the whole digit representation version number with the highest semantic version where the major version
-matches, you must set restfulApi.overrideVersionRangeMediaType=true in Config.groovy. The following is an example:
+###Use highest semantic version for media type
+To dynamically replace all versioned media types with the highest semantic version where the major version matches,
+you must set restfulApi.useHighestSemanticVersion=true in Config.groovy. The following is an example:
 
-    restfulApi.overrideVersionRangeMediaType = true
+    restfulApi.useHighestSemanticVersion = true
     
-This is in support of version ranges that facilitate easier caller adoption of non-breaking API changes. This
-feature requires an ApiVersionParser to be configured.
+This is to facilitate easier caller adoption of non-breaking API changes. This feature requires an ApiVersionParser
+to be configured.
 
 An example of this using a representation with multiple media types. Given a representation of
 * application/vnd.hedtech.integration.v6+json
@@ -3484,7 +3484,11 @@ An example of this using a representation with multiple media types. Given a rep
 * application/vnd.hedtech.integration.v8+json
 * application/vnd.hedtech.integration.v8.0.0+json
 
-This feature will associate application/vnd.hedtech.integration.v7+json with v7.2.1 as it is the highest semantic version for the given representation having a major version of v7. Callers requesting v7, will automatically be returned the highest representation as it is non-breaking by semantic definition. Also, application/vnd.hedtech.integration.v8+json will be associated with v8.0.0. Lastly, application/vnd.hedtech.integration.v6+json will remain as a non-semantic version associated with v6.
+This feature will associate application/vnd.hedtech.integration.v7+json, v7.0.0+json, v7.1.0+json, v7.2.0+json with v7.2.1 as it is the highest semantic version for the given representation having a major version of v7. Callers requesting any v7 version, will automatically be returned the highest representation as it is non-breaking by semantic definition. Also, application/vnd.hedtech.integration.v8+json will be associated with v8.0.0. Lastly, application/vnd.hedtech.integration.v6+json will remain as a non-semantic version associated with v6.
+
+Some callers may not be able to adopt this change being reflected in X-Media-Type right away. Since minor version upgrades are non-breaking, the framework allows callers to delay transitioning to full semantic versioning of the X-Media-Type response header. This is accomplished by setting a configuration property such that whatever is being requested in the Accept request header will be returned in the response X-Media-Type header. To implement this behaviour, specify in Config.groovy the following:
+
+    restfulApi.useAcceptHeaderAsMediaTypeHeader = true
 
 ##Reporting and discovery of all configured resources
 The RestfulApiController exposes selected information about all resources that have been configured through an optional ResourceDetailList. Simply configure the Spring application context for the supplied ResourceDetailList class as a bean named resourceDetailList:

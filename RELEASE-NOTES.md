@@ -1,3 +1,7 @@
+#1.8.0
+* Replace overrideVersionRangeMediaType=true setting with useHighestSemanticVersion=true to dynamically replace all versioned media types with the highest semantic version where the major version matches. This is to facilitate easier caller adoption of non-breaking API changes. This feature requires an ApiVersionParser to be configured. 
+* Add setting useAcceptHeaderAsMediaTypeHeader=true in Config.groovy to return the Accept request header as the X-Media-Type response header for some callers to delay transitioning to full semantic versioning of the X-Media-Type response header. 
+
 #1.7.0
 * Add setting overrideVersionRangeMediaType=true to allow override of a whole digit representation version number with the highest semantic version where the major version matches. This is in support of version ranges that facilitate easier caller adoption of non-breaking API changes. This feature requires an ApiVersionParser to be configured. 
 * Correct extensibility to not execute WRITE SQL if the request is a POST /qapi request (this represents a query by post read-only request). 

@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * Copyright 2013-2018 Ellucian Company L.P. and its affiliates.
+ * Copyright 2013-2019 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import org.codehaus.groovy.grails.web.converters.configuration.DefaultConverterC
 
 class RestfulApiGrailsPlugin {
 
-    def version = "1.7.0"
+    def version = "1.8.0"
     def grailsVersion = "2.2.0 > *"
     def pluginExcludes = [
         "grails-app/views/**",
