@@ -354,7 +354,7 @@ class RestfulApiController {
             def logger = log            // ditto
 
             if (request.method == "POST") {
-                def queryCriteria = parseRequestContent( request, 'query-filters', Methods.LIST )
+                def queryCriteria = parseRequestContent( request, 'query-filters', Methods.LIST, params.pluralizedResourceName )
                 updatePagingQueryParams( queryCriteria ) // We'll ensure params uses expected Grails naming
                 requestParams << queryCriteria
             }
@@ -840,7 +840,12 @@ class RestfulApiController {
      * Returns a map representing the properties of content.
      * @param request the request containing the content
      **/
-    protected Map parseRequestContent( request, String resource, String method ) {
+    protected Map parseRequestContent( request, String resource, String method, String actualResource = null ) {
+
+        def isUsingQueryFilters = (resource == 'query-filters')
+        if (isUsingQueryFilters && actualResource && useHighestSemanticVersion) {
+            resource = actualResource
+        }
 
         ResourceConfig resourceConfig = getResourceConfig( resource )
         def representation = getRequestRepresentation( resource )
@@ -859,7 +864,7 @@ class RestfulApiController {
         //  - delete method which only requires the key of a resource
         //  - create requests if configured to bypass
         //  - update requests if configured to bypass
-        if (restContentFilter && !(resource == 'query-filters' ||
+        if (restContentFilter && !(isUsingQueryFilters ||
                                    method == Methods.DELETE ||
                                    (method == Methods.CREATE && restContentFilter.bypassCreateRequest) ||
                                    (method == Methods.UPDATE && restContentFilter.bypassUpdateRequest))) {

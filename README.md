@@ -598,7 +598,7 @@ new Date(Long.valueOf(filterValue))
 
 Otherwise, the HQLBuilder will attempt to parse it as a subset of ISO 8601.  For example "2013-10-29T15:35:00Z"
 
-##Query-with-POST
+##<a id="query-by-post"></a>Query-with-POST
 If a /qapi url mapping has been defined to support querying with POST, the controller will attempt to parse the body of a POST to a resource using the qapi prefix by using the pseudo-resource name 'query-filters'.  In order for this to work, add a 'query-filters' resource to the restfulApiConfig:
 
     // This pseudo resource is used when issuing a query using a POST. Such a POST is made
@@ -3489,6 +3489,8 @@ This feature will associate application/vnd.hedtech.integration.v7+json, v7.0.0+
 Some callers may not be able to adopt this change being reflected in X-Media-Type right away. Since minor version upgrades are non-breaking, the framework allows callers to delay transitioning to full semantic versioning of the X-Media-Type response header. This is accomplished by setting a configuration property such that whatever is being requested in the Accept request header will be returned in the response X-Media-Type header. To implement this behaviour, specify in Config.groovy the following:
 
     restfulApi.useAcceptHeaderAsMediaTypeHeader = true
+
+When using restfulApi.useHighestSemanticVersion=true, the query-filters resource used with [Query-with-POST](#query-by-post) is disabled. Instead of defining the extractors in query-filters, they should be defined with the actual resource. 
 
 ##Reporting and discovery of all configured resources
 The RestfulApiController exposes selected information about all resources that have been configured through an optional ResourceDetailList. Simply configure the Spring application context for the supplied ResourceDetailList class as a bean named resourceDetailList:
