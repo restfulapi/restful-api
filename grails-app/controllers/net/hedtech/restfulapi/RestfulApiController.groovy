@@ -414,6 +414,9 @@ class RestfulApiController {
             renderErrorResponse(e)
             return
         }
+        finally{
+            try {session.invalidate()} catch(sessionInvalidateError) {}
+        }
     }
 
 
@@ -455,6 +458,9 @@ class RestfulApiController {
             logMessageError(e)
             renderErrorResponse(e)
         }
+        finally{
+            try {session.invalidate()} catch(sessionInvalidateError) {}
+        }
     }
 
 
@@ -478,6 +484,9 @@ class RestfulApiController {
             logMessageError(e)
             renderErrorResponse(e)
         }
+        finally{
+            try {session.invalidate()} catch(sessionInvalidateError) {}
+        }
     }
 
 
@@ -500,6 +509,9 @@ class RestfulApiController {
         catch (e) {
             logMessageError(e)
             renderErrorResponse(e)
+        }
+        finally{
+            try {session.invalidate()} catch(sessionInvalidateError) {}
         }
     }
 
@@ -529,6 +541,9 @@ class RestfulApiController {
         catch (e) {
             logMessageError(e)
             renderErrorResponse(e)
+        }
+        finally{
+            try {session.invalidate()} catch(sessionInvalidateError) {}
         }
     }
 
