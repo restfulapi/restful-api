@@ -1233,6 +1233,38 @@ By default, the name of the service to use is derived from the name of the resou
 
 Will cause the list, show, create, update, and delete methods for the resource 'students' to be delegated to the bean registered under the name 'studentFacadeService' instead of 'studentService'.
 
+###Overriding the service used for list requests of a specific resource representation.
+You can override the name of the service bean to use for list requests of a specific resource representation with the 'representationServiceName' property when configuring a resource representation.  For example:
+
+    restfulApiConfig = {
+        marshallerGroup {
+            name = 'student'
+            marshaller {
+                instance = new net.hedtech.restfulapi.marshallers.json.StudentMarshaller(grailsApplication)
+                priority = 100
+            }
+        }
+        resource 'students' config {
+            serviceName = 'studentFacadeService'
+            representation {
+                mediaTypes = ['application/json']
+                marshallers {
+                    marshallerGroup 'student'
+                }
+            }
+            representation {
+                representationServiceName = 'bulkLoadService'
+                mediaTypes = ['application/vnd.hedtech.bulk-load.json']
+                marshallers {
+                    marshallerGroup 'student'
+                }
+            }
+        }
+
+    }
+
+Will cause the list method for the 'application/vnd.hedtech.bulk-load.json' representation of the resource 'students' to be delegated to the bean registered under the name 'bulkLoadService' instead of 'studentFacadeService'. This is typically used when there is a common service applicable to all resources for a specific media type.
+
 ###<a id="specifying-service-adapter"></a>Specifying a service adapter.
 You can specify, on a per-resource basis a service adapter to use.  First, ensure you have a valid [adapter](#service-layer-adapter) registered as a spring bean, then specify the name of the bean in the configuration.  For example:
 
