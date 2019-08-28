@@ -362,7 +362,10 @@ class RestfulApiController {
                 updatePagingQueryParams( requestParams ) // We'll ensure params uses expected Grails naming
             }
 
-            def service = getService()
+            def service = getRepresentationService(responseRepresentation)
+            if(!service) {
+                service = getService()
+            }
             def delegateToService = getServiceAdapter()
             logger.trace "... will delegate list() to service $service using adapter $delegateToService"
 
@@ -974,6 +977,23 @@ class RestfulApiController {
         adapter = adapter ?: defaultServiceAdapter
         log.trace "getServiceAdapter() will return adapter $adapter"
         adapter
+    }
+
+
+    protected def getRepresentationService(def responseRepresentation) {
+        //getRepresentation
+        def serviceName = responseRepresentation?.representationServiceName
+        if(!serviceName) {
+            serviceName = getResourceConfig()?.representations?.get(responseRepresentation?.mediaType)?.representationServiceName
+        }
+        log.trace "getRepresentationService() will return $serviceName"
+        def svc = getSpringBean( serviceName )
+        log.trace "getService() will return service $svc"
+        if (null == svc) {
+            log.warn "No representation service found for resource ${params.pluralizedResourceName}"
+        }
+        log.trace "representationService() will return service $svc"
+        svc
     }
 
 
