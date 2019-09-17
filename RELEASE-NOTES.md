@@ -1,3 +1,7 @@
+#1.9.0
+* Modify RestfulApiController to invalidate the session after the completion of each REST method as part of an overall solution to an application performance issue when not caching the database connection.
+* Allow service name to be specified at the representation level - list requests only - so that a single service can be used for multiple resources when the underlying functionality is the same (ex: bulk list requests using alternate representations).
+
 #1.8.0
 * Replace overrideVersionRangeMediaType=true setting with useHighestSemanticVersion=true to dynamically replace all versioned media types with the highest semantic version where the major version matches. This is to facilitate easier caller adoption of non-breaking API changes. This feature requires an ApiVersionParser to be configured. 
 * Add setting useAcceptHeaderAsMediaTypeHeader=true in Config.groovy to return the Accept request header as the X-Media-Type response header for some callers to delay transitioning to full semantic versioning of the X-Media-Type response header. 
