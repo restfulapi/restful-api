@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * Copyright 2013 Ellucian Company L.P. and its affiliates.
+ * Copyright 2013-2019 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -531,6 +531,21 @@ restfulApiConfig = {
         serviceName = 'nothingService'
         serviceAdapterName = 'nothingServiceAdapter'
         representation {
+            mediaTypes = ["application/json"]
+            marshallers {
+                jsonDomainMarshaller {
+                    priority = 100
+                }
+            }
+            jsonExtractor {}
+        }
+    }
+
+    //created the resource to test representation service name functionality
+    resource 'representation-things' config {
+        serviceAdapterName = 'nothingServiceAdapter'
+        representation {
+            representationServiceName = 'nothingService'
             mediaTypes = ["application/json"]
             marshallers {
                 jsonDomainMarshaller {

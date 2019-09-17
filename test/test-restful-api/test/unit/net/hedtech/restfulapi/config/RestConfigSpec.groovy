@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * Copyright 2013-2018 Ellucian Company L.P. and its affiliates.
+ * Copyright 2013-2019 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1534,5 +1534,31 @@ class RestConfigSpec extends Specification {
         def e = thrown(RepresentationMetadataNotMapException)
         'things' == e.resourceName
         'application/vnd.hedtech.v0+json' == e.mediaType
+    }
+
+    def "Test service name override by representation service name"() {
+        setup:
+        def src =
+                {
+                    resource 'things' config {
+                        serviceName = 'TheThingService'
+                        representation {
+                            representationServiceName = 'TheThingRepresentationService'
+                            mediaTypes = ['application/vnd.hedtech.v0+json']
+                            marshallers {
+
+                            }
+                            extractor = null
+                        }
+                    }
+
+                }
+
+        when:
+        def config = RestConfig.parse( grailsApplication, src )
+
+        then:
+        1 == config.resources.size()
+        'TheThingRepresentationService' == config.resources['things'].representations.get('application/vnd.hedtech.v0+json').representationServiceName
     }
 }

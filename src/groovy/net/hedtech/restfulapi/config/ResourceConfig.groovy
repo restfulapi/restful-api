@@ -1,5 +1,5 @@
 /* ***************************************************************************
- * Copyright 2013-2018 Ellucian Company L.P. and its affiliates.
+ * Copyright 2013-2019 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -113,8 +113,8 @@ class ResourceConfig {
                 jsonArrayPrefix:delegate.jsonArrayPrefix,
                 marshallers:delegate.marshallers, extractor:delegate.extractor,
                 allMediaTypes: delegate.mediaTypes,
-                representationMetadata: delegate.representationMetadata)
-
+                representationMetadata: delegate.representationMetadata,
+                representationServiceName: delegate.representationServiceName)
             //if we are using the json or xml marshalling framework, check
             //if we have default marshallers that should be automatically used
             //for all representations, and add then to the configuration

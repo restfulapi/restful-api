@@ -1,5 +1,5 @@
 /* ****************************************************************************
- * Copyright 2013 Ellucian Company L.P. and its affiliates.
+ * Copyright 2013-2019 Ellucian Company L.P. and its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -2074,6 +2074,26 @@ class RestfulApiControllerFunctionalSpec extends RestSpecification {
         null                      != json.numParts
         null                      != json.sha1
         "dev"                     == json.tenant
+    }
+
+    def "Test ability to use a representation-specific service"() {
+        setup:
+        createThing('AA')
+        createThing('BB')
+
+        when:
+        get( "$localBase/api/representation-things/" ) {
+            headers['Content-Type']  = 'application/json'
+            headers['Accept']        = 'application/json'
+        }
+
+        then:
+        200 == response.status
+        'application/json' == response.contentType
+
+        def json = JSON.parse response.text
+        2 == json.code.size()
+        "List of representation-thing resources" == responseHeader('X-hedtech-message')
     }
 
     @Ignore // This test requires configuration on the test machine.
